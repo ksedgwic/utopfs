@@ -1,3 +1,5 @@
+# This is a comment.
+
 CXXFLAGS +=	-g -Wall -Werror
 
 DEFS +=		-D_FILE_OFFSET_BITS=64
