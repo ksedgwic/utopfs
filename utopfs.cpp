@@ -4,37 +4,46 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <iostream>
+#include <string>
+
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
 
-#include <iostream>
-
 using namespace std;
-
-static char const * hello_str = "Hello World!\n";
-static char const * hello_path = "/hello";
 
 extern "C" {
 
+static char const * utopfs_dir_path = "/.utopfs";
+static char const * utopfs_ver_path = "/.utopfs/version";
+static char const * utopfs_ver_str = "utopfs version 0.1\n";
+
 static int
-hello_getattr(char const * path,
+utopfs_getattr(char const * i_path,
               struct stat * stbuf)
 {
     int res = 0; /* temporary result */
 
     memset(stbuf, 0, sizeof(struct stat));
 
-    if (strcmp(path, "/") == 0)
+    string path = i_path;
+
+    if (path == "/")
     {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
     }
-    else if (strcmp(path, hello_path) == 0)
+    else if (path == utopfs_dir_path)
+    {
+        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_nlink = 2;
+    }
+    else if (path == utopfs_ver_path)
     {
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
-        stbuf->st_size = strlen(hello_str);
+        stbuf->st_size = strlen(utopfs_ver_str);
     }
     else
     {
@@ -44,7 +53,7 @@ hello_getattr(char const * path,
 }
 
 static int
-hello_readdir(char const * path,
+utopfs_readdir(char const * i_path,
               void * buf,
               fuse_fill_dir_t filler,
               off_t offset,
@@ -53,29 +62,45 @@ hello_readdir(char const * path,
    (void) offset;
    (void) fi;
 
-   if (strcmp(path, "/") != 0)
-       return -ENOENT;
+   string path = i_path;
 
-   filler(buf, ".", NULL, 0);
-   filler(buf, "..", NULL, 0);
-   filler(buf, hello_path + 1, NULL, 0);
+   if (path == "/")
+   {
+       filler(buf, ".", NULL, 0);
+       filler(buf, "..", NULL, 0);
+       filler(buf, utopfs_dir_path + 1, NULL, 0);
+   }
+   else if (path == utopfs_dir_path)
+   {
+       filler(buf, ".", NULL, 0);
+       filler(buf, "..", NULL, 0);
+       filler(buf, utopfs_ver_path + 9, NULL, 0);
+   }
+   else
+   {
+       return -ENOENT;
+   }
 
    return 0;
 }
 
 static int
-hello_open(char const * path,
+utopfs_open(char const * i_path,
            struct fuse_file_info *fi)
 {
-   if (strcmp(path, hello_path) != 0)
+   string path = i_path;
+
+   if (path != utopfs_ver_path)
        return -ENOENT;
+
    if ((fi->flags & 3) != O_RDONLY )
        return -EACCES;
+
    return 0;
 }
 
 static int
-hello_read(char const * path,
+utopfs_read(char const * i_path,
            char * buf,
            size_t size,
            off_t offset,
@@ -85,15 +110,17 @@ hello_read(char const * path,
 
    size_t len;
 
-   if (strcmp(path, hello_path) != 0)
+   string path = i_path;
+
+   if (path != utopfs_ver_path)
        return -ENOENT;
 
-   len = strlen(hello_str);
+   len = strlen(utopfs_ver_str);
    if (offset < off_t(len))
    {
       if (offset + size > len)
          size = len - offset;
-      memcpy(buf, hello_str + offset, size);
+      memcpy(buf, utopfs_ver_str + offset, size);
    }
    else
    {
@@ -102,17 +129,17 @@ hello_read(char const * path,
    return size;
 }
 
-static struct fuse_operations hello_oper;
+static struct fuse_operations utopfs_oper;
 
 } // end extern "C"
 
 int
 main(int argc, char ** argv)
 {
-    hello_oper.getattr	= hello_getattr;
-    hello_oper.readdir	= hello_readdir;
-    hello_oper.open		= hello_open;
-    hello_oper.read		= hello_read;
+    utopfs_oper.getattr		= utopfs_getattr;
+    utopfs_oper.readdir		= utopfs_readdir;
+    utopfs_oper.open		= utopfs_open;
+    utopfs_oper.read		= utopfs_read;
     
-    return fuse_main(argc, argv, &hello_oper, NULL);
+    return fuse_main(argc, argv, &utopfs_oper, NULL);
 }
