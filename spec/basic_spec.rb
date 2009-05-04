@@ -14,7 +14,7 @@ describe "A utopfs filesytem" do
    
   def mount(mdir = @mdir)    
     FileUtils.mkdir_p mdir
-    `./utopfs #{mdir}` if ! is_mounted?(mdir)
+    `./src/utopfs #{mdir}` if ! is_mounted?(mdir)
   end
   
   def unmount(mdir = @mdir)
