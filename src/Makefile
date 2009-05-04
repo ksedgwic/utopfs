@@ -1,4 +1,3 @@
-# This is a comment.
 
 CXXFLAGS +=	-g -Wall -Werror
 

@@ -1,3 +1,5 @@
+// This is a silly comment
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
