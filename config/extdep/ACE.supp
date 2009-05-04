@@ -1,0 +1,570 @@
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZNK31ACE_Service_Repository_Iterator4dumpEv
+   fun:_ZN22ACE_Service_Repository10relocate_iEjjRK7ACE_DLLb
+   fun:_ZN18ACE_Service_Config7currentEv
+   fun:_ZN18ACE_Service_Config11static_svcsEv
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2ERKS0_
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZNK31ACE_Service_Repository_Iterator4dumpEv
+   fun:_ZN22ACE_Service_Repository10relocate_iEjjRK7ACE_DLLb
+   fun:_ZN18ACE_Service_Config7currentEv
+   fun:_ZN18ACE_Service_Config11static_svcsEv
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN18ACE_Object_Manager8instanceEv
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN19ACE_Service_Gestalt6insertEP25ACE_Static_Svc_Descriptor
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2ERKS0_
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN19ACE_Service_Gestalt6insertEP25ACE_Static_Svc_Descriptor
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN18ACE_Object_Manager8instanceEv
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.1
+   fun:_ZN27ACE_Dev_Poll_Reactor_NotifyC1Ev
+   fun:_ZN27ACE_Dev_Poll_Reactor_NotifyD1Ev
+   fun:_ZN10ACE_ARGV_TIcE3addEPKcb
+   fun:_ZN7ACE_DLL4openEPKcii
+   fun:_ZN19ACE_Service_Gestalt20Processed_Static_SvcC2EPK25ACE_Static_Svc_Descriptor
+   fun:_ZNK19ACE_Service_Gestalt26find_static_svc_descriptorEPKcPP25ACE_Static_Svc_Descriptor
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN3ACE7strnnewEPKcj
+   fun:_ZN22ACE_Service_RepositoryC2Ej
+   fun:_ZN19ACE_Service_Gestalt17process_directiveEPKc
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN19ACE_Service_Manager20reconfigure_servicesEv
+   fun:_ZN18ACE_Service_Config7currentEv
+   fun:_ZN18ACE_Service_Config11static_svcsEv
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2ERKS0_
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN19ACE_Service_Manager20reconfigure_servicesEv
+   fun:_ZN18ACE_Service_Config7currentEv
+   fun:_ZN18ACE_Service_Config11static_svcsEv
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN18ACE_Object_Manager8instanceEv
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN31ACE_Service_Repository_IteratorC2ER22ACE_Service_Repositoryi
+   fun:_ZN18ACE_Service_Config6globalEv
+   fun:_ZN19ACE_Service_Manager12handle_inputEi
+   fun:_ZN18ACE_Service_Config11static_svcsEv
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2ERKS0_
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN31ACE_Service_Repository_IteratorC2ER22ACE_Service_Repositoryi
+   fun:_ZN18ACE_Service_Config6globalEv
+   fun:_ZN19ACE_Service_Manager12handle_inputEi
+   fun:_ZN18ACE_Service_Config11static_svcsEv
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN18ACE_Object_Manager8instanceEv
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZN17ACE_New_Allocator6mallocEj
+   fun:_ZN19ACE_Service_Gestalt6insertEP25ACE_Static_Svc_Descriptor
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2ERKS0_
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.1
+   fun:_ZN27ACE_Dev_Poll_Reactor_NotifyC1Ev
+   fun:_ZN27ACE_Dev_Poll_Reactor_NotifyD1Ev
+   fun:_ZN10ACE_ARGV_TIcE3addEPKcb
+   fun:_ZN7ACE_DLL4openEPKcii
+   fun:_ZN19ACE_Service_Gestalt20Processed_Static_SvcC2EPK25ACE_Static_Svc_Descriptor
+   fun:_ZNK19ACE_Service_Gestalt26find_static_svc_descriptorEPKcPP25ACE_Static_Svc_Descriptor
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN3ACE7strnnewEPKcj
+   fun:_ZN22ACE_Service_RepositoryC2Ej
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:add_to_global
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.1
+   fun:_ZN27ACE_Dev_Poll_Reactor_NotifyC1Ev
+   fun:_ZN27ACE_Dev_Poll_Reactor_NotifyD1Ev
+   fun:_ZN10ACE_ARGV_TIcE3addEPKcb
+   fun:_ZN7ACE_DLL4openEPKcii
+   fun:_ZN19ACE_Service_Gestalt20Processed_Static_SvcC2EPK25ACE_Static_Svc_Descriptor
+   fun:_ZNK19ACE_Service_Gestalt26find_static_svc_descriptorEPKcPP25ACE_Static_Svc_Descriptor
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN3ACE7strnnewEPKcj
+   fun:_ZN22ACE_Service_RepositoryC2Ej
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZN17ACE_Control_Block13ACE_Name_NodeC1EPKcPcS3_PS0_
+   obj:/usr/lib/libACE.so.*
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2ERKS0_
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZN17ACE_Control_Block13ACE_Name_NodeC1EPKcPcS3_PS0_
+   obj:/usr/lib/libACE.so.5.*
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN18ACE_Object_Manager8instanceEv
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZN17ACE_New_Allocator6mallocEj
+   fun:_ZN19ACE_Service_Gestalt6insertEP25ACE_Static_Svc_Descriptor
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN18ACE_Object_Manager8instanceEv
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN25ACE_Static_Allocator_Base7protectEii
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2ERKS0_
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1Ev
+   obj:/usr/lib/libACE.so.*
+   obj:/usr/lib/libACE.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN25ACE_Static_Allocator_Base7protectEii
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2Ev
+   fun:_ZN18ACE_Object_Manager8instanceEv
+   fun:_ZN26ACE_Object_Manager_ManagerC1Ev
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   obj:/usr/lib/libACE.so.5.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_ZnwjRKSt9nothrow_t
+   fun:_ZN15ACE_LSOCK_DgramC2ERK8ACE_Addrii
+   fun:_ZNK16ACE_LSOCK_Stream4dumpEv
+   obj:/usr/lib/libACE.so.5.6.1
+   fun:_ZN16ACE_MEM_AcceptorC2ERK12ACE_MEM_Addriii
+   fun:_ZN23ACE_Base_Thread_Adapter13close_log_msgEv
+   fun:_ZN6ACE_OS11cleanup_tssEj
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN18ACE_Object_ManagerD0Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1ERKS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1ERKS0_
+   fun:__cxa_finalize
+   obj:/usr/lib/libACE.so.5.6.1
+   obj:/usr/lib/libACE.so.5.6.1
+   fun:_dl_fini
+   fun:exit
+   fun:(below main)
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.1
+   fun:_ZN9ACE_Event4waitEv
+   fun:_ZN17ACE_Event_Handler13add_referenceEv
+   fun:_ZN7ACE_DLL6open_iEPKciiPv
+   fun:_ZN7ACE_DLL4openEPKcii
+   fun:_ZN30ACE_Service_Type_Dynamic_GuardC2ER22ACE_Service_RepositoryPKc
+   fun:_ZN30ACE_Service_Type_Dynamic_GuardC2ER22ACE_Service_RepositoryPKc
+   fun:_ZN19ACE_Service_Gestalt12initialize_iEPK16ACE_Service_TypePKc
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN19ACE_Service_Gestalt12initialize_iEPK16ACE_Service_TypePKc
+   fun:_ZN3ACE14format_hexdumpEPKcjPcj
+   fun:_ZNK22ACE_Service_Repository4findEPKcPPK16ACE_Service_Typeb
+   fun:_ZN9ACE_Utils9UUID_node6nodeIDERA6_h
+   fun:_ZN9ACE_Utils14UUID_Generator14get_systemtimeERy
+   fun:_ZN9ACE_Utils4UUID9to_stringEv
+   fun:_ZN19ACE_Service_Manager13list_servicesEv
+   fun:_ZN19ACE_Service_Gestalt4openEiPPcPKcbbb
+   fun:_ZN18ACE_Service_Config4openEiPPcPKcbbb
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:_ZN14ACE_DLL_Handle4openEPKciPv
+   fun:_ZN15ACE_DLL_Manager8open_dllEPKciPv
+   fun:_ZN7ACE_DLL6open_iEPKciiPv
+   fun:_ZN17ACE_Location_Node8open_dllERi
+   fun:_ZN17ACE_Function_Node6symbolEP19ACE_Service_GestaltRiPPFvPvE
+   fun:_ZNK24ACE_Service_Type_Factory17make_service_typeEP19ACE_Service_Gestalt
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN16ACE_Dynamic_Node5applyEP19ACE_Service_GestaltRi
+   fun:_Z11ace_yyparsePv
+   fun:_ZN19ACE_Service_Gestalt20process_directives_iEP18ACE_Svc_Conf_Param
+   fun:_ZN19ACE_Service_Gestalt12process_fileEPKc
+   fun:_ZN19ACE_Service_Gestalt18process_directivesEv
+   fun:_ZN19ACE_Service_Gestalt6open_iEPKcS1_bbb
+   fun:_ZN18ACE_Service_Config6open_iEPKcS1_bbb
+   fun:_ZN19ACE_Service_Gestalt4openEiPPcPKcbbb
+   fun:_ZN18ACE_Service_Config4openEiPPcPKcbbb
+   fun:_ZN6radhoc4node7NodeMgr10initializeERiRPPcb
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_ZnwjRKSt9nothrow_t
+   fun:_ZN16ACE_LSOCK_Stream8recv_msgEP5iovecjRi
+   obj:/usr/lib/libACE.so.5.6.1
+   fun:_ZN16ACE_MEM_AcceptorC2ERK12ACE_MEM_Addriii
+   fun:_ZN23ACE_Base_Thread_Adapter13close_log_msgEv
+   fun:_ZN6ACE_OS11cleanup_tssEj
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC2EPKcPcS3_PS0_
+   fun:_ZN18ACE_Object_ManagerD0Ev
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1ERKS0_
+   fun:_ZN20ACE_PI_Control_Block13ACE_Name_NodeC1ERKS0_
+   fun:__cxa_finalize
+   obj:/usr/lib/libACE.so.5.6.1
+   obj:/usr/lib/libACE.so.5.6.1
+   fun:_dl_fini
+   fun:exit
+   fun:(below main)
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_ZnajRKSt9nothrow_t
+   fun:_ZN17ACE_New_Allocator6mallocEj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:call_init
+   fun:_dl_init
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.1
+   fun:_ZN9ACE_Event4waitEv
+   fun:_ZN17ACE_Event_Handler13add_referenceEv
+   fun:_ZN7ACE_DLL6open_iEPKciiPv
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_ZnwjRKSt9nothrow_t
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:call_init
+   fun:_dl_init
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.1
+   fun:_ZN9ACE_Event4waitEv
+   fun:_ZN17ACE_Event_Handler13add_referenceEv
+   fun:_ZN7ACE_DLL6open_iEPKciiPv
+   fun:_ZN7ACE_DLL4openEPKcii
+   fun:_ZN30ACE_Service_Type_Dynamic_GuardC2ER22ACE_Service_RepositoryPKc
+   fun:_ZN30ACE_Service_Type_Dynamic_GuardC2ER22ACE_Service_RepositoryPKc
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_signal_error
+   fun:_dl_signal_cerror
+   fun:_dl_lookup_symbol_x
+   fun:do_sym
+   fun:_dl_sym
+   fun:dlsym_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlsym
+   fun:_ZN19ACE_Dirent_SelectorC1Ev
+   fun:_ZN7ACE_ODB8instanceEv
+   fun:_ZNK7ACE_TSSI11ACE_DynamicE13make_TSS_TYPEEv
+   fun:_ZN13ACE_SingletonI18ACE_Service_Config26ACE_Recursive_Thread_MutexED0Ev
+   fun:_ZN13ACE_SingletonI18ACE_Service_Config26ACE_Recursive_Thread_MutexED1Ev
+   fun:_ZN19ACE_Service_GestaltD1Ev
+   fun:_ZN19ACE_Service_Gestalt12process_fileEPKc
+   fun:_ZN3ACE14format_hexdumpEPKcjPcj
+   fun:_ZNK22ACE_Service_Repository4findEPKcPPK16ACE_Service_Typeb
+   fun:_ZN9ACE_Utils14UUID_GeneratorC2Ev
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:add_to_global
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.1
+   fun:_ZN9ACE_Event4waitEv
+   fun:_ZN17ACE_Event_Handler13add_referenceEv
+   fun:_ZN7ACE_DLL6open_iEPKciiPv
+   fun:_ZN7ACE_DLL4openEPKcii
+   fun:_ZN30ACE_Service_Type_Dynamic_GuardC2ER22ACE_Service_RepositoryPKc
+   fun:_ZN30ACE_Service_Type_Dynamic_GuardC2ER22ACE_Service_RepositoryPKc
+   fun:_ZN19ACE_Service_Gestalt12initialize_iEPK16ACE_Service_TypePKc
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN19ACE_Service_Gestalt12initialize_iEPK16ACE_Service_TypePKc
+   fun:_ZN3ACE14format_hexdumpEPKcjPcj
+   fun:_ZNK22ACE_Service_Repository4findEPKcPPK16ACE_Service_Typeb
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:add_to_global
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:_ZN14ACE_DLL_Handle4openEPKciPv
+   fun:_ZN15ACE_DLL_Manager8open_dllEPKciPv
+   fun:_ZN7ACE_DLL6open_iEPKciiPv
+   fun:_ZN17ACE_Location_Node8open_dllERi
+   fun:_ZN17ACE_Function_Node6symbolEP19ACE_Service_GestaltRiPPFvPvE
+   fun:_ZNK24ACE_Service_Type_Factory17make_service_typeEP19ACE_Service_Gestalt
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN16ACE_Dynamic_Node5applyEP19ACE_Service_GestaltRi
+   fun:_Z11ace_yyparsePv
+   fun:_ZN19ACE_Service_Gestalt20process_directives_iEP18ACE_Svc_Conf_Param
+   fun:_ZN19ACE_Service_Gestalt12process_fileEPKc
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_ZnwmRKSt9nothrow_t
+   fun:_ZN19ACE_Log_Msg_Manager8get_lockEv
+   fun:_ZN11ACE_Log_MsgD1Ev
+   fun:_Z15ACE_TSS_cleanupPv
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_ZnwmRKSt9nothrow_t
+   fun:_ZN19ACE_Log_Msg_Manager12init_backendEPKm
+   fun:_ZN19ACE_Log_Msg_Manager8get_lockEv
+   fun:_ZN11ACE_Log_MsgD1Ev
+   fun:_Z15ACE_TSS_cleanupPv
+   fun:_ZN11ACE_Log_Msg5closeEv
+   fun:_ZN18ACE_Object_Manager4finiEv
+   fun:_ZN18ACE_Object_ManagerD0Ev
+   fun:_ZN26ACE_Object_Manager_ManagerD1Ev
+   fun:__cxa_finalize
+   obj:/usr/lib64/libACE.so.5.6.2
+   obj:/usr/lib64/libACE.so.5.6.2
+   fun:exit
+   fun:(below main)
+}

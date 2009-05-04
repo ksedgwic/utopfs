@@ -1,0 +1,16 @@
+define(`WIN32', ``WIN32'')dnl
+define(`SYSARCH', ``WIN32'')dnl
+define(`SYSCONFPATH', `xxx')dnl
+define(`SYSLOGPATH', `yyy')dnl
+define(`SYSBINPATH', `$1')dnl
+define(`SYSDATAPATH', `$1')dnl
+define(`SYSLDLIBVAR', `PATH')dnl
+define(`CURRPATHU', `CURRDIRU/$1')dnl
+define(`CURRPATHW', `CURRDIRW\$1')dnl
+define(`CURRPATHw', `CURRDIRw\$1')dnl
+define(`CFGPATHU', `CFGDIR/$1')dnl
+define(`CFGPATHW', `CFGDIR\$1')dnl
+define(`OBJPATHU', `OBJDIR/$1')dnl
+define(`OBJPATHW', `OBJDIR\$1')dnl
+define(`BINPATH', `BINPATHU($1)')dnl
+define(`CONFPATH', `CONFPATHW($1)')dnl

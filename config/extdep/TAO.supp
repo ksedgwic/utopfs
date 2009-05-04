@@ -1,0 +1,183 @@
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN13ACE_Filecache4findEPKc
+   fun:_ZN19ACE_Service_Gestalt12initialize_iEPK16ACE_Service_TypePKc
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN3ACE7strnnewEPKcj
+   fun:_ZN22ACE_Service_RepositoryC2Ej
+   fun:_ZN9ACE_Utils14UUID_Generator4lockEP16ACE_Thread_Mutexb
+   fun:_ZN19ACE_Service_Gestalt18process_directivesEv
+   fun:_ZN9ACE_Utils4UUID9to_stringEv
+   fun:_ZN10ACE_ARGV_TIcEC1EPKcb
+   fun:_ZN13TAO_Transport23handle_input_parse_dataER17TAO_Resume_HandleP14ACE_Time_Value
+   fun:_ZN5CORBA8ORB_initERiPPcPKcRNS_11EnvironmentE
+   fun:_ZN5CORBA8ORB_initERiPPcPKc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN13ACE_Filecache4findEPKc
+   fun:_ZN19ACE_Service_Gestalt12initialize_iEPK16ACE_Service_TypePKc
+   fun:_ZN19ACE_Service_Gestalt10initializeEPK24ACE_Service_Type_FactoryPKc
+   fun:_ZN19ACE_Service_Gestalt12parse_args_iEiPPc
+   fun:_ZN3ACE7strnnewEPKcj
+   fun:_ZN22ACE_Service_RepositoryC2Ej
+   fun:_ZN9ACE_Utils14UUID_Generator4lockEP16ACE_Thread_Mutexb
+   fun:_ZN19ACE_Service_Gestalt18process_directivesEv
+   fun:_ZN9ACE_Utils4UUID9to_stringEv
+   fun:_ZN10ACE_ARGV_TIcEC1EPKcb
+   fun:_ZN13TAO_Transport23handle_input_parse_dataER17TAO_Resume_HandleP14ACE_Time_Value
+   fun:_ZN12TAO_ORB_CoreD2Ev
+   fun:_ZN5CORBA8ORB_initERiPPcPKc
+   fun:_Z3runiPPc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN24TAO_POA_Static_Resources8instanceEv
+   obj:/usr/lib/libTAO_PortableServer.so.*
+   obj:/usr/lib/libTAO_PortableServer.so.*
+   fun:_ZlsR13TAO_OutputCDRN14PortableServer27ServantRetentionPolicyValueE
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZN24TAO_POA_Static_Resources8instanceEv
+   fun:_make_RequestProcessingStrategyDefaultServantFactoryImpl
+   obj:/usr/lib/libTAO_PortableServer.so.*
+   fun:_ZN14PortableServer22ServantRetentionPolicy10_duplicateEPS0_
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-2.5.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   obj:/usr/lib/libTAO.so.*
+   fun:_ZN17TAO_TSS_Resources8instanceEv
+   fun:_ZN12TAO_ORB_Core20gui_resource_factoryEv
+   fun:_ZN9Messaging14PolicyValueSeqD0Ev
+   fun:_ZN3TAO23Transport_Cache_Manager19wait_for_connectionERNS_11Cache_ExtIdE
+   fun:_ZN41TAO_Default_Thread_Lane_Resources_Manager8finalizeEv
+   fun:_ZN12TAO_ORB_Core4finiEv
+   fun:_ZN5CORBA15InvalidPoliciesC1ERKS0_
+   fun:_ZN5CORBA13PolicyManagerC1Ev
+   fun:ace_cleanup_destroyer
+   fun:_ZN22ACE_Configuration_Heap12open_sectionERK29ACE_Configuration_Section_KeyPKciRS0_
+   fun:_ZN13TAO_Transport24send_message_block_chainEPK17ACE_Message_BlockRjP14ACE_Time_Value
+   obj:/usr/lib/libTAO.so.*
+   fun:_ZN16ACE_OS_Exit_Info10call_hooksEv
+   fun:_ZN13ACE_Flow_SpecC2Ev
+   fun:_ZN14ACE_QoS_ParamsC2EP5iovecS1_P7ACE_QoSS3_m
+   fun:_ZN26ACE_Object_Manager_ManagerD1Ev
+   fun:_ZN13ACE_Flow_SpecC1Emmmmmmmmii
+   fun:__cxa_finalize
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   obj:/usr/lib/libTAO.so.*
+   fun:_ZN17TAO_TSS_Resources8instanceEv
+   fun:_ZN12TAO_ORB_Core20gui_resource_factoryEv
+   fun:_ZN9Messaging14PolicyValueSeqD0Ev
+   fun:_ZN3TAO23Transport_Cache_Manager19wait_for_connectionERNS_11Cache_ExtIdE
+   fun:_ZN41TAO_Default_Thread_Lane_Resources_Manager8finalizeEv
+   fun:_ZN12TAO_ORB_Core4finiEv
+   fun:_ZN5CORBA15InvalidPoliciesC1ERKS0_
+   fun:_ZN5CORBA13PolicyManagerC1Ev
+   fun:ace_cleanup_destroyer
+   fun:_ZN22ACE_Configuration_Heap12open_sectionERK29ACE_Configuration_Section_KeyPKciRS0_
+   fun:_ZN13TAO_Transport24send_message_block_chainEPK17ACE_Message_BlockRjP14ACE_Time_Value
+   obj:/usr/lib/libTAO.so.*
+   fun:_ZN16ACE_OS_Exit_Info10call_hooksEv
+   fun:_ZN13ACE_Flow_SpecC1Ev
+   obj:/usr/lib/libACE.so.*
+   fun:_ZN13ACE_Flow_SpecC1Emmmmmmmmii
+   fun:_ZN13ACE_Flow_SpecC2Ev
+   fun:__cxa_finalize
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:_ZN15ACE_LSOCK_DgramC1Ev
+   fun:_ZN10ACE_ARGV_TIcEC1EPKcb
+   fun:_ZN13TAO_Transport23handle_input_parse_dataER17TAO_Resume_HandleP14ACE_Time_Value
+   fun:_ZN5CORBA8ORB_initERiPPcPKcRNS_11EnvironmentE
+   fun:_ZN5CORBA8ORB_initERiPPcPKc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:_ZN15ACE_LSOCK_DgramC1Ev
+   fun:_ZN10ACE_ARGV_TIcEC1EPKcb
+   fun:_ZN13TAO_Transport23handle_input_parse_dataER17TAO_Resume_HandleP14ACE_Time_Value
+   fun:_ZN12TAO_ORB_CoreD2Ev
+   fun:_ZN5CORBA8ORB_initERiPPcPKc
+   fun:_Z3runiPPc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   obj:/usr/lib/libTAO.so.*
+   obj:/usr/lib/libTAO.so.*
+   obj:/usr/lib/libTAO.so.*
+   fun:_ZN17TAO_TSS_Resources8instanceEv
+   fun:_ZN12TAO_ORB_Core20gui_resource_factoryEv
+   fun:_ZThn24_N16TAO_MCAST_ParserD1Ev
+   fun:_ZN12TAO_ORB_Core7reactorEv
+   fun:_ZN14TAO_Policy_SetC1ERKS_
+   fun:_ZN5CORBA8ORB_initERiPPcPKcRNS_11EnvironmentE
+   fun:_ZN5CORBA8ORB_initERiPPcPKc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:_Znwj
+   obj:/usr/lib/libTAO.so.1.*
+   obj:/usr/lib/libTAO.so.1.*
+   obj:/usr/lib/libTAO.so.1.*
+   fun:_ZN17TAO_TSS_Resources8instanceEv
+   fun:_ZN12TAO_ORB_Core20gui_resource_factoryEv
+   fun:_ZN9Messaging14PolicyValueSeq19_tao_any_destructorEPv
+   fun:_ZN12TAO_ORB_Core7reactorEv
+   fun:_ZN14TAO_Policy_SetC1ERKS_
+   fun:_ZN12TAO_ORB_CoreC1EPKc
+   fun:_ZN5CORBA8ORB_initERiPPcPKc
+   fun:_Z3runiPPc
+   fun:main
+}
