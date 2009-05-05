@@ -1,17 +1,17 @@
-#include "FSAssocStoreImpl.h"
+#include "FSBlockStoreImpl.h"
 
 namespace utp {
 
-FSAssocStoreImpl::FSAssocStoreImpl()
+FSBlockStoreImpl::FSBlockStoreImpl()
 {
 }
 
-FSAssocStoreImpl::~FSAssocStoreImpl()
+FSBlockStoreImpl::~FSBlockStoreImpl()
 {
 }
 
 size_t
-FSAssocStoreImpl::as_get_block(void * i_keydata,
+FSBlockStoreImpl::bs_get_block(void * i_keydata,
                                size_t i_keysize,
                                void * o_outbuff,
                                size_t i_outsize)
@@ -22,7 +22,7 @@ FSAssocStoreImpl::as_get_block(void * i_keydata,
 }
 
 void
-FSAssocStoreImpl::as_put_block(void * i_keydata,
+FSBlockStoreImpl::bs_put_block(void * i_keydata,
                                size_t i_keysize,
                                void * i_blkdata,
                                size_t i_blksize)
@@ -32,7 +32,7 @@ FSAssocStoreImpl::as_put_block(void * i_keydata,
 }
 
 void
-FSAssocStoreImpl::as_del_block(void * i_keydata,
+FSBlockStoreImpl::bs_del_block(void * i_keydata,
                                size_t i_keysize)
     throw(InternalError,
           NotFoundError)

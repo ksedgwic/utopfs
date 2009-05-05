@@ -8,9 +8,9 @@
 
 namespace utp {
 
-class AssocStore;
+class BlockStore;
 /// Handle to Hints object.
-typedef utp::RCPtr<AssocStore> AssocStoreHandle;
+typedef utp::RCPtr<BlockStore> BlockStoreHandle;
 
 } // end namespace utp
 

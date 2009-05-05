@@ -1,8 +1,8 @@
-#ifndef utp_AssocStore_h__
-#define utp_AssocStore_h__
+#ifndef utp_BlockStore_h__
+#define utp_BlockStore_h__
 
-/// @file AssocStore.h
-/// Abstract AssocStore Interface.
+/// @file BlockStore.h
+/// Abstract BlockStore Interface.
 
 #include <string>
 
@@ -14,20 +14,20 @@
 
 namespace utp {
 
-class UTP_EXP AssocStore : public virtual RCObj
+class UTP_EXP BlockStore : public virtual RCObj
 {
 public:
     /// Assign the singleton instance
     ///
-    static void instance(AssocStoreHandle const & i_ash);
+    static void instance(BlockStoreHandle const & i_ash);
 
     /// Retrieve the singleton instance
     ///
-    static AssocStoreHandle instance();
+    static BlockStoreHandle instance();
 
     /// Destructor
     ///
-    virtual ~AssocStore();
+    virtual ~BlockStore();
 
     /// Get a block.
     ///
@@ -42,7 +42,7 @@ public:
     ///
     /// @return The size of the returned block.
     ///
-    virtual size_t as_get_block(void * i_keydata,
+    virtual size_t bs_get_block(void * i_keydata,
                                 size_t i_keysize,
                                 void * o_outbuff,
                                 size_t i_outsize)
@@ -60,7 +60,7 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError One of the arguments is out of range.
     ///
-    virtual void as_put_block(void * i_keydata,
+    virtual void bs_put_block(void * i_keydata,
                               size_t i_keysize,
                               void * i_blkdata,
                               size_t i_blksize)
@@ -75,7 +75,7 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified key was not found.
     ///
-    virtual void as_del_block(void * i_keydata,
+    virtual void bs_del_block(void * i_keydata,
                               size_t i_keysize)
         throw(InternalError,
               NotFoundError) = 0;
@@ -90,4 +90,4 @@ public:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // utp_AssocStore_h__
+#endif // utp_BlockStore_h__

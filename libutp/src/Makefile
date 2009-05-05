@@ -3,7 +3,7 @@ ROOTDIR = ../..
 include $(ROOTDIR)/config/define.mk
 
 LIBSRC =	\
-			AssocStore.cpp \
+			BlockStore.cpp \
 			Except.cpp \
 			FormatterBase.cpp \
 			Log.cpp \

@@ -27,3 +27,4 @@ include $(ROOTDIR)/config/extdep/ACE.mk
 
 # Module Dependencies
 include $(ROOTDIR)/modules/DefaultLogger/export.mk
+include $(ROOTDIR)/modules/FSBlockStore/export.mk

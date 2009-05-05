@@ -4,6 +4,7 @@ include $(ROOTDIR)/config/define.mk
 
 SUBDIRS =	\
 			DefaultLogger \
+			FSBlockStore \
 			$(NULL)
 
 include $(ROOTDIR)/config/depend.mk

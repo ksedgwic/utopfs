@@ -24,6 +24,7 @@ include $(ROOTDIR)/config/extdep/python.mk
 
 # Module Dependencies
 include $(ROOTDIR)/modules/DefaultLogger/export.mk
+include $(ROOTDIR)/modules/FSBlockStore/export.mk
 
 # Local Variables:
 # mode: Makefile

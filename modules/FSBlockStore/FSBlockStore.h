@@ -1,42 +1,52 @@
-#ifndef utp_FSBlockStoreImpl_h__
-#define utp_FSBlockStoreImpl_h__
+#ifndef FSBlockStore_h__
+#define FSBlockStore_h__
 
-/// @file FSBlockStoreImpl.h
-/// FileSystem Based BlockStore Implementation.
+/// @file FSBlockStore.h
+/// FileSystem BlockStore Instance.
+
+#include <string>
+
+#include "utpfwd.h"
 
 #include "BlockStore.h"
 
-namespace utp {
+#include "fsbsexp.h"
 
-class UTP_EXP FSBlockStoreImpl : public BlockStore
+namespace FSBS {
+
+class FSBS_EXP FSBlockStore : public utp::BlockStore
 {
 public:
-    FSBlockStoreImpl();
+    FSBlockStore();
 
-    virtual ~FSBlockStoreImpl();
+    virtual ~FSBlockStore();
+
+    // BlockStore methods.
 
     virtual size_t bs_get_block(void * i_keydata,
                                 size_t i_keysize,
                                 void * o_outbuff,
                                 size_t i_outsize)
-        throw(InternalError,
-              NotFoundError,
-              ValueError);
+        throw(utp::InternalError,
+              utp::NotFoundError,
+              utp::ValueError);
 
     virtual void bs_put_block(void * i_keydata,
                               size_t i_keysize,
                               void * i_blkdata,
                               size_t i_blksize)
-        throw(InternalError,
-              ValueError);
+        throw(utp::InternalError,
+              utp::ValueError);
 
     virtual void bs_del_block(void * i_keydata,
                               size_t i_keysize)
-        throw(InternalError,
-              NotFoundError);
+        throw(utp::InternalError,
+              utp::NotFoundError);
+
+private:
 };
 
-} // end namespace utp
+} // namespace FSBS
 
 // Local Variables:
 // mode: C++
@@ -45,4 +55,4 @@ public:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // utp_FSBlockStoreImpl_h__
+#endif // FSBlockStore_h__
