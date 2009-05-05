@@ -1,5 +1,7 @@
 #include <typeinfo>
 
+#include <ace/Service_Config.h>
+
 #include "pyutpinit.h"
 #include "statemap.h"
 
@@ -99,6 +101,11 @@ __declspec( dllexport )
 void
 init_utp(void)
 {
+    // Initialize ACE
+    int argc = 0;
+    char * argv[1] = { NULL };
+    ACE_Service_Config::open(argc, argv);
+
     PyObject *m, *d;
 
     // make sure python threading is turned on

@@ -9,6 +9,7 @@ SCRIPTS =	\
 			$(NULL)
 
 CFG =		\
+			svc.conf \
 			$(NULL)
 
 include $(ROOTDIR)/config/depend.mk
@@ -20,6 +21,9 @@ include $(ROOTDIR)/libutp/src/export.mk
 # External Package Dependencies
 include $(ROOTDIR)/config/extdep/ACE.mk
 include $(ROOTDIR)/config/extdep/python.mk
+
+# Module Dependencies
+include $(ROOTDIR)/modules/DefaultLogger/export.mk
 
 # Local Variables:
 # mode: Makefile
