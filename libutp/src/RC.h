@@ -1,7 +1,7 @@
-#ifndef cmn_RC_h__
-#define cmn_RC_h__
+#ifndef utp_RC_h__
+#define utp_RC_h__
 
-/// @file cmn/RC.h
+/// @file RC.h
 /// Reference Counting Template.
 
 // This reference counting design is based on Section 29 of "More
@@ -10,11 +10,11 @@
 #include <ace/Synch.h>
 #include <ace/Atomic_Op.h>
 
-#include "cmnexp.h"
+#include "utpexp.h"
 
-namespace cmn {
+namespace utp {
 
-class CMN_EXP RCObj
+class UTP_EXP RCObj
 {
 public:
     /// Default constructor.
@@ -184,7 +184,7 @@ std::ostream & operator<<(std::ostream & s, RCPtr<T> const & p)
     return s;
 }
 
-} // end namespace cmn
+} // end namespace utp
 
 // Local Variables:
 // mode: C++
@@ -193,4 +193,4 @@ std::ostream & operator<<(std::ostream & s, RCPtr<T> const & p)
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // cmn_RC_h__
+#endif // utp_RC_h__

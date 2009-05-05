@@ -1,21 +1,21 @@
-#ifndef cmn_cmnexp_h__
-#define cmn_cmnexp_h__
+#ifndef utp_utpexp_h__
+#define utp_utpexp_h__
 
-#if defined(CMN_IMPL) || defined(STATIC_LINK)
+#if defined(UTP_IMPL) || defined(STATIC_LINK)
 #   if defined(WIN32)
-#       define CMN_EXP _declspec(dllexport)
+#       define UTP_EXP _declspec(dllexport)
 #   else
 #       if defined(GCC_HASCLASSVISIBILITY)
-#           define CMN_EXP __attribute__ ((visibility("default")))
+#           define UTP_EXP __attribute__ ((visibility("default")))
 #       else
-#           define CMN_EXP
+#           define UTP_EXP
 #       endif
 #   endif
 #else
 #   if defined(WIN32)
-#       define CMN_EXP _declspec(dllimport)
+#       define UTP_EXP _declspec(dllimport)
 #   else
-#       define CMN_EXP
+#       define UTP_EXP
 #   endif
 #endif
 
@@ -23,12 +23,12 @@
 // See http://gcc.gnu.org/wiki/Visibility for more info.
 //
 #if defined(WIN32)
-#   define CMN_EXC_EXP CMN_EXP
+#   define UTP_EXC_EXP UTP_EXP
 #else
 #   if defined(GCC_HASCLASSVISIBILITY)
-#      define CMN_EXC_EXP __attribute__ ((visibility("default")))
+#      define UTP_EXC_EXP __attribute__ ((visibility("default")))
 #   else
-#      define CMN_EXC_EXP
+#      define UTP_EXC_EXP
 #   endif
 #endif
 
@@ -39,4 +39,4 @@
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // cmn_cmnexp_h__
+#endif // utp_utpexp_h__

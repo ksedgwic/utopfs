@@ -1,11 +1,9 @@
-ROOTDIR = .
+ROOTDIR = ..
 
 include $(ROOTDIR)/config/define.mk
 
 SUBDIRS =	\
-			libutp \
-			utopfs \
-			spec \
+			src \
 			$(NULL)
 
 include $(ROOTDIR)/config/depend.mk
