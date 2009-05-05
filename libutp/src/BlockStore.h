@@ -29,6 +29,35 @@ public:
     ///
     virtual ~BlockStore();
 
+    /// Create a block store.
+    ///
+    /// @param[in] i_path Path to the block store.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw ValueError One of the arguments is out of range.
+    ///
+    virtual void bs_create(std::string const & i_path)
+        throw(InternalError,
+              ValueError) = 0;
+
+    /// Open a block store.
+    ///
+    /// @param[in] i_path Path to the block store.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError The specified key was not found.
+    ///
+    virtual void bs_open(std::string const & i_path)
+        throw(InternalError,
+              NotFoundError) = 0;
+
+    /// Close a block store.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void bs_close()
+        throw(InternalError) = 0;
+
     /// Get a block.
     ///
     /// @param[in] i_keydata Pointer to the key data.

@@ -23,6 +23,17 @@ public:
 
     // BlockStore methods.
 
+    virtual void bs_create(std::string const & i_path)
+        throw(utp::InternalError,
+              utp::ValueError);
+
+    virtual void bs_open(std::string const & i_path)
+        throw(utp::InternalError,
+              utp::NotFoundError);
+
+    virtual void bs_close()
+        throw(utp::InternalError);
+
     virtual size_t bs_get_block(void * i_keydata,
                                 size_t i_keysize,
                                 void * o_outbuff,

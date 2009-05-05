@@ -13,13 +13,45 @@ namespace FSBS {
 
 FSBlockStore::FSBlockStore()
 {
-    LOG(lgr, 5, "CTOR");
+    LOG(lgr, 4, "CTOR");
 }
 
 FSBlockStore::~FSBlockStore()
 {
     // Don't try and log here ... in static object destructor context
     // (way after main has returned ...)
+}
+
+void
+FSBlockStore::bs_create(std::string const & i_path)
+    throw(InternalError,
+          ValueError)
+{
+    LOG(lgr, 4, "bs_create " << i_path);
+
+    throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_get_block unimplemented");
+}
+
+void
+FSBlockStore::bs_open(std::string const & i_path)
+    throw(InternalError,
+          NotFoundError)
+{
+    LOG(lgr, 4, "bs_open " << i_path);
+
+    throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_get_block unimplemented");
+}
+
+void
+FSBlockStore::bs_close()
+    throw(InternalError)
+{
+    LOG(lgr, 4, "bs_close");
+
+    throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_get_block unimplemented");
 }
 
 size_t
@@ -31,7 +63,7 @@ FSBlockStore::bs_get_block(void * i_keydata,
           NotFoundError,
           ValueError)
 {
-    LOG(lgr, 5, "bs_get_block");
+    LOG(lgr, 6, "bs_get_block");
 
     throwstream(InternalError, FILELINE
                 << "FSBlockStore::bs_get_block unimplemented");
@@ -45,7 +77,7 @@ FSBlockStore::bs_put_block(void * i_keydata,
     throw(InternalError,
           ValueError)
 {
-    LOG(lgr, 5, "bs_put_block");
+    LOG(lgr, 6, "bs_put_block");
 
     throwstream(InternalError, FILELINE
                 << "FSBlockStore::bs_put_block unimplemented");
@@ -57,7 +89,7 @@ FSBlockStore::bs_del_block(void * i_keydata,
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 5, "bs_del_block");
+    LOG(lgr, 6, "bs_del_block");
 
     throwstream(InternalError, FILELINE
                 << "FSBlockStore::bs_del_block unimplemented");

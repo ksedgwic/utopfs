@@ -2,22 +2,22 @@
 
 namespace {
 
-utp::BlockStoreHandle g_ash;    
+utp::BlockStoreHandle g_bsh;    
 
 } // end namespace
 
 namespace utp {
 
 void
-BlockStore::instance(BlockStoreHandle const & i_ash)
+BlockStore::instance(BlockStoreHandle const & i_bsh)
 {
-    g_ash = i_ash;
+    g_bsh = i_bsh;
 }
 
 BlockStoreHandle
 BlockStore::instance()
 {
-    return g_ash;
+    return g_bsh;
 }
 
 BlockStore::~BlockStore()
