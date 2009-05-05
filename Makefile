@@ -5,6 +5,7 @@ include $(ROOTDIR)/config/define.mk
 SUBDIRS =	\
 			libutp \
 			utopfs \
+			modules \
 			spec \
 			$(NULL)
 
