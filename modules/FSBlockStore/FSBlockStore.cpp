@@ -30,7 +30,7 @@ FSBlockStore::bs_create(std::string const & i_path)
     LOG(lgr, 4, "bs_create " << i_path);
 
     throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block unimplemented");
+                << "FSBlockStore::bs_create unimplemented");
 }
 
 void
@@ -41,7 +41,7 @@ FSBlockStore::bs_open(std::string const & i_path)
     LOG(lgr, 4, "bs_open " << i_path);
 
     throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block unimplemented");
+                << "FSBlockStore::bs_open unimplemented");
 }
 
 void
@@ -51,7 +51,7 @@ FSBlockStore::bs_close()
     LOG(lgr, 4, "bs_close");
 
     throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block unimplemented");
+                << "FSBlockStore::bs_close unimplemented");
 }
 
 size_t

@@ -3,4 +3,15 @@
 import sys
 
 import utp
+import utp.BlockStore
 
+try:
+    bs = utp.BlockStore.instance()
+    bs.bs_create("myfsbs")
+    bs.bs_close()
+
+except utp.Error, ex:
+    print ex[0]['what']
+
+except Exception, ex:
+    print ex

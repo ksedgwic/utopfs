@@ -5,6 +5,8 @@
 #include "pyutpinit.h"
 #include "statemap.h"
 
+#include "pyblockstore.h"
+
 namespace utp {
 
 // Instantiate error objects.
@@ -113,6 +115,9 @@ init_utp(void)
 
     // setup python thread state association
     StateMap::initialize();
+
+    // initialize sub-types
+    init_BlockStore();
 
     // create the module and add the functions
     m = Py_InitModule("_utp", module_methods);

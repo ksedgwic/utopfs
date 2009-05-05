@@ -4,6 +4,7 @@ include $(ROOTDIR)/config/define.mk
 
 LIBSRC =	\
 			pyutpinit.cpp \
+			pyblockstore.cpp \
 			statemap.cpp \
 			$(NULL)
 

@@ -32,11 +32,11 @@ extern PYUTP_EXP PyObject * ParseErrorObject;
     
 extern PYUTP_EXP void PyError_FromException(std::exception const & ex);
 
-#define PYRADHOC_TRY                            \
+#define PYUTP_TRY                            \
     do {                                        \
     try {
 
-#define PYRADHOC_CATCH_ALL                      \
+#define PYUTP_CATCH_ALL                      \
     }                                           \
         catch(std::exception const & ex) {      \
             utp::PyError_FromException(ex);     \
@@ -44,10 +44,10 @@ extern PYUTP_EXP void PyError_FromException(std::exception const & ex);
         }                                       \
 } while (false);
 
-    class PYRADHOC_THREADED_SCOPE {
+    class PYUTP_THREADED_SCOPE {
     public:
-        PYRADHOC_THREADED_SCOPE() { Py_UNBLOCK_THREADS }
-        ~PYRADHOC_THREADED_SCOPE() { Py_BLOCK_THREADS }
+        PYUTP_THREADED_SCOPE() { Py_UNBLOCK_THREADS }
+        ~PYUTP_THREADED_SCOPE() { Py_BLOCK_THREADS }
     protected:
         PyThreadState * _save;
     };
