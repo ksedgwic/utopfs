@@ -101,7 +101,7 @@ DFLGSvc::init(int argc, char * argv[])
         theRootLogCategory.level(loglevel, true);
 
         LOG(theRootLogCategory, 1, " ------------------------------");
-        LOG(theRootLogCategory, 1, "LOG STARTED AT " << T64::_now());
+        LOG(theRootLogCategory, 1, "LOG STARTED AT " << T64::now());
 
         return 0;
     }
@@ -128,7 +128,7 @@ DFLGSvc::fini()
 int
 DFLGSvc::suspend()
 {
-    LOG(theRootLogCategory, 1, "LOG SUSPEND AT " << T64::_now());
+    LOG(theRootLogCategory, 1, "LOG SUSPEND AT " << T64::now());
     LOG(theRootLogCategory, 1, " ------------------------------");
 
 
@@ -151,7 +151,7 @@ DFLGSvc::resume()
         theRootLogCategory.logger_add(m_filelogger);
 
     LOG(theRootLogCategory, 1, " ------------------------------");
-    LOG(theRootLogCategory, 1, "LOG RESUMED AT " << T64::_now());
+    LOG(theRootLogCategory, 1, "LOG RESUMED AT " << T64::now());
 
     return 0;
 }

@@ -104,7 +104,7 @@ public:
 
 LogFieldHandle tstamp()
 {
-    return new TimeLogField("tstamp", T64::_now());
+    return new TimeLogField("tstamp", T64::now());
 }
 
 LogFieldHandle threadid()

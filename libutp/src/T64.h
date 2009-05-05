@@ -28,10 +28,7 @@ public:
 
     /// Returns the current time.
     ///
-    /// Most of the time you want to call radhoc::node::NodeMgr::now()
-    /// instead, so simulated time can be returned.
-    ///
-    static inline T64 _now()
+    static inline T64 now()
     {
 #if defined(LINUX)
         struct timeval tv;
