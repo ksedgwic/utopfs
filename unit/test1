@@ -6,8 +6,16 @@ import utp
 import utp.BlockStore
 
 try:
+    # Find the BlockStore singleton.
     bs = utp.BlockStore.instance()
+
+    # Create the BlockStore at a path.
     bs.bs_create("myfsbs")
+
+    # Put a block of data.
+    bs.bs_put(buffer("thekey"), buffer("thevalue"))
+
+    # Close the BlockStore.
     bs.bs_close()
 
 except utp.Error, ex:

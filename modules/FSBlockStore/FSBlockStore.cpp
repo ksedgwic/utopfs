@@ -55,7 +55,7 @@ FSBlockStore::bs_close()
 }
 
 size_t
-FSBlockStore::bs_get_block(void * i_keydata,
+FSBlockStore::bs_get_block(void const * i_keydata,
                            size_t i_keysize,
                            void * o_outbuff,
                            size_t i_outsize)
@@ -70,9 +70,9 @@ FSBlockStore::bs_get_block(void * i_keydata,
 }
 
 void
-FSBlockStore::bs_put_block(void * i_keydata,
+FSBlockStore::bs_put_block(void const * i_keydata,
                            size_t i_keysize,
-                           void * i_blkdata,
+                           void const * i_blkdata,
                            size_t i_blksize)
     throw(InternalError,
           ValueError)
@@ -84,7 +84,7 @@ FSBlockStore::bs_put_block(void * i_keydata,
 }
 
 void
-FSBlockStore::bs_del_block(void * i_keydata,
+FSBlockStore::bs_del_block(void const * i_keydata,
                            size_t i_keysize)
     throw(InternalError,
           NotFoundError)

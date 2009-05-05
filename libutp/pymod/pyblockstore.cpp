@@ -61,10 +61,100 @@ BlockStore_bs_close(BlockStoreObject *self, PyObject *args)
     PYUTP_CATCH_ALL;
 }
 
+static PyObject *
+BlockStore_bs_get_block(BlockStoreObject *self, PyObject *args)
+{
+    PyObject * keyobj;
+    if (!PyArg_ParseTuple(args, "O!:bs_get_block",
+                          &PyBuffer_Type, &keyobj))
+        return NULL;
+
+    void const * keyptr;
+    Py_ssize_t keylen;
+    if (!PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
+        return NULL;
+
+    char outbuf[32 * 1024];
+    size_t outsz;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        outsz = self->m_bsh->bs_get_block(keyptr, keylen,
+                                          outbuf, sizeof(outbuf));
+    }
+    PYUTP_CATCH_ALL;
+
+    PyObject * retobj = PyBuffer_New(outsz);
+    void * outptr;
+    Py_ssize_t outlen;
+    if (!PyObject_AsWriteBuffer(retobj, &outptr, &outlen))
+        return NULL;
+
+    memcpy(outptr, outbuf, outlen);
+    return retobj;
+}
+
+static PyObject *
+BlockStore_bs_put_block(BlockStoreObject *self, PyObject *args)
+{
+    PyObject * keyobj;
+    PyObject * valobj;
+    if (!PyArg_ParseTuple(args, "O!O!:bs_put_block",
+                          &PyBuffer_Type, &keyobj,
+                          &PyBuffer_Type, &valobj))
+        return NULL;
+
+    void const * keyptr;
+    Py_ssize_t keylen;
+    if (!PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
+        return NULL;
+
+    void const * valptr;
+    Py_ssize_t vallen;
+    if (!PyObject_AsReadBuffer(valobj, &valptr, &vallen))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_put_block(keyptr, keylen, valptr, vallen);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+BlockStore_bs_del_block(BlockStoreObject *self, PyObject *args)
+{
+    PyObject * keyobj;
+    if (!PyArg_ParseTuple(args, "O!:bs_del_block",
+                          &PyBuffer_Type, &keyobj))
+        return NULL;
+
+    void const * keyptr;
+    Py_ssize_t keylen;
+    if (!PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_del_block(keyptr, keylen);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
 static PyMethodDef BlockStore_methods[] = {
     {"bs_create",		(PyCFunction)BlockStore_bs_create,		METH_VARARGS},
     {"bs_open",			(PyCFunction)BlockStore_bs_open,		METH_VARARGS},
     {"bs_close",		(PyCFunction)BlockStore_bs_close,		METH_VARARGS},
+    {"bs_get_block",	(PyCFunction)BlockStore_bs_get_block,	METH_VARARGS},
+    {"bs_put_block",	(PyCFunction)BlockStore_bs_put_block,	METH_VARARGS},
+    {"bs_del_block",	(PyCFunction)BlockStore_bs_del_block,	METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 

@@ -34,7 +34,7 @@ public:
     virtual void bs_close()
         throw(utp::InternalError);
 
-    virtual size_t bs_get_block(void * i_keydata,
+    virtual size_t bs_get_block(void const * i_keydata,
                                 size_t i_keysize,
                                 void * o_outbuff,
                                 size_t i_outsize)
@@ -42,14 +42,14 @@ public:
               utp::NotFoundError,
               utp::ValueError);
 
-    virtual void bs_put_block(void * i_keydata,
+    virtual void bs_put_block(void const * i_keydata,
                               size_t i_keysize,
-                              void * i_blkdata,
+                              void const * i_blkdata,
                               size_t i_blksize)
         throw(utp::InternalError,
               utp::ValueError);
 
-    virtual void bs_del_block(void * i_keydata,
+    virtual void bs_del_block(void const * i_keydata,
                               size_t i_keysize)
         throw(utp::InternalError,
               utp::NotFoundError);

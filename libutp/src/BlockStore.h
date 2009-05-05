@@ -71,7 +71,7 @@ public:
     ///
     /// @return The size of the returned block.
     ///
-    virtual size_t bs_get_block(void * i_keydata,
+    virtual size_t bs_get_block(void const * i_keydata,
                                 size_t i_keysize,
                                 void * o_outbuff,
                                 size_t i_outsize)
@@ -89,9 +89,9 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError One of the arguments is out of range.
     ///
-    virtual void bs_put_block(void * i_keydata,
+    virtual void bs_put_block(void const * i_keydata,
                               size_t i_keysize,
-                              void * i_blkdata,
+                              void const * i_blkdata,
                               size_t i_blksize)
         throw(InternalError,
               ValueError) = 0;
@@ -104,7 +104,7 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified key was not found.
     ///
-    virtual void bs_del_block(void * i_keydata,
+    virtual void bs_del_block(void const * i_keydata,
                               size_t i_keysize)
         throw(InternalError,
               NotFoundError) = 0;
