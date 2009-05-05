@@ -5,6 +5,11 @@ include $(ROOTDIR)/config/define.mk
 LIBSRC =	\
 			AssocStore.cpp \
 			Except.cpp \
+			FormatterBase.cpp \
+			Log.cpp \
+			LogField.cpp \
+			LoggerBase.cpp \
+			T64.cpp \
 			$(NULL)
 
 LIBSO =		libutp

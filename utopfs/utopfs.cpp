@@ -9,6 +9,8 @@
 #include <iostream>
 #include <string>
 
+#include <ace/Service_Config.h>
+
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
@@ -138,6 +140,8 @@ static struct fuse_operations utopfs_oper;
 int
 main(int argc, char ** argv)
 {
+    ACE_Service_Config::open(argc, argv);
+
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.readdir		= utopfs_readdir;
     utopfs_oper.open		= utopfs_open;
