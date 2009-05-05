@@ -13,7 +13,7 @@ try:
     bs.bs_create("myfsbs")
 
     # Put a block of data.
-    bs.bs_put(buffer("thekey"), buffer("thevalue"))
+    bs.bs_put_block(buffer("thekey"), buffer("thevalue"))
 
     # Close the BlockStore.
     bs.bs_close()

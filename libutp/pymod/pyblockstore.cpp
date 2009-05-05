@@ -71,7 +71,7 @@ BlockStore_bs_get_block(BlockStoreObject *self, PyObject *args)
 
     void const * keyptr;
     Py_ssize_t keylen;
-    if (!PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
+    if (PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
         return NULL;
 
     char outbuf[32 * 1024];
@@ -88,7 +88,7 @@ BlockStore_bs_get_block(BlockStoreObject *self, PyObject *args)
     PyObject * retobj = PyBuffer_New(outsz);
     void * outptr;
     Py_ssize_t outlen;
-    if (!PyObject_AsWriteBuffer(retobj, &outptr, &outlen))
+    if (PyObject_AsWriteBuffer(retobj, &outptr, &outlen))
         return NULL;
 
     memcpy(outptr, outbuf, outlen);
@@ -107,12 +107,12 @@ BlockStore_bs_put_block(BlockStoreObject *self, PyObject *args)
 
     void const * keyptr;
     Py_ssize_t keylen;
-    if (!PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
+    if (PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
         return NULL;
 
     void const * valptr;
     Py_ssize_t vallen;
-    if (!PyObject_AsReadBuffer(valobj, &valptr, &vallen))
+    if (PyObject_AsReadBuffer(valobj, &valptr, &vallen))
         return NULL;
 
     PYUTP_TRY
@@ -135,7 +135,7 @@ BlockStore_bs_del_block(BlockStoreObject *self, PyObject *args)
 
     void const * keyptr;
     Py_ssize_t keylen;
-    if (!PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
+    if (PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
         return NULL;
 
     PYUTP_TRY
