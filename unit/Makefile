@@ -1,0 +1,27 @@
+# Copyright (c) 2007 Bonsai Software, Inc.  All rights reserved.
+
+ROOTDIR =	..
+
+include $(ROOTDIR)/config/define.mk
+
+SCRIPTS =	\
+			test1 \
+			$(NULL)
+
+CFG =		\
+			$(NULL)
+
+include $(ROOTDIR)/config/depend.mk
+
+# Dependencies
+include $(ROOTDIR)/libutp/pymod/export.mk
+include $(ROOTDIR)/libutp/src/export.mk
+
+# External Package Dependencies
+include $(ROOTDIR)/config/extdep/ACE.mk
+include $(ROOTDIR)/config/extdep/python.mk
+
+# Local Variables:
+# mode: Makefile
+# tab-width: 4
+# End:

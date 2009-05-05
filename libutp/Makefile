@@ -4,6 +4,7 @@ include $(ROOTDIR)/config/define.mk
 
 SUBDIRS =	\
 			src \
+			pymod \
 			$(NULL)
 
 include $(ROOTDIR)/config/depend.mk

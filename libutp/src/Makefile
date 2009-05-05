@@ -7,7 +7,7 @@ LIBSRC =	\
 			Except.cpp \
 			$(NULL)
 
-LIBSO =		libutopfs
+LIBSO =		libutp
 
 EXPMACRO =	UTP_EXP
 EXPHEADER =	utpexp.h
