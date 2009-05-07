@@ -55,6 +55,9 @@ public:
               utp::NotFoundError);
 
 private:
+    
+     std::string m_path;
+    
 };
 
 } // namespace FSBS

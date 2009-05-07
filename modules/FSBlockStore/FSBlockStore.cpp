@@ -29,8 +29,8 @@ FSBlockStore::bs_create(std::string const & i_path)
 {
     LOG(lgr, 4, "bs_create " << i_path);
 
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_create unimplemented");
+    m_path = i_path;
+    mkdir(m_path.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 }
 
 void
@@ -40,8 +40,7 @@ FSBlockStore::bs_open(std::string const & i_path)
 {
     LOG(lgr, 4, "bs_open " << i_path);
 
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_open unimplemented");
+    m_path = i_path;
 }
 
 void
@@ -50,8 +49,8 @@ FSBlockStore::bs_close()
 {
     LOG(lgr, 4, "bs_close");
 
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_close unimplemented");
+//    throwstream(InternalError, FILELINE
+//                << "FSBlockStore::bs_close unimplemented");
 }
 
 size_t
@@ -62,11 +61,33 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     throw(InternalError,
           NotFoundError,
           ValueError)
+          
 {
     LOG(lgr, 6, "bs_get_block");
 
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block unimplemented");
+    // convert key to filesystem-safe name
+    //std::string s_filename = new std::string(
+    
+    std::string s_filename = m_path + "/testblock";
+    
+    struct stat statbuff;
+    stat(s_filename.c_str(), &statbuff);
+    
+    if (statbuff.st_size > i_outsize) {
+        throwstream(InternalError, FILELINE
+                << "Passed buffer not big enough to hold block");
+    }
+    
+    int fd = open(s_filename.c_str(), O_RDONLY, S_IRUSR);
+    int bytes_read = read(fd,o_outbuff,statbuff.st_size);
+    close(fd);
+        
+    if (bytes_read == 0) {
+        throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_get_block got EOF...");
+    }
+    
+    return bytes_read;
 }
 
 void
@@ -79,8 +100,21 @@ FSBlockStore::bs_put_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_put_block");
 
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_put_block unimplemented");
+    std::string s_filename = m_path + "/testblock";
+    
+    int fd = open(s_filename.c_str(),O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
+    if (fd < 0) {
+        throwstream(InternalError, FILELINE
+                << "FSBlockStore::can't get file descriptor..." << s_filename);
+    }
+    
+    int bytes_written = write(fd,i_blkdata,i_blksize);    
+    close(fd);
+        
+    if (bytes_written == -1) {
+        throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_put_block write error...");
+    }
 }
 
 void
@@ -90,7 +124,9 @@ FSBlockStore::bs_del_block(void const * i_keydata,
           NotFoundError)
 {
     LOG(lgr, 6, "bs_del_block");
-
+    
+    std::string s_filename = m_path + "/testblock";
+    unlink(s_filename.c_str());
     throwstream(InternalError, FILELINE
                 << "FSBlockStore::bs_del_block unimplemented");
 }

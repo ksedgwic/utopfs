@@ -15,6 +15,13 @@ try:
     # Put a block of data.
     bs.bs_put_block(buffer("thekey"), buffer("thevalue"))
 
+
+    # Get a block of data.
+    b = bs.bs_get_block(buffer("thekey"))
+    print b
+    
+    bs.bs_del_block(buffer("thekey"))
+    
     # Close the BlockStore.
     bs.bs_close()
 
