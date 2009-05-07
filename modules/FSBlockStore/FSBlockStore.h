@@ -12,6 +12,7 @@
 
 #include "fsbsexp.h"
 
+
 namespace FSBS {
 
 class FSBS_EXP FSBlockStore : public utp::BlockStore
@@ -56,8 +57,10 @@ public:
 
 private:
     
-     std::string m_path;
+    std::string m_path;
     
+    std::string get_full_path(void const * i_keydata,
+                                size_t i_keysize);
 };
 
 } // namespace FSBS

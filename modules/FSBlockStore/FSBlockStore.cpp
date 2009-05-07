@@ -6,6 +6,8 @@
 #include "FSBlockStore.h"
 #include "fsbslog.h"
 
+#include "Base32.h"
+
 using namespace std;
 using namespace utp;
 
@@ -68,7 +70,8 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     // convert key to filesystem-safe name
     //std::string s_filename = new std::string(
     
-    std::string s_filename = m_path + "/testblock";
+    //std::string s_filename = m_path + "/testblock";
+    std::string s_filename = get_full_path(i_keydata,i_keysize);
     
     struct stat statbuff;
     stat(s_filename.c_str(), &statbuff);
@@ -100,7 +103,8 @@ FSBlockStore::bs_put_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_put_block");
 
-    std::string s_filename = m_path + "/testblock";
+    //std::string s_filename = m_path + "/testblock";
+    std::string s_filename = get_full_path(i_keydata,i_keysize);
     
     int fd = open(s_filename.c_str(),O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
     if (fd < 0) {
@@ -125,11 +129,19 @@ FSBlockStore::bs_del_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_del_block");
     
-    std::string s_filename = m_path + "/testblock";
+    std::string s_filename = get_full_path(i_keydata,i_keysize);
+
     unlink(s_filename.c_str());
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_del_block unimplemented");
 }
+
+std::string 
+FSBlockStore::get_full_path(void const * i_keydata,
+                                size_t i_keysize) 
+{
+    std::string s_filename;
+    Base32::encode((uint8 const *)i_keydata,i_keysize,s_filename);
+    return m_path + "/" + s_filename;
+}                                
 
 } // namespace FSBS
 
