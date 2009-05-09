@@ -28,9 +28,13 @@ try:
     b = bs.bs_get_block(buffer("thekey2"))
     print b
 
+    # Put a bad block of data.
+    bs.bs_put_block(buffer("thekey2"), buffer("thevalue2"))
+
+
     # try geting a block of data that doesn't exist
-    b = bs.bs_get_block(buffer("thekey3"))
-    print b
+    #b = bs.bs_get_block(buffer("thekey3"))
+    #print b
 
     
     # Close the BlockStore.

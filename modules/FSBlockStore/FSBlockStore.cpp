@@ -33,6 +33,8 @@ FSBlockStore::bs_create(std::string const & i_path)
 
     m_path = i_path;
     mkdir(m_path.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    
+    //check for errors; exception?
 }
 
 void
@@ -74,6 +76,7 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     std::string s_filename = get_full_path(i_keydata,i_keysize);
     
     struct stat statbuff;
+    
     stat(s_filename.c_str(), &statbuff);
     
     if (statbuff.st_size > i_outsize) {
@@ -84,10 +87,16 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     int fd = open(s_filename.c_str(), O_RDONLY, S_IRUSR);
     int bytes_read = read(fd,o_outbuff,statbuff.st_size);
     close(fd);
-        
-    if (bytes_read == 0) {
+
+    if (bytes_read == -1) {
         throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block got EOF...");
+                << "FSBlockStore::bs_get_block: read failed: " << strerror(errno));
+    }
+
+        
+    if (bytes_read != statbuff.st_size) {
+        throwstream(InternalError, FILELINE
+                << "FSBlockStore::expected to get " << statbuff.st_size << " bytes, but got " << bytes_read << " bytes");
     }
     
     return bytes_read;
@@ -107,9 +116,9 @@ FSBlockStore::bs_put_block(void const * i_keydata,
     std::string s_filename = get_full_path(i_keydata,i_keysize);
     
     int fd = open(s_filename.c_str(),O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
-    if (fd < 0) {
+    if (fd == -1) {
         throwstream(InternalError, FILELINE
-                << "FSBlockStore::can't get file descriptor..." << s_filename);
+                << "FSBlockStore::bs_put_block: open failed on " << s_filename << ": " << strerror(errno));
     }
     
     int bytes_written = write(fd,i_blkdata,i_blksize);    
