@@ -6,6 +6,7 @@ LIBSRC =	\
 			Base32.cpp \
 			BlockStore.cpp \
 			Except.cpp \
+			FileSystem.cpp \
 			FormatterBase.cpp \
 			Log.cpp \
 			LogField.cpp \

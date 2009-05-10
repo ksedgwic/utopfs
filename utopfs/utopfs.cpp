@@ -25,7 +25,7 @@ static char const * utopfs_ver_str = "utopfs version 0.1\n";
 
 static int
 utopfs_getattr(char const * i_path,
-              struct stat * stbuf)
+               struct stat * stbuf)
 {
     int res = 0; /* temporary result */
 
@@ -58,10 +58,10 @@ utopfs_getattr(char const * i_path,
 
 static int
 utopfs_readdir(char const * i_path,
-              void * buf,
-              fuse_fill_dir_t filler,
-              off_t offset,
-              struct fuse_file_info * fi)
+               void * buf,
+               fuse_fill_dir_t filler,
+               off_t offset,
+               struct fuse_file_info * fi)
 {
    (void) offset;
    (void) fi;
@@ -90,7 +90,7 @@ utopfs_readdir(char const * i_path,
 
 static int
 utopfs_open(char const * i_path,
-           struct fuse_file_info *fi)
+            struct fuse_file_info *fi)
 {
    string path = i_path;
 
@@ -105,10 +105,10 @@ utopfs_open(char const * i_path,
 
 static int
 utopfs_read(char const * i_path,
-           char * buf,
-           size_t size,
-           off_t offset,
-           struct fuse_file_info *fi)
+            char * buf,
+            size_t size,
+            off_t offset,
+            struct fuse_file_info *fi)
 {
    (void) fi;
 

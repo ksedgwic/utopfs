@@ -12,6 +12,10 @@ class BlockStore;
 /// Handle to Hints object.
 typedef utp::RCPtr<BlockStore> BlockStoreHandle;
 
+class FileSystem;
+/// Handle to Hints object.
+typedef utp::RCPtr<FileSystem> FileSystemHandle;
+
 } // end namespace utp
 
 // Local Variables:
