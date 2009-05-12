@@ -7,18 +7,12 @@ import utp.BlockStore
 import utp.FileSystem
 
 try:
-    # Find the BlockStore singleton.
-    bs = utp.BlockStore.instance()
-
-    # Create the BlockStore at a path.
-    bs.bs_create("myfsbs")
-
-    # Open the FileSystem.
+    # Get the FileSystem singleton.
     fs = utp.FileSystem.instance()
-    
-    # Close the BlockStore.
-    bs.bs_close()
 
+    # Make a new filesystem.
+    fs.fs_mkfs("myfs");
+    
 except utp.Error, ex:
     print ex[0]['what']
 

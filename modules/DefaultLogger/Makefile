@@ -1,5 +1,3 @@
-# Copyright (C) 2007 Bonsai Software, Inc.  All rights reserved.
-
 ROOTDIR =	../..
 
 include $(ROOTDIR)/config/define.mk

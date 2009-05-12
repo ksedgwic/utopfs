@@ -1,5 +1,3 @@
-# Copyright (c) 2007 Bonsai Software, Inc.  All rights reserved.
-
 ROOTDIR =	..
 
 include $(ROOTDIR)/config/define.mk
@@ -14,11 +12,10 @@ CFG =		\
 			svc.conf \
 			$(NULL)
 
-all::
-			(cd $(WORKCFGDIR) && py.test test_fileblockstore.py)
-
-
 include $(ROOTDIR)/config/depend.mk
+
+all::
+	(cd $(WORKCFGDIR) && py.test test_fileblockstore.py)
 
 # Dependencies
 include $(ROOTDIR)/libutp/pymod/export.mk

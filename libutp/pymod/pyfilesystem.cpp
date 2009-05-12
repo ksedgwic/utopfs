@@ -11,18 +11,51 @@ static PyObject * FileSystemErrorObject;
 
 /* FileSystem methods */
 
+static PyObject *
+FileSystem_fs_mkfs(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    if (!PyArg_ParseTuple(args, "s:fs_mkfs", &path))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_fsh->fs_mkfs(path);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+FileSystem_fs_mount(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    if (!PyArg_ParseTuple(args, "s:fs_mount", &path))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_fsh->fs_mount(path);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
 #if 0
 static PyObject *
-FileSystem_bs_create(FileSystemObject *self, PyObject *args)
+FileSystem_fs_close(FileSystemObject *self, PyObject *args)
 {
-    char * path;
-    if (!PyArg_ParseTuple(args, "s:bs_create", &path))
+    if (!PyArg_ParseTuple(args, ":fs_close"))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->bs_create(path);
+        self->m_fsh->fs_close();
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -30,43 +63,10 @@ FileSystem_bs_create(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
-FileSystem_bs_open(FileSystemObject *self, PyObject *args)
-{
-    char * path;
-    if (!PyArg_ParseTuple(args, "s:bs_open", &path))
-        return NULL;
-
-    PYUTP_TRY
-    {
-        PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->bs_open(path);
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PYUTP_CATCH_ALL;
-}
-
-static PyObject *
-FileSystem_bs_close(FileSystemObject *self, PyObject *args)
-{
-    if (!PyArg_ParseTuple(args, ":bs_close"))
-        return NULL;
-
-    PYUTP_TRY
-    {
-        PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->bs_close();
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PYUTP_CATCH_ALL;
-}
-
-static PyObject *
-FileSystem_bs_get_block(FileSystemObject *self, PyObject *args)
+FileSystem_fs_get_block(FileSystemObject *self, PyObject *args)
 {
     PyObject * keyobj;
-    if (!PyArg_ParseTuple(args, "O!:bs_get_block",
+    if (!PyArg_ParseTuple(args, "O!:fs_get_block",
                           &PyBuffer_Type, &keyobj))
         return NULL;
 
@@ -81,7 +81,7 @@ FileSystem_bs_get_block(FileSystemObject *self, PyObject *args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        outsz = self->m_fsh->bs_get_block(keyptr, keylen,
+        outsz = self->m_fsh->fs_get_block(keyptr, keylen,
                                           outbuf, sizeof(outbuf));
     }
     PYUTP_CATCH_ALL;
@@ -97,11 +97,11 @@ FileSystem_bs_get_block(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
-FileSystem_bs_put_block(FileSystemObject *self, PyObject *args)
+FileSystem_fs_put_block(FileSystemObject *self, PyObject *args)
 {
     PyObject * keyobj;
     PyObject * valobj;
-    if (!PyArg_ParseTuple(args, "O!O!:bs_put_block",
+    if (!PyArg_ParseTuple(args, "O!O!:fs_put_block",
                           &PyBuffer_Type, &keyobj,
                           &PyBuffer_Type, &valobj))
         return NULL;
@@ -119,7 +119,7 @@ FileSystem_bs_put_block(FileSystemObject *self, PyObject *args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->bs_put_block(keyptr, keylen, valptr, vallen);
+        self->m_fsh->fs_put_block(keyptr, keylen, valptr, vallen);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -127,10 +127,10 @@ FileSystem_bs_put_block(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
-FileSystem_bs_del_block(FileSystemObject *self, PyObject *args)
+FileSystem_fs_del_block(FileSystemObject *self, PyObject *args)
 {
     PyObject * keyobj;
-    if (!PyArg_ParseTuple(args, "O!:bs_del_block",
+    if (!PyArg_ParseTuple(args, "O!:fs_del_block",
                           &PyBuffer_Type, &keyobj))
         return NULL;
 
@@ -142,7 +142,7 @@ FileSystem_bs_del_block(FileSystemObject *self, PyObject *args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->bs_del_block(keyptr, keylen);
+        self->m_fsh->fs_del_block(keyptr, keylen);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -151,13 +151,13 @@ FileSystem_bs_del_block(FileSystemObject *self, PyObject *args)
 #endif
 
 static PyMethodDef FileSystem_methods[] = {
+    {"fs_mkfs",			(PyCFunction)FileSystem_fs_mkfs,		METH_VARARGS},
+    {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
 #if 0
-    {"bs_create",		(PyCFunction)FileSystem_bs_create,		METH_VARARGS},
-    {"bs_open",			(PyCFunction)FileSystem_bs_open,		METH_VARARGS},
-    {"bs_close",		(PyCFunction)FileSystem_bs_close,		METH_VARARGS},
-    {"bs_get_block",	(PyCFunction)FileSystem_bs_get_block,	METH_VARARGS},
-    {"bs_put_block",	(PyCFunction)FileSystem_bs_put_block,	METH_VARARGS},
-    {"bs_del_block",	(PyCFunction)FileSystem_bs_del_block,	METH_VARARGS},
+    {"fs_close",		(PyCFunction)FileSystem_fs_close,		METH_VARARGS},
+    {"fs_get_block",	(PyCFunction)FileSystem_fs_get_block,	METH_VARARGS},
+    {"fs_put_block",	(PyCFunction)FileSystem_fs_put_block,	METH_VARARGS},
+    {"fs_del_block",	(PyCFunction)FileSystem_fs_del_block,	METH_VARARGS},
 #endif
     {NULL,		NULL}		/* sentinel */
 };
