@@ -24,6 +24,14 @@ public:
 
     // FileSystem methods.
 
+    virtual void fs_mkfs(std::string const & i_path)
+        throw (utp::InternalError,
+               utp::ValueError);
+
+    virtual void fs_mount(std::string const & i_path)
+        throw (utp::InternalError,
+               utp::ValueError);
+
     virtual int fs_getattr(std::string const & i_path,
                            struct stat * o_statbuf)
         throw (utp::InternalError);

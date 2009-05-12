@@ -6,6 +6,7 @@
 #include "statemap.h"
 
 #include "pyblockstore.h"
+#include "pyfilesystem.h"
 
 namespace utp {
 
@@ -118,6 +119,7 @@ init_utp(void)
 
     // initialize sub-types
     init_BlockStore();
+    init_FileSystem();
 
     // create the module and add the functions
     m = Py_InitModule("_utp", module_methods);

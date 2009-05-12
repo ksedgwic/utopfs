@@ -6,6 +6,7 @@ include $(ROOTDIR)/config/define.mk
 
 SCRIPTS =	\
 			test1 \
+			test2 \
 			$(NULL)
 
 CFG =		\
@@ -25,6 +26,7 @@ include $(ROOTDIR)/config/extdep/python.mk
 # Module Dependencies
 include $(ROOTDIR)/modules/DefaultLogger/export.mk
 include $(ROOTDIR)/modules/FSBlockStore/export.mk
+include $(ROOTDIR)/modules/UTFileSystem/export.mk
 
 # Local Variables:
 # mode: Makefile

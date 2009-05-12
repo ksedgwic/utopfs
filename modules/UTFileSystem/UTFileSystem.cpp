@@ -24,6 +24,24 @@ UTFileSystem::~UTFileSystem()
     // (way after main has returned ...)
 }
 
+void
+UTFileSystem::fs_mkfs(std::string const & i_path)
+    throw (utp::InternalError,
+           utp::ValueError)
+{
+    throwstream(InternalError, FILELINE
+                << "UTFileSystem::fs_mkfs unimplemented");
+}
+
+void
+UTFileSystem::fs_mount(std::string const & i_path)
+    throw (utp::InternalError,
+           utp::ValueError)
+{
+    throwstream(InternalError, FILELINE
+                << "UTFileSystem::fs_mount unimplemented");
+}
+
 int
 UTFileSystem::fs_getattr(string const & i_path,
                          struct stat * o_statbuf)

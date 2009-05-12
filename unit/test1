@@ -4,6 +4,7 @@ import sys
 
 import utp
 import utp.BlockStore
+import utp.FileSystem
 
 try:
     # Find the BlockStore singleton.
