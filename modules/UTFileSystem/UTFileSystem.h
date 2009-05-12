@@ -52,7 +52,7 @@ public:
         throw (utp::InternalError);
 
 private:
-
+    utp::BlockStoreHandle	m_bsh;
 };
 
 } // namespace UTFS

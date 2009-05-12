@@ -19,7 +19,11 @@ class UTP_EXP FileSystem : public virtual RCObj
 public:
     struct DirEntryFunc
     {
-        virtual bool operator()(std::string const & i_name, off_t i_off) = 0;
+        // @return true if buffer is full, false otherwise.
+        //
+        virtual bool operator()(std::string const & i_name,
+                                struct stat const * i_stbuf,
+                                off_t i_off) = 0;
     };
 
     /// Assign the singleton instance

@@ -15,46 +15,51 @@
 
 #include <fuse.h>
 
+#include "Except.h"
+#include "FileSystem.h"
+
 using namespace std;
+using namespace utp;
 
 extern "C" {
 
-static char const * utopfs_dir_path = "/.utopfs";
-static char const * utopfs_ver_path = "/.utopfs/version";
-static char const * utopfs_ver_str = "utopfs version 0.1\n";
+static int fatal(char const * msg)
+{
+    // FIXME - Is this the best way to deal w/ these errors?
+    cerr << msg;
+    abort();
+    return 0;	// makes compiler happy
+}        
 
 static int
 utopfs_getattr(char const * i_path,
                struct stat * stbuf)
 {
-    int res = 0; /* temporary result */
-
-    memset(stbuf, 0, sizeof(struct stat));
-
-    string path = i_path;
-
-    if (path == "/")
+    try
     {
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
+        return FileSystem::instance()->fs_getattr(i_path, stbuf);
     }
-    else if (path == utopfs_dir_path)
+    catch (utp::Exception const & ex)
     {
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
+        return fatal(ex.what());
     }
-    else if (path == utopfs_ver_path)
-    {
-        stbuf->st_mode = S_IFREG | 0444;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = strlen(utopfs_ver_str);
-    }
-    else
-    {
-        res = -ENOENT;
-    }
-    return res;
 }
+
+struct MyDirEntryFunc : public utp::FileSystem::DirEntryFunc
+{
+    void *				m_buf;
+    fuse_fill_dir_t		m_filler;
+
+    MyDirEntryFunc(void * i_buf, fuse_fill_dir_t i_filler)
+        : m_buf(i_buf), m_filler(i_filler) {}
+
+    virtual bool operator()(string const & i_name,
+                            struct stat const * i_stbuf,
+                            off_t i_off)
+    {
+        return m_filler(m_buf, i_name.c_str(), i_stbuf, i_off) != 0;
+    }
+};
 
 static int
 utopfs_readdir(char const * i_path,
@@ -63,44 +68,29 @@ utopfs_readdir(char const * i_path,
                off_t offset,
                struct fuse_file_info * fi)
 {
-   (void) offset;
-   (void) fi;
-
-   string path = i_path;
-
-   if (path == "/")
-   {
-       filler(buf, ".", NULL, 0);
-       filler(buf, "..", NULL, 0);
-       filler(buf, utopfs_dir_path + 1, NULL, 0);
-   }
-   else if (path == utopfs_dir_path)
-   {
-       filler(buf, ".", NULL, 0);
-       filler(buf, "..", NULL, 0);
-       filler(buf, utopfs_ver_path + 9, NULL, 0);
-   }
-   else
-   {
-       return -ENOENT;
-   }
-
-   return 0;
+    try
+    {
+        MyDirEntryFunc mdef(buf, filler);
+        return FileSystem::instance()->fs_readdir(i_path, offset, mdef);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
 }
 
 static int
 utopfs_open(char const * i_path,
             struct fuse_file_info *fi)
 {
-   string path = i_path;
-
-   if (path != utopfs_ver_path)
-       return -ENOENT;
-
-   if ((fi->flags & 3) != O_RDONLY )
-       return -EACCES;
-
-   return 0;
+    try
+    {
+        return FileSystem::instance()->fs_open(i_path, fi->flags);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
 }
 
 static int
@@ -110,27 +100,14 @@ utopfs_read(char const * i_path,
             off_t offset,
             struct fuse_file_info *fi)
 {
-   (void) fi;
-
-   size_t len;
-
-   string path = i_path;
-
-   if (path != utopfs_ver_path)
-       return -ENOENT;
-
-   len = strlen(utopfs_ver_str);
-   if (offset < off_t(len))
-   {
-      if (offset + size > len)
-         size = len - offset;
-      memcpy(buf, utopfs_ver_str + offset, size);
-   }
-   else
-   {
-       size = 0;
-   }
-   return size;
+    try
+    {
+        return FileSystem::instance()->fs_read(i_path, buf, size, offset);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
 }
 
 static struct fuse_operations utopfs_oper;
