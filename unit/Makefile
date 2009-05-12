@@ -7,11 +7,16 @@ include $(ROOTDIR)/config/define.mk
 SCRIPTS =	\
 			test1 \
 			test2 \
+			test_fileblockstore.py \
 			$(NULL)
 
 CFG =		\
 			svc.conf \
 			$(NULL)
+
+all::
+			(cd $(WORKCFGDIR) && py.test test_fileblockstore.py)
+
 
 include $(ROOTDIR)/config/depend.mk
 
