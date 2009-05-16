@@ -1,3 +1,4 @@
+#include "Except.h"
 #include "FileSystem.h"
 
 namespace {
@@ -16,7 +17,11 @@ FileSystem::instance(FileSystemHandle const & i_bsh)
 
 FileSystemHandle
 FileSystem::instance()
+    throw (NotFoundError)
 {
+    if (!g_bsh)
+        throwstream(NotFoundError, "no FileSystem instance");
+
     return g_bsh;
 }
 

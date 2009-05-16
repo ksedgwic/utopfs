@@ -1,3 +1,4 @@
+#include "Except.h"
 #include "BlockStore.h"
 
 namespace {
@@ -16,7 +17,11 @@ BlockStore::instance(BlockStoreHandle const & i_bsh)
 
 BlockStoreHandle
 BlockStore::instance()
+    throw(NotFoundError)
 {
+    if (!g_bsh)
+        throwstream(NotFoundError, "no BlockStore instance");
+
     return g_bsh;
 }
 

@@ -15,7 +15,7 @@ CFG =		\
 include $(ROOTDIR)/config/depend.mk
 
 all::
-	(cd $(WORKCFGDIR) && py.test test_fileblockstore.py)
+	(cd $(WORKCFGDIR) && . ./env.sh && py.test test_fileblockstore.py)
 
 # Dependencies
 include $(ROOTDIR)/libutp/pymod/export.mk

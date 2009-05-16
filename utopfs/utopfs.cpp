@@ -14,6 +14,7 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
+#include <fuse/fuse_opt.h>
 
 #include "Except.h"
 #include "FileSystem.h"
@@ -29,7 +30,15 @@ static int fatal(char const * msg)
     cerr << msg;
     abort();
     return 0;	// makes compiler happy
-}        
+}
+
+struct utopfs
+{
+    struct fuse_args utop_args;
+    string path;
+};
+
+static struct utopfs utopfs;
 
 static int
 utopfs_getattr(char const * i_path,
@@ -114,15 +123,114 @@ static struct fuse_operations utopfs_oper;
 
 } // end extern "C"
 
+static const char *utop_opts[] = {
+	NULL,
+};
+
+enum {
+	KEY_HELP,
+	KEY_VERSION,
+	KEY_FOREGROUND,
+	KEY_CONFIGFILE,
+};
+
+#define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
+
+static struct fuse_opt utopfs_opts[] = {
+	FUSE_OPT_KEY("-V",             KEY_VERSION),
+	FUSE_OPT_KEY("--version",      KEY_VERSION),
+	FUSE_OPT_KEY("-h",             KEY_HELP),
+	FUSE_OPT_KEY("--help",         KEY_HELP),
+	FUSE_OPT_KEY("debug",          KEY_FOREGROUND),
+	FUSE_OPT_KEY("-d",             KEY_FOREGROUND),
+	FUSE_OPT_KEY("-f",             KEY_FOREGROUND),
+	CPP_FUSE_OPT_END
+};
+
+static int is_utop_opt(const char *arg)
+{
+	if (arg[0] != '-') {
+		unsigned arglen = strlen(arg);
+		const char **o;
+		for (o = utop_opts; *o; o++) {
+			unsigned olen = strlen(*o);
+			if (arglen > olen && arg[olen] == '=' &&
+			    strncasecmp(arg, *o, olen) == 0)
+				return 1;
+		}
+	}
+	return 0;
+}
+
+static void utop_add_arg(char const * arg)
+{
+	if (fuse_opt_add_arg(&utopfs.utop_args, arg) == -1)
+		_exit(1);
+}
+
+static int utopfs_opt_proc(void * data,
+                           char const * arg,
+                           int key,
+                           struct fuse_args * outargs)
+{
+	(void) data;
+
+	switch (key)
+    {
+	case FUSE_OPT_KEY_OPT:
+		if (is_utop_opt(arg))
+        {
+            ostringstream tmpstrm;
+            tmpstrm << "-o" << arg;
+			utop_add_arg(tmpstrm.str().c_str());
+			return 0;
+		}
+		return 1;
+
+	case FUSE_OPT_KEY_NONOPT:
+        if (utopfs.path.empty())
+        {
+            utopfs.path = arg;
+            return 0;
+        }
+        return 1;
+
+	case KEY_HELP:
+	case KEY_VERSION:
+	case KEY_FOREGROUND:
+	case KEY_CONFIGFILE:
+		return 1;
+
+	default:
+		fprintf(stderr, "internal error\n");
+		abort();
+	}
+}
+
 int
 main(int argc, char ** argv)
 {
-    ACE_Service_Config::open(argc, argv);
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+	if (fuse_opt_parse(&args, &utopfs, utopfs_opts, utopfs_opt_proc) == -1)
+        fatal("option parsing failed");
 
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.readdir		= utopfs_readdir;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;
-    
-    return fuse_main(argc, argv, &utopfs_oper, NULL);
+
+    ACE_Service_Config::open(argv[0]);
+
+    // Perform the mount.
+    try
+    {
+        FileSystem::instance()->fs_mount(utopfs.path);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+
+    return fuse_main(args.argc, args.argv, &utopfs_oper, NULL);
 }

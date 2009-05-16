@@ -23,7 +23,8 @@ public:
 
     /// Retrieve the singleton instance
     ///
-    static BlockStoreHandle instance();
+    static BlockStoreHandle instance()
+        throw(NotFoundError);
 
     /// Destructor
     ///

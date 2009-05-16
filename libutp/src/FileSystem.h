@@ -32,7 +32,8 @@ public:
 
     /// Retrieve the singleton instance
     ///
-    static FileSystemHandle instance();
+    static FileSystemHandle instance()
+        throw (utp::NotFoundError);
 
     /// Destructor
     ///

@@ -10,6 +10,7 @@ PRGEXE = 	utopfs
 
 
 SCRIPTS =	\
+			runutopfs \
 			$(NULL)
 
 CFG =		\
