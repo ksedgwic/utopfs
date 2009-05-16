@@ -52,7 +52,3 @@ class TestBlockStore:
     self.bs.bs_del_block(k)
     
     py.test.raises(Exception,self.bs.bs_get_block,k)
-    
-
-    
-

@@ -3,9 +3,8 @@ ROOTDIR =	..
 include $(ROOTDIR)/config/define.mk
 
 SCRIPTS =	\
-			test1 \
-			test2 \
 			test_fileblockstore.py \
+			test_bs_unopened.py \
 			$(NULL)
 
 CFG =		\
@@ -15,7 +14,7 @@ CFG =		\
 include $(ROOTDIR)/config/depend.mk
 
 all::
-	(cd $(WORKCFGDIR) && . ./env.sh && py.test test_fileblockstore.py)
+	(cd $(WORKCFGDIR) && . ./env.sh && py.test $(SCRIPTS))
 
 # Dependencies
 include $(ROOTDIR)/libutp/pymod/export.mk

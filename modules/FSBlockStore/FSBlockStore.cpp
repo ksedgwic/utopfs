@@ -44,6 +44,10 @@ FSBlockStore::bs_open(std::string const & i_path)
 {
     LOG(lgr, 4, "bs_open " << i_path);
 
+    // Need to stat the directory and throw NotFoundError if it doesn't
+    // exist.  Also generate an error if any needed state (in the
+    // directory) is not happy ...
+
     m_path = i_path;
 }
 
