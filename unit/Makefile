@@ -3,9 +3,9 @@ ROOTDIR =	..
 include $(ROOTDIR)/config/define.mk
 
 PYTESTS =	\
-			test_fs_mkfs.py \
 			test_fileblockstore.py \
 			test_bs_unopened.py \
+			test_fs_mkfs.py \
 			$(NULL)
 
 SCRIPTS =	\

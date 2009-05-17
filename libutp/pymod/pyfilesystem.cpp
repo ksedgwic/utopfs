@@ -1,9 +1,11 @@
 #include <memory>
+#include <vector>
 
 #include "pyutpinit.h"
 #include "pyfilesystem.h"
 #include "pystat.h"
 
+using namespace std;
 using namespace utp;
 
 namespace utp {
@@ -68,120 +70,80 @@ FileSystem_fs_getattr(FileSystemObject *self, PyObject *args)
     return pystat_fromstructstat(&statbuf);
 }
 
-#if 0
 static PyObject *
-FileSystem_fs_close(FileSystemObject *self, PyObject *args)
+FileSystem_fs_open(FileSystemObject *self, PyObject *args)
 {
-    if (!PyArg_ParseTuple(args, ":fs_close"))
+    char * path;
+    int flags;
+    if (!PyArg_ParseTuple(args, "si:fs_open", &path, &flags))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_close();
-        Py_INCREF(Py_None);
-        return Py_None;
+        errno = - self->m_fsh->fs_open(path, flags);
     }
     PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
-FileSystem_fs_get_block(FileSystemObject *self, PyObject *args)
+FileSystem_fs_read(FileSystemObject *self, PyObject *args)
 {
-    PyObject * keyobj;
-    if (!PyArg_ParseTuple(args, "O!:fs_get_block",
-                          &PyBuffer_Type, &keyobj))
+    char * path;
+    long int size;
+    long int offset;
+    
+    if (!PyArg_ParseTuple(args, "sll:fs_read", &path, &size, &offset))
         return NULL;
 
-    void const * keyptr;
-    Py_ssize_t keylen;
-    if (PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
-        return NULL;
+    // Allocate a buffer big enough for the users entire request.
+    vector<unsigned char> buffer(size);
 
-    char outbuf[32 * 1024];
-    size_t outsz;
-
+    int retval;
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        outsz = self->m_fsh->fs_get_block(keyptr, keylen,
-                                          outbuf, sizeof(outbuf));
+        retval = self->m_fsh->fs_read(path,
+                                      &buffer[0],
+                                      size_t(size),
+                                      off_t(offset));
     }
     PYUTP_CATCH_ALL;
 
-    PyObject * retobj = PyBuffer_New(outsz);
+    // Was there an error?
+    if (retval < 0)
+    {
+        errno = -retval;
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // Create a buffer object which is exactly as big as the
+    // returned data.
+    //
+    PyObject * retobj = PyBuffer_New(retval);
     void * outptr;
     Py_ssize_t outlen;
     if (PyObject_AsWriteBuffer(retobj, &outptr, &outlen))
         return NULL;
 
-    memcpy(outptr, outbuf, outlen);
+    memcpy(outptr, &buffer[0], outlen);
+
     return retobj;
 }
-
-static PyObject *
-FileSystem_fs_put_block(FileSystemObject *self, PyObject *args)
-{
-    PyObject * keyobj;
-    PyObject * valobj;
-    if (!PyArg_ParseTuple(args, "O!O!:fs_put_block",
-                          &PyBuffer_Type, &keyobj,
-                          &PyBuffer_Type, &valobj))
-        return NULL;
-
-    void const * keyptr;
-    Py_ssize_t keylen;
-    if (PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
-        return NULL;
-
-    void const * valptr;
-    Py_ssize_t vallen;
-    if (PyObject_AsReadBuffer(valobj, &valptr, &vallen))
-        return NULL;
-
-    PYUTP_TRY
-    {
-        PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_put_block(keyptr, keylen, valptr, vallen);
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PYUTP_CATCH_ALL;
-}
-
-static PyObject *
-FileSystem_fs_del_block(FileSystemObject *self, PyObject *args)
-{
-    PyObject * keyobj;
-    if (!PyArg_ParseTuple(args, "O!:fs_del_block",
-                          &PyBuffer_Type, &keyobj))
-        return NULL;
-
-    void const * keyptr;
-    Py_ssize_t keylen;
-    if (PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
-        return NULL;
-
-    PYUTP_TRY
-    {
-        PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_del_block(keyptr, keylen);
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PYUTP_CATCH_ALL;
-}
-#endif
 
 static PyMethodDef FileSystem_methods[] = {
     {"fs_mkfs",			(PyCFunction)FileSystem_fs_mkfs,		METH_VARARGS},
     {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
-#if 0
-    {"fs_get_block",	(PyCFunction)FileSystem_fs_get_block,	METH_VARARGS},
-    {"fs_put_block",	(PyCFunction)FileSystem_fs_put_block,	METH_VARARGS},
-    {"fs_del_block",	(PyCFunction)FileSystem_fs_del_block,	METH_VARARGS},
-#endif
+    {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
+    {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 
