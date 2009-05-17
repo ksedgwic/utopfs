@@ -7,6 +7,7 @@
 
 #include "pyblockstore.h"
 #include "pyfilesystem.h"
+#include "pystat.h"
 
 namespace utp {
 
@@ -118,6 +119,7 @@ init_utp(void)
     StateMap::initialize();
 
     // initialize sub-types
+    init_stat();
     init_BlockStore();
     init_FileSystem();
 

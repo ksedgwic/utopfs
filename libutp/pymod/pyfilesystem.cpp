@@ -2,6 +2,7 @@
 
 #include "pyutpinit.h"
 #include "pyfilesystem.h"
+#include "pystat.h"
 
 using namespace utp;
 
@@ -43,6 +44,28 @@ FileSystem_fs_mount(FileSystemObject *self, PyObject *args)
         return Py_None;
     }
     PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+FileSystem_fs_getattr(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    if (!PyArg_ParseTuple(args, "s:fs_getattr", &path))
+        return NULL;
+
+    struct stat statbuf;
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_getattr(path, &statbuf);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    return pystat_fromstructstat(&statbuf);
 }
 
 #if 0
@@ -153,8 +176,8 @@ FileSystem_fs_del_block(FileSystemObject *self, PyObject *args)
 static PyMethodDef FileSystem_methods[] = {
     {"fs_mkfs",			(PyCFunction)FileSystem_fs_mkfs,		METH_VARARGS},
     {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
+    {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
 #if 0
-    {"fs_close",		(PyCFunction)FileSystem_fs_close,		METH_VARARGS},
     {"fs_get_block",	(PyCFunction)FileSystem_fs_get_block,	METH_VARARGS},
     {"fs_put_block",	(PyCFunction)FileSystem_fs_put_block,	METH_VARARGS},
     {"fs_del_block",	(PyCFunction)FileSystem_fs_del_block,	METH_VARARGS},

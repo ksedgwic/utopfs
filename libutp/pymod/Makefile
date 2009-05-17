@@ -3,9 +3,10 @@ ROOTDIR = ../..
 include $(ROOTDIR)/config/define.mk
 
 LIBSRC =	\
-			pyutpinit.cpp \
 			pyblockstore.cpp \
 			pyfilesystem.cpp \
+			pystat.cpp \
+			pyutpinit.cpp \
 			statemap.cpp \
 			$(NULL)
 
