@@ -2,9 +2,16 @@ ROOTDIR =	..
 
 include $(ROOTDIR)/config/define.mk
 
-SCRIPTS =	\
+PYTESTS =	\
+			test_fs_mkfs.py \
 			test_fileblockstore.py \
 			test_bs_unopened.py \
+			$(NULL)
+
+SCRIPTS =	\
+			$(PYTESTS) \
+			test1 \
+			test2 \
 			$(NULL)
 
 CFG =		\
@@ -14,7 +21,7 @@ CFG =		\
 include $(ROOTDIR)/config/depend.mk
 
 all::
-	(cd $(WORKCFGDIR) && . ./env.sh && py.test $(SCRIPTS))
+	(cd $(WORKCFGDIR) && . ./env.sh && py.test $(PYTESTS))
 
 # Dependencies
 include $(ROOTDIR)/libutp/pymod/export.mk
