@@ -1,5 +1,5 @@
-#ifndef UTFSSvc_h__
-#define UTFSSvc_h__
+#ifndef UTFS_UTFSSvc_h__
+#define UTFS_UTFSSvc_h__
 
 /// @file UTFSSvc.h
 /// UTFS Service
@@ -45,4 +45,4 @@ ACE_SVC_FACTORY_DECLARE(UTFSSvc)
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // UTFSSvc_h__
+#endif // UTFS_UTFSSvc_h__

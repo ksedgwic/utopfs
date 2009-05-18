@@ -1,5 +1,5 @@
-#ifndef utfslog_h__
-#define utfslog_h__
+#ifndef UTFS_utfslog_h__
+#define UTFS_utfslog_h__
 
 /// @file utfslog.h
 
@@ -18,4 +18,4 @@ extern utp::LogCategory lgr;
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // utfslog_h__
+#endif // UTFS_utfslog_h__

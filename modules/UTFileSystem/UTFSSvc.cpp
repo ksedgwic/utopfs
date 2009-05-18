@@ -5,10 +5,11 @@
 
 #include "Log.h"
 
+#include "utfslog.h"
+
 #include "UTFileSystem.h"
 
 #include "UTFSSvc.h"
-#include "utfslog.h"
 
 using namespace std;
 using namespace utp;

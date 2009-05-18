@@ -9,11 +9,11 @@
 namespace utp {
 
 class BlockStore;
-/// Handle to Hints object.
+/// Handle to BlockStore object.
 typedef utp::RCPtr<BlockStore> BlockStoreHandle;
 
 class FileSystem;
-/// Handle to Hints object.
+/// Handle to FileSystem object.
 typedef utp::RCPtr<FileSystem> FileSystemHandle;
 
 } // end namespace utp

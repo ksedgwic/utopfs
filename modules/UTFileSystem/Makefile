@@ -3,9 +3,14 @@ ROOTDIR =	../..
 include $(ROOTDIR)/config/define.mk
 
 LIBSRC += 	\
-			UTFSSvc.cpp \
-			utfslog.cpp \
+			DirNode.cpp \
+			FileNode.cpp \
+			RootDirNode.cpp \
+			SpecialDirNode.cpp \
+			SpecialFileNode.cpp \
 			UTFileSystem.cpp \
+			utfslog.cpp \
+			UTFSSvc.cpp \
 			$(NULL)
 
 MODSO =		UTPFS-UTFS

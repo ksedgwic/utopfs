@@ -1,22 +1,23 @@
 #include <sstream>
 #include <string>
 
-#include "Log.h"
-#include "BlockStore.h"
-
-#include "UTFileSystem.h"
-#include "utfslog.h"
+#include <ace/Guard_T.h>
 
 #include "Base32.h"
+#include "BlockStore.h"
+#include "Log.h"
+
+#include "utfslog.h"
+
+#include "DirNode.h"
+#include "FileNode.h"
+#include "RootDirNode.h"
+#include "UTFileSystem.h"
 
 using namespace std;
 using namespace utp;
 
 namespace UTFS {
-
-static char const * utopfs_dir_path = "/.utopfs";
-static char const * utopfs_ver_path = "/.utopfs/version";
-static char const * utopfs_ver_str = "utopfs version 0.1\n";
 
 UTFileSystem::UTFileSystem()
 {
@@ -36,6 +37,8 @@ UTFileSystem::fs_mkfs(std::string const & i_path)
 {
     m_bsh = BlockStore::instance();
     m_bsh->bs_create(i_path);
+
+    m_rdh = new RootDirNode;
 }
 
 void
@@ -45,6 +48,8 @@ UTFileSystem::fs_mount(std::string const & i_path)
 {
     m_bsh = BlockStore::instance();
     m_bsh->bs_open(i_path);
+
+    m_rdh = new RootDirNode;
 }
 
 int
@@ -52,31 +57,17 @@ UTFileSystem::fs_getattr(string const & i_path,
                          struct stat * o_stbuf)
     throw (utp::InternalError)
 {
-    int res = 0; /* temporary result */
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    memset(o_stbuf, 0, sizeof(struct stat));
-
-    if (i_path == "/")
+    try
     {
-        o_stbuf->st_mode = S_IFDIR | 0755;
-        o_stbuf->st_nlink = 2;
+        FileNodeHandle nh = m_rdh->resolve(i_path);
+        return nh->getattr(o_stbuf);
     }
-    else if (i_path == utopfs_dir_path)
+    catch (int const & i_errno)
     {
-        o_stbuf->st_mode = S_IFDIR | 0755;
-        o_stbuf->st_nlink = 2;
+        return -i_errno;
     }
-    else if (i_path == utopfs_ver_path)
-    {
-        o_stbuf->st_mode = S_IFREG | 0444;
-        o_stbuf->st_nlink = 1;
-        o_stbuf->st_size = strlen(utopfs_ver_str);
-    }
-    else
-    {
-        res = -ENOENT;
-    }
-    return res;
 }
 
 int
@@ -84,13 +75,17 @@ UTFileSystem::fs_open(string const & i_path,
                       int i_flags)
     throw (utp::InternalError)
 {
-   if (i_path != utopfs_ver_path)
-       return -ENOENT;
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-   if ((i_flags & 3) != O_RDONLY )
-       return -EACCES;
-
-   return 0;
+    try
+    {
+        pair<DirNodeHandle, string> res = m_rdh->resolve_parent(i_path);
+        return res.first->open(res.second, i_flags);
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
 }
 
 int
@@ -100,21 +95,17 @@ UTFileSystem::fs_read(string const & i_path,
                       off_t i_off)
     throw (utp::InternalError)
 {
-   if (i_path != utopfs_ver_path)
-       return -ENOENT;
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-   off_t len = strlen(utopfs_ver_str);
-   if (i_off < len)
-   {
-       if (i_off + off_t(i_size) > len)
-          i_size = len - i_off;
-      memcpy(o_bufptr, utopfs_ver_str + i_off, i_size);
-   }
-   else
-   {
-       i_size = 0;
-   }
-   return int(i_size);
+    try
+    {
+        FileNodeHandle nh = m_rdh->resolve(i_path);
+        return nh->read(o_bufptr, i_size, i_off);
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
 }
 
 int
@@ -123,24 +114,24 @@ UTFileSystem::fs_readdir(string const & i_path,
                          DirEntryFunc & o_entryfunc)
     throw (utp::InternalError)
 {
-   if (i_path == "/")
-   {
-       o_entryfunc(".", NULL, 0);
-       o_entryfunc("..", NULL, 0);
-       o_entryfunc(utopfs_dir_path + 1, NULL, 0);
-   }
-   else if (i_path == utopfs_dir_path)
-   {
-       o_entryfunc(".", NULL, 0);
-       o_entryfunc("..", NULL, 0);
-       o_entryfunc(utopfs_ver_path + 9, NULL, 0);
-   }
-   else
-   {
-       return -ENOENT;
-   }
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-   return 0;
+    try
+    {
+        // Resolve the directory node.
+        FileNodeHandle nh = m_rdh->resolve(i_path);
+
+        // Cast the node to a directory node.
+        DirNodeHandle dh = dynamic_cast<DirNode *>(&*nh);
+        if (!dh)
+            throw ENOTDIR;
+
+        return dh->readdir(i_offset, o_entryfunc);
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
 }
 
 } // namespace UTFS

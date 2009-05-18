@@ -1,17 +1,20 @@
-#ifndef UTFileSystem_h__
-#define UTFileSystem_h__
+#ifndef UTFS_UTFileSystem_h__
+#define UTFS_UTFileSystem_h__
 
 /// @file UTFileSystem.h
 /// Utopia FileSystem Instance.
 
+#include <map>
 #include <string>
+
+#include <ace/Thread_Mutex.h>
 
 #include "utpfwd.h"
 
 #include "FileSystem.h"
 
 #include "utfsexp.h"
-
+#include "utfsfwd.h"
 
 namespace UTFS {
 
@@ -51,8 +54,15 @@ public:
                            DirEntryFunc & o_entryfunc)
         throw (utp::InternalError);
 
+protected:
+
 private:
+    typedef std::map<std::string, FileNodeHandle>	NodeMap;
+
+    ACE_Thread_Mutex		m_utfsmutex;
+
     utp::BlockStoreHandle	m_bsh;
+    DirNodeHandle			m_rdh;
 };
 
 } // namespace UTFS
@@ -64,4 +74,4 @@ private:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // UTFileSystem_h__
+#endif // UTFS_UTFileSystem_h__
