@@ -23,7 +23,7 @@ SpecialDirNode::SpecialDirNode()
 
 SpecialDirNode::~SpecialDirNode()
 {
-    // LOG(lgr, 4, "DTOR");
+    LOG(lgr, 4, "DTOR");
 }
 
 FileNodeHandle

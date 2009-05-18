@@ -17,7 +17,7 @@ FileNode::FileNode()
 
 FileNode::~FileNode()
 {
-    // LOG(lgr, 4, "DTOR");
+    LOG(lgr, 4, "DTOR");
 }
 
 int

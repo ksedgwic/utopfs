@@ -21,7 +21,7 @@ RootDirNode::RootDirNode()
 
 RootDirNode::~RootDirNode()
 {
-    // LOG(lgr, 4, "DTOR");
+    LOG(lgr, 4, "DTOR");
 }
 
 FileNodeHandle

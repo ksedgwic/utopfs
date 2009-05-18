@@ -17,7 +17,7 @@ DirNode::DirNode()
 
 DirNode::~DirNode()
 {
-    // LOG(lgr, 4, "DTOR");
+    LOG(lgr, 4, "DTOR");
 }
 
 FileNodeHandle
