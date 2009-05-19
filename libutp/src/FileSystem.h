@@ -21,9 +21,9 @@ public:
     {
         // @return true if buffer is full, false otherwise.
         //
-        virtual bool operator()(std::string const & i_name,
-                                struct stat const * i_stbuf,
-                                off_t i_off) = 0;
+        virtual bool def_entry(std::string const & i_name,
+                               struct stat const * i_stbuf,
+                               off_t i_off) = 0;
     };
 
     /// Assign the singleton instance

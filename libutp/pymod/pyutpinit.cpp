@@ -6,6 +6,7 @@
 #include "statemap.h"
 
 #include "pyblockstore.h"
+#include "pydirentryfunc.h"
 #include "pyfilesystem.h"
 #include "pystat.h"
 
@@ -122,6 +123,7 @@ init_utp(void)
     init_stat();
     init_BlockStore();
     init_FileSystem();
+    init_PyDirEntryFunc();
 
     // create the module and add the functions
     m = Py_InitModule("_utp", module_methods);

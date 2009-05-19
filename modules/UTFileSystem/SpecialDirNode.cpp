@@ -73,9 +73,9 @@ SpecialDirNode::open(std::string const & i_entry, int i_flags)
 int
 SpecialDirNode::readdir(off_t i_offset, FileSystem::DirEntryFunc & o_entryfunc)
 {
-    o_entryfunc(".", NULL, 0);
-    o_entryfunc("..", NULL, 0);
-    o_entryfunc("version", NULL, 0);
+    o_entryfunc.def_entry(".", NULL, 0);
+    o_entryfunc.def_entry("..", NULL, 0);
+    o_entryfunc.def_entry("version", NULL, 0);
     return 0;
 }
 

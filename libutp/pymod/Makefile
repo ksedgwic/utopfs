@@ -3,6 +3,7 @@ ROOTDIR = ../..
 include $(ROOTDIR)/config/define.mk
 
 LIBSRC =	\
+			pydirentryfunc.cpp \
 			pyblockstore.cpp \
 			pyfilesystem.cpp \
 			pystat.cpp \

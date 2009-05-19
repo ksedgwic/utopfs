@@ -73,9 +73,9 @@ int
 RootDirNode::readdir(off_t i_offset, FileSystem::DirEntryFunc & o_entryfunc)
 {
     // FIXME - BOGUS!  We need to have actual dynamic entries!
-    o_entryfunc(".", NULL, 0);
-    o_entryfunc("..", NULL, 0);
-    o_entryfunc(SPECIALDIR, NULL, 0);
+    o_entryfunc.def_entry(".", NULL, 0);
+    o_entryfunc.def_entry("..", NULL, 0);
+    o_entryfunc.def_entry(SPECIALDIR, NULL, 0);
     return 0;
 }
 

@@ -62,9 +62,9 @@ struct MyDirEntryFunc : public utp::FileSystem::DirEntryFunc
     MyDirEntryFunc(void * i_buf, fuse_fill_dir_t i_filler)
         : m_buf(i_buf), m_filler(i_filler) {}
 
-    virtual bool operator()(string const & i_name,
-                            struct stat const * i_stbuf,
-                            off_t i_off)
+    virtual bool def_entry(string const & i_name,
+                           struct stat const * i_stbuf,
+                           off_t i_off)
     {
         return m_filler(m_buf, i_name.c_str(), i_stbuf, i_off) != 0;
     }

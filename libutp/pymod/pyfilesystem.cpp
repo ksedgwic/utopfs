@@ -1,9 +1,10 @@
 #include <memory>
 #include <vector>
 
-#include "pyutpinit.h"
+#include "pydirentryfunc.h"
 #include "pyfilesystem.h"
 #include "pystat.h"
+#include "pyutpinit.h"
 
 using namespace std;
 using namespace utp;
@@ -138,12 +139,46 @@ FileSystem_fs_read(FileSystemObject *self, PyObject *args)
     return retobj;
 }
 
+static PyObject *
+FileSystem_fs_readdir(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    long offset;
+    PyObject * cbobj;
+    if (!PyArg_ParseTuple(args, "slO:fs_readdir", &path, &offset, &cbobj))
+        return NULL;
+
+    PyObject * baseobj = PyObject_GetAttr(cbobj, PyString_FromString("_base"));
+
+    PyDirEntryFuncObject * pdefobj = (PyDirEntryFuncObject *) baseobj;
+
+    // don't want to count this reference, the client is responsible
+    // for keeping the callback object around till the end load
+    // callback
+    Py_DECREF(baseobj);
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_readdir(path, offset, *(pdefobj->decb));
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyMethodDef FileSystem_methods[] = {
     {"fs_mkfs",			(PyCFunction)FileSystem_fs_mkfs,		METH_VARARGS},
     {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},
+    {"fs_readdir",		(PyCFunction)FileSystem_fs_readdir,		METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 

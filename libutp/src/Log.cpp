@@ -146,7 +146,7 @@ LogCategory::LogCategory(string const & name,
 LogCategory::~LogCategory()
 {
     // Turn off logging.
-    m_level = 0;
+    m_level = -1;
 
     Assembly::instance()->remove(this);
 }

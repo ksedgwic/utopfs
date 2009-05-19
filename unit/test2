@@ -5,6 +5,14 @@ import sys
 import utp
 import utp.BlockStore
 import utp.FileSystem
+import utp.PyDirEntryFunc
+
+class DirEntryPrinter(utp.PyDirEntryFunc.PyDirEntryFunc):
+    def __init__(self):
+        utp.PyDirEntryFunc.PyDirEntryFunc.__init__(self)
+
+    def def_entry(self, name, statbuf, offset):
+        print "def_entry", name, statbuf, offset
 
 try:
     # Get the FileSystem singleton.
@@ -15,6 +23,10 @@ try:
 
     # Stat something.
     print fs.fs_getattr("/.utopfs");
+
+    # See if readdir works
+    decb = DirEntryPrinter()
+    fs.fs_readdir("/.utopfs", 0, decb)
     
 except utp.Error, ex:
     print ex[0]['what']
