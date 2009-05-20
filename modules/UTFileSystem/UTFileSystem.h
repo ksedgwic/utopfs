@@ -54,6 +54,10 @@ public:
                            DirEntryFunc & o_entryfunc)
         throw (utp::InternalError);
 
+    virtual int fs_create(std::string const & i_path,
+                          mode_t i_mode)
+        throw (utp::InternalError);
+
 protected:
 
 private:

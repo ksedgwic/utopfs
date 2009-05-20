@@ -48,14 +48,13 @@ RootDirNode::resolve_parent(std::string const & i_path)
 {
     pair<string, string> comp = pathcomp(i_path);
 
+    // If the remainder is empty *we* are the parent.
+    if (comp.second.empty())
+        return make_pair(DirNodeHandle(this), comp.first);
+
     // Check for the special .utopfs directory.
     if (comp.first == SPECIALDIR)
-    {
-        // If the remainder is empty *we* are the parent.
-        return comp.second.empty() ?
-            make_pair(DirNodeHandle(this), string(SPECIALDIR)) :
-            m_sdh->resolve_parent(comp.second);
-    }
+        return m_sdh->resolve_parent(comp.second);
 
     // Otherwise delegate to the base class.
     return DirNode::resolve_parent(i_path);

@@ -119,7 +119,14 @@ public:
                            DirEntryFunc & o_entryfunc)
         throw (utp::InternalError) = 0;
 
-    
+
+    /// Create and open a file.
+    ///
+    /// @param[in] i_path Path to the file.
+    /// @param[in] i_mode Permissions to use.
+    virtual int fs_create(std::string const & i_path,
+                          mode_t i_mode)
+        throw (utp::InternalError) = 0;
 };
 
 } // end namespace utp

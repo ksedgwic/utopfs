@@ -134,6 +134,15 @@ UTFileSystem::fs_readdir(string const & i_path,
     }
 }
 
+int
+UTFileSystem::fs_create(string const & i_path,
+                        mode_t i_mode)
+        throw (utp::InternalError)
+{
+    throwstream(InternalError, FILELINE
+                << "UTFileSystem::fs_create unimplemented");
+}
+
 } // namespace UTFS
 
 // Local Variables:

@@ -45,3 +45,9 @@ class TestBlockStore:
     self.fs.fs_open("/.utopfs/version", os.O_RDONLY)
     data = self.fs.fs_read("/.utopfs/version", 100, 0)
     assert str(data).find("utopfs version") == 0
+
+  def test_can_create_file(self):
+    # We should be able to create a file.
+    self.fs.fs_open("/foo", os.O_CREAT)
+    
+    

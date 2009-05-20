@@ -1,0 +1,1 @@
+Check object lifetimes of the python direntry callback objects.
