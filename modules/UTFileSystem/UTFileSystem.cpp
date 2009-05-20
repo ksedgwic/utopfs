@@ -39,6 +39,8 @@ UTFileSystem::fs_mkfs(std::string const & i_path)
     m_bsh->bs_create(i_path);
 
     m_rdh = new RootDirNode;
+
+    m_rdh->persist();
 }
 
 void
@@ -49,7 +51,10 @@ UTFileSystem::fs_mount(std::string const & i_path)
     m_bsh = BlockStore::instance();
     m_bsh->bs_open(i_path);
 
-    m_rdh = new RootDirNode;
+    throwstream(InternalError, FILELINE
+                << "UTFileSystem::fs_mount unimplemented");
+
+    m_rdh = new RootDirNode(/* digest of root block */);
 }
 
 int

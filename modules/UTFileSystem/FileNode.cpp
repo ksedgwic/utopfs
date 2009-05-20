@@ -20,6 +20,13 @@ FileNode::~FileNode()
     LOG(lgr, 4, "DTOR");
 }
 
+void
+FileNode::persist()
+{
+    throwstream(InternalError, FILELINE
+                << "FileNode::persist unimplemented");
+}
+
 int
 FileNode::getattr(struct stat * o_statbuf)
 {
