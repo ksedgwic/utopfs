@@ -5,6 +5,7 @@ include $(ROOTDIR)/config/define.mk
 LIBSRC =	\
 			Base32.cpp \
 			BlockStore.cpp \
+			Digest.cpp \
 			Except.cpp \
 			FileSystem.cpp \
 			FormatterBase.cpp \

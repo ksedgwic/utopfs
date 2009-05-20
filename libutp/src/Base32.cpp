@@ -70,6 +70,14 @@ chunkEncode(uint8 const * in,
 
 namespace utp {
 
+string const
+Base32::encode(void const * i_data, size_t i_size)
+{
+    string retval;
+    encode((uint8 const *) i_data, i_size, retval);
+    return retval;
+}
+
 void
 Base32::encode(uint8 const * i_raw,
                size_t const & i_size,

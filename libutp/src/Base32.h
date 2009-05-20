@@ -10,6 +10,8 @@ namespace utp {
 class Base32
 {
 public:
+    static std::string const encode(void const * i_data, size_t i_size);
+
     static void encode(uint8 const * i_data,
                        size_t const & i_size,
                        std::string & o_encoded);
