@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <ace/OS_NS_string.h>
+
 #include <openssl/sha.h>
 
 #include "Base32.h"
@@ -9,6 +11,11 @@ using namespace std;
 using namespace utp;
 
 namespace utp {
+
+Digest::Digest()
+{
+    ACE_OS::memset(m_dig, '\0', sizeof(m_dig));
+}
 
 Digest::Digest(void const * i_data, size_t i_size)
 {

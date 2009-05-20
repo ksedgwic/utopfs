@@ -10,6 +10,8 @@ namespace utp {
 class Digest
 {
 public:
+    Digest();
+
     Digest(void const * i_data, size_t i_size);
 
     uint8 const * data() const { return m_dig; }
