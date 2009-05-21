@@ -26,6 +26,8 @@ public:
     virtual int read(void * o_bufptr, size_t i_size, off_t i_off);
 
 private:
+    
+
 };
 
 } // namespace UTFS

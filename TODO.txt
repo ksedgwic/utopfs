@@ -1,1 +1,9 @@
+Create "Things that work Differently" wiki page.
+
+Investigate the AES_ctr128_encrypt interface.
+
+Consider offline python documentation.
+
+Consider offline openssl documentation.
+
 Check object lifetimes of the python direntry callback objects.
