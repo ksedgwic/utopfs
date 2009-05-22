@@ -1,5 +1,7 @@
 Create "Things that work Differently" wiki page.
 
+Almost have the protobuf.mk working in modules/UTFilesystem.
+
 Investigate the AES_ctr128_encrypt interface.
 
 Consider offline python documentation.

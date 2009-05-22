@@ -9,6 +9,10 @@ Some Prerequisites
     sudo yum install -y python-py
     sudo yum install -y python-setuptools
 
+    # Google Protobuf
+    sudo yum install -y protobuf protobuf-devel \
+                        protobuf-compiler protobuf-debuginfo
+
 
 Building
 ----------------------------------------------------------------

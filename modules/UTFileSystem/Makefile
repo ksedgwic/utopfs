@@ -2,6 +2,8 @@ ROOTDIR =	../..
 
 include $(ROOTDIR)/config/define.mk
 
+PROTO +=	INode.proto
+
 LIBSRC += 	\
 			DirNode.cpp \
 			FileNode.cpp \
@@ -25,6 +27,7 @@ include $(ROOTDIR)/config/depend.mk
 # dependencies
 include $(ROOTDIR)/libutp/src/export.mk
 
+include $(ROOTDIR)/config/extdep/protobuf.mk
 include $(ROOTDIR)/config/extdep/ACE.mk
 
 # Local Variables:

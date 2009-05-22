@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include "INode.pb.h"
+
 #include "utpfwd.h"
 #include "utfsexp.h"
 
@@ -26,7 +28,7 @@ public:
     virtual int read(void * o_bufptr, size_t i_size, off_t i_off);
 
 private:
-    
+    INode				m_inode;
 
 };
 
