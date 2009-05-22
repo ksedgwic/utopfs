@@ -13,6 +13,7 @@ LIBSRC =	\
 			LogField.cpp \
 			LoggerBase.cpp \
 			Random.cpp \
+			StreamCipher.cpp \
 			T64.cpp \
 			$(NULL)
 

@@ -4,6 +4,7 @@ include $(ROOTDIR)/config/define.mk
 
 SUBDIRS =	\
 			src \
+			tests \
 			pymod \
 			$(NULL)
 
