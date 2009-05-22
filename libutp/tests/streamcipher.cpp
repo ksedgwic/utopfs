@@ -16,12 +16,18 @@ main(int argc, char ** argv)
     StreamCipher cipher((uint8 const *) secret.c_str(), secret.size());
 
     uint8 * msg = (uint8 *) strdup("This is a secret message");
+    size_t msglen = strlen((char const *) msg);
 
     uint8 iv[8];
     memset(iv, '\0', sizeof(iv));
 
-    cipher.encrypt(iv, 16, msg, strlen((char const *) msg));
-    cipher.encrypt(iv, 16, msg, strlen((char const *) msg));
+    // Encrypt
+    cipher.encrypt(iv, 16, msg, msglen);
+
+    // cout << msg << endl;
+
+    // Decrypt
+    cipher.encrypt(iv, 16, msg, msglen);
 
     cout << msg << endl;
 
