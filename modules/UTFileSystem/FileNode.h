@@ -6,6 +6,9 @@
 
 #include <string>
 
+#include "Types.h"
+#include "Digest.h"
+
 #include "INode.pb.h"
 
 #include "utpfwd.h"
@@ -30,6 +33,13 @@ public:
 private:
     INode				m_inode;
 
+ 	utp::uint8			m_data[2048];
+
+    utp::Digest			m_direct[20];
+    utp::Digest			m_sindir;		// single indirect
+    utp::Digest			m_dindir;		// double indirect
+    utp::Digest			m_tindir;		// triple indirect
+    utp::Digest			m_qindir;		// quad indirect
 };
 
 } // namespace UTFS

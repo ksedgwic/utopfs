@@ -48,7 +48,7 @@ message INode
 //  1 single indirect   =      32 =   32
 //  1 double indirect   =      32 =   32
 //  1 triple indirect   =      32 =   32
-//    1 quad indirect   =      32 =   32
+//  1   quad indirect   =      32 =   32
 
 // How big can a file get?
 //
