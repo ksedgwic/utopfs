@@ -19,7 +19,7 @@ try:
     fs = utp.FileSystem.instance()
 
     # Make a new filesystem.
-    fs.fs_mkfs("myfs");
+    fs.fs_mkfs("myfs", "");
 
     # Stat something.
     print fs.fs_getattr("/.utopfs");
