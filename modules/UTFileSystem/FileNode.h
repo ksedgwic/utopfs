@@ -31,6 +31,8 @@ public:
     virtual int read(void * o_bufptr, size_t i_size, off_t i_off);
 
 private:
+    utp::uint8			m_initvec[8];
+
     INode				m_inode;
 
  	utp::uint8			m_data[2048];

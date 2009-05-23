@@ -1,6 +1,8 @@
 #include "Log.h"
 #include "Except.h"
 
+#include "Random.h"
+
 #include "utfslog.h"
 
 #include "FileNode.h"
@@ -13,6 +15,8 @@ namespace UTFS {
 FileNode::FileNode()
 {
     LOG(lgr, 4, "CTOR");
+
+    Random::fill(m_initvec, sizeof(m_initvec));
 }
 
 FileNode::~FileNode()

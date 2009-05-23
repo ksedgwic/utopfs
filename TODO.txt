@@ -1,11 +1,9 @@
-Create "Things that work Differently" wiki page.
+Graphic identity for utopfs?
 
-Almost have the protobuf.mk working in modules/UTFilesystem.
+Password semantics?
 
-Investigate the AES_ctr128_encrypt interface.
+  Digest of pass-phrase?
 
-Consider offline python documentation.
-
-Consider offline openssl documentation.
+  Always encrypt?
 
 Check object lifetimes of the python direntry callback objects.

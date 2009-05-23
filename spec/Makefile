@@ -1,4 +1,6 @@
-all:
+all::
+
+test::
 	spec -f s -c basic_spec.rb
 
 clobber:	clean
