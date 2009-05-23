@@ -31,7 +31,7 @@ RootDirNode::resolve(std::string const & i_path)
     if (i_path == "/")
         return this;
 
-    pair<string, string> comp = pathcomp(i_path);
+    pair<string, string> comp = pathsplit(i_path);
 
     // Check for the special .utopfs directory.
     if (comp.first == SPECIALDIR)
@@ -46,7 +46,7 @@ RootDirNode::resolve(std::string const & i_path)
 pair<DirNodeHandle, string>
 RootDirNode::resolve_parent(std::string const & i_path)
 {
-    pair<string, string> comp = pathcomp(i_path);
+    pair<string, string> comp = pathsplit(i_path);
 
     // If the remainder is empty *we* are the parent.
     if (comp.second.empty())

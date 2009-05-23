@@ -29,7 +29,7 @@ SpecialDirNode::~SpecialDirNode()
 FileNodeHandle
 SpecialDirNode::resolve(std::string const & i_path)
 {
-    pair<string, string> comp = pathcomp(i_path);
+    pair<string, string> comp = pathsplit(i_path);
 
     // Check for the special files.
     if (comp.first == "version" && comp.second.empty())

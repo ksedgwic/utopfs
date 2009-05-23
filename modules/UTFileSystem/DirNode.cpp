@@ -60,7 +60,7 @@ DirNode::readdir(off_t i_offset, FileSystem::DirEntryFunc & o_entryfunc)
 }
 
 pair<string, string>
-DirNode::pathcomp(string const & i_path)
+DirNode::pathsplit(string const & i_path)
 {
     // The path needs to start with a '/'.
     if (i_path[0] != '/')
