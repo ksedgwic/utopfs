@@ -6,8 +6,8 @@ package UTFS;
 message INode
 {
     required uint32	mode	= 1;
-    required string	uid		= 2;
-    required string	gid		= 3;
+    required string	uname	= 2;
+    required string	gname	= 3;
     required int64	size	= 4;
     required int64	atime	= 5;
     required int64	mtime	= 6;
