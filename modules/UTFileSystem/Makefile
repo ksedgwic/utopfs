@@ -2,7 +2,10 @@ ROOTDIR =	../..
 
 include $(ROOTDIR)/config/define.mk
 
-PROTO +=	INode.proto
+PROTO +=	\
+			Directory.proto \
+			INode.proto \
+			$(NULL)
 
 LIBSRC += 	\
 			DirNode.cpp \

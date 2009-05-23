@@ -8,6 +8,8 @@
 
 #include "FileSystem.h"
 
+#include "Directory.pb.h"
+
 #include "utfsfwd.h"
 #include "utfsexp.h"
 
@@ -42,6 +44,7 @@ protected:
         pathsplit(std::string const & i_path);
 
 private:
+    Directory				m_dir;
     
 };
 

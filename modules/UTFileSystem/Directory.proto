@@ -1,0 +1,22 @@
+package UTFS;
+
+// Protobuf Type Documentation:
+// http://code.google.com/apis/protocolbuffers/docs/proto.html#scalar
+
+message DirEntry
+{
+    required string	name	= 1;
+    required bytes	digest	= 2;
+}
+
+message Directory
+{
+    repeated DirEntry entry	= 1;
+}
+
+// Local Variables:
+// mode: C++
+// tab-width: 4
+// c-basic-offset: 4
+// c-file-offsets: ((comment-intro . 0))
+// End:
