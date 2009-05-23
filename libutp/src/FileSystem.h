@@ -46,7 +46,8 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError Something is wrong with the path argument.
     ///
-    virtual void fs_mkfs(std::string const & i_path)
+    virtual void fs_mkfs(std::string const & i_path,
+                         std::string const & i_passphrase)
         throw (utp::InternalError,
                utp::ValueError) = 0;
 
@@ -57,7 +58,8 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError Something is wrong with the path argument.
     ///
-    virtual void fs_mount(std::string const & i_path)
+    virtual void fs_mount(std::string const & i_path,
+                          std::string const & i_passphrase)
         throw (utp::InternalError,
                utp::ValueError) = 0;
 

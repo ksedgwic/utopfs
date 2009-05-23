@@ -31,20 +31,26 @@ UTFileSystem::~UTFileSystem()
 }
 
 void
-UTFileSystem::fs_mkfs(std::string const & i_path)
+UTFileSystem::fs_mkfs(string const & i_path,
+                      string const & i_passphrase)
     throw (utp::InternalError,
            utp::ValueError)
 {
     m_bsh = BlockStore::instance();
     m_bsh->bs_create(i_path);
 
-    m_rdh = new RootDirNode;
+    // Use part of the digest of the passphrase as the key.
+    Digest dig(i_passphrase.data(), i_passphrase.size());
+    m_cipher.set_key(dig.data(), dig.size());
+
+    m_rdh = new RootDirNode();
 
     m_rdh->persist();
 }
 
 void
-UTFileSystem::fs_mount(std::string const & i_path)
+UTFileSystem::fs_mount(string const & i_path,
+                       string const & i_passphrase)
     throw (utp::InternalError,
            utp::ValueError)
 {
@@ -53,6 +59,10 @@ UTFileSystem::fs_mount(std::string const & i_path)
 
     throwstream(InternalError, FILELINE
                 << "UTFileSystem::fs_mount unimplemented");
+
+    // Use part of the digest of the passphrase as the key.
+    Digest dig(i_passphrase.data(), i_passphrase.size());
+    m_cipher.set_key(dig.data(), dig.size());
 
     m_rdh = new RootDirNode(/* digest of root block */);
 }

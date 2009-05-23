@@ -36,6 +36,7 @@ struct utopfs
 {
     struct fuse_args utop_args;
     string path;
+    string passphrase;
 };
 
 static struct utopfs utopfs;
@@ -243,7 +244,7 @@ main(int argc, char ** argv)
     // Perform the mount.
     try
     {
-        FileSystem::instance()->fs_mount(utopfs.path);
+        FileSystem::instance()->fs_mount(utopfs.path, utopfs.passphrase);
     }
     catch (utp::Exception const & ex)
     {

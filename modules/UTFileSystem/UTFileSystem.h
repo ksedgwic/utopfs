@@ -12,6 +12,7 @@
 #include "utpfwd.h"
 
 #include "FileSystem.h"
+#include "StreamCipher.h"
 
 #include "utfsexp.h"
 #include "utfsfwd.h"
@@ -27,11 +28,13 @@ public:
 
     // FileSystem methods.
 
-    virtual void fs_mkfs(std::string const & i_path)
+    virtual void fs_mkfs(std::string const & i_path,
+                         std::string const & i_passphrase)
         throw (utp::InternalError,
                utp::ValueError);
 
-    virtual void fs_mount(std::string const & i_path)
+    virtual void fs_mount(std::string const & i_path,
+                          std::string const & i_passphrase)
         throw (utp::InternalError,
                utp::ValueError);
 
@@ -72,6 +75,7 @@ private:
     ACE_Thread_Mutex		m_utfsmutex;
 
     utp::BlockStoreHandle	m_bsh;
+    utp::StreamCipher		m_cipher;
     DirNodeHandle			m_rdh;
 };
 

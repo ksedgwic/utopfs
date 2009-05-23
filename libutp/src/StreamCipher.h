@@ -10,6 +10,9 @@ namespace utp {
 class StreamCipher
 {
 public:
+    /// Default constructor.
+    StreamCipher();
+
     /// Create a StreamCipher with a key.
     ///
     /// The first 16 bytes of key data will be used.
@@ -18,6 +21,13 @@ public:
     /// @param[in] i_keysz Size of key in bytes.
     ///
     StreamCipher(uint8 const * i_keyp, size_t i_keysz);
+
+    /// Set the stream cipher's key.
+    ///
+    /// @param[in] i_keyp Pointer to key data.
+    /// @param[in] i_keysz Size of key in bytes.
+    ///
+    void set_key(uint8 const * i_keyp, size_t i_keysz);
 
     /// Encrypt/Decrypt a data buffer in-place.
     ///
@@ -35,6 +45,7 @@ public:
                  size_t i_size);
 
 private:
+    bool				m_isvalid;
     AES_KEY				m_key;
 };
 

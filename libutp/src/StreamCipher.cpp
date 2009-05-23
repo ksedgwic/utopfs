@@ -9,12 +9,24 @@ using namespace utp;
 
 namespace utp {
 
+StreamCipher::StreamCipher()
+    : m_isvalid(false)
+{
+}
+
 StreamCipher::StreamCipher(uint8 const * i_keyp, size_t i_keysz)
+{
+    set_key(i_keyp, i_keysz);
+}
+
+void
+StreamCipher::set_key(uint8 const * i_keyp, size_t i_keysz)
 {
     uint8 buffer[AES_BLOCK_SIZE];
     ACE_OS::memset(buffer, '\0', sizeof(buffer));
     ACE_OS::memcpy(buffer, i_keyp, min(i_keysz, sizeof(buffer)));
     AES_set_encrypt_key(buffer, 128, &m_key);
+    m_isvalid = true;
 }
 
 void
@@ -23,6 +35,10 @@ StreamCipher::encrypt(uint8 const * i_ivptr,
                       uint8 * io_data,
                       size_t i_size)
 {
+    if (!m_isvalid)
+        throwstream(InternalError, FILELINE
+                    << "StreamCipher::encrypt used w/o key set");
+
     unsigned char * in = io_data;
     unsigned char * out = io_data;
 	unsigned char ivec[AES_BLOCK_SIZE];

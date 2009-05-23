@@ -1,3 +1,5 @@
+Wire up a passphrase option for utopfs (fuse binary).
+
 Graphic identity for utopfs?
 
 Password semantics?
