@@ -25,7 +25,8 @@ public:
     // BlockStore methods.
 
     virtual void bs_create(std::string const & i_path)
-        throw(utp::InternalError,
+        throw(utp::NotUniqueError,
+              utp::InternalError,
               utp::ValueError);
 
     virtual void bs_open(std::string const & i_path)
@@ -61,6 +62,7 @@ private:
     
     std::string get_full_path(void const * i_keydata,
                                 size_t i_keysize);
+
 };
 
 } // namespace FSBS

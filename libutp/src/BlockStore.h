@@ -38,7 +38,8 @@ public:
     /// @throw ValueError One of the arguments is out of range.
     ///
     virtual void bs_create(std::string const & i_path)
-        throw(InternalError,
+        throw(NotUniqueError,
+              InternalError,
               ValueError) = 0;
 
     /// Open a block store.

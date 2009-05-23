@@ -1,30 +1,24 @@
 import sys
 import random
 import py
-
+import shutil
 import utp
 import utp.BlockStore
 
 class TestBlockStore:
 
   def setup_class(self):
+    self.bspath = "myfsbs1"
     # Find the BlockStore singleton.
     self.bs = utp.BlockStore.instance()
     
     # Create the BlockStore at a path.
-    self.bs.bs_create("myfsbs")
+    shutil.rmtree(self.bspath,True)
+    self.bs.bs_create(self.bspath)
     
   def teardown_class(self):
     self.bs.bs_close()
 
-  def test_create_should_be_empty(self):
-    k = buffer("test_for_delete")
-    v = buffer("test_for_delete")
-    self.bs.bs_put_block(k,v)
-    self.bs.bs_close()
-    self.bs.bs_create("myfsbs")
-    
-    py.test.raises(Exception,"self.bs.bs_get_block(k)")
 
   def test_put_and_get_block(self):    
         

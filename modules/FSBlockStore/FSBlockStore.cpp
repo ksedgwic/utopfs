@@ -26,13 +26,21 @@ FSBlockStore::~FSBlockStore()
 
 void
 FSBlockStore::bs_create(std::string const & i_path)
-    throw(InternalError,
+    throw(NotUniqueError,
+          InternalError,
           ValueError)
 {
     LOG(lgr, 4, "bs_create " << i_path);
 
+    struct stat statbuff;    
+    if (stat(i_path.c_str(),&statbuff) == 0) {
+         throwstream(NotUniqueError, FILELINE
+                << "Cannot create file block store at '" << i_path << "'. File or directory already exists.");   
+    }
+
     m_path = i_path;
     mkdir(m_path.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    
     
     //check for errors; exception?
 }
@@ -44,8 +52,19 @@ FSBlockStore::bs_open(std::string const & i_path)
 {
     LOG(lgr, 4, "bs_open " << i_path);
 
-    // Need to stat the directory and throw NotFoundError if it doesn't
-    // exist.  Also generate an error if any needed state (in the
+    struct stat statbuff;
+    
+    if (stat(i_path.c_str(), &statbuff) != 0) {
+        throwstream(NotFoundError, FILELINE
+                << "Cannot open file block store at '" << i_path << "'. Directory does not exist.");    
+    }  
+    
+    if (! S_ISDIR(statbuff.st_mode)) {
+        throwstream(NotFoundError, FILELINE
+                << "Cannot open file block store at '" << i_path << "'. Path is not a directory.");
+    }
+
+    // Need to generate an error if any needed state (in the
     // directory) is not happy ...
 
     m_path = i_path;
@@ -116,8 +135,7 @@ FSBlockStore::bs_put_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_put_block");
 
-    //std::string s_filename = m_path + "/testblock";
-    std::string s_filename = get_full_path(i_keydata,i_keysize);
+    std::string s_filename = get_full_path(i_keydata,i_keysize);    
     
     int fd = open(s_filename.c_str(),O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
     if (fd == -1) {

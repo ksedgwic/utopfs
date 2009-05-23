@@ -4,29 +4,27 @@ import random
 import py
 from stat import *
 
+import shutil
 import utp
 import utp.FileSystem
 
-bspath = "fs_mkfs.bs"
 
-class TestBlockStore:
+
+class TestBlockStorefsmkfs:
 
   def setup_class(self):
+    self.bspath = "fs_mkfs.bs"
     # Remove any prexisting blockstore.
-    try:
-      os.rmdir(bspath)
-    except OSError:
-      # Ignore errors, might not exist.
-      pass
+    shutil.rmtree(self.bspath,True)  
 
     # Find the FileSystem singleton.
     self.fs = utp.FileSystem.instance()
     
     # Make the filesystem.
-    self.fs.fs_mkfs(bspath)
+    self.fs.fs_mkfs(self.bspath)
 
   def teardown_class(self):
-    os.rmdir(bspath)
+    shutil.rmtree(self.bspath,True) 
 
   def test_hasno_foodir(self):
     # The filesystem should not have a "foo" directory.
