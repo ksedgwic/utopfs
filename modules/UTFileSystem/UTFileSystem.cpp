@@ -114,6 +114,26 @@ UTFileSystem::fs_read(string const & i_path,
 }
 
 int
+UTFileSystem::fs_write(string const & i_path,
+                       void const * i_data,
+                       size_t i_size,
+                       off_t i_off)
+    throw (utp::InternalError)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        FileNodeHandle nh = m_rdh->resolve(i_path);
+        return nh->write(i_data, i_size, i_off);
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
+}
+
+int
 UTFileSystem::fs_readdir(string const & i_path,
                          off_t i_offset,
                          DirEntryFunc & o_entryfunc)

@@ -45,6 +45,13 @@ FileNode::read(void * o_bufptr, size_t i_size, off_t i_off)
                 << "FileNode::read unimplemented");
 }
 
+int
+FileNode::write(void const * i_data, size_t i_size, off_t i_off)
+{
+    throwstream(InternalError, FILELINE
+                << "FileNode::write unimplemented");
+}
+
 } // namespace UTFS
 
 // Local Variables:

@@ -30,6 +30,8 @@ public:
 
     virtual int read(void * o_bufptr, size_t i_size, off_t i_off);
 
+    virtual int write(void const * i_data, size_t i_size, off_t i_off);
+
 private:
     utp::uint8			m_initvec[8];
 
