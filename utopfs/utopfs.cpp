@@ -119,6 +119,23 @@ utopfs_read(char const * i_path,
     }
 }
 
+static int
+utopfs_write(char const * i_path,
+             char const * buf,
+             size_t size,
+             off_t offset,
+             struct fuse_file_info *fi)
+{
+    try
+    {
+        return FileSystem::instance()->fs_write(i_path, buf, size, offset);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
 static struct fuse_operations utopfs_oper;
 
 } // end extern "C"
@@ -219,6 +236,7 @@ main(int argc, char ** argv)
     utopfs_oper.readdir		= utopfs_readdir;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;
+    utopfs_oper.write		= utopfs_write;
 
     ACE_Service_Config::open(argv[0]);
 
