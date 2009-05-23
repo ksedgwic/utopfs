@@ -9,7 +9,7 @@ using namespace utp;
 namespace utp {
 
 void
-Random::bytes(void * o_ptr, size_t i_size)
+Random::fill(void * o_ptr, size_t i_size)
 {
     int rv = RAND_pseudo_bytes((unsigned char *) o_ptr, i_size);
     if (rv != 1)

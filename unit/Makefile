@@ -20,7 +20,7 @@ CFG =		\
 
 include $(ROOTDIR)/config/depend.mk
 
-all::
+test::
 	(cd $(WORKCFGDIR) && . ./env.sh && py.test $(PYTESTS))
 
 # Dependencies

@@ -10,7 +10,12 @@ namespace utp {
 class Random
 {
 public:
-    static void bytes(void * o_ptr, size_t i_size);
+    /// Fill memory with random bytes.
+    ///
+    /// @param[out] o_ptr Pointer to the memory to be filled.
+    /// @param[in] i_size Number of bytes to be filled.
+    ///
+    static void fill(void * o_ptr, size_t i_size);
 };
 
 } // end namespace utp

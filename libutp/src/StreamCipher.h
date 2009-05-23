@@ -21,8 +21,11 @@ public:
 
     /// Encrypt/Decrypt a data buffer in-place.
     ///
+    /// @note The i_offset value must be aligned on the AES block size
+    ///       (16 bytes).
+    ///
     /// @param[in] i_ivptr Pointer to 8 byte init vector.
-    /// @param[in] i_offset Stream offset in the buffer in bytes.
+    /// @param[in] i_offset Stream offset in bytes.
     /// @param[in,out] io_data Pointer to input/output buffer.
     /// @param[in] i_size Number of bytes to encrypt/decrypt.
     ///

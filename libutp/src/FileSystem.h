@@ -92,9 +92,9 @@ public:
     /// @param[in] i_path Path to the file.
     /// @param[out] o_bufptr Pointer to buffer for returned data.
     /// @param[in] i_size Number of bytes to read.
-    /// @param[in] i_off Number of bytes to skip before reading.
+    /// @param[in] i_off Offset in file to read from.
     ///
-    /// @return Returns 0 on success or errno value otherwise.
+    /// @return Returns bytes read on success or negative errno.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     ///
@@ -102,6 +102,23 @@ public:
                         void * o_bufptr,
                         size_t i_size,
                         off_t i_off)
+        throw (utp::InternalError) = 0;
+
+    /// Write data to an open file
+    ///
+    /// @param[in] i_path Path to the file.
+    /// @param[in] i_data Pointer to data to be written.
+    /// @param[in] i_size Number of bytes to written.
+    /// @param[in] i_off Offset in file to write to.
+    ///
+    /// @return Returns bytes written on success or negative errno.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_write(std::string const & i_path,
+                         void const * i_data,
+                         size_t i_size,
+                         off_t i_off)
         throw (utp::InternalError) = 0;
 
     /// Read directory

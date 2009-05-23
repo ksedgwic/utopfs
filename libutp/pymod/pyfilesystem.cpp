@@ -140,6 +140,33 @@ FileSystem_fs_read(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_write(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    char * data;
+    int size;
+    long int offset;
+    
+    if (!PyArg_ParseTuple(args, "ss#l:fs_write",
+                          &path, &data, &size, &offset))
+        return NULL;
+
+    int retval;
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        retval = self->m_fsh->fs_write(path,
+                                       data,
+                                       size_t(size),
+                                       off_t(offset));
+    }
+    PYUTP_CATCH_ALL;
+
+    return PyInt_FromLong(retval);
+}
+
+
+static PyObject *
 FileSystem_fs_readdir(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -178,6 +205,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},
+    {"fs_write",		(PyCFunction)FileSystem_fs_write,		METH_VARARGS},
     {"fs_readdir",		(PyCFunction)FileSystem_fs_readdir,		METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };

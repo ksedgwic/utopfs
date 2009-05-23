@@ -49,6 +49,12 @@ public:
                         off_t i_off)
         throw (utp::InternalError);
 
+    virtual int fs_write(std::string const & i_path,
+                         void const * i_data,
+                         size_t i_size,
+                         off_t i_off)
+        throw (utp::InternalError);
+
     virtual int fs_readdir(std::string const & i_path,
                            off_t i_offset,
                            DirEntryFunc & o_entryfunc)

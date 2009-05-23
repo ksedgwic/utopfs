@@ -11,7 +11,7 @@ rpm::		$(ALLTRG)
 install::	$(INSTTRG)
 		+$(LOOP_SUBDIRS)
 
-test::
+test::	all
 		+$(LOOP_SUBDIRS)
 
 echo::

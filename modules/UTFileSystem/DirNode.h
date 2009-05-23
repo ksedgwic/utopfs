@@ -39,9 +39,10 @@ public:
 protected:
     // Split a path into the next component and the remainder.
     static std::pair<std::string, std::string>
-        pathcomp(std::string const & i_path);
+        pathsplit(std::string const & i_path);
 
 private:
+    
 };
 
 } // namespace UTFS
