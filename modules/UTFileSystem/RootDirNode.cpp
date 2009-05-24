@@ -25,7 +25,9 @@ RootDirNode::~RootDirNode()
 }
 
 void
-RootDirNode::traverse(string const & i_entry,
+RootDirNode::traverse(BlockStoreHandle const & i_bsh,
+                      StreamCipher & i_cipher,
+                      string const & i_entry,
                       string const & i_rmndr,
                       TraverseFunc & i_trav)
 {
@@ -39,7 +41,7 @@ RootDirNode::traverse(string const & i_entry,
         else
         {
             pair<string, string> ps = pathsplit(i_rmndr);
-            m_sdh->traverse(ps.first, ps.second, i_trav);
+            m_sdh->traverse(i_bsh, i_cipher, ps.first, ps.second, i_trav);
         }
 
         // SPECIAL CASE: Changes to the .utopfs dir don't update
@@ -51,7 +53,7 @@ RootDirNode::traverse(string const & i_entry,
     // Otherwise defer to the base class.
     else
     {
-        DirNode::traverse(i_entry, i_rmndr, i_trav);
+        DirNode::traverse(i_bsh, i_cipher, i_entry, i_rmndr, i_trav);
     }
 }
 

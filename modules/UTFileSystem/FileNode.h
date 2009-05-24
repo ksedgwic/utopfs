@@ -25,6 +25,10 @@ public:
 
     FileNode();
 
+    FileNode(utp::BlockStoreHandle const & i_bsh,
+             utp::StreamCipher & i_cipher,
+             utp::Digest const & i_dig);
+
     virtual ~FileNode();
 
     virtual utp::Digest const & digest() { return m_digest; }

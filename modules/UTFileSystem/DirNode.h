@@ -4,6 +4,7 @@
 /// @file DirNode.h
 /// Utopia FileSystem Directory Node Object.
 
+#include <map>
 #include <string>
 
 #include "FileSystem.h"
@@ -55,7 +56,9 @@ public:
     virtual ~DirNode();
 
     // Traverse a path.
-    virtual void traverse(std::string const & i_entry,
+    virtual void traverse(utp::BlockStoreHandle const & i_bsh,
+                          utp::StreamCipher & i_cipher,
+                          std::string const & i_entry,
                           std::string const & i_rmndr,
                           TraverseFunc & i_trav);
 
@@ -69,8 +72,13 @@ public:
 protected:
 
 private:
+    typedef std::map<std::string, FileNodeHandle> EntryMap;
+
+    // Name to digest mapppings (what is persisted).
     Directory				m_dir;
-    
+
+    // Name to FileNodeHandle mappings (cached).
+    EntryMap				m_cache;
 };
 
 } // namespace UTFS

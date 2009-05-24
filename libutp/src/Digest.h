@@ -2,6 +2,7 @@
 #define utp_Digest_h__
 
 #include <iosfwd>
+#include <string>
 
 #include "Types.h"
 
@@ -10,9 +11,18 @@ namespace utp {
 class Digest
 {
 public:
+    /// Default constructor.
     Digest();
 
+    /// Compute digest from range of memory.
     Digest(void const * i_data, size_t i_size);
+
+    /// Construct digest from protobuf field.
+    ///
+    /// IMPORTANT - This is unmarshaling a binaary digest which is
+    /// stored in a string, not computing the digest of a string!
+    ///
+    Digest(std::string const & i_digstr);
 
     uint8 const * data() const { return m_dig; }
 

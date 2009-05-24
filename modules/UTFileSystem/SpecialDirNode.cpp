@@ -28,7 +28,9 @@ SpecialDirNode::~SpecialDirNode()
 }
 
 void
-SpecialDirNode::traverse(string const & i_entry,
+SpecialDirNode::traverse(BlockStoreHandle const & i_bsh,
+                         StreamCipher & i_cipher,
+                         string const & i_entry,
                          string const & i_rmndr,
                          TraverseFunc & i_trav)
 {
@@ -37,6 +39,9 @@ SpecialDirNode::traverse(string const & i_entry,
     {
         i_trav.tf_parent(*this, i_entry);
         i_trav.tf_leaf(*m_version);
+
+        // SPECIAL CASE: We don't update digests ...
+        // i_trav.tf_update(*this, i_entry, m_version->digest());
     }
 
     else

@@ -92,7 +92,7 @@ UTFileSystem::fs_getattr(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         GetAttrTraverseFunc gatf(o_stbuf);
-        m_rdh->traverse(ps.first, ps.second, gatf);
+        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, gatf);
         return gatf.retval();
     }
     catch (int const & i_errno)
@@ -125,7 +125,7 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         OpenTraverseFunc otf(i_flags);
-        m_rdh->traverse(ps.first, ps.second, otf);
+        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, otf);
         return otf.retval();
     }
     catch (int const & i_errno)
@@ -164,7 +164,7 @@ UTFileSystem::fs_read(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
-        m_rdh->traverse(ps.first, ps.second, wtf);
+        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, wtf);
         return wtf.retval();
     }
     catch (int const & i_errno)
@@ -203,7 +203,7 @@ UTFileSystem::fs_write(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         WriteTraverseFunc wtf(i_data, i_size, i_off);
-        m_rdh->traverse(ps.first, ps.second, wtf);
+        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, wtf);
         return wtf.retval();
     }
     catch (int const & i_errno)
@@ -246,7 +246,7 @@ UTFileSystem::fs_readdir(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadDirTraverseFunc rdtf(i_offset, o_entryfunc);
-        m_rdh->traverse(ps.first, ps.second, rdtf);
+        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, rdtf);
         return rdtf.retval();
     }
     catch (int const & i_errno)

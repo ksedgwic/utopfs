@@ -73,6 +73,14 @@ FileNode::FileNode()
     ACE_OS::memset(m_data, '\0', sizeof(m_data));
 }
 
+FileNode::FileNode(BlockStoreHandle const & i_bsh,
+                   StreamCipher & i_cipher,
+                   Digest const & i_dig)
+{
+    throwstream(InternalError, FILELINE
+                << "FileNode::FileNode from blockstore unimplemented");
+}
+
 FileNode::~FileNode()
 {
     LOG(lgr, 4, "DTOR");

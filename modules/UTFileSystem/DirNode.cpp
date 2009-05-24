@@ -23,12 +23,55 @@ DirNode::~DirNode()
 }
 
 void
-DirNode::traverse(string const & i_entry,
+DirNode::traverse(BlockStoreHandle const & i_bsh,
+                  StreamCipher & i_cipher,
+                  string const & i_entry,
                   string const & i_rmndr,
-                  TraverseFunc & i_trunc)
+                  TraverseFunc & i_trav)
 {
-    throwstream(InternalError, FILELINE
-                << "DirNode::traverse unimplemented");
+    // Do we have a cached entry for this name?
+    FileNodeHandle fnh;
+    EntryMap::const_iterator pos = m_cache.find(i_entry);
+    if (pos != m_cache.end())
+    {
+        fnh = pos->second;
+    }
+    else
+    {
+        // Is it in the directories digest table?
+        for (int i = 0; i < m_dir.entry_size(); ++i)
+        {
+            if (m_dir.entry(i).name() == i_entry)
+            {
+                fnh = new FileNode(i_bsh, i_cipher, m_dir.entry(i).digest());
+                m_cache.insert(make_pair(i_entry, fnh));
+            }
+        }
+    }
+
+    if (!fnh)
+        throw ENOENT;
+
+    if (i_rmndr.empty())
+    {
+        // We're at the leaf.
+        i_trav.tf_parent(*this, i_entry);
+        i_trav.tf_leaf(*fnh);
+    }
+    else
+    {
+        DirNodeHandle dnh = dynamic_cast<DirNode *>(&*fnh);
+
+        // If the cast didn't work then this wasn't a directory.
+        if (!dnh)
+            throw ENOTDIR;
+
+        // We have more traversing to do.
+        pair<string, string> ps = pathsplit(i_rmndr);
+        dnh->traverse(i_bsh, i_cipher, ps.first, ps.second, i_trav);
+    }
+
+    i_trav.tf_update(*this, i_entry, fnh->digest());
 }
 
 int
