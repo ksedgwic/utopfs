@@ -1,5 +1,7 @@
+#include "BlockStore.h"
 #include "Except.h"
 #include "Log.h"
+#include "StreamCipher.h"
 
 #include "utfslog.h"
 

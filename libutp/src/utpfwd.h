@@ -16,6 +16,9 @@ class FileSystem;
 /// Handle to FileSystem object.
 typedef utp::RCPtr<FileSystem> FileSystemHandle;
 
+class Digest;
+class StreamCipher;
+
 } // end namespace utp
 
 // Local Variables:

@@ -16,7 +16,7 @@ class DirEntryPrinter(utp.PyDirEntryFunc.PyDirEntryFunc):
         print "def_entry", name, statbuf, offset
 
 try:
-    bspath = "test1.bs"
+    bspath = "test2.bs"
 
     # Remove any prexisting blockstore.
     shutil.rmtree(bspath, True)  
@@ -34,8 +34,8 @@ try:
     decb = DirEntryPrinter()
     fs.fs_readdir("/.utopfs", 0, decb)
 
-    # Clean up.
-    shutil.rmtree(bspath, True)  
+    # Don't Clean up.
+    # shutil.rmtree(bspath, True)  
 
 except utp.Error, ex:
     print ex[0]['what']

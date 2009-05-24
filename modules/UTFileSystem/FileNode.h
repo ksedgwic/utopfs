@@ -6,12 +6,13 @@
 
 #include <string>
 
+#include "utpfwd.h"
+
 #include "Types.h"
 #include "Digest.h"
 
 #include "INode.pb.h"
 
-#include "utpfwd.h"
 #include "utfsexp.h"
 
 
@@ -20,11 +21,14 @@ namespace UTFS {
 class UTFS_EXP FileNode : public virtual utp::RCObj
 {
 public:
+    static const size_t BLKSZ = 4096;
+
     FileNode();
 
     virtual ~FileNode();
 
-    virtual void persist();
+    virtual void persist(utp::BlockStoreHandle const & i_bsh,
+                         utp::StreamCipher & i_cipher);
 
     virtual int getattr(struct stat * o_statbuf);
 

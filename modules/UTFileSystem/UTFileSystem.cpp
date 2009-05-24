@@ -45,7 +45,7 @@ UTFileSystem::fs_mkfs(string const & i_path,
 
     m_rdh = new RootDirNode();
 
-    m_rdh->persist();
+    m_rdh->persist(m_bsh, m_cipher);
 }
 
 void

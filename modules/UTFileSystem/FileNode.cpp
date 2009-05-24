@@ -2,10 +2,14 @@
 #include <pwd.h>
 #include <sys/types.h>
 
+#include <cassert>
+
 #include "Log.h"
 #include "Except.h"
 
+#include "BlockStore.h"
 #include "Random.h"
+#include "StreamCipher.h"
 
 #include "utfslog.h"
 
@@ -65,6 +69,8 @@ FileNode::FileNode()
     m_inode.set_atime(now.usec());
     m_inode.set_mtime(now.usec());
     m_inode.set_ctime(now.usec());
+
+    ACE_OS::memset(m_data, '\0', sizeof(m_data));
 }
 
 FileNode::~FileNode()
@@ -73,10 +79,69 @@ FileNode::~FileNode()
 }
 
 void
-FileNode::persist()
+FileNode::persist(BlockStoreHandle const & i_bsh,
+                  StreamCipher & i_cipher)
 {
-    throwstream(InternalError, FILELINE
-                << "FileNode::persist unimplemented");
+    uint8 buf[BLKSZ];
+
+    // Clear the buffer first.  Seems unnecessary, but I don't
+    // like leaking our stack contents out in blocks ...
+    //
+    ACE_OS::memset(buf, '\0', sizeof(buf));
+
+    // Compute the size of fixed fields after the inode.
+    size_t fixedsz =
+        sizeof(m_data)
+        + sizeof(m_direct)
+        + sizeof(m_sindir)
+        + sizeof(m_dindir)
+        + sizeof(m_tindir)
+        + sizeof(m_qindir);
+    
+    // Compute the size available for the inode fields and serialize.
+    size_t sz = BLKSZ - sizeof(m_initvec) - fixedsz;
+    bool rv = m_inode.SerializeToArray(buf + sizeof(m_initvec), sz);
+    if (!rv)
+        throwstream(InternalError, FILELINE << "inode serialization error");
+
+    // Setup a pointer for the fixed fields.
+    uint8 * ptr = &buf[BLKSZ - fixedsz];
+
+    // Copy the inline data.
+    ACE_OS::memcpy(ptr, m_data, sizeof(m_data));
+    ptr += sizeof(m_data);
+
+    // Copy the block references.
+    ACE_OS::memcpy(ptr, m_direct, sizeof(m_direct));
+    ptr += sizeof(m_direct);
+
+    ACE_OS::memcpy(ptr, &m_sindir, sizeof(m_sindir));
+    ptr += sizeof(m_sindir);
+
+    ACE_OS::memcpy(ptr, &m_dindir, sizeof(m_dindir));
+    ptr += sizeof(m_dindir);
+    
+    ACE_OS::memcpy(ptr, &m_tindir, sizeof(m_tindir));
+    ptr += sizeof(m_tindir);
+    
+    ACE_OS::memcpy(ptr, &m_qindir, sizeof(m_qindir));
+    ptr += sizeof(m_qindir);
+
+#ifdef DEBUG
+    assert(ptr == buf + BLKSZ);
+#endif
+
+    // Encrypt the entire block.
+    i_cipher.encrypt(m_initvec, 0, buf, sizeof(buf));
+
+    // Write the initvec in the front.
+    ACE_OS::memcpy(buf, m_initvec, sizeof(m_initvec));
+
+    // Take the digest of the whole thing.
+    Digest dig(buf, sizeof(buf));
+
+    // Write the block out to the block store.
+    i_bsh->bs_put_block(dig.data(), dig.size(), buf, sizeof(buf));
 }
 
 int
