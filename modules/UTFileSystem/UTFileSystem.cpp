@@ -162,8 +162,10 @@ UTFileSystem::fs_read(string const & i_path,
 
     try
     {
-        FileNodeHandle nh = m_rdh->resolve(i_path);
-        return nh->read(o_bufptr, i_size, i_off);
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
+        m_rdh->traverse(ps.first, ps.second, wtf);
+        return wtf.retval();
     }
     catch (int const & i_errno)
     {

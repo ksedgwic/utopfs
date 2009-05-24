@@ -31,24 +31,6 @@ DirNode::traverse(string const & i_entry,
                 << "DirNode::traverse unimplemented");
 }
 
-FileNodeHandle
-DirNode::resolve(std::string const & i_path)
-{
-    // FIXME - This is completely bogus; we only deal with empty
-    // directories ...
-    //
-    throw ENOENT;
-}
-
-pair<DirNodeHandle, string>
-DirNode::resolve_parent(std::string const & i_path)
-{
-    // FIXME - This is completely bogus; we only deal with empty
-    // directories ...
-    //
-    throw ENOENT;
-}
-
 int
 DirNode::getattr(struct stat * o_statbuf)
 {

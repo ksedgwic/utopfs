@@ -46,30 +46,6 @@ SpecialDirNode::traverse(string const & i_entry,
     }
 }
 
-FileNodeHandle
-SpecialDirNode::resolve(std::string const & i_path)
-{
-    pair<string, string> comp = pathsplit(i_path);
-
-    // Check for the special files.
-    if (comp.first == "version" && comp.second.empty())
-        return new SpecialFileNode(utopfs_ver_str);
-
-    // We only have special files ...
-    else
-        throw ENOENT;
-}
-
-pair<DirNodeHandle, string>
-SpecialDirNode::resolve_parent(std::string const & i_path)
-{
-    if (i_path == "/version")
-        return make_pair(this, "version");
-
-    else
-        throw ENOENT;
-}
-
 int
 SpecialDirNode::getattr(struct stat * o_stbuf)
 {

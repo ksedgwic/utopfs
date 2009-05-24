@@ -59,13 +59,6 @@ public:
                           std::string const & i_rmndr,
                           TraverseFunc & i_trav);
 
-    // Resolves a path into a file node object.
-    virtual FileNodeHandle resolve(std::string const & i_path);
-
-    // Resolves a path into a parent node object and a remainder path.
-    virtual std::pair<DirNodeHandle, std::string>
-        resolve_parent(std::string const & i_path);
-
     virtual int getattr(struct stat * o_statbuf);
 
     virtual int open(std::string const & i_entry, int i_flags);

@@ -55,42 +55,6 @@ RootDirNode::traverse(string const & i_entry,
     }
 }
 
-FileNodeHandle
-RootDirNode::resolve(std::string const & i_path)
-{
-    // We are the root node.
-    if (i_path == "/")
-        return this;
-
-    pair<string, string> comp = pathsplit(i_path);
-
-    // Check for the special .utopfs directory.
-    if (comp.first == SPECIALDIR)
-        return comp.second.empty() ?
-            FileNodeHandle(&*m_sdh) :
-            m_sdh->resolve(comp.second);
-
-    // Otherwise delegate to the base class.
-    return DirNode::resolve(i_path);
-}
-
-pair<DirNodeHandle, string>
-RootDirNode::resolve_parent(std::string const & i_path)
-{
-    pair<string, string> comp = pathsplit(i_path);
-
-    // If the remainder is empty *we* are the parent.
-    if (comp.second.empty())
-        return make_pair(DirNodeHandle(this), comp.first);
-
-    // Check for the special .utopfs directory.
-    if (comp.first == SPECIALDIR)
-        return m_sdh->resolve_parent(comp.second);
-
-    // Otherwise delegate to the base class.
-    return DirNode::resolve_parent(i_path);
-}
-
 int
 RootDirNode::getattr(struct stat * o_stbuf)
 {
