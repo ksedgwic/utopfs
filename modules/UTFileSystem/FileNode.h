@@ -27,6 +27,8 @@ public:
 
     virtual ~FileNode();
 
+    virtual utp::Digest const & digest() { return m_digest; }
+
     virtual void persist(utp::BlockStoreHandle const & i_bsh,
                          utp::StreamCipher & i_cipher);
 
@@ -37,6 +39,8 @@ public:
     virtual int write(void const * i_data, size_t i_size, off_t i_off);
 
 private:
+    utp::Digest			m_digest;
+
     utp::uint8			m_initvec[8];
 
     INode				m_inode;

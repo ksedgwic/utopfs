@@ -17,6 +17,7 @@ namespace {
 namespace UTFS {
 
 SpecialDirNode::SpecialDirNode()
+    : m_version(new SpecialFileNode(utopfs_ver_str))
 {
     LOG(lgr, 4, "CTOR");
 }
@@ -24,6 +25,25 @@ SpecialDirNode::SpecialDirNode()
 SpecialDirNode::~SpecialDirNode()
 {
     LOG(lgr, 4, "DTOR");
+}
+
+void
+SpecialDirNode::traverse(string const & i_entry,
+                         string const & i_rmndr,
+                         TraverseFunc & i_trav)
+{
+    // Check for special files.
+    if (i_entry == "version" && i_rmndr.empty())
+    {
+        i_trav.tf_parent(*this, i_entry);
+        i_trav.tf_leaf(*m_version);
+    }
+
+    else
+    {
+        // We only have special files.
+        throw ENOENT;
+    }
 }
 
 FileNodeHandle

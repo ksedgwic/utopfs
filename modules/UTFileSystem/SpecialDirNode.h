@@ -22,6 +22,11 @@ public:
 
     virtual ~SpecialDirNode();
 
+    // Traverse a path.
+    virtual void traverse(std::string const & i_entry,
+                          std::string const & i_rmndr,
+                          TraverseFunc & i_trav);
+
     virtual FileNodeHandle resolve(std::string const & i_path);
 
     virtual std::pair<DirNodeHandle, std::string>
@@ -35,6 +40,7 @@ public:
                         utp::FileSystem::DirEntryFunc & o_entryfunc);
 
 private:
+    FileNodeHandle		m_version;
 };
 
 } // namespace UTFS

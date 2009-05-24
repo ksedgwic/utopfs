@@ -22,6 +22,15 @@ DirNode::~DirNode()
     LOG(lgr, 4, "DTOR");
 }
 
+void
+DirNode::traverse(string const & i_entry,
+                  string const & i_rmndr,
+                  TraverseFunc & i_trunc)
+{
+    throwstream(InternalError, FILELINE
+                << "DirNode::traverse unimplemented");
+}
+
 FileNodeHandle
 DirNode::resolve(std::string const & i_path)
 {

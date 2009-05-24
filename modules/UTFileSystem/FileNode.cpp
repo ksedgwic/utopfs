@@ -138,10 +138,10 @@ FileNode::persist(BlockStoreHandle const & i_bsh,
     ACE_OS::memcpy(buf, m_initvec, sizeof(m_initvec));
 
     // Take the digest of the whole thing.
-    Digest dig(buf, sizeof(buf));
+    m_digest = Digest(buf, sizeof(buf));
 
     // Write the block out to the block store.
-    i_bsh->bs_put_block(dig.data(), dig.size(), buf, sizeof(buf));
+    i_bsh->bs_put_block(m_digest.data(), m_digest.size(), buf, sizeof(buf));
 }
 
 int

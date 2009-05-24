@@ -24,6 +24,37 @@ RootDirNode::~RootDirNode()
     LOG(lgr, 4, "DTOR");
 }
 
+void
+RootDirNode::traverse(string const & i_entry,
+                      string const & i_rmndr,
+                      TraverseFunc & i_trav)
+{
+    // Check for the special .utopfs directory.
+    if (i_entry == SPECIALDIR)
+    {
+        if (i_rmndr.empty())
+        {
+            i_trav.tf_leaf(*m_sdh);
+        }
+        else
+        {
+            pair<string, string> ps = pathsplit(i_rmndr);
+            m_sdh->traverse(ps.first, ps.second, i_trav);
+        }
+
+        // SPECIAL CASE: Changes to the .utopfs dir don't update
+        // our digest.
+        //
+        // i_trav.tf_update(*this, i_entry, m_sdh->digest());
+    }
+
+    // Otherwise defer to the base class.
+    else
+    {
+        DirNode::traverse(i_entry, i_rmndr, i_trav);
+    }
+}
+
 FileNodeHandle
 RootDirNode::resolve(std::string const & i_path)
 {

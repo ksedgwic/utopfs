@@ -67,6 +67,20 @@ UTFileSystem::fs_mount(string const & i_path,
     m_rdh = new RootDirNode(/* digest of root block */);
 }
 
+class GetAttrTraverseFunc : public TraverseFunc
+{
+public:
+    GetAttrTraverseFunc(struct stat * o_stbuf) : m_sbp(o_stbuf) {}
+
+    virtual void tf_leaf(FileNode & i_fn)
+    {
+        retval(i_fn.getattr(m_sbp));
+    }
+
+private:
+    struct stat *	m_sbp;
+};
+
 int
 UTFileSystem::fs_getattr(string const & i_path,
                          struct stat * o_stbuf)
@@ -76,8 +90,10 @@ UTFileSystem::fs_getattr(string const & i_path,
 
     try
     {
-        FileNodeHandle nh = m_rdh->resolve(i_path);
-        return nh->getattr(o_stbuf);
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        GetAttrTraverseFunc gatf(o_stbuf);
+        m_rdh->traverse(ps.first, ps.second, gatf);
+        return gatf.retval();
     }
     catch (int const & i_errno)
     {
@@ -85,23 +101,55 @@ UTFileSystem::fs_getattr(string const & i_path,
     }
 }
 
+class OpenTraverseFunc : public TraverseFunc
+{
+public:
+    OpenTraverseFunc(int i_flags) : m_flags(i_flags) {}
+
+    virtual void tf_parent(DirNode & i_dn, string const & i_entry)
+    {
+        retval(i_dn.open(i_entry, m_flags));
+    }
+
+private:
+    int		m_flags;
+};
+
 int
-UTFileSystem::fs_open(string const & i_path,
-                      int i_flags)
+UTFileSystem::fs_open(string const & i_path, int i_flags)
     throw (utp::InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
-        pair<DirNodeHandle, string> res = m_rdh->resolve_parent(i_path);
-        return res.first->open(res.second, i_flags);
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        OpenTraverseFunc otf(i_flags);
+        m_rdh->traverse(ps.first, ps.second, otf);
+        return otf.retval();
     }
     catch (int const & i_errno)
     {
         return -i_errno;
     }
 }
+
+class ReadTraverseFunc : public TraverseFunc
+{
+public:
+    ReadTraverseFunc(void * i_bufptr, size_t i_size, off_t i_off)
+        : m_bufptr(i_bufptr), m_size(i_size), m_off(i_off) {}
+
+    virtual void tf_leaf(FileNode & i_fn)
+    {
+        retval(i_fn.read(m_bufptr, m_size, m_off));
+    }
+
+private:
+    void *			m_bufptr;
+    size_t			m_size;
+    off_t			m_off;
+};
 
 int
 UTFileSystem::fs_read(string const & i_path,
@@ -123,6 +171,23 @@ UTFileSystem::fs_read(string const & i_path,
     }
 }
 
+class WriteTraverseFunc : public TraverseFunc
+{
+public:
+    WriteTraverseFunc(void const * i_bufptr, size_t i_size, off_t i_off)
+        : m_bufptr(i_bufptr), m_size(i_size), m_off(i_off) {}
+
+    virtual void tf_leaf(FileNode & i_fn)
+    {
+        retval(i_fn.write(m_bufptr, m_size, m_off));
+    }
+
+private:
+    void const *	m_bufptr;
+    size_t			m_size;
+    off_t			m_off;
+};
+
 int
 UTFileSystem::fs_write(string const & i_path,
                        void const * i_data,
@@ -134,16 +199,38 @@ UTFileSystem::fs_write(string const & i_path,
 
     try
     {
-        FileNodeHandle nh = m_rdh->resolve(i_path);
-        int rv = nh->write(i_data, i_size, i_off);
-        nh->persist(m_bsh, m_cipher);
-        return rv;
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        WriteTraverseFunc wtf(i_data, i_size, i_off);
+        m_rdh->traverse(ps.first, ps.second, wtf);
+        return wtf.retval();
     }
     catch (int const & i_errno)
     {
         return -i_errno;
     }
 }
+
+class ReadDirTraverseFunc : public TraverseFunc
+{
+public:
+    ReadDirTraverseFunc(off_t i_offset, FileSystem::DirEntryFunc & i_entryfunc)
+        : m_offset(i_offset), m_entryfunc(i_entryfunc) {}
+
+    virtual void tf_leaf(FileNode & i_fn)
+    {
+        // Cast the node to a directory node.
+        DirNodeHandle dh = dynamic_cast<DirNode *>(&i_fn);
+        if (!dh)
+            throw ENOTDIR;
+
+        retval(dh->readdir(m_offset, m_entryfunc));
+    }
+
+private:
+    off_t							m_offset;
+    FileSystem::DirEntryFunc &		m_entryfunc;
+};
+
 
 int
 UTFileSystem::fs_readdir(string const & i_path,
@@ -155,15 +242,10 @@ UTFileSystem::fs_readdir(string const & i_path,
 
     try
     {
-        // Resolve the directory node.
-        FileNodeHandle nh = m_rdh->resolve(i_path);
-
-        // Cast the node to a directory node.
-        DirNodeHandle dh = dynamic_cast<DirNode *>(&*nh);
-        if (!dh)
-            throw ENOTDIR;
-
-        return dh->readdir(i_offset, o_entryfunc);
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ReadDirTraverseFunc rdtf(i_offset, o_entryfunc);
+        m_rdh->traverse(ps.first, ps.second, rdtf);
+        return rdtf.retval();
     }
     catch (int const & i_errno)
     {

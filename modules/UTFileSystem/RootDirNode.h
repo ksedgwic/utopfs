@@ -20,6 +20,11 @@ public:
 
     virtual ~RootDirNode();
 
+    // Traverse a path.
+    virtual void traverse(std::string const & i_entry,
+                          std::string const & i_rmndr,
+                          TraverseFunc & i_trav);
+
     virtual FileNodeHandle resolve(std::string const & i_path);
 
     virtual std::pair<DirNodeHandle, std::string>
