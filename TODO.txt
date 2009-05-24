@@ -1,4 +1,8 @@
-Need to store S_ISDIR/S_ISREG in the mode field of the inode.
+DirNode::persist
+
+  Need to store S_ISDIR/S_ISREG in the mode field of the inode.
+
+  Need to serialize Directory using FileNode::write from DirNode persist.
 
 Wire up a passphrase option for utopfs (fuse binary).
 
