@@ -1,11 +1,7 @@
+Need to store S_ISDIR/S_ISREG in the mode field of the inode.
+
 Wire up a passphrase option for utopfs (fuse binary).
 
 Graphic identity for utopfs?
-
-Password semantics?
-
-  Digest of pass-phrase?
-
-  Always encrypt?
 
 Check object lifetimes of the python direntry callback objects.
