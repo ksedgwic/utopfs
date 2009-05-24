@@ -135,7 +135,9 @@ UTFileSystem::fs_write(string const & i_path,
     try
     {
         FileNodeHandle nh = m_rdh->resolve(i_path);
-        return nh->write(i_data, i_size, i_off);
+        int rv = nh->write(i_data, i_size, i_off);
+        nh->persist(m_bsh, m_cipher);
+        return rv;
     }
     catch (int const & i_errno)
     {

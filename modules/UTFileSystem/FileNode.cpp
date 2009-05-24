@@ -154,15 +154,29 @@ FileNode::getattr(struct stat * o_statbuf)
 int
 FileNode::read(void * o_bufptr, size_t i_size, off_t i_off)
 {
-    throwstream(InternalError, FILELINE
-                << "FileNode::read unimplemented");
+    // For now, bail on anything that is bigger then fits
+    // in a single INode.
+    //
+    if (i_off + i_size > 2048)
+        throwstream(InternalError, FILELINE
+                    << "FileNode::read outside first 2048 bytes unsupported");
+
+    ACE_OS::memcpy(o_bufptr, m_data + i_off, i_size);
+    return i_size;
 }
 
 int
 FileNode::write(void const * i_data, size_t i_size, off_t i_off)
 {
-    throwstream(InternalError, FILELINE
-                << "FileNode::write unimplemented");
+    // For now, bail on anything that is bigger then fits
+    // in a single INode.
+    //
+    if (i_off + i_size > 2048)
+        throwstream(InternalError, FILELINE
+                    << "FileNode::write outside first 2048 bytes unsupported");
+
+    ACE_OS::memcpy(m_data + i_off, i_data, i_size);
+    return i_size;
 }
 
 } // namespace UTFS
