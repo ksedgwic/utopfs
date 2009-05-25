@@ -16,6 +16,8 @@ class DirNode;
 /// Handle to DirNode object.
 typedef utp::RCPtr<DirNode> DirNodeHandle;
 
+struct Context;
+
 } // end namespace utp
 
 // Local Variables:

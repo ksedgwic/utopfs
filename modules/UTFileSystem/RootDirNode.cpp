@@ -25,8 +25,8 @@ RootDirNode::~RootDirNode()
 }
 
 void
-RootDirNode::traverse(BlockStoreHandle const & i_bsh,
-                      StreamCipher & i_cipher,
+RootDirNode::traverse(Context & i_ctxt,
+                      unsigned int i_flags,
                       string const & i_entry,
                       string const & i_rmndr,
                       TraverseFunc & i_trav)
@@ -36,12 +36,12 @@ RootDirNode::traverse(BlockStoreHandle const & i_bsh,
     {
         if (i_rmndr.empty())
         {
-            i_trav.tf_leaf(*m_sdh);
+            i_trav.tf_leaf(i_ctxt, *m_sdh);
         }
         else
         {
             pair<string, string> ps = pathsplit(i_rmndr);
-            m_sdh->traverse(i_bsh, i_cipher, ps.first, ps.second, i_trav);
+            m_sdh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
         }
 
         // SPECIAL CASE: Changes to the .utopfs dir don't update
@@ -53,12 +53,12 @@ RootDirNode::traverse(BlockStoreHandle const & i_bsh,
     // Otherwise defer to the base class.
     else
     {
-        DirNode::traverse(i_bsh, i_cipher, i_entry, i_rmndr, i_trav);
+        DirNode::traverse(i_ctxt, i_flags, i_entry, i_rmndr, i_trav);
     }
 }
 
 int
-RootDirNode::getattr(struct stat * o_stbuf)
+RootDirNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
 {
     o_stbuf->st_mode = S_IFDIR | 0755;
     o_stbuf->st_nlink = 2;
@@ -66,7 +66,9 @@ RootDirNode::getattr(struct stat * o_stbuf)
 }
 
 int
-RootDirNode::readdir(off_t i_offset, FileSystem::DirEntryFunc & o_entryfunc)
+RootDirNode::readdir(Context & i_ctxt,
+                     off_t i_offset,
+                     FileSystem::DirEntryFunc & o_entryfunc)
 {
     // FIXME - BOGUS!  We need to have actual dynamic entries!
     o_entryfunc.def_entry(".", NULL, 0);

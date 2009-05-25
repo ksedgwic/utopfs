@@ -13,6 +13,7 @@
 
 #include "utfslog.h"
 
+#include "Context.h"
 #include "FileNode.h"
 
 using namespace std;
@@ -73,9 +74,7 @@ FileNode::FileNode()
     ACE_OS::memset(m_data, '\0', sizeof(m_data));
 }
 
-FileNode::FileNode(BlockStoreHandle const & i_bsh,
-                   StreamCipher & i_cipher,
-                   Digest const & i_dig)
+FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
 {
     throwstream(InternalError, FILELINE
                 << "FileNode::FileNode from blockstore unimplemented");
@@ -87,8 +86,7 @@ FileNode::~FileNode()
 }
 
 void
-FileNode::persist(BlockStoreHandle const & i_bsh,
-                  StreamCipher & i_cipher)
+FileNode::persist(Context & i_ctxt)
 {
     uint8 buf[BLKSZ];
 
@@ -140,7 +138,7 @@ FileNode::persist(BlockStoreHandle const & i_bsh,
 #endif
 
     // Encrypt the entire block.
-    i_cipher.encrypt(m_initvec, 0, buf, sizeof(buf));
+    i_ctxt.m_cipher.encrypt(m_initvec, 0, buf, sizeof(buf));
 
     // Write the initvec in the front.
     ACE_OS::memcpy(buf, m_initvec, sizeof(m_initvec));
@@ -149,18 +147,19 @@ FileNode::persist(BlockStoreHandle const & i_bsh,
     m_digest = Digest(buf, sizeof(buf));
 
     // Write the block out to the block store.
-    i_bsh->bs_put_block(m_digest.data(), m_digest.size(), buf, sizeof(buf));
+    i_ctxt.m_bsh->bs_put_block(m_digest.data(), m_digest.size(),
+                               buf, sizeof(buf));
 }
 
 int
-FileNode::getattr(struct stat * o_statbuf)
+FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 {
     throwstream(InternalError, FILELINE
                 << "FileNode::getattr unimplemented");
 }
 
 int
-FileNode::read(void * o_bufptr, size_t i_size, off_t i_off)
+FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
 {
     // For now, bail on anything that is bigger then fits
     // in a single INode.
@@ -174,7 +173,10 @@ FileNode::read(void * o_bufptr, size_t i_size, off_t i_off)
 }
 
 int
-FileNode::write(void const * i_data, size_t i_size, off_t i_off)
+FileNode::write(Context & i_ctxt,
+                void const * i_data,
+                size_t i_size,
+                off_t i_off)
 {
     // For now, bail on anything that is bigger then fits
     // in a single INode.

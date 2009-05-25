@@ -1,5 +1,6 @@
 #!/bin/env python
 
+import os
 import sys
 import shutil
 
@@ -33,6 +34,9 @@ try:
     # See if readdir works
     decb = DirEntryPrinter()
     fs.fs_readdir("/.utopfs", 0, decb)
+
+    # Open a file
+    fs.fs_open("/foo", os.O_CREAT)
 
     # Don't Clean up.
     # shutil.rmtree(bspath, True)  

@@ -22,9 +22,13 @@ public:
 
     virtual ~SpecialFileNode();
 
-    virtual int getattr(struct stat * o_statbuf);
+    virtual int getattr(Context & i_ctxt,
+                        struct stat * o_statbuf);
 
-    virtual int read(void * o_bufptr, size_t i_size, off_t i_off);
+    virtual int read(Context & i_ctxt,
+                     void * o_bufptr,
+                     size_t i_size,
+                     off_t i_off);
 
 private:
     std::string				m_data;

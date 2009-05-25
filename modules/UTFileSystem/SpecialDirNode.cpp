@@ -28,8 +28,8 @@ SpecialDirNode::~SpecialDirNode()
 }
 
 void
-SpecialDirNode::traverse(BlockStoreHandle const & i_bsh,
-                         StreamCipher & i_cipher,
+SpecialDirNode::traverse(Context & i_ctxt,
+                         unsigned int i_flags,
                          string const & i_entry,
                          string const & i_rmndr,
                          TraverseFunc & i_trav)
@@ -37,8 +37,8 @@ SpecialDirNode::traverse(BlockStoreHandle const & i_bsh,
     // Check for special files.
     if (i_entry == "version" && i_rmndr.empty())
     {
-        i_trav.tf_parent(*this, i_entry);
-        i_trav.tf_leaf(*m_version);
+        i_trav.tf_parent(i_ctxt, *this, i_entry);
+        i_trav.tf_leaf(i_ctxt, *m_version);
 
         // SPECIAL CASE: We don't update digests ...
         // i_trav.tf_update(*this, i_entry, m_version->digest());
@@ -52,7 +52,7 @@ SpecialDirNode::traverse(BlockStoreHandle const & i_bsh,
 }
 
 int
-SpecialDirNode::getattr(struct stat * o_stbuf)
+SpecialDirNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
 {
     o_stbuf->st_mode = S_IFDIR | 0755;
     o_stbuf->st_nlink = 2;
@@ -60,7 +60,9 @@ SpecialDirNode::getattr(struct stat * o_stbuf)
 }
 
 int
-SpecialDirNode::open(std::string const & i_entry, int i_flags)
+SpecialDirNode::open(Context & i_ctxt,
+                     std::string const & i_entry,
+                     int i_flags)
 {
     if (i_entry != "version")
         return ENOENT;
@@ -72,7 +74,9 @@ SpecialDirNode::open(std::string const & i_entry, int i_flags)
 }
 
 int
-SpecialDirNode::readdir(off_t i_offset, FileSystem::DirEntryFunc & o_entryfunc)
+SpecialDirNode::readdir(Context & i_ctxt,
+                        off_t i_offset,
+                        FileSystem::DirEntryFunc & o_entryfunc)
 {
     o_entryfunc.def_entry(".", NULL, 0);
     o_entryfunc.def_entry("..", NULL, 0);

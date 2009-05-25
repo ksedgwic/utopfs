@@ -22,15 +22,18 @@ class UTFS_EXP TraverseFunc
 {
 public:
     // Called on the leaf node of a traversal.
-    virtual void tf_leaf(FileNode & i_fn)
+    virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
     {}
 
     // Called on the parent node of a traversal.
-    virtual void tf_parent(DirNode & i_dn, std::string const & i_entry)
+    virtual void tf_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           std::string const & i_entry)
     {}
 
     // Called post-traversal on directories for updating.
-    virtual void tf_update(DirNode & i_dn,
+    virtual void tf_update(Context & i_ctxt,
+                           DirNode & i_dn,
                            std::string const & i_entry,
                            utp::Digest const & i_dig)
     {}
@@ -55,21 +58,34 @@ public:
 
     virtual ~DirNode();
 
+    enum TraverseFlags
+    {
+        TF_DEFAULT		= 0x0,	// Traverse to leaf, don't update.
+        TF_PARENT		= 0x1,	// Stop at parent, leaf may be missing.
+        TF_UPDATE		= 0x2	// Call the update method.
+    };
+
     // Traverse a path.
-    virtual void traverse(utp::BlockStoreHandle const & i_bsh,
-                          utp::StreamCipher & i_cipher,
+    virtual void traverse(Context & i_ctxt,
+                          unsigned int i_flags,
                           std::string const & i_entry,
                           std::string const & i_rmndr,
                           TraverseFunc & i_trav);
 
-    virtual int getattr(struct stat * o_statbuf);
+    virtual int getattr(Context & i_ctxt,
+                        struct stat * o_statbuf);
 
-    virtual int open(std::string const & i_entry, int i_flags);
+    virtual int open(Context & i_ctxt,
+                     std::string const & i_entry,
+                     int i_flags);
 
-    virtual int readdir(off_t i_offset,
+    virtual int readdir(Context & i_ctxt,
+                        off_t i_offset,
                         utp::FileSystem::DirEntryFunc & o_entryfunc);
 
 protected:
+    virtual FileNodeHandle lookup(Context & i_ctxt,
+                                  std::string const & i_entry);
 
 private:
     typedef std::map<std::string, FileNodeHandle> EntryMap;

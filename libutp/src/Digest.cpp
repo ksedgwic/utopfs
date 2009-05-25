@@ -6,6 +6,7 @@
 
 #include "Base32.h"
 #include "Digest.h"
+#include "Except.h"
 
 using namespace std;
 using namespace utp;

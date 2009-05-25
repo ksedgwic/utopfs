@@ -21,7 +21,7 @@ SpecialFileNode::~SpecialFileNode()
 }
 
 int
-SpecialFileNode::getattr(struct stat * o_stbuf)
+SpecialFileNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
 {
     o_stbuf->st_mode = S_IFREG | 0444;
     o_stbuf->st_nlink = 1;
@@ -31,7 +31,10 @@ SpecialFileNode::getattr(struct stat * o_stbuf)
 }
 
 int
-SpecialFileNode::read(void * o_bufptr, size_t i_size, off_t i_off)
+SpecialFileNode::read(Context & i_ctxt,
+                      void * o_bufptr,
+                      size_t i_size,
+                      off_t i_off)
 {
     off_t len = m_data.size();
     if (i_off < len)

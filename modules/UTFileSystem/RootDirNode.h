@@ -21,15 +21,17 @@ public:
     virtual ~RootDirNode();
 
     // Traverse a path.
-    virtual void traverse(utp::BlockStoreHandle const & i_bsh,
-                          utp::StreamCipher & i_cipher,
+    virtual void traverse(Context & i_ctxt,
+                          unsigned int i_flags,
                           std::string const & i_entry,
                           std::string const & i_rmndr,
                           TraverseFunc & i_trav);
 
-    virtual int getattr(struct stat * o_statbuf);
+    virtual int getattr(Context & i_ctxt,
+                        struct stat * o_statbuf);
 
-    virtual int readdir(off_t i_offset,
+    virtual int readdir(Context & i_ctxt,
+                        off_t i_offset,
                         utp::FileSystem::DirEntryFunc & o_entryfunc);
 
 private:

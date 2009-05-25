@@ -11,10 +11,10 @@
 #include "Types.h"
 #include "Digest.h"
 
-#include "INode.pb.h"
-
+#include "utfsfwd.h"
 #include "utfsexp.h"
 
+#include "INode.pb.h"
 
 namespace UTFS {
 
@@ -25,22 +25,26 @@ public:
 
     FileNode();
 
-    FileNode(utp::BlockStoreHandle const & i_bsh,
-             utp::StreamCipher & i_cipher,
-             utp::Digest const & i_dig);
+    FileNode(Context & i_ctxt, utp::Digest const & i_dig);
 
     virtual ~FileNode();
 
     virtual utp::Digest const & digest() { return m_digest; }
 
-    virtual void persist(utp::BlockStoreHandle const & i_bsh,
-                         utp::StreamCipher & i_cipher);
+    virtual void persist(Context & i_ctxt);
 
-    virtual int getattr(struct stat * o_statbuf);
+    virtual int getattr(Context & i_ctxt,
+                        struct stat * o_statbuf);
 
-    virtual int read(void * o_bufptr, size_t i_size, off_t i_off);
+    virtual int read(Context & i_ctxt,
+                     void * o_bufptr,
+                     size_t i_size,
+                     off_t i_off);
 
-    virtual int write(void const * i_data, size_t i_size, off_t i_off);
+    virtual int write(Context & i_ctxt,
+                      void const * i_data,
+                      size_t i_size,
+                      off_t i_off);
 
 private:
     utp::Digest			m_digest;

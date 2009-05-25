@@ -36,16 +36,16 @@ UTFileSystem::fs_mkfs(string const & i_path,
     throw (utp::InternalError,
            utp::ValueError)
 {
-    m_bsh = BlockStore::instance();
-    m_bsh->bs_create(i_path);
+    m_ctxt.m_bsh = BlockStore::instance();
+    m_ctxt.m_bsh->bs_create(i_path);
 
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
-    m_cipher.set_key(dig.data(), dig.size());
+    m_ctxt.m_cipher.set_key(dig.data(), dig.size());
 
     m_rdh = new RootDirNode();
 
-    m_rdh->persist(m_bsh, m_cipher);
+    m_rdh->persist(m_ctxt);
 }
 
 void
@@ -54,15 +54,15 @@ UTFileSystem::fs_mount(string const & i_path,
     throw (utp::InternalError,
            utp::ValueError)
 {
-    m_bsh = BlockStore::instance();
-    m_bsh->bs_open(i_path);
+    m_ctxt.m_bsh = BlockStore::instance();
+    m_ctxt.m_bsh->bs_open(i_path);
 
     throwstream(InternalError, FILELINE
                 << "UTFileSystem::fs_mount unimplemented");
 
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
-    m_cipher.set_key(dig.data(), dig.size());
+    m_ctxt.m_cipher.set_key(dig.data(), dig.size());
 
     m_rdh = new RootDirNode(/* digest of root block */);
 }
@@ -72,9 +72,9 @@ class GetAttrTraverseFunc : public TraverseFunc
 public:
     GetAttrTraverseFunc(struct stat * o_stbuf) : m_sbp(o_stbuf) {}
 
-    virtual void tf_leaf(FileNode & i_fn)
+    virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
     {
-        retval(i_fn.getattr(m_sbp));
+        retval(i_fn.getattr(i_ctxt, m_sbp));
     }
 
 private:
@@ -92,7 +92,8 @@ UTFileSystem::fs_getattr(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         GetAttrTraverseFunc gatf(o_stbuf);
-        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, gatf);
+        m_rdh->traverse(m_ctxt, DirNode::TF_DEFAULT,
+                        ps.first, ps.second, gatf);
         return gatf.retval();
     }
     catch (int const & i_errno)
@@ -106,9 +107,11 @@ class OpenTraverseFunc : public TraverseFunc
 public:
     OpenTraverseFunc(int i_flags) : m_flags(i_flags) {}
 
-    virtual void tf_parent(DirNode & i_dn, string const & i_entry)
+    virtual void tf_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
     {
-        retval(i_dn.open(i_entry, m_flags));
+        retval(i_dn.open(i_ctxt, i_entry, m_flags));
     }
 
 private:
@@ -125,7 +128,8 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         OpenTraverseFunc otf(i_flags);
-        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, otf);
+        m_rdh->traverse(m_ctxt, DirNode::TF_PARENT | DirNode::TF_UPDATE,
+                        ps.first, ps.second, otf);
         return otf.retval();
     }
     catch (int const & i_errno)
@@ -140,9 +144,9 @@ public:
     ReadTraverseFunc(void * i_bufptr, size_t i_size, off_t i_off)
         : m_bufptr(i_bufptr), m_size(i_size), m_off(i_off) {}
 
-    virtual void tf_leaf(FileNode & i_fn)
+    virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
     {
-        retval(i_fn.read(m_bufptr, m_size, m_off));
+        retval(i_fn.read(i_ctxt, m_bufptr, m_size, m_off));
     }
 
 private:
@@ -164,7 +168,8 @@ UTFileSystem::fs_read(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
-        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, wtf);
+        m_rdh->traverse(m_ctxt, DirNode::TF_DEFAULT,
+                        ps.first, ps.second, wtf);
         return wtf.retval();
     }
     catch (int const & i_errno)
@@ -179,9 +184,9 @@ public:
     WriteTraverseFunc(void const * i_bufptr, size_t i_size, off_t i_off)
         : m_bufptr(i_bufptr), m_size(i_size), m_off(i_off) {}
 
-    virtual void tf_leaf(FileNode & i_fn)
+    virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
     {
-        retval(i_fn.write(m_bufptr, m_size, m_off));
+        retval(i_fn.write(i_ctxt, m_bufptr, m_size, m_off));
     }
 
 private:
@@ -203,7 +208,8 @@ UTFileSystem::fs_write(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         WriteTraverseFunc wtf(i_data, i_size, i_off);
-        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, wtf);
+        m_rdh->traverse(m_ctxt, DirNode::TF_UPDATE,
+                        ps.first, ps.second, wtf);
         return wtf.retval();
     }
     catch (int const & i_errno)
@@ -218,14 +224,14 @@ public:
     ReadDirTraverseFunc(off_t i_offset, FileSystem::DirEntryFunc & i_entryfunc)
         : m_offset(i_offset), m_entryfunc(i_entryfunc) {}
 
-    virtual void tf_leaf(FileNode & i_fn)
+    virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
     {
         // Cast the node to a directory node.
         DirNodeHandle dh = dynamic_cast<DirNode *>(&i_fn);
         if (!dh)
             throw ENOTDIR;
 
-        retval(dh->readdir(m_offset, m_entryfunc));
+        retval(dh->readdir(i_ctxt, m_offset, m_entryfunc));
     }
 
 private:
@@ -246,7 +252,8 @@ UTFileSystem::fs_readdir(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadDirTraverseFunc rdtf(i_offset, o_entryfunc);
-        m_rdh->traverse(m_bsh, m_cipher, ps.first, ps.second, rdtf);
+        m_rdh->traverse(m_ctxt, DirNode::TF_DEFAULT,
+                        ps.first, ps.second, rdtf);
         return rdtf.retval();
     }
     catch (int const & i_errno)

@@ -47,5 +47,3 @@ class TestBlockStorefsmkfs:
   def test_can_create_file(self):
     # We should be able to create a file.
     self.fs.fs_open("/foo", os.O_CREAT)
-    
-    

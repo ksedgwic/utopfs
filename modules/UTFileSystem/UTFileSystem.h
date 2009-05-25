@@ -14,6 +14,8 @@
 #include "FileSystem.h"
 #include "StreamCipher.h"
 
+#include "Context.h"
+
 #include "utfsexp.h"
 #include "utfsfwd.h"
 
@@ -74,8 +76,8 @@ private:
 
     ACE_Thread_Mutex		m_utfsmutex;
 
-    utp::BlockStoreHandle	m_bsh;
-    utp::StreamCipher		m_cipher;
+    Context					m_ctxt;
+
     DirNodeHandle			m_rdh;
 };
 
