@@ -154,8 +154,15 @@ FileNode::persist(Context & i_ctxt)
 int
 FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 {
-    throwstream(InternalError, FILELINE
-                << "FileNode::getattr unimplemented");
+    o_statbuf->st_mode = m_inode.mode();
+    o_statbuf->st_uid = 0;    // FIXME - uid missing!
+    o_statbuf->st_gid = 0;    // FIXME - gid missing!
+    o_statbuf->st_size = m_inode.size();
+    o_statbuf->st_atime = m_inode.atime() / 1000000;
+    o_statbuf->st_mtime = m_inode.mtime() / 1000000;
+    o_statbuf->st_ctime = m_inode.ctime() / 1000000;
+
+    return 0;
 }
 
 int

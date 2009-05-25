@@ -38,6 +38,9 @@ try:
     # Open a file
     fs.fs_open("/foo", os.O_CREAT)
 
+    # Stat the file
+    print fs.fs_getattr("/foo")
+
     # Don't Clean up.
     # shutil.rmtree(bspath, True)  
 

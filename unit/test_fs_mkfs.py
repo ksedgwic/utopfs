@@ -47,3 +47,6 @@ class TestBlockStorefsmkfs:
   def test_can_create_file(self):
     # We should be able to create a file.
     self.fs.fs_open("/foo", os.O_CREAT)
+
+    # Now we should be able to stat the file.
+    print self.fs.fs_getattr("/foo");

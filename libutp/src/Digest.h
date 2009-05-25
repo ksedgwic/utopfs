@@ -19,10 +19,20 @@ public:
 
     /// Construct digest from protobuf field.
     ///
-    /// IMPORTANT - This is unmarshaling a binaary digest which is
+    /// IMPORTANT - This is unmarshaling a binary digest which is
     /// stored in a string, not computing the digest of a string!
     ///
     Digest(std::string const & i_digstr);
+
+    /// Cast digest to a protobuf value.
+    ///
+    /// IMPORTANT - This is marshals the Digest into a binary
+    /// value held in a string.  This value is NOT printable!
+    ///
+    operator std::string() const
+    {
+        return std::string((char const *) m_dig, sizeof(m_dig));
+    }
 
     uint8 const * data() const { return m_dig; }
 
