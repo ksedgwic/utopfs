@@ -1,6 +1,6 @@
 #!/bin/env python
 
-import os
+from os import *
 import sys
 import shutil
 
@@ -35,8 +35,17 @@ try:
     decb = DirEntryPrinter()
     fs.fs_readdir("/.utopfs", 0, decb)
 
-    # Open a file
-    fs.fs_open("/foo", os.O_CREAT)
+    # Create a file
+    fs.fs_open("/foo", O_CREAT)
+
+    # Stat the file
+    print fs.fs_getattr("/foo")
+
+    # Unmount the filesystem.
+    fs.fs_unmount()
+
+    # Mount the existing filesystem.
+    fs.fs_mount(bspath, "")
 
     # Stat the file
     print fs.fs_getattr("/foo")

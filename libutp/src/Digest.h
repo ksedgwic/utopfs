@@ -24,7 +24,7 @@ public:
     ///
     Digest(std::string const & i_digstr);
 
-    /// Cast digest to a protobuf value.
+    /// Cast digest to a protobuf string value.
     ///
     /// IMPORTANT - This is marshals the Digest into a binary
     /// value held in a string.  This value is NOT printable!
@@ -42,6 +42,7 @@ private:
     uint8		m_dig[32];
 };
 
+// Insert human friendly vesion of the digest into stream.
 std::ostream & operator<<(std::ostream & strm, Digest const & i_dig);
 
 } // end namespace utp

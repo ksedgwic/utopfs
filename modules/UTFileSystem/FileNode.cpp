@@ -4,6 +4,9 @@
 
 #include <cassert>
 
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+
 #include "Log.h"
 #include "Except.h"
 
@@ -18,6 +21,7 @@
 
 using namespace std;
 using namespace utp;
+using namespace google::protobuf::io;
 
 namespace {
 
@@ -75,14 +79,69 @@ FileNode::FileNode()
 }
 
 FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
+    : m_digest(i_dig)
 {
-    throwstream(InternalError, FILELINE
-                << "FileNode::FileNode from blockstore unimplemented");
+    LOG(lgr, 6, "CTOR " << i_dig);
+
+    uint8 buf[BLKSZ];
+
+    // Read the block from the blockstore.
+    i_ctxt.m_bsh->bs_get_block(i_dig.data(), i_dig.size(),
+                               buf, sizeof(buf));
+
+    // The initvec is not encrypted.
+    ACE_OS::memcpy(m_initvec, buf, sizeof(m_initvec));
+
+    // Decrypt the block.
+    i_ctxt.m_cipher.encrypt(m_initvec, 0, buf, sizeof(buf));
+
+    // Compute the size of fixed fields after the inode.
+    size_t fixedsz = fixed_field_size();
+
+    // Parse the INode data.
+    size_t sz = BLKSZ - sizeof(m_initvec) - fixedsz;
+    
+    // NOTE - We use protobuf components individually here
+    // because ParseFromArray insists that the entire input
+    // stream be consumed.
+    //
+    ArrayInputStream input(buf + sizeof(m_initvec), sz);
+    CodedInputStream decoder(&input);
+    if (!m_inode.ParseFromCodedStream(&decoder))
+        throwstream(InternalError, FILELINE
+                    << "inode deserialization failed");
+
+    // Setup a pointer for the fixed fields.
+    uint8 * ptr = &buf[BLKSZ - fixedsz];
+
+    // Copy the inline data.
+    ACE_OS::memcpy(m_data, ptr, sizeof(m_data));
+    ptr += sizeof(m_data);
+
+    // Copy the block references.
+    ACE_OS::memcpy(m_direct, ptr, sizeof(m_direct));
+    ptr += sizeof(m_direct);
+
+    ACE_OS::memcpy(&m_sindir, ptr, sizeof(m_sindir));
+    ptr += sizeof(m_sindir);
+
+    ACE_OS::memcpy(&m_dindir, ptr, sizeof(m_dindir));
+    ptr += sizeof(m_dindir);
+    
+    ACE_OS::memcpy(&m_tindir, ptr, sizeof(m_tindir));
+    ptr += sizeof(m_tindir);
+    
+    ACE_OS::memcpy(&m_qindir, ptr, sizeof(m_qindir));
+    ptr += sizeof(m_qindir);
+
+#ifdef DEBUG
+    assert(ptr == buf + BLKSZ);
+#endif
 }
 
 FileNode::~FileNode()
 {
-    LOG(lgr, 4, "DTOR");
+    LOG(lgr, 6, "DTOR");
 }
 
 void
@@ -96,13 +155,7 @@ FileNode::persist(Context & i_ctxt)
     ACE_OS::memset(buf, '\0', sizeof(buf));
 
     // Compute the size of fixed fields after the inode.
-    size_t fixedsz =
-        sizeof(m_data)
-        + sizeof(m_direct)
-        + sizeof(m_sindir)
-        + sizeof(m_dindir)
-        + sizeof(m_tindir)
-        + sizeof(m_qindir);
+    size_t fixedsz = fixed_field_size();
     
     // Compute the size available for the inode fields and serialize.
     size_t sz = BLKSZ - sizeof(m_initvec) - fixedsz;
@@ -145,6 +198,8 @@ FileNode::persist(Context & i_ctxt)
 
     // Take the digest of the whole thing.
     m_digest = Digest(buf, sizeof(buf));
+
+    LOG(lgr, 6, "persist " << m_digest);
 
     // Write the block out to the block store.
     i_ctxt.m_bsh->bs_put_block(m_digest.data(), m_digest.size(),
@@ -194,6 +249,17 @@ FileNode::write(Context & i_ctxt,
 
     ACE_OS::memcpy(m_data + i_off, i_data, i_size);
     return i_size;
+}
+
+size_t
+FileNode::fixed_field_size() const
+{
+    return sizeof(m_data)
+        + sizeof(m_direct)
+        + sizeof(m_sindir)
+        + sizeof(m_dindir)
+        + sizeof(m_tindir)
+        + sizeof(m_qindir);
 }
 
 } // namespace UTFS

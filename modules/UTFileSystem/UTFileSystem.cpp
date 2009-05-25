@@ -134,6 +134,14 @@ public:
         retval(i_dn.open(i_ctxt, i_entry, m_flags));
     }
 
+    virtual void tf_update(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry,
+                           Digest const & i_dig)
+    {
+        i_dn.update(i_ctxt, i_entry, i_dig);
+    }
+
 private:
     int		m_flags;
 };
@@ -152,6 +160,7 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
         OpenTraverseFunc otf(i_flags);
         m_rdh->traverse(m_ctxt, DirNode::TF_PARENT | DirNode::TF_UPDATE,
                         ps.first, ps.second, otf);
+        rootref(m_rdh->digest());
         return otf.retval();
     }
     catch (int const & i_errno)
@@ -305,6 +314,8 @@ UTFileSystem::fs_create(string const & i_path,
 void
 UTFileSystem::rootref(utp::Digest const & i_digest)
 {
+    LOG(lgr, 6, "rootref set " << i_digest);
+
     uint8 iv[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
     uint8 buffer[sizeof(Digest)];
@@ -333,7 +344,11 @@ UTFileSystem::rootref()
 
     m_ctxt.m_cipher.encrypt(iv, 0, (uint8 *) &digstr[0], digstr.size());
 
-    return Digest(digstr);
+    Digest dig(digstr);
+
+    LOG(lgr, 6, "rootref get " << dig);
+
+    return dig;
 }
 
 } // namespace UTFS

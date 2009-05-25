@@ -1,3 +1,6 @@
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+
 #include "BlockStore.h"
 #include "Except.h"
 #include "Log.h"
@@ -9,6 +12,7 @@
 
 using namespace std;
 using namespace utp;
+using namespace google::protobuf::io;
 
 namespace UTFS {
 
@@ -37,7 +41,17 @@ DirNode::DirNode()
 DirNode::DirNode(Context & i_ctxt, Digest const & i_dig)
     : FileNode(i_ctxt, i_dig)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 4, "CTOR " << i_dig);
+
+    // NOTE - We use protobuf components individually here
+    // because ParseFromArray insists that the entire input
+    // stream be consumed.
+    //
+    ArrayInputStream input(data(), size());
+    CodedInputStream decoder(&input);
+    if (!m_dir.ParseFromCodedStream(&decoder))
+        throwstream(InternalError, FILELINE
+                    << "dir deserialization failed");
 }
 
 DirNode::~DirNode()
@@ -120,6 +134,54 @@ DirNode::traverse(Context & i_ctxt,
         }
     }
 
+}
+
+void
+DirNode::persist(Context & i_ctxt)
+{
+    LOG(lgr, 6, "persist");
+    if (lgr.is_enabled(6))
+    {
+        for (int i = 0; i < m_dir.entry_size(); ++i)
+        {
+            Directory::Entry const & ent = m_dir.entry(i);
+            LOG(lgr, 6, Digest(ent.digest()) << " " << ent.name());
+        }
+    }
+
+    // Persist our directory map.
+    bool rv = m_dir.SerializeToArray(data(), size());
+    if (!rv)
+        throwstream(InternalError, FILELINE << "dir serialization error");
+
+    // Let the FileNode do all the hard work ...
+    FileNode::persist(i_ctxt);
+}
+
+void
+DirNode::update(Context & i_ctxt,
+                string const & i_entry,
+                Digest const & i_dig)
+{
+    LOG(lgr, 6, "update " << i_entry << " " << i_dig);
+
+    // Does this entry exist already?
+    for (int i = 0; i < m_dir.entry_size(); ++i)
+    {
+        Directory::Entry * entp = m_dir.mutable_entry(i);
+        if (entp->name() == i_entry)
+        {
+            entp->set_digest(i_dig);
+            persist(i_ctxt);
+            return;
+        }
+    }
+
+    // If we get here it needs to be added ...
+    Directory::Entry * entp = m_dir.add_entry();
+    entp->set_name(i_entry);
+    entp->set_digest(i_dig);
+    persist(i_ctxt);
 }
 
 int

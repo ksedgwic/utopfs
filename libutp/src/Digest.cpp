@@ -34,7 +34,8 @@ Digest::Digest(string const & i_digstr)
 
 ostream & operator<<(ostream & ostrm, Digest const & i_dig)
 {
-    ostrm << Base32::encode(i_dig.data(), i_dig.size());
+    // Since this is a human friendly version just show first N bytes ...
+    ostrm << Base32::encode(i_dig.data(), i_dig.size()).substr(0, 8) << "...";
     return ostrm;
 }
 

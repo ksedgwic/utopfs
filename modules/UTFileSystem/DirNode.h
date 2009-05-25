@@ -67,12 +67,20 @@ public:
         TF_UPDATE		= 0x2	// Call the update method.
     };
 
-    // Traverse a path.
+    // Traverse a path calling functor methods as appropriate.
     virtual void traverse(Context & i_ctxt,
                           unsigned int i_flags,
                           std::string const & i_entry,
                           std::string const & i_rmndr,
                           TraverseFunc & i_trav);
+
+    // Persist this DirNode to blockstore and update digest.
+    virtual void persist(Context & i_ctxt);
+
+    // Update this entries digest in this directory and persist.
+    virtual void update(Context & i_ctxt,
+                        std::string const & i_entry,
+                        utp::Digest const & i_dig);
 
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);

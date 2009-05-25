@@ -46,6 +46,15 @@ public:
                       size_t i_size,
                       off_t i_off);
 
+protected:
+    utp::uint8 const * data() const { return m_data; }
+
+    utp::uint8 * data() { return m_data; }
+
+    size_t size() { return sizeof(m_data); }
+
+    size_t fixed_field_size() const;
+
 private:
     utp::Digest			m_digest;
 
