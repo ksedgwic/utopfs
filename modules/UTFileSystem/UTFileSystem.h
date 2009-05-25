@@ -70,6 +70,9 @@ public:
         throw (utp::InternalError);
 
 protected:
+    void rootref(utp::Digest const & i_digest);
+
+    utp::Digest rootref();
 
 private:
     typedef std::map<std::string, FileNodeHandle>	NodeMap;

@@ -44,8 +44,8 @@ UTFileSystem::fs_mkfs(string const & i_path,
     m_ctxt.m_cipher.set_key(dig.data(), dig.size());
 
     m_rdh = new RootDirNode();
-
     m_rdh->persist(m_ctxt);
+    rootref(m_rdh->digest());
 }
 
 void
@@ -57,14 +57,11 @@ UTFileSystem::fs_mount(string const & i_path,
     m_ctxt.m_bsh = BlockStore::instance();
     m_ctxt.m_bsh->bs_open(i_path);
 
-    throwstream(InternalError, FILELINE
-                << "UTFileSystem::fs_mount unimplemented");
-
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
     m_ctxt.m_cipher.set_key(dig.data(), dig.size());
 
-    m_rdh = new RootDirNode(/* digest of root block */);
+    m_rdh = new RootDirNode(m_ctxt, rootref());
 }
 
 class GetAttrTraverseFunc : public TraverseFunc
@@ -269,6 +266,39 @@ UTFileSystem::fs_create(string const & i_path,
 {
     throwstream(InternalError, FILELINE
                 << "UTFileSystem::fs_create unimplemented");
+}
+
+void
+UTFileSystem::rootref(utp::Digest const & i_digest)
+{
+    uint8 iv[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
+    uint8 buffer[sizeof(Digest)];
+    ACE_OS::memcpy(buffer, i_digest.data(), sizeof(buffer));
+
+    m_ctxt.m_cipher.encrypt(iv, 0, buffer, sizeof(buffer));
+
+    string key = "ROOT";
+    
+    m_ctxt.m_bsh->bs_put_block(key.data(), key.size(), buffer, sizeof(buffer));
+}
+
+Digest
+UTFileSystem::rootref()
+{
+    string digstr;
+    digstr.resize(sizeof(Digest));
+
+    string key = "ROOT";
+    
+    m_ctxt.m_bsh->bs_get_block(key.data(), key.size(),
+                               &digstr[0], digstr.size());
+    
+    uint8 iv[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
+    m_ctxt.m_cipher.encrypt(iv, 0, (uint8 *) &digstr[0], digstr.size());
+
+    return Digest(digstr);
 }
 
 } // namespace UTFS

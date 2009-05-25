@@ -19,6 +19,14 @@ RootDirNode::RootDirNode()
     m_sdh = new SpecialDirNode;
 }
 
+RootDirNode::RootDirNode(Context & i_ctxt, Digest const & i_dig)
+    : DirNode(i_ctxt, i_dig)
+{
+    LOG(lgr, 4, "CTOR");
+
+    m_sdh = new SpecialDirNode;
+}
+
 RootDirNode::~RootDirNode()
 {
     LOG(lgr, 4, "DTOR");

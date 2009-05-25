@@ -56,6 +56,8 @@ public:
 
     DirNode();
 
+    DirNode(Context & i_ctxt, utp::Digest const & i_dig);
+
     virtual ~DirNode();
 
     enum TraverseFlags

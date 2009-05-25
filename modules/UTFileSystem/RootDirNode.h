@@ -18,6 +18,8 @@ class UTFS_EXP RootDirNode : public DirNode
 public:
     RootDirNode();
 
+    RootDirNode(Context & i_ctxt, utp::Digest const & i_dig);
+
     virtual ~RootDirNode();
 
     // Traverse a path.

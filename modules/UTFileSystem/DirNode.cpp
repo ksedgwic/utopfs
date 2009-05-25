@@ -34,6 +34,12 @@ DirNode::DirNode()
     LOG(lgr, 4, "CTOR");
 }
 
+DirNode::DirNode(Context & i_ctxt, Digest const & i_dig)
+    : FileNode(i_ctxt, i_dig)
+{
+    LOG(lgr, 4, "CTOR");
+}
+
 DirNode::~DirNode()
 {
     LOG(lgr, 4, "DTOR");

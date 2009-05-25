@@ -12,6 +12,7 @@ SCRIPTS =	\
 			$(PYTESTS) \
 			test1 \
 			test2 \
+			test3 \
 			$(NULL)
 
 CFG =		\
