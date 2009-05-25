@@ -10,7 +10,7 @@ import utp.FileSystem
 
 
 
-class TestBlockStorefsmkfs:
+class Test_fs_mkfs:
 
   def setup_class(self):
     self.bspath = "fs_mkfs.bs"

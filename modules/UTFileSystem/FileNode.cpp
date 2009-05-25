@@ -209,6 +209,8 @@ FileNode::persist(Context & i_ctxt)
 int
 FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 {
+    ACE_OS::memset(o_statbuf, '\0', sizeof(*o_statbuf));
+
     o_statbuf->st_mode = m_inode.mode();
     o_statbuf->st_uid = 0;    // FIXME - uid missing!
     o_statbuf->st_gid = 0;    // FIXME - gid missing!

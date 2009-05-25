@@ -7,6 +7,7 @@ PYTESTS =	\
 			test_bs_unopened.py \
 			test_fileblockstore.py \
 			test_fs_persist_01.py \
+			test_fs_persist_02.py \
 			$(NULL)
 
 SCRIPTS =	\
