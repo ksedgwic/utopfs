@@ -35,7 +35,7 @@ class TestBlockStore:
    
   def test_get_block_that_does_not_exist(self):
     k = buffer("badkey%(random.randrange(999999999))")
-    py.test.raises(Exception,"self.bs.bs_get_block(k)")
+    py.test.raises(utp.NotFoundError, "self.bs.bs_get_block(k)")
   
     
   def test_delete_block(self):
@@ -45,4 +45,4 @@ class TestBlockStore:
     self.bs.bs_put_block(k, v)   
     self.bs.bs_del_block(k)
     
-    py.test.raises(Exception,self.bs.bs_get_block,k)
+    py.test.raises(utp.NotFoundError, self.bs.bs_get_block,k)
