@@ -1,8 +1,3 @@
-Stat of foo is different second time in test2.
-
-DirNode::persist
-
-  Need to store S_ISDIR/S_ISREG in the mode field of the inode.
 
 Wire up a passphrase option for utopfs (fuse binary).
 

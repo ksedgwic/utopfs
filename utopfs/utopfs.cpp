@@ -37,6 +37,7 @@ struct utopfs
     struct fuse_args utop_args;
     string path;
     string passphrase;
+    bool do_mkfs;
 };
 
 static struct utopfs utopfs;
@@ -160,6 +161,8 @@ static const char *utop_opts[] = {
 };
 
 enum {
+    KEY_MKFS,
+    KEY_PASSPHRASE,
 	KEY_HELP,
 	KEY_VERSION,
 	KEY_FOREGROUND,
@@ -169,6 +172,8 @@ enum {
 #define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
 
 static struct fuse_opt utopfs_opts[] = {
+	FUSE_OPT_KEY("-M",             KEY_MKFS),
+	FUSE_OPT_KEY("-P ",             KEY_PASSPHRASE),
 	FUSE_OPT_KEY("-V",             KEY_VERSION),
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("-h",             KEY_HELP),
@@ -209,6 +214,14 @@ static int utopfs_opt_proc(void * data,
 
 	switch (key)
     {
+    case KEY_MKFS:
+        utopfs.do_mkfs = true;
+        return 0;
+
+    case KEY_PASSPHRASE:
+        utopfs.passphrase = arg;
+        return 0;
+
 	case FUSE_OPT_KEY_OPT:
 		if (is_utop_opt(arg))
         {
@@ -242,6 +255,8 @@ static int utopfs_opt_proc(void * data,
 int
 main(int argc, char ** argv)
 {
+    utopfs.do_mkfs = false;
+
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
 	if (fuse_opt_parse(&args, &utopfs, utopfs_opts, utopfs_opt_proc) == -1)
@@ -249,16 +264,21 @@ main(int argc, char ** argv)
 
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.readdir		= utopfs_readdir;
+    utopfs_oper.mkdir		= utopfs_mkdir;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;
     utopfs_oper.write		= utopfs_write;
+    utopfs_oper.readdir		= utopfs_readdir;
 
     ACE_Service_Config::open(argv[0]);
 
     // Perform the mount.
     try
     {
-        FileSystem::instance()->fs_mount(utopfs.path, utopfs.passphrase);
+        if (utopfs.do_mkfs)
+            FileSystem::instance()->fs_mkfs(utopfs.path, utopfs.passphrase);
+        else
+            FileSystem::instance()->fs_mount(utopfs.path, utopfs.passphrase);
     }
     catch (utp::Exception const & ex)
     {

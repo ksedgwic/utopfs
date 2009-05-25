@@ -28,4 +28,4 @@ CGCMD="valgrind \
 mkdir mnt 2> /dev/null
 
 # Run the utopfs in the foreground.
-${USEVG} BINPATHU(utopfs) -d BLOCKS mnt
+${USEVG} BINPATHU(utopfs) -M -d BLOCKS -P "" mnt
