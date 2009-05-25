@@ -46,7 +46,12 @@ public:
                       size_t i_size,
                       off_t i_off);
 
+    mode_t mode() const { return m_inode.mode(); }
+
+    void mode(mode_t i_mode) { m_inode.set_mode(i_mode); }
+
 protected:
+
     utp::uint8 const * data() const { return m_data; }
 
     utp::uint8 * data() { return m_data; }

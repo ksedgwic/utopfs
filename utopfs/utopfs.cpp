@@ -90,6 +90,20 @@ utopfs_readdir(char const * i_path,
 }
 
 static int
+utopfs_mkdir(char const * i_path,
+             mode_t i_mode)
+{
+    try
+    {
+        return FileSystem::instance()->fs_mkdir(i_path, i_mode);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
 utopfs_open(char const * i_path,
             struct fuse_file_info *fi)
 {

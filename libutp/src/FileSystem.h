@@ -85,6 +85,19 @@ public:
                            struct stat * o_statbuf)
         throw (utp::InternalError) = 0;
 
+    /// Create a directory.
+    ///
+    /// @param[in] i_path Path to the directory.
+    /// @param[in] i_mode File access flags.
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_mkdir(std::string const & i_path,
+                         mode_t i_mode)
+        throw (utp::InternalError) = 0;
+
     /// File open operation
     ///
     /// @param[in] i_path Path to the file.

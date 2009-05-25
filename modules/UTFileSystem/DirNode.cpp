@@ -38,20 +38,20 @@ DirNode::DirNode()
     LOG(lgr, 4, "CTOR");
 }
 
+DirNode::DirNode(FileNode const & i_fn)
+    : FileNode(i_fn)
+{
+    LOG(lgr, 4, "CTOR");
+
+    deserialize();
+}
+
 DirNode::DirNode(Context & i_ctxt, Digest const & i_dig)
     : FileNode(i_ctxt, i_dig)
 {
     LOG(lgr, 4, "CTOR " << i_dig);
 
-    // NOTE - We use protobuf components individually here
-    // because ParseFromArray insists that the entire input
-    // stream be consumed.
-    //
-    ArrayInputStream input(data(), size());
-    CodedInputStream decoder(&input);
-    if (!m_dir.ParseFromCodedStream(&decoder))
-        throwstream(InternalError, FILELINE
-                    << "dir deserialization failed");
+    deserialize();
 }
 
 DirNode::~DirNode()
@@ -185,10 +185,33 @@ DirNode::update(Context & i_ctxt,
 }
 
 int
-DirNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
+DirNode::mkdir(Context & i_ctxt,
+               string const & i_entry,
+               mode_t i_mode)
 {
-    throwstream(InternalError, FILELINE
-                << "DirNode::getattr unimplemented");
+    // The entry better not already exist.
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    if (fnh)
+        throw EEXIST;
+
+    // Create the new directory node.
+    DirNodeHandle dnh = new DirNode();
+
+    // Set the mode.
+    dnh->mode(i_mode | S_IFDIR);
+
+    // Persist it (sets the digest).
+    dnh->persist(i_ctxt);
+
+    // Insert into our Directory collection.
+    Directory::Entry * de = m_dir.add_entry();
+    de->set_name(i_entry);
+    de->set_digest(dnh->digest());
+
+    // Insert into the cache.
+    m_cache.insert(make_pair(i_entry, dnh));
+
+    return 0;
 }
 
 int
@@ -241,7 +264,6 @@ FileNodeHandle
 DirNode::lookup(Context & i_ctxt, string const & i_entry)
 {
     // Do we have a cached entry for this name?
-    FileNodeHandle fnh;
     EntryMap::const_iterator pos = m_cache.find(i_entry);
     if (pos != m_cache.end())
     {
@@ -254,15 +276,34 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
         {
             if (m_dir.entry(i).name() == i_entry)
             {
-                FileNodeHandle fnh =
+                FileNodeHandle nh =
                     new FileNode(i_ctxt, m_dir.entry(i).digest());
-                m_cache.insert(make_pair(i_entry, fnh));
-                return fnh;
+
+                // Is it really a directory?
+                if (S_ISDIR(nh->mode()))
+                    nh = new DirNode(*nh);
+
+                m_cache.insert(make_pair(i_entry, nh));
+                return nh;
             }
         }
     }
 
     return NULL;
+}
+
+void
+DirNode::deserialize()
+{
+    // NOTE - We use protobuf components individually here
+    // because ParseFromArray insists that the entire input
+    // stream be consumed.
+    //
+    ArrayInputStream input(data(), size());
+    CodedInputStream decoder(&input);
+    if (!m_dir.ParseFromCodedStream(&decoder))
+        throwstream(InternalError, FILELINE
+                    << "dir deserialization failed");
 }
 
 } // namespace UTFS

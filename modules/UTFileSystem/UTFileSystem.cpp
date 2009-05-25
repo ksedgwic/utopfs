@@ -122,6 +122,53 @@ UTFileSystem::fs_getattr(string const & i_path,
     }
 }
 
+class MkdirTraverseFunc : public TraverseFunc
+{
+public:
+    MkdirTraverseFunc(mode_t i_mode) : m_mode(i_mode) {}
+
+    virtual void tf_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
+    {
+        retval(i_dn.mkdir(i_ctxt, i_entry, m_mode));
+    }
+
+    virtual void tf_update(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry,
+                           Digest const & i_dig)
+    {
+        i_dn.update(i_ctxt, i_entry, i_dig);
+    }
+
+private:
+    mode_t		m_mode;
+};
+
+int
+UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
+    throw (utp::InternalError)
+{
+    LOG(lgr, 6, "fs_mkdir " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        MkdirTraverseFunc otf(i_mode);
+        m_rdh->traverse(m_ctxt, DirNode::TF_PARENT | DirNode::TF_UPDATE,
+                        ps.first, ps.second, otf);
+        rootref(m_rdh->digest());
+        return otf.retval();
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
+}
+
 class OpenTraverseFunc : public TraverseFunc
 {
 public:

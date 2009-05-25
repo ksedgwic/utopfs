@@ -56,6 +56,8 @@ public:
 
     DirNode();
 
+    DirNode(FileNode const & i_fn);
+
     DirNode(Context & i_ctxt, utp::Digest const & i_dig);
 
     virtual ~DirNode();
@@ -82,8 +84,9 @@ public:
                         std::string const & i_entry,
                         utp::Digest const & i_dig);
 
-    virtual int getattr(Context & i_ctxt,
-                        struct stat * o_statbuf);
+    virtual int mkdir(Context & i_ctxt,
+                      std::string const & i_entry,
+                      mode_t i_mode);
 
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,
@@ -96,6 +99,8 @@ public:
 protected:
     virtual FileNodeHandle lookup(Context & i_ctxt,
                                   std::string const & i_entry);
+
+    void deserialize();
 
 private:
     typedef std::map<std::string, FileNodeHandle> EntryMap;

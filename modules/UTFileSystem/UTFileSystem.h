@@ -47,6 +47,10 @@ public:
                            struct stat * o_statbuf)
         throw (utp::InternalError);
 
+    virtual int fs_mkdir(std::string const & i_path,
+                         mode_t i_mode)
+        throw (utp::InternalError);
+
     virtual int fs_open(std::string const & i_path,
                         int i_flags)
         throw (utp::InternalError);
