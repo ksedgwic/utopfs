@@ -36,6 +36,10 @@ UTFileSystem::fs_mkfs(string const & i_path,
     throw (utp::InternalError,
            utp::ValueError)
 {
+    LOG(lgr, 4, "fs_mkfs " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
     m_ctxt.m_bsh = BlockStore::instance();
     m_ctxt.m_bsh->bs_create(i_path);
 
@@ -54,6 +58,10 @@ UTFileSystem::fs_mount(string const & i_path,
     throw (utp::InternalError,
            utp::ValueError)
 {
+    LOG(lgr, 4, "fs_mount " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
     m_ctxt.m_bsh = BlockStore::instance();
     m_ctxt.m_bsh->bs_open(i_path);
 
@@ -62,6 +70,19 @@ UTFileSystem::fs_mount(string const & i_path,
     m_ctxt.m_cipher.set_key(dig.data(), dig.size());
 
     m_rdh = new RootDirNode(m_ctxt, rootref());
+}
+
+void
+UTFileSystem::fs_unmount()
+    throw (utp::InternalError)
+{
+    LOG(lgr, 4, "fs_unmount ");
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    m_rdh = NULL;
+    m_ctxt.m_bsh = NULL;
+    m_ctxt.m_cipher.unset_key();
 }
 
 class GetAttrTraverseFunc : public TraverseFunc
@@ -83,6 +104,8 @@ UTFileSystem::fs_getattr(string const & i_path,
                          struct stat * o_stbuf)
     throw (utp::InternalError)
 {
+    LOG(lgr, 6, "fs_getattr " << i_path);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
@@ -119,6 +142,8 @@ int
 UTFileSystem::fs_open(string const & i_path, int i_flags)
     throw (utp::InternalError)
 {
+    LOG(lgr, 6, "fs_open " << i_path);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
@@ -159,6 +184,8 @@ UTFileSystem::fs_read(string const & i_path,
                       off_t i_off)
     throw (utp::InternalError)
 {
+    LOG(lgr, 6, "fs_read " << i_path << " sz=" << i_size << " off=" << i_off);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
@@ -199,6 +226,8 @@ UTFileSystem::fs_write(string const & i_path,
                        off_t i_off)
     throw (utp::InternalError)
 {
+    LOG(lgr, 6, "fs_write " << i_path << " sz=" << i_size << " off=" << i_off);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
@@ -218,7 +247,8 @@ UTFileSystem::fs_write(string const & i_path,
 class ReadDirTraverseFunc : public TraverseFunc
 {
 public:
-    ReadDirTraverseFunc(off_t i_offset, FileSystem::DirEntryFunc & i_entryfunc)
+    ReadDirTraverseFunc(off_t i_offset,
+                        FileSystem::DirEntryFunc & i_entryfunc)
         : m_offset(i_offset), m_entryfunc(i_entryfunc) {}
 
     virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
@@ -243,6 +273,8 @@ UTFileSystem::fs_readdir(string const & i_path,
                          DirEntryFunc & o_entryfunc)
     throw (utp::InternalError)
 {
+    LOG(lgr, 6, "fs_readdir " << i_path);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
@@ -264,6 +296,8 @@ UTFileSystem::fs_create(string const & i_path,
                         mode_t i_mode)
         throw (utp::InternalError)
 {
+    LOG(lgr, 6, "fs_create " << i_path);
+
     throwstream(InternalError, FILELINE
                 << "UTFileSystem::fs_create unimplemented");
 }
@@ -280,7 +314,8 @@ UTFileSystem::rootref(utp::Digest const & i_digest)
 
     string key = "ROOT";
     
-    m_ctxt.m_bsh->bs_put_block(key.data(), key.size(), buffer, sizeof(buffer));
+    m_ctxt.m_bsh->bs_put_block(key.data(), key.size(),
+                               buffer, sizeof(buffer));
 }
 
 Digest

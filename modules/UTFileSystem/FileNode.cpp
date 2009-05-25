@@ -63,7 +63,7 @@ FileNode::FileNode()
 
     Random::fill(m_initvec, sizeof(m_initvec));
 
-    m_inode.set_mode(S_IRUSR | S_IWUSR | S_IRGRP);
+    m_inode.set_mode(S_IRUSR | S_IWUSR | S_IRGRP | S_IFREG);
     m_inode.set_uname(myuname());
     m_inode.set_gname(mygname());
     m_inode.set_size(0);

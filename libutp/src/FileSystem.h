@@ -63,6 +63,15 @@ public:
         throw (utp::InternalError,
                utp::ValueError) = 0;
 
+    /// Unmount the filesystem
+    ///
+    /// After unmounting, you may create or mount again.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void fs_unmount()
+        throw (utp::InternalError) = 0;
+
     /// Get file attributes
     ///
     /// @param[in] i_path Path to the file.

@@ -30,6 +30,16 @@ StreamCipher::set_key(uint8 const * i_keyp, size_t i_keysz)
 }
 
 void
+StreamCipher::unset_key()
+{
+    // Set the key to all zeros.
+    uint8 buffer[AES_BLOCK_SIZE];
+    ACE_OS::memset(buffer, '\0', sizeof(buffer));
+    AES_set_encrypt_key(buffer, 128, &m_key);
+    m_isvalid = false;
+}
+
+void
 StreamCipher::encrypt(uint8 const * i_ivptr,
                       size_t i_offset,
                       uint8 * io_data,

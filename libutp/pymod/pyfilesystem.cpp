@@ -52,6 +52,22 @@ FileSystem_fs_mount(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_unmount(FileSystemObject *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ":fs_unmount"))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_fsh->fs_unmount();
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
 FileSystem_fs_getattr(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -204,6 +220,7 @@ FileSystem_fs_readdir(FileSystemObject *self, PyObject *args)
 static PyMethodDef FileSystem_methods[] = {
     {"fs_mkfs",			(PyCFunction)FileSystem_fs_mkfs,		METH_VARARGS},
     {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
+    {"fs_unmount",		(PyCFunction)FileSystem_fs_unmount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},

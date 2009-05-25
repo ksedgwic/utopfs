@@ -1,3 +1,7 @@
+Finish test2 -> test3 cycle.
+
+Need to implement some sort of unmount so tests can check persistence.
+
 DirNode::persist
 
   Need to store S_ISDIR/S_ISREG in the mode field of the inode.

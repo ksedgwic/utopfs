@@ -29,6 +29,10 @@ public:
     ///
     void set_key(uint8 const * i_keyp, size_t i_keysz);
 
+    /// Unset the stream cipher's key.
+    ///
+    void unset_key();
+
     /// Encrypt/Decrypt a data buffer in-place.
     ///
     /// @note The i_offset value must be aligned on the AES block size

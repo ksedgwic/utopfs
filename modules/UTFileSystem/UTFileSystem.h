@@ -40,6 +40,9 @@ public:
         throw (utp::InternalError,
                utp::ValueError);
 
+    virtual void fs_unmount()
+        throw (utp::InternalError);
+
     virtual int fs_getattr(std::string const & i_path,
                            struct stat * o_statbuf)
         throw (utp::InternalError);
