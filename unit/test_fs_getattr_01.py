@@ -8,8 +8,6 @@ import shutil
 import utp
 import utp.FileSystem
 
-
-
 class Test_fs_getattr_01:
 
   def setup_class(self):
@@ -38,6 +36,18 @@ class Test_fs_getattr_01:
     st = self.fs.fs_getattr("/")
     assert S_ISDIR(st[ST_MODE])
     assert st[ST_NLINK] == 4
+
+  def test_can_getattr_utopfs(self):
+    # We should be able to stat "/.utopfs"
+    st = self.fs.fs_getattr("/.utopfs")
+    assert S_ISDIR(st[ST_MODE])
+    assert st[ST_NLINK] == 2
+
+  def test_can_getattr_version(self):
+    # We should be able to stat "/.utopfs/version"
+    st = self.fs.fs_getattr("/.utopfs/version")
+    assert S_ISREG(st[ST_MODE])
+    assert st[ST_NLINK] == 1
 
   def test_can_getattr_dir(self):
     # We should be able to stat "/foo"
