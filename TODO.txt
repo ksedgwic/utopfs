@@ -1,5 +1,4 @@
-
-Wire up a passphrase option for utopfs (fuse binary).
+Figure out which fuse interface "touch bar" uses and implement it.
 
 Graphic identity for utopfs?
 
