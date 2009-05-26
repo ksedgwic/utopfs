@@ -94,10 +94,12 @@ RootDirNode::readdir(Context & i_ctxt,
                      off_t i_offset,
                      FileSystem::DirEntryFunc & o_entryfunc)
 {
-    // FIXME - BOGUS!  We need to have actual dynamic entries!
-    o_entryfunc.def_entry(".", NULL, 0);
-    o_entryfunc.def_entry("..", NULL, 0);
+    // First call the base class to emit the real entries.
+    DirNode::readdir(i_ctxt, i_offset, o_entryfunc);
+
+    // Then add our pseudo directory.
     o_entryfunc.def_entry(SPECIALDIR, NULL, 0);
+
     return 0;
 }
 

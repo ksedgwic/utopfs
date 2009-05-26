@@ -10,25 +10,24 @@ import utp.FileSystem
 import utp.PyDirEntryFunc
 
 # This callback is constructed with a list of expected entries.  It
-# complains if any not on the list are seen and returns the list of
-# missing ones.
+# returns lists of unexpected and missing entries.
 #
 class DirEntryChecker(utp.PyDirEntryFunc.PyDirEntryFunc):
   def __init__(self, checklist):
     utp.PyDirEntryFunc.PyDirEntryFunc.__init__(self)
     self.checkset = set(checklist)
-    self.extras = []
+    self.unexpected = []
 
   def def_entry(self, name, statbuf, offset):
     if name not in self.checkset:
-      self.extras.append(name)
+      self.unexpected.append(name)
     self.checkset.remove(name)
 
   def missing(self):
     return self.checkset
 
   def unwanted(self):
-    return self.extras
+    return self.unexpected
 
 class Test_fs_readdir_01:
 

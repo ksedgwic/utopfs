@@ -270,8 +270,15 @@ DirNode::readdir(Context & i_ctxt,
                  off_t i_offset,
                  FileSystem::DirEntryFunc & o_entryfunc)
 {
-    throwstream(InternalError, FILELINE
-                << "DirNode::readdir unimplemented");
+    // Add all the entries in our digest table.
+    for (int i = 0; i < m_dir.entry_size(); ++i)
+        o_entryfunc.def_entry(m_dir.entry(i).name(), NULL, 0);
+
+    // Add some old favorites.
+    o_entryfunc.def_entry(".", NULL, 0);
+    o_entryfunc.def_entry("..", NULL, 0);
+
+    return 0;
 }
 
 FileNodeHandle
