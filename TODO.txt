@@ -1,5 +1,8 @@
 Figure out which fuse interface "touch bar" uses and implement it.
 
+Clone the getattr and readdir tests and make sure they make after
+unmount/remount.
+
 Graphic identity for utopfs?
 
 Check object lifetimes of the python direntry callback objects.
