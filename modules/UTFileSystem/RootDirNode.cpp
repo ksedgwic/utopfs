@@ -39,8 +39,20 @@ RootDirNode::traverse(Context & i_ctxt,
                       string const & i_rmndr,
                       TraverseFunc & i_trav)
 {
+    // Check for the root directory itself.
+    if (i_entry.empty())
+    {
+        // If a parent traversal was requested then we have issues.
+        if (i_flags & TF_PARENT)
+            throw ENOENT;
+
+        i_trav.tf_leaf(i_ctxt, *this);
+
+        // I think our caller has to do any required update.
+    }
+
     // Check for the special .utopfs directory.
-    if (i_entry == SPECIALDIR)
+    else if (i_entry == SPECIALDIR)
     {
         if (i_rmndr.empty())
         {
@@ -68,8 +80,12 @@ RootDirNode::traverse(Context & i_ctxt,
 int
 RootDirNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
 {
-    o_stbuf->st_mode = S_IFDIR | 0755;
-    o_stbuf->st_nlink = 2;
+    // Let the base class do most of the work.
+    DirNode::getattr(i_ctxt, o_stbuf);
+
+    // We have have one pseudo-directory, bump the link count.
+    o_stbuf->st_nlink += 1;
+
     return 0;
 }
 

@@ -6,12 +6,13 @@ package UTFS;
 message INode
 {
     required uint32	mode	= 1;
-    required string	uname	= 2;
-    required string	gname	= 3;
-    required int64	size	= 4;
-    required int64	atime	= 5;
-    required int64	mtime	= 6;
-    required int64	ctime	= 7;
+    required uint32 nlink	= 2;
+    required string	uname	= 3;
+    required string	gname	= 4;
+    required int64	size	= 5;
+    required int64	atime	= 6;
+    required int64	mtime	= 7;
+    required int64	ctime	= 8;
 }
 
 

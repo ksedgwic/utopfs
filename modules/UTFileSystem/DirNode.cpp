@@ -36,6 +36,16 @@ DirNode::pathsplit(string const & i_path)
 DirNode::DirNode()
 {
     LOG(lgr, 4, "CTOR");
+
+    // We are a directory, not a file.
+    mode_t m = mode();	// Fetch current bits
+    m &= ~S_IFMT;		// Turn off all IFMT bits.
+    m |= S_IFDIR;		// Turn on the directory bits.
+    mode(m);			// Set the bits.
+
+    // Directories have a link count of 2 when they are created ("."
+    // and "..").
+    nlink(2);
 }
 
 DirNode::DirNode(FileNode const & i_fn)
@@ -145,7 +155,8 @@ DirNode::persist(Context & i_ctxt)
         for (int i = 0; i < m_dir.entry_size(); ++i)
         {
             Directory::Entry const & ent = m_dir.entry(i);
-            LOG(lgr, 6, Digest(ent.digest()) << " " << ent.name());
+            LOG(lgr, 6, "[" << i << "]: "
+                << Digest(ent.digest()) << " " << ent.name());
         }
     }
 
@@ -210,6 +221,9 @@ DirNode::mkdir(Context & i_ctxt,
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, dnh));
+
+    // Increment our link count.
+    nlink(nlink() + 1);
 
     return 0;
 }

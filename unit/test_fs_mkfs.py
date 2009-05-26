@@ -1,14 +1,12 @@
-import os
 import sys
 import random
 import py
+from os import *
 from stat import *
 
 import shutil
 import utp
 import utp.FileSystem
-
-
 
 class Test_fs_mkfs:
 
@@ -40,13 +38,13 @@ class Test_fs_mkfs:
     assert S_ISREG(statbuf[ST_MODE])
 
     # The version file should contain a version string.
-    self.fs.fs_open("/.utopfs/version", os.O_RDONLY)
+    self.fs.fs_open("/.utopfs/version", O_RDONLY)
     data = self.fs.fs_read("/.utopfs/version", 100, 0)
     assert str(data).find("utopfs version") == 0
 
   def test_can_create_file(self):
     # We should be able to create a file.
-    self.fs.fs_open("/foo", os.O_CREAT)
+    self.fs.fs_open("/foo", O_CREAT)
 
     # Now we should be able to stat the file.
     print self.fs.fs_getattr("/foo");

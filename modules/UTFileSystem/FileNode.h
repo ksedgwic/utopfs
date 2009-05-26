@@ -50,6 +50,10 @@ public:
 
     void mode(mode_t i_mode) { m_inode.set_mode(i_mode); }
 
+    nlink_t nlink() const { return m_inode.nlink(); }
+
+    void nlink(nlink_t i_nlink) { m_inode.set_nlink(i_nlink); }
+
 protected:
 
     utp::uint8 const * data() const { return m_data; }
