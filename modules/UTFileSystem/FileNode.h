@@ -8,8 +8,9 @@
 
 #include "utpfwd.h"
 
-#include "Types.h"
 #include "Digest.h"
+#include "T64.h"
+#include "Types.h"
 
 #include "utfsfwd.h"
 #include "utfsexp.h"
@@ -53,6 +54,14 @@ public:
     nlink_t nlink() const { return m_inode.nlink(); }
 
     void nlink(nlink_t i_nlink) { m_inode.set_nlink(i_nlink); }
+
+    utp::T64 atime() const { return m_inode.atime(); }
+
+    void atime(utp::T64 const & i_atime) { m_inode.set_atime(i_atime.usec()); }
+
+    utp::T64 mtime() const { return m_inode.mtime(); }
+
+    void mtime(utp::T64 const & i_mtime) { m_inode.set_mtime(i_mtime.usec()); }
 
 protected:
 

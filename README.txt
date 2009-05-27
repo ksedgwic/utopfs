@@ -28,10 +28,10 @@ Create file system in "BLOCKS" and mount it on "mnt":
     cd utopfs/Linux.WORKCFG
     . ./env.sh
     rm -rf BLOCKS
-    ../Linux.DBGOBJ/utopfs -M -d BLOCKS -P "" mnt
+    ../Linux.DBGOBJ/utopfs -f -M -P "" BLOCKS mnt
 
 Mount existing file system in "BLOCKS":
 
     cd utopfs/Linux.WORKCFG
     . ./env.sh
-    ../Linux.DBGOBJ/utopfs -d BLOCKS -P "" mnt
+    ../Linux.DBGOBJ/utopfs -f -P "" BLOCKS mnt

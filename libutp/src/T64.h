@@ -69,6 +69,10 @@ public:
     /// Constructor from struct timeval.
     inline T64(struct timeval const & tv)
         : m_usec(((int64(tv.tv_sec)) * 1000000LL) + tv.tv_usec) {}
+
+    /// Constructor from struct timespec.
+    inline T64(struct timespec const & tv)
+        : m_usec(((int64(tv.tv_sec)) * 1000000LL) + (tv.tv_nsec / 1000LL)) {}
 #elif defined(WIN32)
     /// Constructor from struct timeb.
     inline T64(struct timeb const & tb)

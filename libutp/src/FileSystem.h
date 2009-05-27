@@ -173,6 +173,20 @@ public:
                            off_t i_offset,
                            DirEntryFunc & o_entryfunc)
         throw (utp::InternalError) = 0;
+
+    /// Change the access and modification times of a file.
+    ///
+    /// @param[in] i_path Path to the file.
+    /// @param[in] i_tv Array of timestamps (access and mod).
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_utimens(std::string const & i_path,
+                           struct timespec const tv[2])
+        throw (utp::InternalError) = 0;
+
 };
 
 } // end namespace utp

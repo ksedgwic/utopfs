@@ -77,6 +77,10 @@ public:
                            DirEntryFunc & o_entryfunc)
         throw (utp::InternalError);
 
+    virtual int fs_utimens(std::string const & i_path,
+                           struct timespec const tv[2])
+        throw (utp::InternalError);
+
 protected:
     void rootref(utp::Digest const & i_digest);
 

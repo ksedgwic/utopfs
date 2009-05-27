@@ -122,30 +122,6 @@ UTFileSystem::fs_getattr(string const & i_path,
     }
 }
 
-class MkdirTraverseFunc : public TraverseFunc
-{
-public:
-    MkdirTraverseFunc(mode_t i_mode) : m_mode(i_mode) {}
-
-    virtual void tf_parent(Context & i_ctxt,
-                           DirNode & i_dn,
-                           string const & i_entry)
-    {
-        retval(i_dn.mkdir(i_ctxt, i_entry, m_mode));
-    }
-
-    virtual void tf_update(Context & i_ctxt,
-                           DirNode & i_dn,
-                           string const & i_entry,
-                           Digest const & i_dig)
-    {
-        i_dn.update(i_ctxt, i_entry, i_dig);
-    }
-
-private:
-    mode_t		m_mode;
-};
-
 class MknodTraverseFunc : public TraverseFunc
 {
 public:
@@ -196,6 +172,30 @@ UTFileSystem::fs_mknod(string const & i_path,
         return -i_errno;
     }
 }
+
+class MkdirTraverseFunc : public TraverseFunc
+{
+public:
+    MkdirTraverseFunc(mode_t i_mode) : m_mode(i_mode) {}
+
+    virtual void tf_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
+    {
+        retval(i_dn.mkdir(i_ctxt, i_entry, m_mode));
+    }
+
+    virtual void tf_update(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry,
+                           Digest const & i_dig)
+    {
+        i_dn.update(i_ctxt, i_entry, i_dig);
+    }
+
+private:
+    mode_t		m_mode;
+};
 
 int
 UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
@@ -391,6 +391,54 @@ UTFileSystem::fs_readdir(string const & i_path,
         m_rdh->traverse(m_ctxt, DirNode::TF_DEFAULT,
                         ps.first, ps.second, rdtf);
         return rdtf.retval();
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
+}
+
+class UtimeTraverseFunc : public TraverseFunc
+{
+public:
+    UtimeTraverseFunc(T64 const & i_atime, T64 const & i_mtime)
+        : m_atime(i_atime), m_mtime(i_mtime) {}
+
+    virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
+    {
+        i_fn.atime(m_atime);
+        i_fn.mtime(m_mtime);
+        retval(0);
+    }
+
+    virtual void tf_update(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry,
+                           Digest const & i_dig)
+    {
+        i_dn.update(i_ctxt, i_entry, i_dig);
+    }
+
+private:
+    T64		m_atime;
+    T64		m_mtime;
+};
+
+int
+UTFileSystem::fs_utimens(std::string const & i_path,
+                         struct timespec const i_tv[2])
+        throw (utp::InternalError)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        UtimeTraverseFunc otf(i_tv[0], i_tv[1]);
+        m_rdh->traverse(m_ctxt, DirNode::TF_UPDATE,
+                        ps.first, ps.second, otf);
+        rootref(m_rdh->digest());
+        return otf.retval();
     }
     catch (int const & i_errno)
     {

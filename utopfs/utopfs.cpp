@@ -73,24 +73,6 @@ struct MyDirEntryFunc : public utp::FileSystem::DirEntryFunc
 };
 
 static int
-utopfs_readdir(char const * i_path,
-               void * buf,
-               fuse_fill_dir_t filler,
-               off_t offset,
-               struct fuse_file_info * fi)
-{
-    try
-    {
-        MyDirEntryFunc mdef(buf, filler);
-        return FileSystem::instance()->fs_readdir(i_path, offset, mdef);
-    }
-    catch (utp::Exception const & ex)
-    {
-        return fatal(ex.what());
-    }
-}
-
-static int
 utopfs_mknod(char const * i_path, mode_t i_mode, dev_t i_dev)
 {
     try
@@ -156,6 +138,37 @@ utopfs_write(char const * i_path,
     try
     {
         return FileSystem::instance()->fs_write(i_path, buf, size, offset);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
+utopfs_readdir(char const * i_path,
+               void * buf,
+               fuse_fill_dir_t filler,
+               off_t offset,
+               struct fuse_file_info * fi)
+{
+    try
+    {
+        MyDirEntryFunc mdef(buf, filler);
+        return FileSystem::instance()->fs_readdir(i_path, offset, mdef);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
+utopfs_utimens(char const * i_path, struct timespec const i_tv[2])
+{
+    try
+    {
+        return FileSystem::instance()->fs_utimens(i_path, i_tv);
     }
     catch (utp::Exception const & ex)
     {
@@ -274,13 +287,13 @@ main(int argc, char ** argv)
         fatal("option parsing failed");
 
     utopfs_oper.getattr		= utopfs_getattr;
-    utopfs_oper.readdir		= utopfs_readdir;
     utopfs_oper.mknod		= utopfs_mknod;
     utopfs_oper.mkdir		= utopfs_mkdir;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;
     utopfs_oper.write		= utopfs_write;
     utopfs_oper.readdir		= utopfs_readdir;
+    utopfs_oper.utimens		= utopfs_utimens;
 
     ACE_Service_Config::open(argv[0]);
 
