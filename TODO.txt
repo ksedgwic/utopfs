@@ -1,7 +1,17 @@
 Figure out which fuse interface "touch bar" uses and implement it.
 
+  Implement the setattr fuse command
+
+  Restore the unit tests; open -> mknod in most cases.
+
 Clone the getattr and readdir tests and make sure they make after
 unmount/remount.
+
+Figure out the uid an gid, are they in the file_info_t?
+
+  Add tests for mknod based on permissions.
+
+  Add tests for open based on permissions.
 
 Add test for what happens when passwords don't match.
 

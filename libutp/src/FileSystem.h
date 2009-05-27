@@ -85,6 +85,20 @@ public:
                            struct stat * o_statbuf)
         throw (utp::InternalError) = 0;
 
+    /// Create a file node.
+    ///
+    /// @param[in] i_path Path to the file.
+    /// @param[in] i_mode Permissions to use.
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_mknod(std::string const & i_path,
+                         mode_t i_mode,
+                         dev_t i_dev)
+        throw (utp::InternalError) = 0;
+
     /// Create a directory.
     ///
     /// @param[in] i_path Path to the directory.
@@ -158,15 +172,6 @@ public:
     virtual int fs_readdir(std::string const & i_path,
                            off_t i_offset,
                            DirEntryFunc & o_entryfunc)
-        throw (utp::InternalError) = 0;
-
-
-    /// Create and open a file.
-    ///
-    /// @param[in] i_path Path to the file.
-    /// @param[in] i_mode Permissions to use.
-    virtual int fs_create(std::string const & i_path,
-                          mode_t i_mode)
         throw (utp::InternalError) = 0;
 };
 

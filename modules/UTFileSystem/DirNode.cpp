@@ -196,6 +196,35 @@ DirNode::update(Context & i_ctxt,
 }
 
 int
+DirNode::mknod(Context & i_ctxt,
+               string const & i_entry,
+               mode_t i_mode,
+               dev_t i_dev)
+{
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+
+    // We're creating this file.
+    if (!fnh)
+    {
+        // Create a new file.
+        fnh = new FileNode();
+
+        // Persist it (sets the digest).
+        fnh->persist(i_ctxt);
+
+        // Insert into our Directory collection.
+        Directory::Entry * de = m_dir.add_entry();
+        de->set_name(i_entry);
+        de->set_digest(fnh->digest());
+
+        // Insert into the cache.
+        m_cache.insert(make_pair(i_entry, fnh));
+    }
+
+    return 0;
+}
+
+int
 DirNode::mkdir(Context & i_ctxt,
                string const & i_entry,
                mode_t i_mode)
@@ -235,32 +264,9 @@ DirNode::open(Context & i_ctxt,
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
 
-    if (i_flags & O_CREAT)
-    {
-        // We're creating this file.
-        if (!fnh)
-        {
-            // Create a new file.
-            fnh = new FileNode();
-
-            // Persist it (sets the digest).
-            fnh->persist(i_ctxt);
-
-            // Insert into our Directory collection.
-            Directory::Entry * de = m_dir.add_entry();
-            de->set_name(i_entry);
-            de->set_digest(fnh->digest());
-
-            // Insert into the cache.
-            m_cache.insert(make_pair(i_entry, fnh));
-        }
-    }
-    else
-    {
-        // The file needs to exist.
-        if (!fnh)
-            throw ENOENT;
-    }
+    // The file needs to exist.
+    if (!fnh)
+        throw ENOENT;
 
     return 0;
 }

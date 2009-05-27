@@ -47,6 +47,11 @@ public:
                            struct stat * o_statbuf)
         throw (utp::InternalError);
 
+    virtual int fs_mknod(std::string const & i_path,
+                         mode_t i_mode,
+                         dev_t i_dev)
+        throw (utp::InternalError);
+
     virtual int fs_mkdir(std::string const & i_path,
                          mode_t i_mode)
         throw (utp::InternalError);
@@ -70,10 +75,6 @@ public:
     virtual int fs_readdir(std::string const & i_path,
                            off_t i_offset,
                            DirEntryFunc & o_entryfunc)
-        throw (utp::InternalError);
-
-    virtual int fs_create(std::string const & i_path,
-                          mode_t i_mode)
         throw (utp::InternalError);
 
 protected:

@@ -84,6 +84,11 @@ public:
                         std::string const & i_entry,
                         utp::Digest const & i_dig);
 
+    virtual int mknod(Context & i_ctxt,
+                      std::string const & i_entry,
+                      mode_t i_mode,
+                      dev_t i_dev);
+
     virtual int mkdir(Context & i_ctxt,
                       std::string const & i_entry,
                       mode_t i_mode);

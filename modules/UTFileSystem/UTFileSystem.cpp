@@ -146,6 +146,57 @@ private:
     mode_t		m_mode;
 };
 
+class MknodTraverseFunc : public TraverseFunc
+{
+public:
+    MknodTraverseFunc(mode_t i_mode, dev_t i_dev)
+        : m_mode(i_mode), m_dev(i_dev) {}
+
+    virtual void tf_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
+    {
+        retval(i_dn.mknod(i_ctxt, i_entry, m_mode, m_dev));
+    }
+
+    virtual void tf_update(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry,
+                           Digest const & i_dig)
+    {
+        i_dn.update(i_ctxt, i_entry, i_dig);
+    }
+
+private:
+    mode_t		m_mode;
+    dev_t		m_dev;
+};
+
+int
+UTFileSystem::fs_mknod(string const & i_path,
+                       mode_t i_mode,
+                       dev_t i_dev)
+        throw (utp::InternalError)
+{
+    LOG(lgr, 6, "fs_mknod " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        MknodTraverseFunc otf(i_mode, i_dev);
+        m_rdh->traverse(m_ctxt, DirNode::TF_PARENT | DirNode::TF_UPDATE,
+                        ps.first, ps.second, otf);
+        rootref(m_rdh->digest());
+        return otf.retval();
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
+}
+
 int
 UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
     throw (utp::InternalError)
@@ -345,17 +396,6 @@ UTFileSystem::fs_readdir(string const & i_path,
     {
         return -i_errno;
     }
-}
-
-int
-UTFileSystem::fs_create(string const & i_path,
-                        mode_t i_mode)
-        throw (utp::InternalError)
-{
-    LOG(lgr, 6, "fs_create " << i_path);
-
-    throwstream(InternalError, FILELINE
-                << "UTFileSystem::fs_create unimplemented");
 }
 
 void

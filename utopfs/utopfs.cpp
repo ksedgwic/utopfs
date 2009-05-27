@@ -91,8 +91,20 @@ utopfs_readdir(char const * i_path,
 }
 
 static int
-utopfs_mkdir(char const * i_path,
-             mode_t i_mode)
+utopfs_mknod(char const * i_path, mode_t i_mode, dev_t i_dev)
+{
+    try
+    {
+        return FileSystem::instance()->fs_mknod(i_path, i_mode, i_dev);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
+utopfs_mkdir(char const * i_path, mode_t i_mode)
 {
     try
     {
@@ -105,8 +117,7 @@ utopfs_mkdir(char const * i_path,
 }
 
 static int
-utopfs_open(char const * i_path,
-            struct fuse_file_info *fi)
+utopfs_open(char const * i_path, struct fuse_file_info *fi)
 {
     try
     {
@@ -264,6 +275,7 @@ main(int argc, char ** argv)
 
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.readdir		= utopfs_readdir;
+    utopfs_oper.mknod		= utopfs_mknod;
     utopfs_oper.mkdir		= utopfs_mkdir;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;
