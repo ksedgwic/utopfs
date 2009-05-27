@@ -1,3 +1,11 @@
+Implement code to make following work:
+
+    cd mnt
+    mkdir foo
+    cd foo
+    echo word > bar
+    ls -l bar
+
 Figure out which fuse interface "touch bar" uses and implement it.
 
   Implement the setattr fuse command

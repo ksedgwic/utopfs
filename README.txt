@@ -23,8 +23,15 @@ Building
 Running
 ----------------------------------------------------------------
 
-This simple script runs utopfs in the foreground with fuse debugging
-enabled:
+Create file system in "BLOCKS" and mount it on "mnt":
 
     cd utopfs/Linux.WORKCFG
-    ./runutopfs
+    . ./env.sh
+    rm -rf BLOCKS
+    ../Linux.DBGOBJ/utopfs -M -d BLOCKS -P "" mnt
+
+Mount existing file system in "BLOCKS":
+
+    cd utopfs/Linux.WORKCFG
+    . ./env.sh
+    ../Linux.DBGOBJ/utopfs -d BLOCKS -P "" mnt
