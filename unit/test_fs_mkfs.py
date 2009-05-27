@@ -44,7 +44,7 @@ class Test_fs_mkfs:
 
   def test_can_create_file(self):
     # We should be able to create a file.
-    self.fs.fs_open("/foo", O_CREAT)
+    self.fs.fs_mknod("/foo", 0666, 0)
 
     # Now we should be able to stat the file.
     print self.fs.fs_getattr("/foo");

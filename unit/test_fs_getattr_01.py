@@ -26,7 +26,7 @@ class Test_fs_getattr_01:
     self.fs.fs_mkdir("/foo", 0755)
 
     # Make a file.
-    self.fs.fs_open("/foo/bar", O_CREAT)
+    self.fs.fs_mknod("/foo/bar", 0666, 0)
 
   def teardown_class(self):
     shutil.rmtree(self.bspath,True) 

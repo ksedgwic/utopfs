@@ -2,8 +2,6 @@ Figure out which fuse interface "touch bar" uses and implement it.
 
   Implement the setattr fuse command
 
-  Restore the unit tests; open -> mknod in most cases.
-
 Clone the getattr and readdir tests and make sure they make after
 unmount/remount.
 

@@ -28,7 +28,7 @@ class Test_fs_persist_01:
 
   def test_persistence(self):
     # Create a file.
-    self.fs.fs_open("/foo", O_CREAT)
+    self.fs.fs_mknod("/foo", 0666, 0)
 
     # Now we should be able to stat the file.
     st = self.fs.fs_getattr("/foo");

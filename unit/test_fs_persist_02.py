@@ -32,7 +32,7 @@ class Test_fs_persist_02:
     self.fs.fs_mkdir("/foo", 0755)
 
     # Create a file in the directory.
-    self.fs.fs_open("/foo/bar", O_CREAT)
+    self.fs.fs_mknod("/foo/bar", 0666, 0)
 
     # Now we should be able to stat the directory.
     st = self.fs.fs_getattr("/foo");

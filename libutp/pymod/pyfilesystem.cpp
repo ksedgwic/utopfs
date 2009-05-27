@@ -90,6 +90,30 @@ FileSystem_fs_getattr(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_mknod(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    int mode;
+    int dev;
+    if (!PyArg_ParseTuple(args, "sii:fs_mknod", &path, &mode, &dev))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_mknod(path, mode, dev);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
 FileSystem_fs_mkdir(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -245,6 +269,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
     {"fs_unmount",		(PyCFunction)FileSystem_fs_unmount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
+    {"fs_mknod",		(PyCFunction)FileSystem_fs_mknod,		METH_VARARGS},
     {"fs_mkdir",		(PyCFunction)FileSystem_fs_mkdir,		METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},
