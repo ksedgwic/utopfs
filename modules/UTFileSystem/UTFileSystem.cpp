@@ -135,14 +135,6 @@ public:
         retval(i_dn.mknod(i_ctxt, i_entry, m_mode, m_dev));
     }
 
-    virtual void tf_update(Context & i_ctxt,
-                           DirNode & i_dn,
-                           string const & i_entry,
-                           Digest const & i_dig)
-    {
-        i_dn.update(i_ctxt, i_entry, i_dig);
-    }
-
 private:
     mode_t		m_mode;
     dev_t		m_dev;
@@ -185,14 +177,6 @@ public:
         retval(i_dn.mkdir(i_ctxt, i_entry, m_mode));
     }
 
-    virtual void tf_update(Context & i_ctxt,
-                           DirNode & i_dn,
-                           string const & i_entry,
-                           Digest const & i_dig)
-    {
-        i_dn.update(i_ctxt, i_entry, i_dig);
-    }
-
 private:
     mode_t		m_mode;
 };
@@ -230,14 +214,6 @@ public:
                            string const & i_entry)
     {
         retval(i_dn.open(i_ctxt, i_entry, m_flags));
-    }
-
-    virtual void tf_update(Context & i_ctxt,
-                           DirNode & i_dn,
-                           string const & i_entry,
-                           Digest const & i_dig)
-    {
-        i_dn.update(i_ctxt, i_entry, i_dig);
     }
 
 private:
@@ -341,8 +317,8 @@ UTFileSystem::fs_write(string const & i_path,
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         WriteTraverseFunc wtf(i_data, i_size, i_off);
-        m_rdh->traverse(m_ctxt, DirNode::TF_UPDATE,
-                        ps.first, ps.second, wtf);
+        m_rdh->traverse(m_ctxt, DirNode::TF_UPDATE, ps.first, ps.second, wtf);
+        rootref(m_rdh->digest());
         return wtf.retval();
     }
     catch (int const & i_errno)
@@ -409,14 +385,6 @@ public:
         i_fn.atime(m_atime);
         i_fn.mtime(m_mtime);
         retval(0);
-    }
-
-    virtual void tf_update(Context & i_ctxt,
-                           DirNode & i_dn,
-                           string const & i_entry,
-                           Digest const & i_dig)
-    {
-        i_dn.update(i_ctxt, i_entry, i_dig);
     }
 
 private:

@@ -32,11 +32,12 @@ public:
     {}
 
     // Called post-traversal on directories for updating.
+    // Default implementation persists the parent node.
+    //
     virtual void tf_update(Context & i_ctxt,
                            DirNode & i_dn,
                            std::string const & i_entry,
-                           utp::Digest const & i_dig)
-    {}
+                           utp::Digest const & i_dig);
 
     int retval() const { return m_retval; }
 

@@ -54,5 +54,5 @@ class Test_fs_write_01:
     assert st[ST_SIZE] == 8
 
     # We should be able to read the data.
-    buf = self.fs.fs_read("/foo")
+    buf = self.fs.fs_read("/foo", 1024)
     assert str(buf) == "testdata"

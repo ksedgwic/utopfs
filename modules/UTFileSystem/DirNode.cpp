@@ -16,6 +16,15 @@ using namespace google::protobuf::io;
 
 namespace UTFS {
 
+void
+TraverseFunc::tf_update(Context & i_ctxt,
+                        DirNode & i_dn,
+                        std::string const & i_entry,
+                        utp::Digest const & i_dig)
+{
+    i_dn.update(i_ctxt, i_entry, i_dig);
+}
+
 pair<string, string>
 DirNode::pathsplit(string const & i_path)
 {
@@ -161,7 +170,7 @@ DirNode::persist(Context & i_ctxt)
     }
 
     // Persist our directory map.
-    bool rv = m_dir.SerializeToArray(data(), size());
+    bool rv = m_dir.SerializeToArray(inl_data(), inl_size());
     if (!rv)
         throwstream(InternalError, FILELINE << "dir serialization error");
 
@@ -326,7 +335,7 @@ DirNode::deserialize()
     // because ParseFromArray insists that the entire input
     // stream be consumed.
     //
-    ArrayInputStream input(data(), size());
+    ArrayInputStream input(inl_data(), inl_size());
     CodedInputStream decoder(&input);
     if (!m_dir.ParseFromCodedStream(&decoder))
         throwstream(InternalError, FILELINE

@@ -70,11 +70,11 @@ public:
 
 protected:
 
-    utp::uint8 const * data() const { return m_data; }
+    utp::uint8 const * inl_data() const { return m_inl; }
 
-    utp::uint8 * data() { return m_data; }
+    utp::uint8 * inl_data() { return m_inl; }
 
-    size_t size() { return sizeof(m_data); }
+    size_t inl_size() { return sizeof(m_inl); }
 
     size_t fixed_field_size() const;
 
@@ -85,7 +85,7 @@ private:
 
     INode				m_inode;
 
- 	utp::uint8			m_data[INLSZ];
+ 	utp::uint8			m_inl[INLSZ];
 
     utp::Digest			m_direct[20];
     utp::Digest			m_sindir;		// single indirect

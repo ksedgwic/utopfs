@@ -76,7 +76,7 @@ FileNode::FileNode()
     m_inode.set_mtime(now.usec());
     m_inode.set_ctime(now.usec());
 
-    ACE_OS::memset(m_data, '\0', sizeof(m_data));
+    ACE_OS::memset(m_inl, '\0', sizeof(m_inl));
 }
 
 FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
@@ -116,8 +116,8 @@ FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
     uint8 * ptr = &buf[BLKSZ - fixedsz];
 
     // Copy the inline data.
-    ACE_OS::memcpy(m_data, ptr, sizeof(m_data));
-    ptr += sizeof(m_data);
+    ACE_OS::memcpy(m_inl, ptr, sizeof(m_inl));
+    ptr += sizeof(m_inl);
 
     // Copy the block references.
     ACE_OS::memcpy(m_direct, ptr, sizeof(m_direct));
@@ -168,8 +168,8 @@ FileNode::persist(Context & i_ctxt)
     uint8 * ptr = &buf[BLKSZ - fixedsz];
 
     // Copy the inline data.
-    ACE_OS::memcpy(ptr, m_data, sizeof(m_data));
-    ptr += sizeof(m_data);
+    ACE_OS::memcpy(ptr, m_inl, sizeof(m_inl));
+    ptr += sizeof(m_inl);
 
     // Copy the block references.
     ACE_OS::memcpy(ptr, m_direct, sizeof(m_direct));
@@ -230,12 +230,19 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     // For now, bail on anything that is bigger then fits
     // in a single INode.
     //
-    if (i_off + i_size > sizeof(m_data))
+    if (i_off + i_size > sizeof(m_inl))
         throwstream(InternalError, FILELINE
                     << "FileNode::read outside inlined bytes unsupported");
 
-    ACE_OS::memcpy(o_bufptr, m_data + i_off, i_size);
-    return i_size;
+    // Can't read past the end of data.
+    if (i_off > off_t(size()))
+        return 0;
+
+    // Don't return bytes past the end of the file.
+    size_t sz = min(i_size, size() - i_off);
+
+    ACE_OS::memcpy(o_bufptr, m_inl + i_off, sz);
+    return sz;
 }
 
 int
@@ -247,13 +254,18 @@ FileNode::write(Context & i_ctxt,
     // For now, bail on anything that is bigger then fits
     // in a single INode.
     //
-    if (i_off + i_size > sizeof(m_data))
+    if (i_off + i_size > sizeof(m_inl))
         throwstream(InternalError, FILELINE
                     << "FileNode::write outside inlined bytes unsupported");
 
-    ACE_OS::memcpy(m_data + i_off, i_data, i_size);
+    // Write the data.
+    ACE_OS::memcpy(m_inl + i_off, i_data, i_size);
 
-    size(i_off + i_size);
+    // If the file grew the size needs to be larger.
+    size(max(i_off + i_size, size()));
+
+    // Save the new state to the blockstore.
+    persist(i_ctxt);
 
     return i_size;
 }
@@ -261,7 +273,7 @@ FileNode::write(Context & i_ctxt,
 size_t
 FileNode::fixed_field_size() const
 {
-    return sizeof(m_data)
+    return sizeof(m_inl)
         + sizeof(m_direct)
         + sizeof(m_sindir)
         + sizeof(m_dindir)
