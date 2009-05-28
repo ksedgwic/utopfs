@@ -425,8 +425,9 @@ private:
 };
 
 int
-UTFileSystem::fs_utimens(std::string const & i_path,
-                         struct timespec const i_tv[2])
+UTFileSystem::fs_utime(string const & i_path,
+                       T64 const & i_atime,
+                       T64 const & i_mtime)
         throw (utp::InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
@@ -434,7 +435,7 @@ UTFileSystem::fs_utimens(std::string const & i_path,
     try
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
-        UtimeTraverseFunc otf(i_tv[0], i_tv[1]);
+        UtimeTraverseFunc otf(i_atime, i_mtime);
         m_rdh->traverse(m_ctxt, DirNode::TF_UPDATE,
                         ps.first, ps.second, otf);
         rootref(m_rdh->digest());

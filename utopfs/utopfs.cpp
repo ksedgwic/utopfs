@@ -168,7 +168,7 @@ utopfs_utimens(char const * i_path, struct timespec const i_tv[2])
 {
     try
     {
-        return FileSystem::instance()->fs_utimens(i_path, i_tv);
+        return FileSystem::instance()->fs_utime(i_path, i_tv[0], i_tv[1]);
     }
     catch (utp::Exception const & ex)
     {
