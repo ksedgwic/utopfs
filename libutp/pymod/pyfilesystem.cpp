@@ -164,9 +164,9 @@ FileSystem_fs_read(FileSystemObject *self, PyObject *args)
 {
     char * path;
     long int size;
-    long int offset;
+    long int offset = 0;
     
-    if (!PyArg_ParseTuple(args, "sll:fs_read", &path, &size, &offset))
+    if (!PyArg_ParseTuple(args, "sl|l:fs_read", &path, &size, &offset))
         return NULL;
 
     // Allocate a buffer big enough for the users entire request.
@@ -210,9 +210,9 @@ FileSystem_fs_write(FileSystemObject *self, PyObject *args)
     char * path;
     char * data;
     int size;
-    long int offset;
+    long int offset = 0;
     
-    if (!PyArg_ParseTuple(args, "ss#l:fs_write",
+    if (!PyArg_ParseTuple(args, "ss#|l:fs_write",
                           &path, &data, &size, &offset))
         return NULL;
 

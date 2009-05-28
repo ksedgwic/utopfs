@@ -10,6 +10,7 @@ PYTESTS =	\
 			test_fs_persist_02.py \
 			test_fs_getattr_01.py \
 			test_fs_readdir_01.py \
+			test_fs_write_01.py \
 			$(NULL)
 
 SCRIPTS =	\
