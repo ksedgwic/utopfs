@@ -230,9 +230,9 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     // For now, bail on anything that is bigger then fits
     // in a single INode.
     //
-    if (i_off + i_size > 2048)
+    if (i_off + i_size > sizeof(m_data))
         throwstream(InternalError, FILELINE
-                    << "FileNode::read outside first 2048 bytes unsupported");
+                    << "FileNode::read outside inlined bytes unsupported");
 
     ACE_OS::memcpy(o_bufptr, m_data + i_off, i_size);
     return i_size;
@@ -247,11 +247,14 @@ FileNode::write(Context & i_ctxt,
     // For now, bail on anything that is bigger then fits
     // in a single INode.
     //
-    if (i_off + i_size > 2048)
+    if (i_off + i_size > sizeof(m_data))
         throwstream(InternalError, FILELINE
-                    << "FileNode::write outside first 2048 bytes unsupported");
+                    << "FileNode::write outside inlined bytes unsupported");
 
     ACE_OS::memcpy(m_data + i_off, i_data, i_size);
+
+    size(i_off + i_size);
+
     return i_size;
 }
 

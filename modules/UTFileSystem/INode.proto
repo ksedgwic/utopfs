@@ -26,7 +26,7 @@ message INode
 // ~            padding             ~
 // +--------------------------------+
 // |                                |
-// |         First 2K File          |
+// |         First 4K File          |
 // |                                |
 // +--------------------------------+
 // |         Direct Ref[0]          |
@@ -48,8 +48,10 @@ message INode
 
 // How big is an INode?
 //
+// THESE NUMBERS ARE ALL OLD
+//
 // INode message                  = 1024
-// First 2K of the file           = 2048
+// First 4K of the file           = 4096
 // 20 direct references = 20 * 32 =  640
 //  1 single indirect   =      32 =   32
 //  1 double indirect   =      32 =   32

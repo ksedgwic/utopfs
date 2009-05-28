@@ -22,7 +22,8 @@ namespace UTFS {
 class UTFS_EXP FileNode : public virtual utp::RCObj
 {
 public:
-    static const size_t BLKSZ = 4096;
+    static const size_t BLKSZ = 8192;
+    static const size_t INLSZ = 4096;
 
     FileNode();
 
@@ -55,6 +56,10 @@ public:
 
     void nlink(nlink_t i_nlink) { m_inode.set_nlink(i_nlink); }
 
+    size_t size() const { return m_inode.size(); }
+
+    void size(size_t i_size) { m_inode.set_size(i_size); }
+
     utp::T64 atime() const { return m_inode.atime(); }
 
     void atime(utp::T64 const & i_atime) { m_inode.set_atime(i_atime.usec()); }
@@ -80,7 +85,7 @@ private:
 
     INode				m_inode;
 
- 	utp::uint8			m_data[2048];
+ 	utp::uint8			m_data[INLSZ];
 
     utp::Digest			m_direct[20];
     utp::Digest			m_sindir;		// single indirect
