@@ -1,6 +1,3 @@
-Clone the getattr and readdir tests and make sure they make after
-unmount/remount.
-
 Figure out the uid an gid, are they in the file_info_t?
 
   Add tests for mknod based on permissions.
