@@ -1,17 +1,3 @@
-Figure out which fuse interface "touch bar" uses and implement it.
-
-  Implement the setattr fuse command
-
-Factor the td_update routine into the base class.
-
-Implement code to make following work:
-
-    cd mnt
-    mkdir foo
-    cd foo
-    echo word > bar
-    ls -l bar
-
 Clone the getattr and readdir tests and make sure they make after
 unmount/remount.
 
@@ -26,3 +12,110 @@ Add test for what happens when passwords don't match.
 Graphic identity for utopfs?
 
 Check object lifetimes of the python direntry callback objects.
+
+
+Write Blocksize Question
+----------------------------------------------------------------
+
+What happens when you "dd if=/dev/urandom of=bar bs=128k count=1"?
+
+Specifically, does the fuse interface call utopfs w/ a 128k write or
+with a series of 4k writes?
+
+<pre>
+unique: 401, opcode: GETATTR (3), nodeid: 1, insize: 56
+2009-05-28 20:52:50.427 T4 UTFS  UTFileSystem.cpp:107 fs_getattr /
+   unique: 401, error: 0 (Success), outsize: 112
+unique: 402, opcode: STATFS (17), nodeid: 1, insize: 40
+   unique: 402, error: 0 (Success), outsize: 96
+unique: 403, opcode: GETATTR (3), nodeid: 3, insize: 56
+2009-05-28 20:52:50.959 T2 UTFS  UTFileSystem.cpp:107 fs_getattr /foo
+   unique: 403, error: 0 (Success), outsize: 112
+unique: 404, opcode: LOOKUP (1), nodeid: 3, insize: 44
+LOOKUP /foo/bar
+2009-05-28 20:52:50.961 T5 UTFS  UTFileSystem.cpp:107 fs_getattr /foo/bar
+   unique: 404, error: -2 (No such file or directory), outsize: 16
+unique: 405, opcode: CREATE (35), nodeid: 3, insize: 52
+   unique: 405, error: -38 (Function not implemented), outsize: 16
+unique: 406, opcode: MKNOD (8), nodeid: 3, insize: 52
+MKNOD /foo/bar
+2009-05-28 20:52:50.961 T4 UTFS  UTFileSystem.cpp:149 fs_mknod /foo/bar
+2009-05-28 20:52:50.961 T4 UTFS  FileNode.cpp:64 CTOR
+2009-05-28 20:52:50.962 T4 UTFS  FileNode.cpp:203 persist BB7VXMUN...
+2009-05-28 20:52:50.962 T4 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.962 T4 UTFS  DirNode.cpp:186 update bar BB7VXMUN...
+2009-05-28 20:52:50.962 T4 UTFS  DirNode.cpp:161 persist
+2009-05-28 20:52:50.962 T4 UTFS  DirNode.cpp:168 [0]: BB7VXMUN... bar
+2009-05-28 20:52:50.963 T4 UTFS  FileNode.cpp:203 persist 7EKBV5F2...
+2009-05-28 20:52:50.963 T4 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.963 T4 UTFS  DirNode.cpp:186 update foo 7EKBV5F2...
+2009-05-28 20:52:50.963 T4 UTFS  DirNode.cpp:161 persist
+2009-05-28 20:52:50.963 T4 UTFS  DirNode.cpp:168 [0]: 7EKBV5F2... foo
+2009-05-28 20:52:50.963 T4 UTFS  FileNode.cpp:203 persist M3V7YBP2...
+2009-05-28 20:52:50.963 T4 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.964 T4 UTFS  UTFileSystem.cpp:421 rootref set M3V7YBP2...
+2009-05-28 20:52:50.964 T4 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.964 T4 UTFS  UTFileSystem.cpp:107 fs_getattr /foo/bar
+   NODEID: 4
+   unique: 406, error: 0 (Success), outsize: 136
+unique: 407, opcode: OPEN (14), nodeid: 4, insize: 48
+2009-05-28 20:52:50.964 T6 UTFS  UTFileSystem.cpp:227 fs_open /foo/bar
+2009-05-28 20:52:50.964 T6 UTFS  DirNode.cpp:186 update bar BB7VXMUN...
+2009-05-28 20:52:50.964 T6 UTFS  DirNode.cpp:161 persist
+2009-05-28 20:52:50.964 T6 UTFS  DirNode.cpp:168 [0]: BB7VXMUN... bar
+2009-05-28 20:52:50.965 T6 UTFS  FileNode.cpp:203 persist 7EKBV5F2...
+2009-05-28 20:52:50.965 T6 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.965 T6 UTFS  DirNode.cpp:186 update foo 7EKBV5F2...
+2009-05-28 20:52:50.965 T6 UTFS  DirNode.cpp:161 persist
+2009-05-28 20:52:50.965 T6 UTFS  DirNode.cpp:168 [0]: 7EKBV5F2... foo
+2009-05-28 20:52:50.965 T6 UTFS  FileNode.cpp:203 persist M3V7YBP2...
+2009-05-28 20:52:50.965 T6 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.965 T6 UTFS  UTFileSystem.cpp:421 rootref set M3V7YBP2...
+2009-05-28 20:52:50.965 T6 FSBS  FSBlockStore.cpp:136 bs_put_block
+   unique: 407, error: 0 (Success), outsize: 32
+OPEN[0] flags: 0x8001 /foo/bar
+unique: 408, opcode: FLUSH (25), nodeid: 4, insize: 64
+FLUSH[0]
+   unique: 408, error: -38 (Function not implemented), outsize: 16
+unique: 409, opcode: GETXATTR (22), nodeid: 4, insize: 68
+   unique: 409, error: -38 (Function not implemented), outsize: 16
+unique: 410, opcode: WRITE (16), nodeid: 4, insize: 4160
+WRITE[0] 4096 bytes to 0
+2009-05-28 20:52:50.997 T3 UTFS  UTFileSystem.cpp:312 fs_write /foo/bar sz=4096 off=0
+2009-05-28 20:52:50.997 T3 UTFS  FileNode.cpp:203 persist XTJO4TT4...
+2009-05-28 20:52:50.997 T3 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.997 T3 UTFS  DirNode.cpp:186 update bar XTJO4TT4...
+2009-05-28 20:52:50.997 T3 UTFS  DirNode.cpp:161 persist
+2009-05-28 20:52:50.997 T3 UTFS  DirNode.cpp:168 [0]: XTJO4TT4... bar
+2009-05-28 20:52:50.997 T3 UTFS  FileNode.cpp:203 persist D7DVZBKP...
+2009-05-28 20:52:50.997 T3 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.998 T3 UTFS  DirNode.cpp:186 update foo D7DVZBKP...
+2009-05-28 20:52:50.998 T3 UTFS  DirNode.cpp:161 persist
+2009-05-28 20:52:50.998 T3 UTFS  DirNode.cpp:168 [0]: D7DVZBKP... foo
+2009-05-28 20:52:50.998 T3 UTFS  FileNode.cpp:203 persist TWCFJBKF...
+2009-05-28 20:52:50.998 T3 FSBS  FSBlockStore.cpp:136 bs_put_block
+2009-05-28 20:52:50.998 T3 UTFS  UTFileSystem.cpp:421 rootref set TWCFJBKF...
+2009-05-28 20:52:50.998 T3 FSBS  FSBlockStore.cpp:136 bs_put_block
+   WRITE[0] 4096 bytes
+   unique: 410, error: 0 (Success), outsize: 24
+unique: 411, opcode: WRITE (16), nodeid: 4, insize: 4160
+WRITE[0] 4096 bytes to 4096
+2009-05-28 20:52:50.998 T4 UTFS  UTFileSystem.cpp:312 fs_write /foo/bar sz=4096 off=4096
+InternalError: FileNode.cpp:259 FileNode::write outside inlined bytes unsupported
+  utp::Exception::Exception(std::string const&, std::string const&)
+  utp::InternalError::InternalError(std::string const&)
+  UTFS::FileNode::write(UTFS::Context&, void const*, unsigned long, long)
+  UTFS::WriteTraverseFunc::tf_leaf(UTFS::Context&, UTFS::FileNode&)
+  UTFS::DirNode::traverse(UTFS::Context&, unsigned int, std::string const&, std::string const&, UTFS::TraverseFunc&)
+  UTFS::DirNode::traverse(UTFS::Context&, unsigned int, std::string const&, std::string const&, UTFS::TraverseFunc&)
+  UTFS::RootDirNode::traverse(UTFS::Context&, unsigned int, std::string const&, std::string const&, UTFS::TraverseFunc&)
+  UTFS::UTFileSystem::fs_write(std::string const&, void const*, unsigned long, long)
+  addr2line -C -s -f -e /home/ksedgwic/utopfs/utopfs/utopfs/Linux.DBGOBJ/utopfs 0x402397
+  addr2line -C -s -f -e /lib64/libfuse.so.2 0x319ac0c749
+  addr2line -C -s -f -e /lib64/libfuse.so.2 0x319ac12537
+  addr2line -C -s -f -e /lib64/libfuse.so.2 0x319ac0ff3f
+  addr2line -C -s -f -e /lib64/libpthread.so.0 0x35406073da
+  clone
+./runutopfs: line 31:  3371 Aborted                 ${USEVG} /home/ksedgwic/utopfs/utopfs/utopfs/Linux.DBGOBJ/utopfs -M -d BLOCKS -P "" mnt
+[ksedgwic@lap3 Linux.WORKCFG]$ 
+</pre>
