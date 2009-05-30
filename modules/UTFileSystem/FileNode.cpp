@@ -16,6 +16,7 @@
 
 #include "utfslog.h"
 
+#include "BlockNode.h"
 #include "Context.h"
 #include "FileNode.h"
 
@@ -84,7 +85,7 @@ FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
 {
     LOG(lgr, 6, "CTOR " << i_dig);
 
-    uint8 buf[BLKSZ];
+    uint8 buf[BlockNode::BLKSZ];
 
     // Read the block from the blockstore.
     i_ctxt.m_bsh->bs_get_block(i_dig.data(), i_dig.size(),
@@ -100,7 +101,7 @@ FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
     size_t fixedsz = fixed_field_size();
 
     // Parse the INode data.
-    size_t sz = BLKSZ - sizeof(m_initvec) - fixedsz;
+    size_t sz = BlockNode::BLKSZ - sizeof(m_initvec) - fixedsz;
     
     // NOTE - We use protobuf components individually here
     // because ParseFromArray insists that the entire input
@@ -113,7 +114,7 @@ FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
                     << "inode deserialization failed");
 
     // Setup a pointer for the fixed fields.
-    uint8 * ptr = &buf[BLKSZ - fixedsz];
+    uint8 * ptr = &buf[BlockNode::BLKSZ - fixedsz];
 
     // Copy the inline data.
     ACE_OS::memcpy(m_inl, ptr, sizeof(m_inl));
@@ -148,7 +149,7 @@ FileNode::~FileNode()
 void
 FileNode::persist(Context & i_ctxt)
 {
-    uint8 buf[BLKSZ];
+    uint8 buf[BlockNode::BLKSZ];
 
     // Clear the buffer first.  Seems unnecessary, but I don't
     // like leaking our stack contents out in blocks ...
@@ -159,13 +160,13 @@ FileNode::persist(Context & i_ctxt)
     size_t fixedsz = fixed_field_size();
     
     // Compute the size available for the inode fields and serialize.
-    size_t sz = BLKSZ - sizeof(m_initvec) - fixedsz;
+    size_t sz = BlockNode::BLKSZ - sizeof(m_initvec) - fixedsz;
     bool rv = m_inode.SerializeToArray(buf + sizeof(m_initvec), sz);
     if (!rv)
         throwstream(InternalError, FILELINE << "inode serialization error");
 
     // Setup a pointer for the fixed fields.
-    uint8 * ptr = &buf[BLKSZ - fixedsz];
+    uint8 * ptr = &buf[BlockNode::BLKSZ - fixedsz];
 
     // Copy the inline data.
     ACE_OS::memcpy(ptr, m_inl, sizeof(m_inl));

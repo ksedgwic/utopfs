@@ -37,16 +37,16 @@ RootDirNode::traverse(Context & i_ctxt,
                       unsigned int i_flags,
                       string const & i_entry,
                       string const & i_rmndr,
-                      TraverseFunc & i_trav)
+                      NodeTraverseFunc & i_trav)
 {
     // Check for the root directory itself.
     if (i_entry.empty())
     {
         // If a parent traversal was requested then we have issues.
-        if (i_flags & TF_PARENT)
+        if (i_flags & NT_PARENT)
             throw ENOENT;
 
-        i_trav.tf_leaf(i_ctxt, *this);
+        i_trav.nt_leaf(i_ctxt, *this);
 
         // I think our caller has to do any required update.
     }
@@ -56,7 +56,7 @@ RootDirNode::traverse(Context & i_ctxt,
     {
         if (i_rmndr.empty())
         {
-            i_trav.tf_leaf(i_ctxt, *m_sdh);
+            i_trav.nt_leaf(i_ctxt, *m_sdh);
         }
         else
         {
@@ -67,7 +67,7 @@ RootDirNode::traverse(Context & i_ctxt,
         // SPECIAL CASE: Changes to the .utopfs dir don't update
         // our digest.
         //
-        // i_trav.tf_update(*this, i_entry, m_sdh->digest());
+        // i_trav.nt_update(*this, i_entry, m_sdh->digest());
     }
 
     // Otherwise defer to the base class.

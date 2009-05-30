@@ -32,16 +32,16 @@ SpecialDirNode::traverse(Context & i_ctxt,
                          unsigned int i_flags,
                          string const & i_entry,
                          string const & i_rmndr,
-                         TraverseFunc & i_trav)
+                         NodeTraverseFunc & i_trav)
 {
     // Check for special files.
     if (i_entry == "version" && i_rmndr.empty())
     {
-        i_trav.tf_parent(i_ctxt, *this, i_entry);
-        i_trav.tf_leaf(i_ctxt, *m_version);
+        i_trav.nt_parent(i_ctxt, *this, i_entry);
+        i_trav.nt_leaf(i_ctxt, *m_version);
 
         // SPECIAL CASE: We don't update digests ...
-        // i_trav.tf_update(*this, i_entry, m_version->digest());
+        // i_trav.nt_update(*this, i_entry, m_version->digest());
     }
 
     else

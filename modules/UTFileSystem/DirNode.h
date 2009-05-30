@@ -21,20 +21,20 @@ namespace UTFS {
 class UTFS_EXP DirNode : public FileNode
 {
 public:
-    // Directory traversal functor base class.
+    // Node traversal functor base class.
     //
-    class UTFS_EXP TraverseFunc
+    class UTFS_EXP NodeTraverseFunc
     {
     public:
         // Called on the leaf node of a traversal.  Empty by default.
-        virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
+        virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
         {}
 
         // Called on the parent node of a traversal.  The parent is
         // the second from the bottom, the parent of the leaf.  Empty
         // by default.
         //
-        virtual void tf_parent(Context & i_ctxt,
+        virtual void nt_parent(Context & i_ctxt,
                                DirNode & i_dn,
                                std::string const & i_entry)
         {}
@@ -42,7 +42,7 @@ public:
         // Called post-traversal order on directories for updating.
         // Default implementation persists the directory node.
         //
-        virtual void tf_update(Context & i_ctxt,
+        virtual void nt_update(Context & i_ctxt,
                                DirNode & i_dn,
                                std::string const & i_entry,
                                utp::Digest const & i_dig);
@@ -69,7 +69,7 @@ public:
     // Default Constructor.
     DirNode();
 
-    // "Upgrade from FileNode" copy constructor.
+    // "Upgrade FileNode to a DirNode" copy constructor.
     DirNode(FileNode const & i_fn);
 
     // Constructor from blockstore persisted data.
@@ -81,9 +81,9 @@ public:
     // Traversal option flags.
     enum TraverseFlags
     {
-        TF_DEFAULT		= 0x0,	// Traverse to leaf, don't update.
-        TF_PARENT		= 0x1,	// Stop at parent, leaf may be missing.
-        TF_UPDATE		= 0x2	// Call the update method.
+        NT_DEFAULT		= 0x0,	// Traverse to leaf, don't update.
+        NT_PARENT		= 0x1,	// Stop at parent, leaf may be missing.
+        NT_UPDATE		= 0x2	// Call the update method.
     };
 
     // Traverse a path calling functor methods as appropriate.
@@ -91,7 +91,7 @@ public:
                           unsigned int i_flags,
                           std::string const & i_entry,
                           std::string const & i_rmndr,
-                          TraverseFunc & i_trav);
+                          NodeTraverseFunc & i_trav);
 
     // Persist this DirNode to blockstore and update digest.
     virtual void persist(Context & i_ctxt);

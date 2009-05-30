@@ -17,7 +17,7 @@ using namespace google::protobuf::io;
 namespace UTFS {
 
 void
-DirNode::TraverseFunc::tf_update(Context & i_ctxt,
+DirNode::NodeTraverseFunc::nt_update(Context & i_ctxt,
                                  DirNode & i_dn,
                                  std::string const & i_entry,
                                  utp::Digest const & i_dig)
@@ -83,11 +83,11 @@ DirNode::traverse(Context & i_ctxt,
                   unsigned int i_flags,
                   string const & i_entry,
                   string const & i_rmndr,
-                  TraverseFunc & i_trav)
+                  NodeTraverseFunc & i_trav)
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
 
-    if (i_flags & TF_PARENT)
+    if (i_flags & NT_PARENT)
     {
         // This is a parent traversal.
 
@@ -95,14 +95,14 @@ DirNode::traverse(Context & i_ctxt,
         if (i_rmndr.empty())
         {
             // Yes, this is the parent.
-            i_trav.tf_parent(i_ctxt, *this, i_entry);
+            i_trav.nt_parent(i_ctxt, *this, i_entry);
 
-            if (i_flags & TF_UPDATE)
+            if (i_flags & NT_UPDATE)
             {
                 // Need to redo the lookup because it might have changed.
                 fnh = lookup(i_ctxt, i_entry);
                 if (fnh)
-                    i_trav.tf_update(i_ctxt, *this, i_entry, fnh->digest());
+                    i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
             }
         }
         else
@@ -120,8 +120,8 @@ DirNode::traverse(Context & i_ctxt,
             pair<string, string> ps = pathsplit(i_rmndr);
             dnh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
-            if (i_flags & TF_UPDATE)
-                i_trav.tf_update(i_ctxt, *this, i_entry, fnh->digest());
+            if (i_flags & NT_UPDATE)
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
         }
     }
     else
@@ -132,10 +132,10 @@ DirNode::traverse(Context & i_ctxt,
 
         if (i_rmndr.empty())
         {
-            i_trav.tf_leaf(i_ctxt, *fnh);
+            i_trav.nt_leaf(i_ctxt, *fnh);
 
-            if (i_flags & TF_UPDATE)
-                i_trav.tf_update(i_ctxt, *this, i_entry, fnh->digest());
+            if (i_flags & NT_UPDATE)
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
         }
         else
         {
@@ -148,8 +148,8 @@ DirNode::traverse(Context & i_ctxt,
             pair<string, string> ps = pathsplit(i_rmndr);
             dnh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
-            if (i_flags & TF_UPDATE)
-                i_trav.tf_update(i_ctxt, *this, i_entry, fnh->digest());
+            if (i_flags & NT_UPDATE)
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
         }
     }
 

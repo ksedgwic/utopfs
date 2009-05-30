@@ -27,7 +27,7 @@ public:
                           unsigned int i_flags,
                           std::string const & i_entry,
                           std::string const & i_rmndr,
-                          TraverseFunc & i_trav);
+                          NodeTraverseFunc & i_trav);
 
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);

@@ -17,22 +17,55 @@
 
 #include "INode.pb.h"
 
+#include "BlockNode.h"
+
 namespace UTFS {
 
 class UTFS_EXP FileNode : public virtual utp::RCObj
 {
 public:
-    static const size_t BLKSZ = 8192;
+    // How much data is "inlined" in the FileNode itself.
     static const size_t INLSZ = 4096;
 
+    // Block traversal functor base class.
+    //
+    class UTFS_EXP BlockTraverseFunc
+    {
+    public:
+        /// Block visit method called on each block in the traversal.
+        // The i_off argument expresses the offset that this block
+        // represents in the logical file.
+        virtual void bt_visit(Context & i_ctxt,
+                              void * i_data,
+                              size_t i_size,
+                              off_t i_off);
+
+        // Called in post-traversal order on block indexes for with
+        // list of updated block digests.  Default implementation
+        // persists the block node ...
+        //
+        virtual void bt_update(Context & i_ctxt,
+                               BlockNode & i_bn,
+                               IndirectBlockNode::BindingSeq const & i_bbs);
+    };
+
+    // Default constructor.
     FileNode();
 
+    // Constructor from blockstore persisted data.
     FileNode(Context & i_ctxt, utp::Digest const & i_dig);
 
+    // Destructor.
     virtual ~FileNode();
 
+    // Returns the cached digest of the node.  This value is not
+    // computed until persist() is called.
+    //
     virtual utp::Digest const & digest() { return m_digest; }
 
+    // Persist the node to the blockstore and update the cached
+    // digest value.
+    //
     virtual void persist(Context & i_ctxt);
 
     virtual int getattr(Context & i_ctxt,
@@ -69,12 +102,11 @@ public:
     void mtime(utp::T64 const & i_mtime) { m_inode.set_mtime(i_mtime.usec()); }
 
 protected:
-
     utp::uint8 const * inl_data() const { return m_inl; }
 
     utp::uint8 * inl_data() { return m_inl; }
 
-    size_t inl_size() { return sizeof(m_inl); }
+    size_t inl_size() const { return sizeof(m_inl); }
 
     size_t fixed_field_size() const;
 

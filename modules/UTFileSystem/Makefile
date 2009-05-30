@@ -8,6 +8,7 @@ PROTO +=	\
 			$(NULL)
 
 LIBSRC += 	\
+			BlockNode.cpp \
 			DirNode.cpp \
 			FileNode.cpp \
 			RootDirNode.cpp \
