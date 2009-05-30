@@ -21,30 +21,41 @@ namespace UTFS {
 class UTFS_EXP DirNode : public FileNode
 {
 public:
+    // Directory traversal functor base class.
+    //
     class UTFS_EXP TraverseFunc
     {
     public:
-        // Called on the leaf node of a traversal.
+        // Called on the leaf node of a traversal.  Empty by default.
         virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
         {}
 
-        // Called on the parent node of a traversal.
+        // Called on the parent node of a traversal.  The parent is
+        // the second from the bottom, the parent of the leaf.  Empty
+        // by default.
+        //
         virtual void tf_parent(Context & i_ctxt,
                                DirNode & i_dn,
                                std::string const & i_entry)
         {}
 
-        // Called post-traversal on directories for updating.
-        // Default implementation persists the parent node.
+        // Called post-traversal order on directories for updating.
+        // Default implementation persists the directory node.
         //
         virtual void tf_update(Context & i_ctxt,
                                DirNode & i_dn,
                                std::string const & i_entry,
                                utp::Digest const & i_dig);
 
+        // Accesses the "return value" assigned by the leaf or parent
+        // routine.
+        //
         int retval() const { return m_retval; }
 
     protected:
+        // Called to set the return value in the leaf or parent
+        // routine.
+        //
         void retval(int i_retval) { m_retval = i_retval; }
 
     private:
@@ -55,14 +66,19 @@ public:
     static std::pair<std::string, std::string>
         pathsplit(std::string const & i_path);
 
+    // Default Constructor.
     DirNode();
 
+    // "Upgrade from FileNode" copy constructor.
     DirNode(FileNode const & i_fn);
 
+    // Constructor from blockstore persisted data.
     DirNode(Context & i_ctxt, utp::Digest const & i_dig);
 
+    // Destructor.
     virtual ~DirNode();
 
+    // Traversal option flags.
     enum TraverseFlags
     {
         TF_DEFAULT		= 0x0,	// Traverse to leaf, don't update.
