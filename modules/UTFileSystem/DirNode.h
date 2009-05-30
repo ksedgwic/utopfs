@@ -18,39 +18,39 @@
 
 namespace UTFS {
 
-class UTFS_EXP TraverseFunc
-{
-public:
-    // Called on the leaf node of a traversal.
-    virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
-    {}
-
-    // Called on the parent node of a traversal.
-    virtual void tf_parent(Context & i_ctxt,
-                           DirNode & i_dn,
-                           std::string const & i_entry)
-    {}
-
-    // Called post-traversal on directories for updating.
-    // Default implementation persists the parent node.
-    //
-    virtual void tf_update(Context & i_ctxt,
-                           DirNode & i_dn,
-                           std::string const & i_entry,
-                           utp::Digest const & i_dig);
-
-    int retval() const { return m_retval; }
-
-protected:
-    void retval(int i_retval) { m_retval = i_retval; }
-
-private:
-    int				m_retval;
-};
-
 class UTFS_EXP DirNode : public FileNode
 {
 public:
+    class UTFS_EXP TraverseFunc
+    {
+    public:
+        // Called on the leaf node of a traversal.
+        virtual void tf_leaf(Context & i_ctxt, FileNode & i_fn)
+        {}
+
+        // Called on the parent node of a traversal.
+        virtual void tf_parent(Context & i_ctxt,
+                               DirNode & i_dn,
+                               std::string const & i_entry)
+        {}
+
+        // Called post-traversal on directories for updating.
+        // Default implementation persists the parent node.
+        //
+        virtual void tf_update(Context & i_ctxt,
+                               DirNode & i_dn,
+                               std::string const & i_entry,
+                               utp::Digest const & i_dig);
+
+        int retval() const { return m_retval; }
+
+    protected:
+        void retval(int i_retval) { m_retval = i_retval; }
+
+    private:
+        int				m_retval;
+    };
+
     // Split a path into the next component and the remainder.
     static std::pair<std::string, std::string>
         pathsplit(std::string const & i_path);

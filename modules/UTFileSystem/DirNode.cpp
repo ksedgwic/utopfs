@@ -17,10 +17,10 @@ using namespace google::protobuf::io;
 namespace UTFS {
 
 void
-TraverseFunc::tf_update(Context & i_ctxt,
-                        DirNode & i_dn,
-                        std::string const & i_entry,
-                        utp::Digest const & i_dig)
+DirNode::TraverseFunc::tf_update(Context & i_ctxt,
+                                 DirNode & i_dn,
+                                 std::string const & i_entry,
+                                 utp::Digest const & i_dig)
 {
     i_dn.update(i_ctxt, i_entry, i_dig);
 }

@@ -85,7 +85,7 @@ UTFileSystem::fs_unmount()
     m_ctxt.m_cipher.unset_key();
 }
 
-class GetAttrTraverseFunc : public TraverseFunc
+class GetAttrTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     GetAttrTraverseFunc(struct stat * o_stbuf) : m_sbp(o_stbuf) {}
@@ -122,7 +122,7 @@ UTFileSystem::fs_getattr(string const & i_path,
     }
 }
 
-class MknodTraverseFunc : public TraverseFunc
+class MknodTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     MknodTraverseFunc(mode_t i_mode, dev_t i_dev)
@@ -165,7 +165,7 @@ UTFileSystem::fs_mknod(string const & i_path,
     }
 }
 
-class MkdirTraverseFunc : public TraverseFunc
+class MkdirTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     MkdirTraverseFunc(mode_t i_mode) : m_mode(i_mode) {}
@@ -204,7 +204,7 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
     }
 }
 
-class OpenTraverseFunc : public TraverseFunc
+class OpenTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     OpenTraverseFunc(int i_flags) : m_flags(i_flags) {}
@@ -243,7 +243,7 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
     }
 }
 
-class ReadTraverseFunc : public TraverseFunc
+class ReadTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     ReadTraverseFunc(void * i_bufptr, size_t i_size, off_t i_off)
@@ -285,7 +285,7 @@ UTFileSystem::fs_read(string const & i_path,
     }
 }
 
-class WriteTraverseFunc : public TraverseFunc
+class WriteTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     WriteTraverseFunc(void const * i_bufptr, size_t i_size, off_t i_off)
@@ -327,7 +327,7 @@ UTFileSystem::fs_write(string const & i_path,
     }
 }
 
-class ReadDirTraverseFunc : public TraverseFunc
+class ReadDirTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     ReadDirTraverseFunc(off_t i_offset,
@@ -374,7 +374,7 @@ UTFileSystem::fs_readdir(string const & i_path,
     }
 }
 
-class UtimeTraverseFunc : public TraverseFunc
+class UtimeTraverseFunc : public DirNode::TraverseFunc
 {
 public:
     UtimeTraverseFunc(T64 const & i_atime, T64 const & i_mtime)
