@@ -102,7 +102,7 @@ DirNode::traverse(Context & i_ctxt,
                 // Need to redo the lookup because it might have changed.
                 fnh = lookup(i_ctxt, i_entry);
                 if (fnh)
-                    i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
+                    i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
             }
         }
         else
@@ -121,7 +121,7 @@ DirNode::traverse(Context & i_ctxt,
             dnh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
         }
     }
     else
@@ -135,7 +135,7 @@ DirNode::traverse(Context & i_ctxt,
             i_trav.nt_leaf(i_ctxt, *fnh);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
         }
         else
         {
@@ -149,7 +149,7 @@ DirNode::traverse(Context & i_ctxt,
             dnh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->digest());
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
         }
     }
 
@@ -170,7 +170,7 @@ DirNode::persist(Context & i_ctxt)
     }
 
     // Persist our directory map.
-    bool rv = m_dir.SerializeToArray(inl_data(), inl_size());
+    bool rv = m_dir.SerializeToArray(bn_data(), bn_size());
     if (!rv)
         throwstream(InternalError, FILELINE << "dir serialization error");
 
@@ -224,7 +224,7 @@ DirNode::mknod(Context & i_ctxt,
         // Insert into our Directory collection.
         Directory::Entry * de = m_dir.add_entry();
         de->set_name(i_entry);
-        de->set_digest(fnh->digest());
+        de->set_digest(fnh->bn_digest());
 
         // Insert into the cache.
         m_cache.insert(make_pair(i_entry, fnh));
@@ -255,7 +255,7 @@ DirNode::mkdir(Context & i_ctxt,
     // Insert into our Directory collection.
     Directory::Entry * de = m_dir.add_entry();
     de->set_name(i_entry);
-    de->set_digest(dnh->digest());
+    de->set_digest(dnh->bn_digest());
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, dnh));
@@ -335,7 +335,7 @@ DirNode::deserialize()
     // because ParseFromArray insists that the entire input
     // stream be consumed.
     //
-    ArrayInputStream input(inl_data(), inl_size());
+    ArrayInputStream input(bn_data(), bn_size());
     CodedInputStream decoder(&input);
     if (!m_dir.ParseFromCodedStream(&decoder))
         throwstream(InternalError, FILELINE

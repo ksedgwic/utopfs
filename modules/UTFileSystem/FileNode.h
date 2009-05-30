@@ -21,7 +21,7 @@
 
 namespace UTFS {
 
-class UTFS_EXP FileNode : public virtual utp::RCObj
+class UTFS_EXP FileNode : public BlockNode
 {
 public:
     // How much data is "inlined" in the FileNode itself.
@@ -57,11 +57,6 @@ public:
 
     // Destructor.
     virtual ~FileNode();
-
-    // Returns the cached digest of the node.  This value is not
-    // computed until persist() is called.
-    //
-    virtual utp::Digest const & digest() { return m_digest; }
 
     // Persist the node to the blockstore and update the cached
     // digest value.
@@ -102,17 +97,15 @@ public:
     void mtime(utp::T64 const & i_mtime) { m_inode.set_mtime(i_mtime.usec()); }
 
 protected:
-    utp::uint8 const * inl_data() const { return m_inl; }
+    utp::uint8 const * bn_data() const { return m_inl; }
 
-    utp::uint8 * inl_data() { return m_inl; }
+    utp::uint8 * bn_data() { return m_inl; }
 
-    size_t inl_size() const { return sizeof(m_inl); }
+    size_t bn_size() const { return sizeof(m_inl); }
 
     size_t fixed_field_size() const;
 
 private:
-    utp::Digest			m_digest;
-
     utp::uint8			m_initvec[8];
 
     INode				m_inode;

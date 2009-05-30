@@ -81,7 +81,7 @@ FileNode::FileNode()
 }
 
 FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
-    : m_digest(i_dig)
+    : BlockNode(i_dig)
 {
     LOG(lgr, 6, "CTOR " << i_dig);
 
@@ -199,12 +199,12 @@ FileNode::persist(Context & i_ctxt)
     ACE_OS::memcpy(buf, m_initvec, sizeof(m_initvec));
 
     // Take the digest of the whole thing.
-    m_digest = Digest(buf, sizeof(buf));
+    bn_digest(Digest(buf, sizeof(buf)));
 
-    LOG(lgr, 6, "persist " << m_digest);
+    LOG(lgr, 6, "persist " << bn_digest());
 
     // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_put_block(m_digest.data(), m_digest.size(),
+    i_ctxt.m_bsh->bs_put_block(bn_digest().data(), bn_digest().size(),
                                buf, sizeof(buf));
 }
 

@@ -49,7 +49,7 @@ UTFileSystem::fs_mkfs(string const & i_path,
 
     m_rdh = new RootDirNode();
     m_rdh->persist(m_ctxt);
-    rootref(m_rdh->digest());
+    rootref(m_rdh->bn_digest());
 }
 
 void
@@ -156,7 +156,7 @@ UTFileSystem::fs_mknod(string const & i_path,
         MknodTraverseFunc otf(i_mode, i_dev);
         m_rdh->traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                         ps.first, ps.second, otf);
-        rootref(m_rdh->digest());
+        rootref(m_rdh->bn_digest());
         return otf.retval();
     }
     catch (int const & i_errno)
@@ -195,7 +195,7 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
         MkdirTraverseFunc otf(i_mode);
         m_rdh->traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                         ps.first, ps.second, otf);
-        rootref(m_rdh->digest());
+        rootref(m_rdh->bn_digest());
         return otf.retval();
     }
     catch (int const & i_errno)
@@ -234,7 +234,7 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
         OpenTraverseFunc otf(i_flags);
         m_rdh->traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                         ps.first, ps.second, otf);
-        rootref(m_rdh->digest());
+        rootref(m_rdh->bn_digest());
         return otf.retval();
     }
     catch (int const & i_errno)
@@ -318,7 +318,7 @@ UTFileSystem::fs_write(string const & i_path,
         pair<string, string> ps = DirNode::pathsplit(i_path);
         WriteTraverseFunc wtf(i_data, i_size, i_off);
         m_rdh->traverse(m_ctxt, DirNode::NT_UPDATE, ps.first, ps.second, wtf);
-        rootref(m_rdh->digest());
+        rootref(m_rdh->bn_digest());
         return wtf.retval();
     }
     catch (int const & i_errno)
@@ -406,7 +406,7 @@ UTFileSystem::fs_utime(string const & i_path,
         UtimeTraverseFunc otf(i_atime, i_mtime);
         m_rdh->traverse(m_ctxt, DirNode::NT_UPDATE,
                         ps.first, ps.second, otf);
-        rootref(m_rdh->digest());
+        rootref(m_rdh->bn_digest());
         return otf.retval();
     }
     catch (int const & i_errno)

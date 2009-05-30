@@ -23,6 +23,12 @@ namespace UTFS {
 class UTFS_EXP BlockNode : public virtual utp::RCObj
 {
 public:
+    // Default constructor.
+    BlockNode() {}
+
+    // Constructor which initializes the cached digest.
+    BlockNode(utp::Digest const & i_digest) : m_digest(i_digest) {}
+
     // Fundamental block size of the filesystem.
     static const size_t BLKSZ = 8192;
 
@@ -32,18 +38,24 @@ public:
     // Returns the cached digest of the node.  This value is not
     // computed until persist() is called.
     //
-    virtual utp::Digest const & digest() { return m_digest; }
+    virtual utp::Digest const & bn_digest() { return m_digest; }
 
-    // Persist the node to the blockstore and update the cached
-    // digest value.
+    // Set's the cached digest of the node.
     //
-    virtual void persist(Context & i_ctxt);
+    virtual void bn_digest(utp::Digest const & i_digest)
+    {
+        m_digest = i_digest;
+    }
 
-    virtual utp::uint8 const * data() const = 0;
+    virtual utp::uint8 const * bn_data() const = 0;
 
-    virtual utp::uint8 * data() = 0;
+    virtual utp::uint8 * bn_data() = 0;
 
-    virtual size_t size() const = 0;
+    // This is the size of contained data, not the size of the node
+    // itself.  Data blocks return BLKSZ.  INodes have a smaller
+    // initial block and return that size.
+    //
+    virtual size_t bn_size() const = 0;
 
 private:
     utp::Digest			m_digest;
@@ -62,11 +74,11 @@ public:
 
     virtual ~DataBlockNode();
 
-    virtual utp::uint8 const * data() const { return m_data; }
+    virtual utp::uint8 const * bn_data() const { return m_data; }
 
-    virtual utp::uint8 * data() { return m_data; }
+    virtual utp::uint8 * bn_data() { return m_data; }
 
-    virtual size_t size() const { return sizeof(m_data); }
+    virtual size_t bn_size() const { return sizeof(m_data); }
 
 private:
     utp::uint8				m_data[BLKSZ];
@@ -89,23 +101,23 @@ public:
 
     virtual ~IndirectBlockNode();
 
-    virtual utp::uint8 const * data() const
+    virtual utp::uint8 const * bn_data() const
     {
-        return (utp::uint8 const *) &m_digest[0];
+        return (utp::uint8 const *) &m_reftbl[0];
     }
 
-    virtual utp::uint8 * data() { return (utp::uint8 *) &m_digest[0]; }
+    virtual utp::uint8 * bn_data() { return (utp::uint8 *) &m_reftbl[0]; }
 
     // Return the whole block size even if Digests don't divide evenly;
     // gurantees that we initialize all bytes ...
     //
-    virtual size_t size() const { return BLKSZ; }
+    virtual size_t bn_size() const { return BLKSZ; }
 
     // Update entries in this node and persist.
     virtual void update(Context & i_ctxt, BindingSeq const & i_bs);
 
 private:
-    utp::Digest				m_digest[NUMDIG];
+    utp::Digest				m_reftbl[NUMDIG];
 
 };
 

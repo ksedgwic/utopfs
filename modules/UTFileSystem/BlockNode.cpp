@@ -25,13 +25,6 @@ BlockNode::~BlockNode()
     LOG(lgr, 6, "DTOR");
 }
 
-void
-BlockNode::persist(Context & i_ctxt)
-{
-    throwstream(InternalError, FILELINE
-                << "BlockNode::persist unimplemented");
-}
-
 DataBlockNode::DataBlockNode()
 {
     throwstream(InternalError, FILELINE
