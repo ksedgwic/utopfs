@@ -79,11 +79,11 @@ DirNode::~DirNode()
 }
 
 void
-DirNode::traverse(Context & i_ctxt,
-                  unsigned int i_flags,
-                  string const & i_entry,
-                  string const & i_rmndr,
-                  NodeTraverseFunc & i_trav)
+DirNode::node_traverse(Context & i_ctxt,
+                       unsigned int i_flags,
+                       string const & i_entry,
+                       string const & i_rmndr,
+                       NodeTraverseFunc & i_trav)
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
 
@@ -118,7 +118,7 @@ DirNode::traverse(Context & i_ctxt,
                 throw ENOTDIR;
 
             pair<string, string> ps = pathsplit(i_rmndr);
-            dnh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
+            dnh->node_traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
                 i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
@@ -146,7 +146,7 @@ DirNode::traverse(Context & i_ctxt,
                 throw ENOTDIR;
 
             pair<string, string> ps = pathsplit(i_rmndr);
-            dnh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
+            dnh->node_traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
                 i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());

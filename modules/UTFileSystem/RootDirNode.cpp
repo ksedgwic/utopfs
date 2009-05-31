@@ -33,11 +33,11 @@ RootDirNode::~RootDirNode()
 }
 
 void
-RootDirNode::traverse(Context & i_ctxt,
-                      unsigned int i_flags,
-                      string const & i_entry,
-                      string const & i_rmndr,
-                      NodeTraverseFunc & i_trav)
+RootDirNode::node_traverse(Context & i_ctxt,
+                           unsigned int i_flags,
+                           string const & i_entry,
+                           string const & i_rmndr,
+                           NodeTraverseFunc & i_trav)
 {
     // Check for the root directory itself.
     if (i_entry.empty())
@@ -61,7 +61,7 @@ RootDirNode::traverse(Context & i_ctxt,
         else
         {
             pair<string, string> ps = pathsplit(i_rmndr);
-            m_sdh->traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
+            m_sdh->node_traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
         }
 
         // SPECIAL CASE: Changes to the .utopfs dir don't update
@@ -73,7 +73,7 @@ RootDirNode::traverse(Context & i_ctxt,
     // Otherwise defer to the base class.
     else
     {
-        DirNode::traverse(i_ctxt, i_flags, i_entry, i_rmndr, i_trav);
+        DirNode::node_traverse(i_ctxt, i_flags, i_entry, i_rmndr, i_trav);
     }
 }
 

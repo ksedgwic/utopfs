@@ -23,11 +23,11 @@ public:
     virtual ~RootDirNode();
 
     // Traverse a path.
-    virtual void traverse(Context & i_ctxt,
-                          unsigned int i_flags,
-                          std::string const & i_entry,
-                          std::string const & i_rmndr,
-                          NodeTraverseFunc & i_trav);
+    virtual void node_traverse(Context & i_ctxt,
+                               unsigned int i_flags,
+                               std::string const & i_entry,
+                               std::string const & i_rmndr,
+                               NodeTraverseFunc & i_trav);
 
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);

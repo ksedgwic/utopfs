@@ -28,11 +28,11 @@ SpecialDirNode::~SpecialDirNode()
 }
 
 void
-SpecialDirNode::traverse(Context & i_ctxt,
-                         unsigned int i_flags,
-                         string const & i_entry,
-                         string const & i_rmndr,
-                         NodeTraverseFunc & i_trav)
+SpecialDirNode::node_traverse(Context & i_ctxt,
+                              unsigned int i_flags,
+                              string const & i_entry,
+                              string const & i_rmndr,
+                              NodeTraverseFunc & i_trav)
 {
     // Check for special files.
     if (i_entry == "version" && i_rmndr.empty())
