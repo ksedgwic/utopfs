@@ -84,6 +84,31 @@ private:
     utp::uint8				m_data[BLKSZ];
 };
 
+// The ReferenceBlockNode is an abstract interface for all objects
+// that contain references and hence can particiate in a block
+// traversal.  The FileNode is a ReferenceBlockNode since it contains
+// the intial direct references.  The Indirect block nodes all
+// implement the ReferenceBlockNode interface as well.
+//
+class UTFS_EXP ReferenceBlockNode : public BlockNode
+{
+public:
+    ReferenceBlockNode() {}
+
+    ReferenceBlockNode(utp::Digest const & i_digest) : BlockNode(i_digest) {}
+
+    // Sequence of offsets and Digests used for updates.
+    typedef std::vector<size_t, utp::Digest> BindingSeq;
+
+    virtual ~ReferenceBlockNode();
+
+    // Update references in this node and persist.
+    virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs) = 0;
+
+private:
+
+};
+
 class UTFS_EXP IndirectBlockNode : public BlockNode
 {
 public:
@@ -114,7 +139,7 @@ public:
     virtual size_t bn_size() const { return BLKSZ; }
 
     // Update entries in this node and persist.
-    virtual void update(Context & i_ctxt, BindingSeq const & i_bs);
+    virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs);
 
 private:
     utp::Digest				m_reftbl[NUMDIG];

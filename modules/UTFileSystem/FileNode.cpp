@@ -81,7 +81,7 @@ FileNode::FileNode()
 }
 
 FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
-    : BlockNode(i_dig)
+    : ReferenceBlockNode(i_dig)
 {
     LOG(lgr, 6, "CTOR " << i_dig);
 
@@ -144,6 +144,13 @@ FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
 FileNode::~FileNode()
 {
     LOG(lgr, 6, "DTOR");
+}
+
+void
+FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
+{
+    throwstream(InternalError, FILELINE
+                << "FileNode::rb_update unimplemented");
 }
 
 void

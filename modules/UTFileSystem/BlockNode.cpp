@@ -20,10 +20,18 @@ namespace {
 
 namespace UTFS {
 
+// ----------------------------------------------------------------
+// BlockNode methods
+// ----------------------------------------------------------------
+
 BlockNode::~BlockNode()
 {
     LOG(lgr, 6, "DTOR");
 }
+
+// ----------------------------------------------------------------
+// DataBlockNode methods
+// ----------------------------------------------------------------
 
 DataBlockNode::DataBlockNode()
 {
@@ -39,9 +47,19 @@ DataBlockNode::DataBlockNode(Context & i_ctxt, utp::Digest const & i_dig)
 
 DataBlockNode::~DataBlockNode()
 {
-    throwstream(InternalError, FILELINE
-                << "DataBlockNode::~DataBlockNode unimplemented");
 }
+
+// ----------------------------------------------------------------
+// ReferenceBlockNode methods
+// ----------------------------------------------------------------
+
+ReferenceBlockNode::~ReferenceBlockNode()
+{
+}
+
+// ----------------------------------------------------------------
+// IndirectBlockNode methods
+// ----------------------------------------------------------------
 
 IndirectBlockNode::IndirectBlockNode()
 {
@@ -58,12 +76,10 @@ IndirectBlockNode::IndirectBlockNode(Context & i_ctxt,
 
 IndirectBlockNode::~IndirectBlockNode()
 {
-    throwstream(InternalError, FILELINE
-                << "IndirectBlockNode::~IndirectBlockNode unimplemented");
 }
 
 void
-IndirectBlockNode::update(Context & i_ctxt, BindingSeq const & i_bs)
+IndirectBlockNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
 {
     throwstream(InternalError, FILELINE
                 << "IndirectBlockNode::update unimplemented");

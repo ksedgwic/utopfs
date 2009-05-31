@@ -21,7 +21,7 @@
 
 namespace UTFS {
 
-class UTFS_EXP FileNode : public BlockNode
+class UTFS_EXP FileNode : public ReferenceBlockNode
 {
 public:
     // How much data is "inlined" in the FileNode itself.
@@ -57,6 +57,8 @@ public:
 
     // Destructor.
     virtual ~FileNode();
+
+    virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs);
 
     // Persist the node to the blockstore and update the cached
     // digest value.
