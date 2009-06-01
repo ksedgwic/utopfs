@@ -35,8 +35,8 @@ BlockNode::~BlockNode()
 
 DataBlockNode::DataBlockNode()
 {
-    throwstream(InternalError, FILELINE
-                << "DataBlockNode::DataBlockNode unimplemented");
+    // Clear all the memory in the block.
+    ACE_OS::memset(m_data, '\0', sizeof(m_data));
 }
 
 DataBlockNode::DataBlockNode(Context & i_ctxt, utp::Digest const & i_dig)
@@ -47,6 +47,26 @@ DataBlockNode::DataBlockNode(Context & i_ctxt, utp::Digest const & i_dig)
 
 DataBlockNode::~DataBlockNode()
 {
+}
+
+void
+DataBlockNode::bn_persist(Context & i_ctxt)
+{
+    // FIXME - Totally bogus, zero an initvec.
+    utp::uint8 initvec[8];
+    ACE_OS::memset(initvec, '\0', sizeof(initvec));
+
+    // Encrypt the entire block.
+    i_ctxt.m_cipher.encrypt(initvec, 0, m_data, sizeof(m_data));
+
+    // Take the digest of the whole thing.
+    bn_digest(Digest(m_data, sizeof(m_data)));
+
+    LOG(lgr, 6, "persist " << bn_digest());
+
+    // Write the block out to the block store.
+    i_ctxt.m_bsh->bs_put_block(bn_digest().data(), bn_digest().size(),
+                               m_data, sizeof(m_data));
 }
 
 // ----------------------------------------------------------------

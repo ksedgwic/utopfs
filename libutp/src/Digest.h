@@ -34,6 +34,12 @@ public:
         return std::string((char const *) m_dig, sizeof(m_dig));
     }
 
+    /// Nil predicate.
+    bool operator!() const;
+
+    /// Non-nil predicate.
+    operator bool() const { return !operator!(); }
+
     uint8 const * data() const { return m_dig; }
 
     size_t size() const { return sizeof(m_dig); }

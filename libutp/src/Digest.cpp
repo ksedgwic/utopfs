@@ -32,6 +32,17 @@ Digest::Digest(string const & i_digstr)
     ACE_OS::memcpy(m_dig, i_digstr.data(), sizeof(m_dig));
 }
 
+bool
+Digest::operator!() const
+{
+    for (unsigned i = 0; i < sizeof(m_dig); ++i)
+    {
+        if (m_dig[i])
+            return false;
+    }
+    return true;
+}
+
 ostream & operator<<(ostream & ostrm, Digest const & i_dig)
 {
     // Since this is a human friendly version just show first N bytes ...

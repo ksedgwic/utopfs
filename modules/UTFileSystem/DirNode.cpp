@@ -175,7 +175,7 @@ DirNode::persist(Context & i_ctxt)
         throwstream(InternalError, FILELINE << "dir serialization error");
 
     // Let the FileNode do all the hard work ...
-    FileNode::persist(i_ctxt);
+    FileNode::bn_persist(i_ctxt);
 }
 
 void
@@ -219,7 +219,7 @@ DirNode::mknod(Context & i_ctxt,
         fnh = new FileNode();
 
         // Persist it (sets the digest).
-        fnh->persist(i_ctxt);
+        fnh->bn_persist(i_ctxt);
 
         // Insert into our Directory collection.
         Directory::Entry * de = m_dir.add_entry();

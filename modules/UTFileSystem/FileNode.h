@@ -39,6 +39,14 @@ public:
     // Destructor.
     virtual ~FileNode();
 
+    virtual void bn_persist(Context & i_ctxt);
+
+    utp::uint8 const * bn_data() const { return m_inl; }
+
+    utp::uint8 * bn_data() { return m_inl; }
+
+    size_t bn_size() const { return sizeof(m_inl); }
+
     virtual void rb_traverse(Context & i_ctxt,
                              off_t i_base,
                              off_t i_rngoff,
@@ -46,11 +54,6 @@ public:
                              BlockTraverseFunc & i_trav);
 
     virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs);
-
-    // Persist the node to the blockstore and update the cached
-    // digest value.
-    //
-    virtual void persist(Context & i_ctxt);
 
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
@@ -86,26 +89,24 @@ public:
     void mtime(utp::T64 const & i_mtime) { m_inode.set_mtime(i_mtime.usec()); }
 
 protected:
-    utp::uint8 const * bn_data() const { return m_inl; }
-
-    utp::uint8 * bn_data() { return m_inl; }
-
-    size_t bn_size() const { return sizeof(m_inl); }
-
     size_t fixed_field_size() const;
 
 private:
-    utp::uint8			m_initvec[8];
+    utp::uint8				m_initvec[8];
 
-    INode				m_inode;
+    INode					m_inode;
 
- 	utp::uint8			m_inl[INLSZ];
+ 	utp::uint8				m_inl[INLSZ];
 
-    utp::Digest			m_direct[NDIRECT];	// Direct references
-    utp::Digest			m_sindir;			// Single indirect refs
-    utp::Digest			m_dindir;			// Double indirect refs
-    utp::Digest			m_tindir;			// Triple indirect refs
-    utp::Digest			m_qindir;			// Quad indirect refs
+    // References
+    utp::Digest				m_dirref[NDIRECT];	// Direct references
+    utp::Digest				m_sinref;			// Single indirect refs
+    utp::Digest				m_dinref;			// Double indirect refs
+    utp::Digest				m_tinref;			// Triple indirect refs
+    utp::Digest				m_qinref;			// Quad indirect refs
+
+    // Cached Objects
+    DataBlockNodeHandle		m_dirobj[NDIRECT];
 };
 
 } // namespace UTFS

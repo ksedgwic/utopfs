@@ -40,4 +40,4 @@ class Test_fs_bigfile_01:
 
     # Write the buffer to the file.
     rv = self.fs.fs_write("/bigfile", buffer(jnkstr))
-    assert rv == len(jnkstr)
+    assert rv == 18000

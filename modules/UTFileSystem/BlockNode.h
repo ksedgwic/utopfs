@@ -35,8 +35,13 @@ public:
     // Destructor.
     virtual ~BlockNode();
 
+    // Persist the node to the blockstore and update the cached
+    // digest value.
+    //
+    virtual void bn_persist(Context & i_ctxt) = 0;
+
     // Returns the cached digest of the node.  This value is not
-    // computed until persist() is called.
+    // computed until bn_persist() is called.
     //
     virtual utp::Digest const & bn_digest() { return m_digest; }
 
@@ -73,6 +78,8 @@ public:
     DataBlockNode(Context & i_ctxt, utp::Digest const & i_dig);
 
     virtual ~DataBlockNode();
+
+    virtual void bn_persist(Context & i_ctxt);
 
     virtual utp::uint8 const * bn_data() const { return m_data; }
 

@@ -121,20 +121,20 @@ FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
     ptr += sizeof(m_inl);
 
     // Copy the block references.
-    ACE_OS::memcpy(m_direct, ptr, sizeof(m_direct));
-    ptr += sizeof(m_direct);
+    ACE_OS::memcpy(m_dirref, ptr, sizeof(m_dirref));
+    ptr += sizeof(m_dirref);
 
-    ACE_OS::memcpy(&m_sindir, ptr, sizeof(m_sindir));
-    ptr += sizeof(m_sindir);
+    ACE_OS::memcpy(&m_sinref, ptr, sizeof(m_sinref));
+    ptr += sizeof(m_sinref);
 
-    ACE_OS::memcpy(&m_dindir, ptr, sizeof(m_dindir));
-    ptr += sizeof(m_dindir);
+    ACE_OS::memcpy(&m_dinref, ptr, sizeof(m_dinref));
+    ptr += sizeof(m_dinref);
     
-    ACE_OS::memcpy(&m_tindir, ptr, sizeof(m_tindir));
-    ptr += sizeof(m_tindir);
+    ACE_OS::memcpy(&m_tinref, ptr, sizeof(m_tinref));
+    ptr += sizeof(m_tinref);
     
-    ACE_OS::memcpy(&m_qindir, ptr, sizeof(m_qindir));
-    ptr += sizeof(m_qindir);
+    ACE_OS::memcpy(&m_qinref, ptr, sizeof(m_qinref));
+    ptr += sizeof(m_qinref);
 
 #ifdef DEBUG
     assert(ptr == buf + BLKSZ);
@@ -147,38 +147,7 @@ FileNode::~FileNode()
 }
 
 void
-FileNode::rb_traverse(Context & i_ctxt,
-                      off_t i_base,
-                      off_t i_rngoff,
-                      size_t i_rngsize,
-                      BlockTraverseFunc & i_trav)
-{
-    // Our base needs to be 0 or else somebody is very confused.
-    if (i_base != 0)
-        throwstream(InternalError, FILELINE
-                    << "FileNode::rb_traverse called with non-zero base: "
-                    << i_base);
-
-    RefBlockNode::BindingSeq mods;
-
-    // Does this region intersect the inline block?
-    if (i_rngoff < off_t(sizeof(m_inl)))
-        if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0))
-            mods.push_back(make_pair(0, Digest()));
-
-    // Were there any modified regions?
-    if (!mods.empty())
-        i_trav.bt_update(i_ctxt, *this, mods);
-}
-
-void
-FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
-{
-    // FIXME - We need to store any modified bindings!
-}
-
-void
-FileNode::persist(Context & i_ctxt)
+FileNode::bn_persist(Context & i_ctxt)
 {
     uint8 buf[BlockNode::BLKSZ];
 
@@ -204,20 +173,20 @@ FileNode::persist(Context & i_ctxt)
     ptr += sizeof(m_inl);
 
     // Copy the block references.
-    ACE_OS::memcpy(ptr, m_direct, sizeof(m_direct));
-    ptr += sizeof(m_direct);
+    ACE_OS::memcpy(ptr, m_dirref, sizeof(m_dirref));
+    ptr += sizeof(m_dirref);
 
-    ACE_OS::memcpy(ptr, &m_sindir, sizeof(m_sindir));
-    ptr += sizeof(m_sindir);
+    ACE_OS::memcpy(ptr, &m_sinref, sizeof(m_sinref));
+    ptr += sizeof(m_sinref);
 
-    ACE_OS::memcpy(ptr, &m_dindir, sizeof(m_dindir));
-    ptr += sizeof(m_dindir);
+    ACE_OS::memcpy(ptr, &m_dinref, sizeof(m_dinref));
+    ptr += sizeof(m_dinref);
     
-    ACE_OS::memcpy(ptr, &m_tindir, sizeof(m_tindir));
-    ptr += sizeof(m_tindir);
+    ACE_OS::memcpy(ptr, &m_tinref, sizeof(m_tinref));
+    ptr += sizeof(m_tinref);
     
-    ACE_OS::memcpy(ptr, &m_qindir, sizeof(m_qindir));
-    ptr += sizeof(m_qindir);
+    ACE_OS::memcpy(ptr, &m_qinref, sizeof(m_qinref));
+    ptr += sizeof(m_qinref);
 
 #ifdef DEBUG
     assert(ptr == buf + BLKSZ);
@@ -237,6 +206,84 @@ FileNode::persist(Context & i_ctxt)
     // Write the block out to the block store.
     i_ctxt.m_bsh->bs_put_block(bn_digest().data(), bn_digest().size(),
                                buf, sizeof(buf));
+}
+
+void
+FileNode::rb_traverse(Context & i_ctxt,
+                      off_t i_base,
+                      off_t i_rngoff,
+                      size_t i_rngsize,
+                      BlockTraverseFunc & i_trav)
+{
+    // Running offset.
+    size_t off = 0;
+
+    // Our base needs to be 0 or else somebody is very confused.
+    if (i_base != off_t(off))
+        throwstream(InternalError, FILELINE
+                    << "FileNode::rb_traverse called with non-zero base: "
+                    << i_base);
+
+    RefBlockNode::BindingSeq mods;
+
+    // Does this region intersect the inline block?
+    if (i_rngoff < off_t(sizeof(m_inl)))
+        if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0))
+            mods.push_back(make_pair(off, Digest()));
+
+    off += sizeof(m_inl);
+
+    // Traverse the direct blocks.
+    for (unsigned i = 0; i < NDIRECT; ++i)
+    {
+        // If we are beyond the traversal region we're done.
+        if (off > i_rngoff + i_rngsize)
+            break;
+
+        // Does the range intersect this block?
+        if (i_rngoff < off_t(off + BlockNode::BLKSZ))
+        {
+            // Do we have a cached version of this block?
+            if (!m_dirobj[i])
+            {
+                // Nope, does it have a digest yet?
+                if (m_dirref[i])
+                {
+                    // Yes, read it from the block store.
+                    m_dirobj[i] = new DataBlockNode(i_ctxt, m_dirref[i]);
+                }
+                else
+                {
+                    // Nope, create new block.
+                    m_dirobj[i] = new DataBlockNode();
+                    m_dirobj[i]->bn_persist(i_ctxt);
+                    m_dirref[i] = m_dirobj[i]->bn_digest();
+                }
+            }
+
+            if (i_trav.bt_visit(i_ctxt,
+                                m_dirobj[i]->bn_data(),
+                                m_dirobj[i]->bn_size(),
+                                off))
+            {
+                m_dirobj[i]->bn_persist(i_ctxt);
+                mods.push_back(make_pair(off, m_dirobj[i]->bn_digest()));
+            }
+        }
+
+        // Move to the next direct block.
+        off += BlockNode::BLKSZ;
+    }
+
+    // Were there any modified regions?
+    if (!mods.empty())
+        i_trav.bt_update(i_ctxt, *this, mods);
+}
+
+void
+FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
+{
+    // FIXME - We need to store any modified bindings!
 }
 
 int
@@ -352,7 +399,7 @@ FileNode::write(Context & i_ctxt,
         size(max(i_off + i_size, size()));
 
         // Save the new state to the blockstore.
-        persist(i_ctxt);
+        bn_persist(i_ctxt);
 
         return wbtf.bt_retval();
     }
@@ -366,11 +413,11 @@ size_t
 FileNode::fixed_field_size() const
 {
     return sizeof(m_inl)
-        + sizeof(m_direct)
-        + sizeof(m_sindir)
-        + sizeof(m_dindir)
-        + sizeof(m_tindir)
-        + sizeof(m_qindir);
+        + sizeof(m_dirref)
+        + sizeof(m_sinref)
+        + sizeof(m_dinref)
+        + sizeof(m_tinref)
+        + sizeof(m_qinref);
 }
 
 } // namespace UTFS
