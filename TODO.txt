@@ -1,8 +1,4 @@
-Change Digest from encrypted block to pre-encrypted block.
-
-  Write overview of encryption strategy.
-
-  Discuss w/ Paul and Jim.
+Implement current AES-128 CBC strategy outlined in wiki.
 
 Figure out the uid an gid, are they in the file_info_t?
 

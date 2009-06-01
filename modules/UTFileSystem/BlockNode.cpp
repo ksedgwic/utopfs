@@ -50,10 +50,18 @@ DataBlockNode::~DataBlockNode()
 }
 
 // ----------------------------------------------------------------
-// ReferenceBlockNode methods
+// RefBlockNode methods
 // ----------------------------------------------------------------
 
-ReferenceBlockNode::~ReferenceBlockNode()
+void
+RefBlockNode::BlockTraverseFunc::bt_update(Context & i_ctxt,
+                                           RefBlockNode & i_bn,
+                                           BindingSeq const & i_bbs)
+{
+    i_bn.rb_update(i_ctxt, i_bbs);
+}
+
+RefBlockNode::~RefBlockNode()
 {
 }
 
@@ -79,7 +87,8 @@ IndirectBlockNode::~IndirectBlockNode()
 }
 
 void
-IndirectBlockNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
+IndirectBlockNode::rb_update(Context & i_ctxt,
+                             RefBlockNode::BindingSeq const & i_bs)
 {
     throwstream(InternalError, FILELINE
                 << "IndirectBlockNode::update unimplemented");

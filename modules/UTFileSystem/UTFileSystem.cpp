@@ -92,7 +92,7 @@ public:
 
     virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
     {
-        retval(i_fn.getattr(i_ctxt, m_sbp));
+        nt_retval(i_fn.getattr(i_ctxt, m_sbp));
     }
 
 private:
@@ -114,7 +114,7 @@ UTFileSystem::fs_getattr(string const & i_path,
         GetAttrTraverseFunc gatf(o_stbuf);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
                              ps.first, ps.second, gatf);
-        return gatf.retval();
+        return gatf.nt_retval();
     }
     catch (int const & i_errno)
     {
@@ -132,7 +132,7 @@ public:
                            DirNode & i_dn,
                            string const & i_entry)
     {
-        retval(i_dn.mknod(i_ctxt, i_entry, m_mode, m_dev));
+        nt_retval(i_dn.mknod(i_ctxt, i_entry, m_mode, m_dev));
     }
 
 private:
@@ -157,7 +157,7 @@ UTFileSystem::fs_mknod(string const & i_path,
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
         rootref(m_rdh->bn_digest());
-        return otf.retval();
+        return otf.nt_retval();
     }
     catch (int const & i_errno)
     {
@@ -174,7 +174,7 @@ public:
                            DirNode & i_dn,
                            string const & i_entry)
     {
-        retval(i_dn.mkdir(i_ctxt, i_entry, m_mode));
+        nt_retval(i_dn.mkdir(i_ctxt, i_entry, m_mode));
     }
 
 private:
@@ -196,7 +196,7 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
         rootref(m_rdh->bn_digest());
-        return otf.retval();
+        return otf.nt_retval();
     }
     catch (int const & i_errno)
     {
@@ -213,7 +213,7 @@ public:
                            DirNode & i_dn,
                            string const & i_entry)
     {
-        retval(i_dn.open(i_ctxt, i_entry, m_flags));
+        nt_retval(i_dn.open(i_ctxt, i_entry, m_flags));
     }
 
 private:
@@ -235,7 +235,7 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
         rootref(m_rdh->bn_digest());
-        return otf.retval();
+        return otf.nt_retval();
     }
     catch (int const & i_errno)
     {
@@ -251,7 +251,7 @@ public:
 
     virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
     {
-        retval(i_fn.read(i_ctxt, m_bufptr, m_size, m_off));
+        nt_retval(i_fn.read(i_ctxt, m_bufptr, m_size, m_off));
     }
 
 private:
@@ -277,7 +277,7 @@ UTFileSystem::fs_read(string const & i_path,
         ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
                              ps.first, ps.second, wtf);
-        return wtf.retval();
+        return wtf.nt_retval();
     }
     catch (int const & i_errno)
     {
@@ -293,7 +293,7 @@ public:
 
     virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
     {
-        retval(i_fn.write(i_ctxt, m_bufptr, m_size, m_off));
+        nt_retval(i_fn.write(i_ctxt, m_bufptr, m_size, m_off));
     }
 
 private:
@@ -320,7 +320,7 @@ UTFileSystem::fs_write(string const & i_path,
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, wtf);
         rootref(m_rdh->bn_digest());
-        return wtf.retval();
+        return wtf.nt_retval();
     }
     catch (int const & i_errno)
     {
@@ -342,7 +342,7 @@ public:
         if (!dh)
             throw ENOTDIR;
 
-        retval(dh->readdir(i_ctxt, m_offset, m_entryfunc));
+        nt_retval(dh->readdir(i_ctxt, m_offset, m_entryfunc));
     }
 
 private:
@@ -367,7 +367,7 @@ UTFileSystem::fs_readdir(string const & i_path,
         ReadDirTraverseFunc rdtf(i_offset, o_entryfunc);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
                              ps.first, ps.second, rdtf);
-        return rdtf.retval();
+        return rdtf.nt_retval();
     }
     catch (int const & i_errno)
     {
@@ -385,7 +385,7 @@ public:
     {
         i_fn.atime(m_atime);
         i_fn.mtime(m_mtime);
-        retval(0);
+        nt_retval(0);
     }
 
 private:
@@ -408,7 +408,7 @@ UTFileSystem::fs_utime(string const & i_path,
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
         rootref(m_rdh->bn_digest());
-        return otf.retval();
+        return otf.nt_retval();
     }
     catch (int const & i_errno)
     {

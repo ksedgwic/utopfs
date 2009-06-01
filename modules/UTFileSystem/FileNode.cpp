@@ -81,7 +81,7 @@ FileNode::FileNode()
 }
 
 FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
-    : ReferenceBlockNode(i_dig)
+    : RefBlockNode(i_dig)
 {
     LOG(lgr, 6, "CTOR " << i_dig);
 
@@ -147,10 +147,34 @@ FileNode::~FileNode()
 }
 
 void
+FileNode::rb_traverse(Context & i_ctxt,
+                      off_t i_base,
+                      off_t i_rngoff,
+                      size_t i_rngsize,
+                      BlockTraverseFunc & i_trav)
+{
+    // Our base needs to be 0 or else somebody is very confused.
+    if (i_base != 0)
+        throwstream(InternalError, FILELINE
+                    << "FileNode::rb_traverse called with non-zero base: "
+                    << i_base);
+
+    RefBlockNode::BindingSeq mods;
+
+    // Does this region intersect the inline block?
+    if (i_rngoff < off_t(sizeof(m_inl)))
+        if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0))
+            mods.push_back(make_pair(0, Digest()));
+
+    // Were there any modified regions?
+    if (!mods.empty())
+        i_trav.bt_update(i_ctxt, *this, mods);
+}
+
+void
 FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
 {
-    throwstream(InternalError, FILELINE
-                << "FileNode::rb_update unimplemented");
+    // FIXME - We need to store any modified bindings!
 }
 
 void
@@ -253,29 +277,89 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     return sz;
 }
 
+class WriteBTF : public RefBlockNode::BlockTraverseFunc
+{
+public:
+    WriteBTF(void const * i_wrtdata,
+             size_t i_wrtsize,
+             off_t i_wrtoff)
+        : m_wrtdata(i_wrtdata)
+        , m_wrtsize(i_wrtsize)
+        , m_wrtoff(i_wrtoff)
+    {}
+
+    //          wrtoff -------------------------------------> wrtsz
+    // -----------+---------------------------------------------+------
+    //            |                Write Buffer                 |
+    // -----+-----+--------+------------------------+-----------+---+--
+    //      |   Block A    |                        |    Block B    |
+    // -----+--------------+------------------------+---------------+--
+    //    blkoff ------> blksz                    blkoff -------> blksz
+
+
+    virtual bool bt_visit(Context & i_ctxt,
+                          void * i_blkdata,
+                          size_t i_blksize,
+                          off_t i_blkoff)
+    {
+        // Find the minimum file offset which is being transferred.
+        off_t minoff = max(m_wrtoff, i_blkoff);
+
+        // Find the file offset just after the write.
+        off_t maxoff = min(m_wrtoff + m_wrtsize, i_blkoff + i_blksize);
+
+        // If there is no overlap we are done.
+        if (minoff >= maxoff)
+            return false;
+
+        // Find the source pointer.
+        uint8 const * srcptr =
+            ((uint8 const *) m_wrtdata) + (minoff - m_wrtoff);
+
+        // Find the dest pointer.
+        uint8 * dstptr = ((uint8 *) i_blkdata) + (minoff - i_blkoff);
+
+        // Find the size of the transfer.
+        size_t sz = maxoff - minoff;
+
+        // Write the data.
+        ACE_OS::memcpy(dstptr, srcptr, sz);
+
+        // We wrote some bytes.
+        m_retval += sz;
+        return true;
+    }
+
+private:
+    void const *	m_wrtdata;	// Data to write.
+    size_t			m_wrtsize;	// Size of write.
+    off_t			m_wrtoff;	// Logical offset in file
+};
+
 int
 FileNode::write(Context & i_ctxt,
                 void const * i_data,
                 size_t i_size,
                 off_t i_off)
 {
-    // For now, bail on anything that is bigger then fits
-    // in a single INode.
-    //
-    if (i_off + i_size > sizeof(m_inl))
-        throwstream(InternalError, FILELINE
-                    << "FileNode::write outside inlined bytes unsupported");
+    try
+    {
+        WriteBTF wbtf(i_data, i_size, i_off);
+        rb_traverse(i_ctxt, 0, i_off, i_size, wbtf);
 
-    // Write the data.
-    ACE_OS::memcpy(m_inl + i_off, i_data, i_size);
+        // Did the node get bigger?
+        // If the file grew the size needs to be larger.
+        size(max(i_off + i_size, size()));
 
-    // If the file grew the size needs to be larger.
-    size(max(i_off + i_size, size()));
+        // Save the new state to the blockstore.
+        persist(i_ctxt);
 
-    // Save the new state to the blockstore.
-    persist(i_ctxt);
-
-    return i_size;
+        return wbtf.bt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
 }
 
 size_t

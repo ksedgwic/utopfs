@@ -84,23 +84,61 @@ private:
     utp::uint8				m_data[BLKSZ];
 };
 
-// The ReferenceBlockNode is an abstract interface for all objects
-// that contain references and hence can particiate in a block
-// traversal.  The FileNode is a ReferenceBlockNode since it contains
-// the intial direct references.  The Indirect block nodes all
-// implement the ReferenceBlockNode interface as well.
+// The RefBlockNode is an abstract interface for all objects that
+// contain references and hence can particiate in a block traversal.
+// The FileNode is a RefBlockNode since it contains the intial direct
+// references.  The Indirect block nodes all implement the
+// RefBlockNode interface as well.
 //
-class UTFS_EXP ReferenceBlockNode : public BlockNode
+class UTFS_EXP RefBlockNode : public BlockNode
 {
 public:
-    ReferenceBlockNode() {}
+    // Sequence of index offsets and Digests used for updates.
+    typedef std::vector<std::pair<size_t, utp::Digest> > BindingSeq;
 
-    ReferenceBlockNode(utp::Digest const & i_digest) : BlockNode(i_digest) {}
+    // Block traversal functor base class.
+    //
+    class UTFS_EXP BlockTraverseFunc
+    {
+    public:
+        BlockTraverseFunc() : m_retval(0) {}
 
-    // Sequence of offsets and Digests used for updates.
-    typedef std::vector<size_t, utp::Digest> BindingSeq;
+        /// Block visit method called on each block in the traversal.
+        // The i_blkoff argument expresses the offset that this block
+        // represents in the logical file.  Returns true if the block
+        // was modified.
+        //
+        virtual bool bt_visit(Context & i_ctxt,
+                              void * i_blkdata,
+                              size_t i_blksize,
+                              off_t i_blkoff) = 0;
 
-    virtual ~ReferenceBlockNode();
+        // Called in post-traversal order on block indexes for with
+        // list of updated block digests.  Default implementation
+        // persists the block node ...
+        //
+        virtual void bt_update(Context & i_ctxt,
+                               RefBlockNode & i_bn,
+                               BindingSeq const & i_bbs);
+
+        int bt_retval() const { return m_retval; }
+
+    protected:
+        int				m_retval;
+    };
+
+    RefBlockNode() {}
+
+    RefBlockNode(utp::Digest const & i_digest) : BlockNode(i_digest) {}
+
+    virtual ~RefBlockNode();
+
+    // Traverse range calling functor methods.
+    virtual void rb_traverse(Context & i_ctxt,
+                             off_t i_base,			// offset of this block
+                             off_t i_rngoff,		// offset of range
+                             size_t i_rngsize,		// size of range
+                             BlockTraverseFunc & i_trav) = 0;
 
     // Update references in this node and persist.
     virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs) = 0;
@@ -114,9 +152,6 @@ class UTFS_EXP IndirectBlockNode : public BlockNode
 public:
     // How many digests fit in a packed block.
     static const size_t NUMDIG = (BLKSZ / sizeof(utp::Digest));
-
-    // Sequence of index offsets and Digests used for updates.
-    typedef std::vector<size_t, utp::Digest> BindingSeq;
 
     // Default constructor.
     IndirectBlockNode();
@@ -139,7 +174,8 @@ public:
     virtual size_t bn_size() const { return BLKSZ; }
 
     // Update entries in this node and persist.
-    virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs);
+    virtual void rb_update(Context & i_ctxt,
+                           RefBlockNode::BindingSeq const & i_bs);
 
 private:
     utp::Digest				m_reftbl[NUMDIG];

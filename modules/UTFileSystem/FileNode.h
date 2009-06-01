@@ -21,33 +21,14 @@
 
 namespace UTFS {
 
-class UTFS_EXP FileNode : public ReferenceBlockNode
+class UTFS_EXP FileNode : public RefBlockNode
 {
 public:
     // How much data is "inlined" in the FileNode itself.
     static const size_t INLSZ = 4096;
 
-    // Block traversal functor base class.
-    //
-    class UTFS_EXP BlockTraverseFunc
-    {
-    public:
-        /// Block visit method called on each block in the traversal.
-        // The i_off argument expresses the offset that this block
-        // represents in the logical file.
-        virtual void bt_visit(Context & i_ctxt,
-                              void * i_data,
-                              size_t i_size,
-                              off_t i_off);
-
-        // Called in post-traversal order on block indexes for with
-        // list of updated block digests.  Default implementation
-        // persists the block node ...
-        //
-        virtual void bt_update(Context & i_ctxt,
-                               BlockNode & i_bn,
-                               IndirectBlockNode::BindingSeq const & i_bbs);
-    };
+    // How many direct references does the FileNode contain?
+    static const size_t NDIRECT = 20;
 
     // Default constructor.
     FileNode();
@@ -57,6 +38,12 @@ public:
 
     // Destructor.
     virtual ~FileNode();
+
+    virtual void rb_traverse(Context & i_ctxt,
+                             off_t i_base,
+                             off_t i_rngoff,
+                             size_t i_rngsize,
+                             BlockTraverseFunc & i_trav);
 
     virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs);
 
@@ -114,11 +101,11 @@ private:
 
  	utp::uint8			m_inl[INLSZ];
 
-    utp::Digest			m_direct[20];
-    utp::Digest			m_sindir;		// single indirect
-    utp::Digest			m_dindir;		// double indirect
-    utp::Digest			m_tindir;		// triple indirect
-    utp::Digest			m_qindir;		// quad indirect
+    utp::Digest			m_direct[NDIRECT];	// Direct references
+    utp::Digest			m_sindir;			// Single indirect refs
+    utp::Digest			m_dindir;			// Double indirect refs
+    utp::Digest			m_tindir;			// Triple indirect refs
+    utp::Digest			m_qindir;			// Quad indirect refs
 };
 
 } // namespace UTFS

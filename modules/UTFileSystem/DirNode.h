@@ -50,13 +50,13 @@ public:
         // Accesses the "return value" assigned by the leaf or parent
         // routine.
         //
-        int retval() const { return m_retval; }
+        int nt_retval() const { return m_retval; }
 
     protected:
         // Called to set the return value in the leaf or parent
         // routine.
         //
-        void retval(int i_retval) { m_retval = i_retval; }
+        void nt_retval(int i_retval) { m_retval = i_retval; }
 
     private:
         int				m_retval;
