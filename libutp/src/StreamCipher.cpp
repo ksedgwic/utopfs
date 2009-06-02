@@ -19,6 +19,11 @@ StreamCipher::StreamCipher(uint8 const * i_keyp, size_t i_keysz)
     set_key(i_keyp, i_keysz);
 }
 
+StreamCipher::~StreamCipher()
+{
+    unset_key();
+}
+
 void
 StreamCipher::set_key(uint8 const * i_keyp, size_t i_keysz)
 {

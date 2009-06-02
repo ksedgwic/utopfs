@@ -1,5 +1,5 @@
-#ifndef utp_StreamCipher_h__
-#define utp_StreamCipher_h__
+#ifndef utp_BlockCipher_h__
+#define utp_BlockCipher_h__
 
 #include <openssl/aes.h>
 
@@ -7,26 +7,26 @@
 
 namespace utp {
 
-class StreamCipher
+class BlockCipher
 {
 public:
     /// Default constructor.
-    StreamCipher();
+    BlockCipher();
 
-    /// Create a StreamCipher with a key.
+    /// Create a BlockCipher with a key.
     ///
     /// The first 16 bytes of key data will be used.
     ///
     /// @param[in] i_keyp Pointer to key data.
     /// @param[in] i_keysz Size of key in bytes.
     ///
-    StreamCipher(uint8 const * i_keyp, size_t i_keysz);
+    BlockCipher(uint8 const * i_keyp, size_t i_keysz);
 
     /// Destructor.
     ///
-    ~StreamCipher();
+    ~BlockCipher();
 
-    /// Set the stream cipher's key.
+    /// Set the cipher's key.
     ///
     /// @param[in] i_keyp Pointer to key data.
     /// @param[in] i_keysz Size of key in bytes.
@@ -37,18 +37,23 @@ public:
     ///
     void unset_key();
 
-    /// Encrypt/Decrypt a data buffer in-place.
+    /// Encrypt a data buffer in-place.
     ///
-    /// @note The i_offset value must be aligned on the AES block size
-    ///       (16 bytes).
-    ///
-    /// @param[in] i_ivptr Pointer to 8 byte init vector.
-    /// @param[in] i_offset Stream offset in bytes.
+    /// @param[in] i_ivptr Pointer to 16 byte init vector.
     /// @param[in,out] io_data Pointer to input/output buffer.
     /// @param[in] i_size Number of bytes to encrypt/decrypt.
     ///
     void encrypt(uint8 const * i_ivptr,
-                 size_t i_offset,
+                 uint8 * io_data,
+                 size_t i_size);
+
+    /// Decrypt a data buffer in-place.
+    ///
+    /// @param[in] i_ivptr Pointer to 16 byte init vector.
+    /// @param[in,out] io_data Pointer to input/output buffer.
+    /// @param[in] i_size Number of bytes to encrypt/decrypt.
+    ///
+    void decrypt(uint8 const * i_ivptr,
                  uint8 * io_data,
                  size_t i_size);
 
@@ -66,4 +71,4 @@ private:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // utp_StreamCipher_h__
+#endif // utp_BlockCipher_h__

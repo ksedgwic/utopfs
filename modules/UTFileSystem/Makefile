@@ -9,6 +9,7 @@ PROTO +=	\
 
 LIBSRC += 	\
 			BlockNode.cpp \
+			BlockRef.cpp \
 			DirNode.cpp \
 			FileNode.cpp \
 			RootDirNode.cpp \
