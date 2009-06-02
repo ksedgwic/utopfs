@@ -43,8 +43,8 @@ public:
     /// @param[in,out] io_data Pointer to input/output buffer.
     /// @param[in] i_size Number of bytes to encrypt/decrypt.
     ///
-    void encrypt(uint8 const * i_ivptr,
-                 uint8 * io_data,
+    void encrypt(void const * i_ivptr,
+                 void * io_data,
                  size_t i_size);
 
     /// Decrypt a data buffer in-place.
@@ -53,13 +53,14 @@ public:
     /// @param[in,out] io_data Pointer to input/output buffer.
     /// @param[in] i_size Number of bytes to encrypt/decrypt.
     ///
-    void decrypt(uint8 const * i_ivptr,
-                 uint8 * io_data,
+    void decrypt(void const * i_ivptr,
+                 void * io_data,
                  size_t i_size);
 
 private:
     bool				m_isvalid;
-    AES_KEY				m_key;
+    AES_KEY				m_enckey;
+    AES_KEY				m_deckey;
 };
 
 } // end namespace utp

@@ -5,6 +5,7 @@ include $(ROOTDIR)/config/define.mk
 # Add test programs (one mainline per source file) to TSTSRC
 
 TSTSRC += 	\
+			blockcipher.cpp \
 			streamcipher.cpp \
 			$(NULL)
 
