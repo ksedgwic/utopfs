@@ -45,7 +45,7 @@ public:
         virtual void nt_update(Context & i_ctxt,
                                DirNode & i_dn,
                                std::string const & i_entry,
-                               utp::Digest const & i_dig);
+                               BlockRef const & i_ref);
 
         // Accesses the "return value" assigned by the leaf or parent
         // routine.
@@ -73,7 +73,7 @@ public:
     DirNode(FileNode const & i_fn);
 
     // Constructor from blockstore persisted data.
-    DirNode(Context & i_ctxt, utp::Digest const & i_dig);
+    DirNode(Context & i_ctxt, BlockRef const & i_ref);
 
     // Destructor.
     virtual ~DirNode();
@@ -96,10 +96,10 @@ public:
     // Persist this DirNode to blockstore and update digest.
     virtual void persist(Context & i_ctxt);
 
-    // Update this entries digest in this directory and persist.
+    // Update this entries reference in this directory and persist.
     virtual void update(Context & i_ctxt,
                         std::string const & i_entry,
-                        utp::Digest const & i_dig);
+                        BlockRef const & i_ref);
 
     virtual int mknod(Context & i_ctxt,
                       std::string const & i_entry,

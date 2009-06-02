@@ -8,7 +8,7 @@ message Directory
     message Entry
     {
         required string	name	= 1;
-        required bytes	digest	= 2;
+        required bytes	blkref	= 2;
     }
 
     repeated Entry entry	= 1;

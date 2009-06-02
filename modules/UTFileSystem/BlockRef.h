@@ -19,8 +19,16 @@ public:
     // Generate a nil reference.
     BlockRef();
 
-    // Construct a reference from a digest.
-    BlockRef(utp::Digest const & i_dig);
+    // Construct a reference from a digest and an initvec.
+    BlockRef(utp::Digest const & i_dig, utp::uint8 const * i_ivp);
+
+    /// Construct block reference from protobuf field.
+    ///
+    /// IMPORTANT - This is unmarshaling a binary block reference
+    /// which is stored in a string, not computing the digest of a
+    /// string!
+    ///
+    BlockRef(std::string const & i_blkref);
 
     /// Cast reference to a protobuf string value.
     ///

@@ -30,6 +30,8 @@ typedef utp::RCPtr<DirNode> DirNodeHandle;
 
 struct Context;
 
+class BlockRef;
+
 } // end namespace utp
 
 // Local Variables:

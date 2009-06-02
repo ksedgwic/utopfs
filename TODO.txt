@@ -1,3 +1,6 @@
+Add calls to BlockRef::validate *everywhere* a block is read from
+blockstore.
+
 Implement current AES-128 CBC strategy outlined in wiki.
 
 Make direct block persistence work.

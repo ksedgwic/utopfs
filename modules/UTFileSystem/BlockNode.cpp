@@ -1,8 +1,9 @@
-#include "Log.h"
-#include "Except.h"
-
+#include "BlockCipher.h"
 #include "BlockStore.h"
-#include "StreamCipher.h"
+#include "Digest.h"
+#include "Except.h"
+#include "Log.h"
+#include "Random.h"
 
 #include "utfslog.h"
 
@@ -39,7 +40,7 @@ DataBlockNode::DataBlockNode()
     ACE_OS::memset(m_data, '\0', sizeof(m_data));
 }
 
-DataBlockNode::DataBlockNode(Context & i_ctxt, utp::Digest const & i_dig)
+DataBlockNode::DataBlockNode(Context & i_ctxt, BlockRef const & i_ref)
 {
     throwstream(InternalError, FILELINE
                 << "DataBlockNode::DataBlockNode unimplemented");
@@ -49,24 +50,26 @@ DataBlockNode::~DataBlockNode()
 {
 }
 
-void
+BlockRef
 DataBlockNode::bn_persist(Context & i_ctxt)
 {
-    // FIXME - Totally bogus, zero an initvec.
-    utp::uint8 initvec[8];
-    ACE_OS::memset(initvec, '\0', sizeof(initvec));
+    // Construct an initvec.
+    utp::uint8 iv[8];
+    Random::fill(iv, sizeof(iv));
 
     // Encrypt the entire block.
-    i_ctxt.m_cipher.encrypt(initvec, 0, m_data, sizeof(m_data));
+    i_ctxt.m_cipher.encrypt(iv, m_data, sizeof(m_data));
 
-    // Take the digest of the whole thing.
-    bn_digest(Digest(m_data, sizeof(m_data)));
+    // Set our reference value.
+    m_ref = BlockRef(Digest(m_data, sizeof(m_data)), iv);
 
-    LOG(lgr, 6, "persist " << bn_digest());
+    LOG(lgr, 6, "persist " << bn_blkref());
 
     // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_put_block(bn_digest().data(), bn_digest().size(),
+    i_ctxt.m_bsh->bs_put_block(bn_blkref().data(), bn_blkref().size(),
                                m_data, sizeof(m_data));
+
+    return m_ref;
 }
 
 // ----------------------------------------------------------------
@@ -96,7 +99,7 @@ IndirectBlockNode::IndirectBlockNode()
 }
 
 IndirectBlockNode::IndirectBlockNode(Context & i_ctxt,
-                                     utp::Digest const & i_dig)
+                                     BlockRef const & i_ref)
 {
     throwstream(InternalError, FILELINE
                 << "IndirectBlockNode::IndirectBlockNode unimplemented");

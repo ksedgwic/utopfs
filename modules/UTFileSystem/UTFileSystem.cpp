@@ -49,7 +49,7 @@ UTFileSystem::fs_mkfs(string const & i_path,
 
     m_rdh = new RootDirNode();
     m_rdh->persist(m_ctxt);
-    rootref(m_rdh->bn_digest());
+    rootref(m_rdh->bn_blkref());
 }
 
 void
@@ -156,7 +156,7 @@ UTFileSystem::fs_mknod(string const & i_path,
         MknodTraverseFunc otf(i_mode, i_dev);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_digest());
+        rootref(m_rdh->bn_blkref());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
@@ -195,7 +195,7 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
         MkdirTraverseFunc otf(i_mode);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_digest());
+        rootref(m_rdh->bn_blkref());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
@@ -234,7 +234,7 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
         OpenTraverseFunc otf(i_flags);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_digest());
+        rootref(m_rdh->bn_blkref());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
@@ -319,7 +319,7 @@ UTFileSystem::fs_write(string const & i_path,
         WriteTraverseFunc wtf(i_data, i_size, i_off);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, wtf);
-        rootref(m_rdh->bn_digest());
+        rootref(m_rdh->bn_blkref());
         return wtf.nt_retval();
     }
     catch (int const & i_errno)
@@ -407,7 +407,7 @@ UTFileSystem::fs_utime(string const & i_path,
         UtimeTraverseFunc otf(i_atime, i_mtime);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_digest());
+        rootref(m_rdh->bn_blkref());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
@@ -417,16 +417,17 @@ UTFileSystem::fs_utime(string const & i_path,
 }
 
 void
-UTFileSystem::rootref(utp::Digest const & i_digest)
+UTFileSystem::rootref(BlockRef const & i_blkref)
 {
-    LOG(lgr, 6, "rootref set " << i_digest);
+    LOG(lgr, 6, "rootref set " << i_blkref);
 
-    uint8 iv[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+    uint8 iv[16];
+    memset(iv, '\0', sizeof(iv));
 
-    uint8 buffer[sizeof(Digest)];
-    ACE_OS::memcpy(buffer, i_digest.data(), sizeof(buffer));
+    uint8 buffer[sizeof(BlockRef)];
+    ACE_OS::memcpy(buffer, i_blkref.data(), sizeof(buffer));
 
-    m_ctxt.m_cipher.encrypt(iv, 0, buffer, sizeof(buffer));
+    m_ctxt.m_cipher.encrypt(iv, buffer, sizeof(buffer));
 
     string key = "ROOT";
     
@@ -434,26 +435,27 @@ UTFileSystem::rootref(utp::Digest const & i_digest)
                                buffer, sizeof(buffer));
 }
 
-Digest
+BlockRef
 UTFileSystem::rootref()
 {
-    string digstr;
-    digstr.resize(sizeof(Digest));
+    string refstr;
+    refstr.resize(sizeof(BlockRef));
 
     string key = "ROOT";
     
     m_ctxt.m_bsh->bs_get_block(key.data(), key.size(),
-                               &digstr[0], digstr.size());
+                               &refstr[0], refstr.size());
     
-    uint8 iv[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+    uint8 iv[16];
+    memset(iv, '\0', sizeof(iv));
 
-    m_ctxt.m_cipher.encrypt(iv, 0, (uint8 *) &digstr[0], digstr.size());
+    m_ctxt.m_cipher.decrypt(iv, (uint8 *) &refstr[0], refstr.size());
 
-    Digest dig(digstr);
+    BlockRef blkref(refstr);
 
-    LOG(lgr, 6, "rootref get " << dig);
+    LOG(lgr, 6, "rootref get " << blkref);
 
-    return dig;
+    return blkref;
 }
 
 } // namespace UTFS

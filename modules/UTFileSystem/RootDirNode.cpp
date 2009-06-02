@@ -4,6 +4,7 @@
 
 #include "SpecialDirNode.h"
 #include "RootDirNode.h"
+#include "BlockRef.h"
 
 using namespace std;
 using namespace utp;
@@ -19,8 +20,8 @@ RootDirNode::RootDirNode()
     m_sdh = new SpecialDirNode;
 }
 
-RootDirNode::RootDirNode(Context & i_ctxt, Digest const & i_dig)
-    : DirNode(i_ctxt, i_dig)
+RootDirNode::RootDirNode(Context & i_ctxt, BlockRef const & i_ref)
+    : DirNode(i_ctxt, i_ref)
 {
     LOG(lgr, 4, "CTOR");
 

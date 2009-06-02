@@ -4,7 +4,7 @@
 #include "BlockStore.h"
 #include "Except.h"
 #include "Log.h"
-#include "StreamCipher.h"
+#include "BlockCipher.h"
 
 #include "utfslog.h"
 
@@ -18,11 +18,11 @@ namespace UTFS {
 
 void
 DirNode::NodeTraverseFunc::nt_update(Context & i_ctxt,
-                                 DirNode & i_dn,
-                                 std::string const & i_entry,
-                                 utp::Digest const & i_dig)
+                                     DirNode & i_dn,
+                                     std::string const & i_entry,
+                                     BlockRef const & i_ref)
 {
-    i_dn.update(i_ctxt, i_entry, i_dig);
+    i_dn.update(i_ctxt, i_entry, i_ref);
 }
 
 pair<string, string>
@@ -65,10 +65,10 @@ DirNode::DirNode(FileNode const & i_fn)
     deserialize();
 }
 
-DirNode::DirNode(Context & i_ctxt, Digest const & i_dig)
-    : FileNode(i_ctxt, i_dig)
+DirNode::DirNode(Context & i_ctxt, BlockRef const & i_ref)
+    : FileNode(i_ctxt, i_ref)
 {
-    LOG(lgr, 4, "CTOR " << i_dig);
+    LOG(lgr, 4, "CTOR " << i_ref);
 
     deserialize();
 }
@@ -102,7 +102,7 @@ DirNode::node_traverse(Context & i_ctxt,
                 // Need to redo the lookup because it might have changed.
                 fnh = lookup(i_ctxt, i_entry);
                 if (fnh)
-                    i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
+                    i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
             }
         }
         else
@@ -121,7 +121,7 @@ DirNode::node_traverse(Context & i_ctxt,
             dnh->node_traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
         }
     }
     else
@@ -135,7 +135,7 @@ DirNode::node_traverse(Context & i_ctxt,
             i_trav.nt_leaf(i_ctxt, *fnh);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
         }
         else
         {
@@ -149,7 +149,7 @@ DirNode::node_traverse(Context & i_ctxt,
             dnh->node_traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_digest());
+                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
         }
     }
 
@@ -165,7 +165,7 @@ DirNode::persist(Context & i_ctxt)
         {
             Directory::Entry const & ent = m_dir.entry(i);
             LOG(lgr, 6, "[" << i << "]: "
-                << Digest(ent.digest()) << " " << ent.name());
+                << BlockRef(ent.blkref()) << " " << ent.name());
         }
     }
 
@@ -181,9 +181,9 @@ DirNode::persist(Context & i_ctxt)
 void
 DirNode::update(Context & i_ctxt,
                 string const & i_entry,
-                Digest const & i_dig)
+                BlockRef const & i_ref)
 {
-    LOG(lgr, 6, "update " << i_entry << " " << i_dig);
+    LOG(lgr, 6, "update " << i_entry << " " << i_ref);
 
     // Does this entry exist already?
     for (int i = 0; i < m_dir.entry_size(); ++i)
@@ -191,7 +191,7 @@ DirNode::update(Context & i_ctxt,
         Directory::Entry * entp = m_dir.mutable_entry(i);
         if (entp->name() == i_entry)
         {
-            entp->set_digest(i_dig);
+            entp->set_blkref(i_ref);
             persist(i_ctxt);
             return;
         }
@@ -200,7 +200,7 @@ DirNode::update(Context & i_ctxt,
     // If we get here it needs to be added ...
     Directory::Entry * entp = m_dir.add_entry();
     entp->set_name(i_entry);
-    entp->set_digest(i_dig);
+    entp->set_blkref(i_ref);
     persist(i_ctxt);
 }
 
@@ -218,13 +218,13 @@ DirNode::mknod(Context & i_ctxt,
         // Create a new file.
         fnh = new FileNode();
 
-        // Persist it (sets the digest).
+        // Persist it (sets the blkref).
         fnh->bn_persist(i_ctxt);
 
         // Insert into our Directory collection.
         Directory::Entry * de = m_dir.add_entry();
         de->set_name(i_entry);
-        de->set_digest(fnh->bn_digest());
+        de->set_blkref(fnh->bn_blkref());
 
         // Insert into the cache.
         m_cache.insert(make_pair(i_entry, fnh));
@@ -255,7 +255,7 @@ DirNode::mkdir(Context & i_ctxt,
     // Insert into our Directory collection.
     Directory::Entry * de = m_dir.add_entry();
     de->set_name(i_entry);
-    de->set_digest(dnh->bn_digest());
+    de->set_blkref(dnh->bn_blkref());
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, dnh));
@@ -313,7 +313,7 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
             if (m_dir.entry(i).name() == i_entry)
             {
                 FileNodeHandle nh =
-                    new FileNode(i_ctxt, m_dir.entry(i).digest());
+                    new FileNode(i_ctxt, m_dir.entry(i).blkref());
 
                 // Is it really a directory?
                 if (S_ISDIR(nh->mode()))

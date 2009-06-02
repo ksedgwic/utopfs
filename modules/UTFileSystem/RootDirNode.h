@@ -18,7 +18,7 @@ class UTFS_EXP RootDirNode : public DirNode
 public:
     RootDirNode();
 
-    RootDirNode(Context & i_ctxt, utp::Digest const & i_dig);
+    RootDirNode(Context & i_ctxt, BlockRef const & i_ref);
 
     virtual ~RootDirNode();
 

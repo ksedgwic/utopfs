@@ -8,13 +8,14 @@
 
 #include "utpfwd.h"
 
-#include "Digest.h"
 #include "Types.h"
 
 #include "utfsfwd.h"
 #include "utfsexp.h"
 
 #include "INode.pb.h"
+
+#include "BlockRef.h"
 
 namespace UTFS {
 
@@ -23,34 +24,27 @@ namespace UTFS {
 class UTFS_EXP BlockNode : public virtual utp::RCObj
 {
 public:
+    // Fundamental block size of the filesystem.
+    static const size_t BLKSZ = 8192;
+
     // Default constructor.
     BlockNode() {}
 
     // Constructor which initializes the cached digest.
-    BlockNode(utp::Digest const & i_digest) : m_digest(i_digest) {}
-
-    // Fundamental block size of the filesystem.
-    static const size_t BLKSZ = 8192;
+    BlockNode(BlockRef const & i_ref) : m_ref(i_ref) {}
 
     // Destructor.
     virtual ~BlockNode();
 
     // Persist the node to the blockstore and update the cached
-    // digest value.
+    // reference.
     //
-    virtual void bn_persist(Context & i_ctxt) = 0;
+    virtual BlockRef bn_persist(Context & i_ctxt) = 0;
 
-    // Returns the cached digest of the node.  This value is not
+    // Returns the cached reference of the node.  This value is not
     // computed until bn_persist() is called.
     //
-    virtual utp::Digest const & bn_digest() { return m_digest; }
-
-    // Set's the cached digest of the node.
-    //
-    virtual void bn_digest(utp::Digest const & i_digest)
-    {
-        m_digest = i_digest;
-    }
+    virtual BlockRef const & bn_blkref() { return m_ref; }
 
     virtual utp::uint8 const * bn_data() const = 0;
 
@@ -62,8 +56,8 @@ public:
     //
     virtual size_t bn_size() const = 0;
 
-private:
-    utp::Digest			m_digest;
+protected:
+    BlockRef			m_ref;
  };
 
 // Data blocks contain the actual logical file data.
@@ -75,11 +69,11 @@ public:
     DataBlockNode();
 
     // Constructor from blockstore persisted data.
-    DataBlockNode(Context & i_ctxt, utp::Digest const & i_dig);
+    DataBlockNode(Context & i_ctxt, BlockRef const & i_ref);
 
     virtual ~DataBlockNode();
 
-    virtual void bn_persist(Context & i_ctxt);
+    virtual BlockRef bn_persist(Context & i_ctxt);
 
     virtual utp::uint8 const * bn_data() const { return m_data; }
 
@@ -100,8 +94,8 @@ private:
 class UTFS_EXP RefBlockNode : public BlockNode
 {
 public:
-    // Sequence of index offsets and Digests used for updates.
-    typedef std::vector<std::pair<size_t, utp::Digest> > BindingSeq;
+    // Sequence of index offsets and BlockRefs used for updates.
+    typedef std::vector<std::pair<size_t, BlockRef> > BindingSeq;
 
     // Block traversal functor base class.
     //
@@ -136,7 +130,7 @@ public:
 
     RefBlockNode() {}
 
-    RefBlockNode(utp::Digest const & i_digest) : BlockNode(i_digest) {}
+    RefBlockNode(BlockRef const & i_ref) : BlockNode(i_ref) {}
 
     virtual ~RefBlockNode();
 
@@ -158,13 +152,13 @@ class UTFS_EXP IndirectBlockNode : public BlockNode
 {
 public:
     // How many digests fit in a packed block.
-    static const size_t NUMDIG = (BLKSZ / sizeof(utp::Digest));
+    static const size_t NUMDIG = (BLKSZ / sizeof(BlockRef));
 
     // Default constructor.
     IndirectBlockNode();
 
     // Constructor from blockstore persisted data.
-    IndirectBlockNode(Context & i_ctxt, utp::Digest const & i_dig);
+    IndirectBlockNode(Context & i_ctxt, BlockRef const & i_ref);
 
     virtual ~IndirectBlockNode();
 
@@ -175,7 +169,7 @@ public:
 
     virtual utp::uint8 * bn_data() { return (utp::uint8 *) &m_reftbl[0]; }
 
-    // Return the whole block size even if Digests don't divide evenly;
+    // Return the whole block size even if BlockRefs don't divide evenly;
     // gurantees that we initialize all bytes ...
     //
     virtual size_t bn_size() const { return BLKSZ; }
@@ -185,7 +179,7 @@ public:
                            RefBlockNode::BindingSeq const & i_bs);
 
 private:
-    utp::Digest				m_reftbl[NUMDIG];
+    BlockRef				m_reftbl[NUMDIG];
 
 };
 

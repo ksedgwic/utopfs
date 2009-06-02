@@ -2,6 +2,7 @@
 
 #include "Base32.h"
 #include "Digest.h"
+#include "Except.h"
 #include "Log.h"
 #include "Random.h"
 
@@ -20,13 +21,22 @@ BlockRef::BlockRef()
 }
 
 
-BlockRef::BlockRef(Digest const & i_dig)
+BlockRef::BlockRef(Digest const & i_dig, uint8 const * i_ivp)
 {
-    // Use the digest for the first half ...
+    // Use the digest for the first half.
     ACE_OS::memcpy(m_ref, i_dig.data(), 16);
 
-    // ... and random bytes for the second half.
-    Random::fill(m_ref + 16, 16);
+    // Use the initvec for the second half.
+    ACE_OS::memcpy(m_ref + 16, i_ivp, 16);
+}
+
+BlockRef::BlockRef(string const & i_blkrefstr)
+{
+    if (i_blkrefstr.size() != 32)
+        throwstream(InternalError, FILELINE
+                    << "stored blkref is wrong size: " << i_blkrefstr.size());
+
+    ACE_OS::memcpy(m_ref, i_blkrefstr.data(), sizeof(m_ref));
 }
 
 bool

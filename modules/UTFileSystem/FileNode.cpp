@@ -12,11 +12,12 @@
 
 #include "BlockStore.h"
 #include "Random.h"
-#include "StreamCipher.h"
+#include "BlockCipher.h"
 
 #include "utfslog.h"
 
 #include "BlockNode.h"
+#include "BlockRef.h"
 #include "Context.h"
 #include "FileNode.h"
 
@@ -66,8 +67,6 @@ FileNode::FileNode()
 
     T64 now = T64::now();
 
-    Random::fill(m_initvec, sizeof(m_initvec));
-
     m_inode.set_mode(S_IRUSR | S_IWUSR | S_IRGRP | S_IFREG);
     m_inode.set_nlink(1);
     m_inode.set_uname(myuname());
@@ -80,34 +79,31 @@ FileNode::FileNode()
     ACE_OS::memset(m_inl, '\0', sizeof(m_inl));
 }
 
-FileNode::FileNode(Context & i_ctxt, Digest const & i_dig)
-    : RefBlockNode(i_dig)
+FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
+    : RefBlockNode(i_ref)
 {
-    LOG(lgr, 6, "CTOR " << i_dig);
+    LOG(lgr, 6, "CTOR " << i_ref);
 
     uint8 buf[BlockNode::BLKSZ];
 
     // Read the block from the blockstore.
-    i_ctxt.m_bsh->bs_get_block(i_dig.data(), i_dig.size(),
+    i_ctxt.m_bsh->bs_get_block(i_ref.data(), i_ref.size(),
                                buf, sizeof(buf));
 
-    // The initvec is not encrypted.
-    ACE_OS::memcpy(m_initvec, buf, sizeof(m_initvec));
-
     // Decrypt the block.
-    i_ctxt.m_cipher.encrypt(m_initvec, 0, buf, sizeof(buf));
+    i_ctxt.m_cipher.decrypt(i_ref.iv(), buf, sizeof(buf));
 
     // Compute the size of fixed fields after the inode.
     size_t fixedsz = fixed_field_size();
 
     // Parse the INode data.
-    size_t sz = BlockNode::BLKSZ - sizeof(m_initvec) - fixedsz;
+    size_t sz = BlockNode::BLKSZ - fixedsz;
     
     // NOTE - We use protobuf components individually here
     // because ParseFromArray insists that the entire input
     // stream be consumed.
     //
-    ArrayInputStream input(buf + sizeof(m_initvec), sz);
+    ArrayInputStream input(buf, sz);
     CodedInputStream decoder(&input);
     if (!m_inode.ParseFromCodedStream(&decoder))
         throwstream(InternalError, FILELINE
@@ -146,7 +142,7 @@ FileNode::~FileNode()
     LOG(lgr, 6, "DTOR");
 }
 
-void
+BlockRef
 FileNode::bn_persist(Context & i_ctxt)
 {
     uint8 buf[BlockNode::BLKSZ];
@@ -160,8 +156,8 @@ FileNode::bn_persist(Context & i_ctxt)
     size_t fixedsz = fixed_field_size();
     
     // Compute the size available for the inode fields and serialize.
-    size_t sz = BlockNode::BLKSZ - sizeof(m_initvec) - fixedsz;
-    bool rv = m_inode.SerializeToArray(buf + sizeof(m_initvec), sz);
+    size_t sz = BlockNode::BLKSZ - fixedsz;
+    bool rv = m_inode.SerializeToArray(buf, sz);
     if (!rv)
         throwstream(InternalError, FILELINE << "inode serialization error");
 
@@ -192,20 +188,22 @@ FileNode::bn_persist(Context & i_ctxt)
     assert(ptr == buf + BLKSZ);
 #endif
 
+    uint8 iv[16];
+    Random::fill(iv, sizeof(iv));
+
     // Encrypt the entire block.
-    i_ctxt.m_cipher.encrypt(m_initvec, 0, buf, sizeof(buf));
+    i_ctxt.m_cipher.encrypt(iv, buf, sizeof(buf));
 
-    // Write the initvec in the front.
-    ACE_OS::memcpy(buf, m_initvec, sizeof(m_initvec));
+    // Update our reference.
+    m_ref = BlockRef(Digest(buf, sizeof(buf)), iv);
 
-    // Take the digest of the whole thing.
-    bn_digest(Digest(buf, sizeof(buf)));
-
-    LOG(lgr, 6, "persist " << bn_digest());
+    LOG(lgr, 6, "persist " << m_ref);
 
     // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_put_block(bn_digest().data(), bn_digest().size(),
+    i_ctxt.m_bsh->bs_put_block(m_ref.data(), m_ref.size(),
                                buf, sizeof(buf));
+
+    return m_ref;
 }
 
 void
@@ -229,7 +227,7 @@ FileNode::rb_traverse(Context & i_ctxt,
     // Does this region intersect the inline block?
     if (i_rngoff < off_t(sizeof(m_inl)))
         if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0))
-            mods.push_back(make_pair(off, Digest()));
+            mods.push_back(make_pair(off, BlockRef()));
 
     off += sizeof(m_inl);
 
@@ -257,7 +255,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                     // Nope, create new block.
                     m_dirobj[i] = new DataBlockNode();
                     m_dirobj[i]->bn_persist(i_ctxt);
-                    m_dirref[i] = m_dirobj[i]->bn_digest();
+                    m_dirref[i] = m_dirobj[i]->bn_blkref();
                 }
             }
 
@@ -267,7 +265,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                                 off))
             {
                 m_dirobj[i]->bn_persist(i_ctxt);
-                mods.push_back(make_pair(off, m_dirobj[i]->bn_digest()));
+                mods.push_back(make_pair(off, m_dirobj[i]->bn_blkref()));
             }
         }
 

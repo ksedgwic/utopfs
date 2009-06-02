@@ -9,7 +9,7 @@
 #include "utpfwd.h"
 
 #include "BlockStore.h"
-#include "StreamCipher.h"
+#include "BlockCipher.h"
 
 #include "utfsexp.h"
 
@@ -18,7 +18,7 @@ namespace UTFS {
 struct UTFS_EXP Context
 {
     utp::BlockStoreHandle		m_bsh;
-    utp::StreamCipher			m_cipher;
+    utp::BlockCipher			m_cipher;
 };
 
 } // namespace UTFS

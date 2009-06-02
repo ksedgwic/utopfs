@@ -18,6 +18,7 @@
 #include "INode.pb.h"
 
 #include "BlockNode.h"
+#include "BlockRef.h"
 
 namespace UTFS {
 
@@ -34,12 +35,12 @@ public:
     FileNode();
 
     // Constructor from blockstore persisted data.
-    FileNode(Context & i_ctxt, utp::Digest const & i_dig);
+    FileNode(Context & i_ctxt, BlockRef const & i_ref);
 
     // Destructor.
     virtual ~FileNode();
 
-    virtual void bn_persist(Context & i_ctxt);
+    virtual BlockRef bn_persist(Context & i_ctxt);
 
     utp::uint8 const * bn_data() const { return m_inl; }
 
@@ -92,18 +93,16 @@ protected:
     size_t fixed_field_size() const;
 
 private:
-    utp::uint8				m_initvec[8];
-
     INode					m_inode;
 
  	utp::uint8				m_inl[INLSZ];
 
     // References
-    utp::Digest				m_dirref[NDIRECT];	// Direct references
-    utp::Digest				m_sinref;			// Single indirect refs
-    utp::Digest				m_dinref;			// Double indirect refs
-    utp::Digest				m_tinref;			// Triple indirect refs
-    utp::Digest				m_qinref;			// Quad indirect refs
+    BlockRef				m_dirref[NDIRECT];	// Direct references
+    BlockRef				m_sinref;			// Single indirect refs
+    BlockRef				m_dinref;			// Double indirect refs
+    BlockRef				m_tinref;			// Triple indirect refs
+    BlockRef				m_qinref;			// Quad indirect refs
 
     // Cached Objects
     DataBlockNodeHandle		m_dirobj[NDIRECT];

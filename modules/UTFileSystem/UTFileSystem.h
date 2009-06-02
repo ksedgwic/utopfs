@@ -12,7 +12,7 @@
 #include "utpfwd.h"
 
 #include "FileSystem.h"
-#include "StreamCipher.h"
+#include "BlockCipher.h"
 
 #include "Context.h"
 
@@ -83,9 +83,9 @@ public:
         throw (utp::InternalError);
 
 protected:
-    void rootref(utp::Digest const & i_digest);
+    void rootref(BlockRef const & i_blkref);
 
-    utp::Digest rootref();
+    BlockRef rootref();
 
 private:
     typedef std::map<std::string, FileNodeHandle>	NodeMap;
