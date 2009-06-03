@@ -1,7 +1,4 @@
-Add calls to BlockRef::validate *everywhere* a block is read from
-blockstore.
-
-Implement current AES-128 CBC strategy outlined in wiki.
+Add filesystem identifier to scheme; use instead of "ROOT" in rootref.
 
 Make direct block persistence work.
 

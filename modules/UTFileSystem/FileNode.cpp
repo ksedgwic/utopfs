@@ -90,6 +90,9 @@ FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
     i_ctxt.m_bsh->bs_get_block(i_ref.data(), i_ref.size(),
                                buf, sizeof(buf));
 
+    // Validate the block.
+    i_ref.validate(buf, sizeof(buf));
+
     // Decrypt the block.
     i_ctxt.m_cipher.decrypt(i_ref.iv(), buf, sizeof(buf));
 

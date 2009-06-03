@@ -48,14 +48,16 @@ BlockRef::operator!() const
     return true;
 }
 
-bool
+void
 BlockRef::validate(uint8 const * i_data, size_t i_size) const
+    throw(VerificationError)
 {
     // Compute the digest of the data block.
     Digest dig(i_data, i_size);
 
     // Does the first part match?
-    return ACE_OS::memcmp(dig.data(), m_ref, 16) == 0;
+    if (ACE_OS::memcmp(dig.data(), m_ref, 16) != 0)
+        throwstream(VerificationError, *this);
 }
 
 ostream & operator<<(ostream & ostrm, BlockRef const & i_ref)

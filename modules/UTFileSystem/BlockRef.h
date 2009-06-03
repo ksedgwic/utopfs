@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "Except.h"
 #include "Types.h"
 
 #include "utpfwd.h"
@@ -56,7 +57,8 @@ public:
     // Validate a data block.  Returns true of the block matches
     // the reference, false otherwise.
     //
-    bool validate(utp::uint8 const * i_data, size_t i_size) const;
+    void validate(utp::uint8 const * i_data, size_t i_size) const
+        throw(utp::VerificationError);
 
 private:
     utp::uint8				m_ref[32];

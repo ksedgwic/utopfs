@@ -445,7 +445,9 @@ UTFileSystem::rootref()
     
     m_ctxt.m_bsh->bs_get_block(key.data(), key.size(),
                                &refstr[0], refstr.size());
-    
+
+    // Can this block be validated?
+
     uint8 iv[16];
     memset(iv, '\0', sizeof(iv));
 
