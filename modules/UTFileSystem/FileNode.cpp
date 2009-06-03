@@ -229,7 +229,7 @@ FileNode::rb_traverse(Context & i_ctxt,
 
     // Does this region intersect the inline block?
     if (i_rngoff < off_t(sizeof(m_inl)))
-        if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0))
+        if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0, size()))
             mods.push_back(make_pair(off, BlockRef()));
 
     off += sizeof(m_inl);
@@ -265,7 +265,8 @@ FileNode::rb_traverse(Context & i_ctxt,
             if (i_trav.bt_visit(i_ctxt,
                                 m_dirobj[i]->bn_data(),
                                 m_dirobj[i]->bn_size(),
-                                off))
+                                off,
+                                size()))
             {
                 m_dirobj[i]->bn_persist(i_ctxt);
                 mods.push_back(make_pair(off, m_dirobj[i]->bn_blkref()));
@@ -285,6 +286,25 @@ void
 FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
 {
     // FIXME - We need to store any modified bindings!
+    // m_dirref[i] = m_dirobj[i]->bn_blkref();
+
+    for (unsigned i = 0; i < i_bs.size(); ++i)
+    {
+        off_t off = i_bs[i].first;
+        if (off == 0)
+            continue; // Ignore, this is the inline section.
+
+        // Subtract the inline block size.
+        off -= sizeof(m_inl);
+
+        if (off < off_t(NDIRECT * BLKSZ))
+            m_dirref[off/BLKSZ] = i_bs[i].second;
+
+        else
+            throwstream(InternalError, FILELINE
+                        << "FileNode::rb_update "
+                        << "for indirect blocks unimplemented");
+    }
 }
 
 int
@@ -304,25 +324,85 @@ FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
     return 0;
 }
 
+class ReadBTF : public RefBlockNode::BlockTraverseFunc
+{
+public:
+    ReadBTF(void * i_rddata,
+             size_t i_rdsize,
+             off_t i_rdoff)
+        : m_rddata(i_rddata)
+        , m_rdsize(i_rdsize)
+        , m_rdoff(i_rdoff)
+    {}
+    
+    //          rdoff --------------------------------------> rdsz
+    // -----------+---------------------------------------------+------
+    //            |                Read Buffer                  |
+    // -----+-----+--------+------------------------+-----------+---+--
+    //      |   Block A    |                        |    Block B    |
+    // -----+--------------+------------------------+---------------+--
+    //    blkoff ------> blksz                    blkoff -------> blksz
+
+
+    virtual bool bt_visit(Context & i_ctxt,
+                          void * i_blkdata,
+                          size_t i_blksize,
+                          off_t i_blkoff,
+                          size_t i_filesz)
+    {
+        // Find the minimum file offset which is being transferred.
+        off_t minoff = max(m_rdoff, i_blkoff);
+
+        // Find the file offset just after the write.
+        off_t maxoff = min(m_rdoff + m_rdsize, i_blkoff + i_blksize);
+
+        // Make sure we aren't reading past the end of the file.
+        if (maxoff > off_t(i_filesz))
+            maxoff = i_filesz;
+
+        // If there is no overlap we are done.
+        if (minoff >= maxoff)
+            return false;
+
+        // Find the dest pointer.
+        uint8 * dstptr = ((uint8 *) m_rddata) + (minoff - m_rdoff);
+
+        // Find the source pointer.
+        uint8 const * srcptr =
+            ((uint8 const *) i_blkdata) + (minoff - i_blkoff);
+
+        // Find the size of the transfer.
+        size_t sz = maxoff - minoff;
+
+        // Write the data.
+        ACE_OS::memcpy(dstptr, srcptr, sz);
+
+        // We read some bytes.
+        m_retval += sz;
+
+        // But we didn't change any ...
+        return false;
+    }
+
+private:
+    void const *	m_rddata;	// Read data buffer.
+    size_t			m_rdsize;	// Size of read.
+    off_t			m_rdoff;	// Logical offset in file
+};
+
 int
 FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
 {
-    // For now, bail on anything that is bigger then fits
-    // in a single INode.
-    //
-    if (i_off + i_size > sizeof(m_inl))
-        throwstream(InternalError, FILELINE
-                    << "FileNode::read outside inlined bytes unsupported");
-
-    // Can't read past the end of data.
-    if (i_off > off_t(size()))
-        return 0;
-
-    // Don't return bytes past the end of the file.
-    size_t sz = min(i_size, size() - i_off);
-
-    ACE_OS::memcpy(o_bufptr, m_inl + i_off, sz);
-    return sz;
+    try
+    {
+        ReadBTF rbtf(o_bufptr, i_size, i_off);
+        rb_traverse(i_ctxt, 0, i_off, i_size, rbtf);
+        return rbtf.bt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
 }
 
 class WriteBTF : public RefBlockNode::BlockTraverseFunc
@@ -348,7 +428,8 @@ public:
     virtual bool bt_visit(Context & i_ctxt,
                           void * i_blkdata,
                           size_t i_blksize,
-                          off_t i_blkoff)
+                          off_t i_blkoff,
+                          size_t i_filesz)
     {
         // Find the minimum file offset which is being transferred.
         off_t minoff = max(m_wrtoff, i_blkoff);

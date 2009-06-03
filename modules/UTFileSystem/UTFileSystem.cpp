@@ -232,9 +232,9 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
         OpenTraverseFunc otf(i_flags);
-        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_blkref());
+        // rootref(m_rdh->bn_blkref());
         return otf.nt_retval();
     }
     catch (int const & i_errno)

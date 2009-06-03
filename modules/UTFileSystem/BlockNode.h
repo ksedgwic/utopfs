@@ -95,7 +95,7 @@ class UTFS_EXP RefBlockNode : public BlockNode
 {
 public:
     // Sequence of index offsets and BlockRefs used for updates.
-    typedef std::vector<std::pair<size_t, BlockRef> > BindingSeq;
+    typedef std::vector<std::pair<off_t, BlockRef> > BindingSeq;
 
     // Block traversal functor base class.
     //
@@ -112,7 +112,8 @@ public:
         virtual bool bt_visit(Context & i_ctxt,
                               void * i_blkdata,
                               size_t i_blksize,
-                              off_t i_blkoff) = 0;
+                              off_t i_blkoff,
+                              size_t i_filesz) = 0;
 
         // Called in post-traversal order on block indexes for with
         // list of updated block digests.  Default implementation
