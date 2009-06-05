@@ -48,6 +48,8 @@ class Test_fs_bigfile_01:
     st = self.fs.fs_getattr("/bigfile");
     assert S_ISREG(st[ST_MODE])
     assert st[ST_SIZE] == 18000
+    nblocks = st.st_blocks
+    assert nblocks == (1 + 2) * 8192 / 512
 
     # We should be able to read the data.
     self.fs.fs_open("/bigfile", O_RDONLY)
@@ -65,6 +67,8 @@ class Test_fs_bigfile_01:
     st = self.fs.fs_getattr("/bigfile");
     assert S_ISREG(st[ST_MODE])
     assert st[ST_SIZE] == 18000
+    nblocks = st.st_blocks
+    assert nblocks == (1 + 2) * 8192 / 512
 
     # We should be able to read the data.
     self.fs.fs_open("/bigfile", O_RDONLY)
