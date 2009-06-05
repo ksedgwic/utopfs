@@ -210,18 +210,20 @@ FileNode::bn_persist(Context & i_ctxt)
     return m_ref;
 }
 
-void
+bool
 FileNode::rb_traverse(Context & i_ctxt,
+                      unsigned int i_flags,
                       off_t i_base,
                       off_t i_rngoff,
                       size_t i_rngsize,
                       BlockTraverseFunc & i_trav)
 {
-    // Running offset.
-    size_t off = 0;
+    // Running offset and size.
+    off_t off = 0;
+    off_t sz = 0;
 
     // Our base needs to be 0 or else somebody is very confused.
-    if (i_base != off_t(off))
+    if (i_base != off)
         throwstream(InternalError, FILELINE
                     << "FileNode::rb_traverse called with non-zero base: "
                     << i_base);
@@ -229,71 +231,146 @@ FileNode::rb_traverse(Context & i_ctxt,
     RefBlockNode::BindingSeq mods;
 
     // Does this region intersect the inline block?
+    //
+    // NOTE - We don't really need to append to the mods collection
+    // since this block is inline and the FileNode gets persisted
+    // already.  But the return logic correctly will return true if we
+    // use a placeholder.
+    //
     if (i_rngoff < off_t(sizeof(m_inl)))
         if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0, size()))
             mods.push_back(make_pair(off, BlockRef()));
 
     off += sizeof(m_inl);
 
-    // Traverse the direct blocks.
-    for (unsigned i = 0; i < NDIRECT; ++i)
+    // Are we beyond the region?
+    if (off > i_rngoff + off_t(i_rngsize))
+        goto done;
+
+    // Does this region intersect the direct blocks?
+    sz = NDIRECT * BlockNode::BLKSZ;
+    if (i_rngoff >= off + sz)
     {
-        // If we are beyond the traversal region we're done.
-        if (off > i_rngoff + i_rngsize)
-            break;
-
-        // Does the range intersect this block?
-        if (i_rngoff < off_t(off + BlockNode::BLKSZ))
+        // Skip past the direct blocks.
+        off += sz;
+    }
+    else
+    {
+        // Traverse the direct blocks.
+        for (unsigned i = 0; i < NDIRECT; ++i)
         {
-            // Do we have a cached version of this block?
-            if (!m_dirobj[i])
+            // If we are beyond the traversal region we're done.
+            if (off > i_rngoff + off_t(i_rngsize))
+                goto done;
+
+            // Does the range intersect this block?
+            if (i_rngoff < off_t(off + BlockNode::BLKSZ))
             {
-                // Nope, does it have a digest yet?
-                if (m_dirref[i])
+                // Do we have a cached version of this block?
+                if (!m_dirobj[i])
                 {
-                    // Yes, read it from the block store.
-                    m_dirobj[i] = new DataBlockNode(i_ctxt, m_dirref[i]);
+                    // Nope, does it have a digest yet?
+                    if (m_dirref[i])
+                    {
+                        // Yes, read it from the blockstore.
+                        m_dirobj[i] = new DataBlockNode(i_ctxt, m_dirref[i]);
+                    }
+                    else if (i_flags & RB_MODIFY)
+                    {
+                        // Nope, create new block.
+                        m_dirobj[i] = new DataBlockNode();
+
+                        // Increment the block count.
+                        m_inode.set_blocks(m_inode.blocks() + 1);
+                    }
+                    else
+                    {
+                        throwstream(InternalError, FILELINE
+                                    << "read only traversal unimplemented");
+                    }
                 }
-                else
+
+                if (i_trav.bt_visit(i_ctxt,
+                                    m_dirobj[i]->bn_data(),
+                                    m_dirobj[i]->bn_size(),
+                                    off,
+                                    size()))
                 {
-                    // Nope, create new block.
-                    m_dirobj[i] = new DataBlockNode();
                     m_dirobj[i]->bn_persist(i_ctxt);
-
-                    // Store the reference.
-                    m_dirref[i] = m_dirobj[i]->bn_blkref();
-
-                    // Increment the block count.
-                    m_inode.set_blocks(m_inode.blocks() + 1);
+                    mods.push_back(make_pair(off, m_dirobj[i]->bn_blkref()));
                 }
             }
 
-            if (i_trav.bt_visit(i_ctxt,
-                                m_dirobj[i]->bn_data(),
-                                m_dirobj[i]->bn_size(),
-                                off,
-                                size()))
+            // Move to the next direct block.
+            off += BlockNode::BLKSZ;
+        }
+    }
+
+    // Are we beyond the region?
+    if (off > i_rngoff + off_t(i_rngsize))
+        goto done;
+
+    // Does this region intersect the single indirect block?
+    sz = IndirectBlockNode::NUMREF * BlockNode::BLKSZ;
+    if (i_rngoff >= off + sz)
+    {
+        // Skip past the single indirect block ...
+        off += sz;
+    }
+    else
+    {
+        // Do we have a cached version of this block?
+        if (!m_sinobj)
+        {
+            // Nope, does it have a digest yet?
+            if (m_sinref)
             {
-                m_dirobj[i]->bn_persist(i_ctxt);
-                mods.push_back(make_pair(off, m_dirobj[i]->bn_blkref()));
+                // Yes, read it from the blockstore.
+                m_sinobj = new IndirectBlockNode(i_ctxt, m_sinref);
+            }
+            else if (i_flags & RB_MODIFY)
+            {
+                // Nope, create a new one.
+                m_sinobj = new IndirectBlockNode();
+
+                // Increment the block count.
+                m_inode.set_blocks(m_inode.blocks() + 1);
+            }
+            else
+            {
+                throwstream(InternalError, FILELINE
+                            << "read only traversal unimplemented");
             }
         }
 
-        // Move to the next direct block.
-        off += BlockNode::BLKSZ;
+        if (m_sinobj->rb_traverse(i_ctxt, i_flags, off,
+                                  i_rngoff, i_rngsize, i_trav))
+        {
+            m_sinobj->bn_persist(i_ctxt);
+            mods.push_back(make_pair(off, m_sinobj->bn_blkref()));
+        }
     }
 
+    // If we get here we need to use the indirect block ...
+    throwstream(InternalError, FILELINE
+                << "multiple indirect block traversal unimplemented");
+
+ done:
     // Were there any modified regions?
-    if (!mods.empty())
+    if (mods.empty())
+    {
+        return false;
+    }
+    else
+    {
         i_trav.bt_update(i_ctxt, *this, mods);
+        return true;
+    }
 }
 
 void
 FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
 {
-    // FIXME - We need to store any modified bindings!
-    // m_dirref[i] = m_dirobj[i]->bn_blkref();
-
     for (unsigned i = 0; i < i_bs.size(); ++i)
     {
         off_t off = i_bs[i].first;
@@ -304,12 +381,25 @@ FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
         off -= sizeof(m_inl);
 
         if (off < off_t(NDIRECT * BLKSZ))
+        {
             m_dirref[off/BLKSZ] = i_bs[i].second;
+            continue;
+        }
 
-        else
-            throwstream(InternalError, FILELINE
-                        << "FileNode::rb_update "
-                        << "for indirect blocks unimplemented");
+        off -= off_t(NDIRECT * BLKSZ);
+
+        if (off == 0)
+        {
+            m_sinref = i_bs[i].second;
+            continue;
+        }
+
+        off -= off_t(IndirectBlockNode::NUMREF * BlockNode::BLKSZ);
+
+        // If we get here we need to implement more stuff ...
+        throwstream(InternalError, FILELINE
+                    << "FileNode::rb_update "
+                    << "for multi indirect blocks unimplemented");
     }
 }
 
@@ -403,7 +493,7 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     try
     {
         ReadBTF rbtf(o_bufptr, i_size, i_off);
-        rb_traverse(i_ctxt, 0, i_off, i_size, rbtf);
+        rb_traverse(i_ctxt, RB_DEFAULT, 0, i_off, i_size, rbtf);
         return rbtf.bt_retval();
     }
     catch (int const & i_errno)
@@ -481,7 +571,7 @@ FileNode::write(Context & i_ctxt,
     try
     {
         WriteBTF wbtf(i_data, i_size, i_off);
-        rb_traverse(i_ctxt, 0, i_off, i_size, wbtf);
+        rb_traverse(i_ctxt, RB_MODIFY, 0, i_off, i_size, wbtf);
 
         // Did the node get bigger?
         // If the file grew the size needs to be larger.

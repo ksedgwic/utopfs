@@ -7,7 +7,7 @@
 
 #include "utfslog.h"
 
-#include "BlockNode.h"
+#include "RefBlockNode.h"
 #include "Context.h"
 
 using namespace std;
@@ -21,9 +21,16 @@ namespace {
 
 namespace UTFS {
 
-BlockNode::~BlockNode()
+void
+RefBlockNode::BlockTraverseFunc::bt_update(Context & i_ctxt,
+                                           RefBlockNode & i_bn,
+                                           BindingSeq const & i_bbs)
 {
-    LOG(lgr, 6, "DTOR");
+    i_bn.rb_update(i_ctxt, i_bbs);
+}
+
+RefBlockNode::~RefBlockNode()
+{
 }
 
 } // namespace UTFS

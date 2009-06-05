@@ -10,8 +10,11 @@ PROTO +=	\
 LIBSRC += 	\
 			BlockNode.cpp \
 			BlockRef.cpp \
+			DataBlockNode.cpp \
 			DirNode.cpp \
 			FileNode.cpp \
+			IndirectBlockNode.cpp \
+			RefBlockNode.cpp \
 			RootDirNode.cpp \
 			SpecialDirNode.cpp \
 			SpecialFileNode.cpp \

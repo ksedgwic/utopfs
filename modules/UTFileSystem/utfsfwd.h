@@ -12,6 +12,10 @@ class IndirectBlockNode;
 /// Handle to IndirectBlockNode object.
 typedef utp::RCPtr<IndirectBlockNode> IndirectBlockNodeHandle;
 
+class RefBlockNode;
+/// Handle to RefBlockNode object.
+typedef utp::RCPtr<RefBlockNode> RefBlockNodeHandle;
+
 class DataBlockNode;
 /// Handle to DataBlockNode object.
 typedef utp::RCPtr<DataBlockNode> DataBlockNodeHandle;

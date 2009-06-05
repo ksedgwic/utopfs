@@ -17,7 +17,9 @@
 
 #include "INode.pb.h"
 
-#include "BlockNode.h"
+#include "RefBlockNode.h"
+#include "DataBlockNode.h"
+#include "IndirectBlockNode.h"
 #include "BlockRef.h"
 
 namespace UTFS {
@@ -48,7 +50,8 @@ public:
 
     size_t bn_size() const { return sizeof(m_inl); }
 
-    virtual void rb_traverse(Context & i_ctxt,
+    virtual bool rb_traverse(Context & i_ctxt,
+                             unsigned int i_flags,
                              off_t i_base,
                              off_t i_rngoff,
                              size_t i_rngsize,
@@ -93,19 +96,20 @@ protected:
     size_t fixed_field_size() const;
 
 private:
-    INode					m_inode;
+    INode						m_inode;
 
- 	utp::uint8				m_inl[INLSZ];
+ 	utp::uint8					m_inl[INLSZ];
 
     // References
-    BlockRef				m_dirref[NDIRECT];	// Direct references
-    BlockRef				m_sinref;			// Single indirect refs
-    BlockRef				m_dinref;			// Double indirect refs
-    BlockRef				m_tinref;			// Triple indirect refs
-    BlockRef				m_qinref;			// Quad indirect refs
+    BlockRef					m_dirref[NDIRECT];	// Direct references
+    BlockRef					m_sinref;			// Single indirect refs
+    BlockRef					m_dinref;			// Double indirect refs
+    BlockRef					m_tinref;			// Triple indirect refs
+    BlockRef					m_qinref;			// Quad indirect refs
 
     // Cached Objects
-    DataBlockNodeHandle		m_dirobj[NDIRECT];
+    DataBlockNodeHandle			m_dirobj[NDIRECT];
+    IndirectBlockNodeHandle		m_sinobj;
 };
 
 } // namespace UTFS

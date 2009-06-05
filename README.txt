@@ -35,3 +35,14 @@ Mount existing file system in "BLOCKS":
     cd utopfs/Linux.WORKCFG
     . ./env.sh
     ../Linux.DBGOBJ/utopfs -f -P "" BLOCKS mnt
+
+
+Debugging
+----------------------------------------------------------------
+
+Run a unit test under the debugger:
+
+    cd unit/Linux.WORKCFG
+    . ./env.sh
+    gdb python
+    r /usr/bin/py.test --nocapture test_fs_sparse_01.py
