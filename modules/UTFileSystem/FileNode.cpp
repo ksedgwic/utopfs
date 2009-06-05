@@ -75,6 +75,7 @@ FileNode::FileNode()
     m_inode.set_atime(now.usec());
     m_inode.set_mtime(now.usec());
     m_inode.set_ctime(now.usec());
+    m_inode.set_blocks(1);
 
     ACE_OS::memset(m_inl, '\0', sizeof(m_inl));
 }
@@ -258,7 +259,12 @@ FileNode::rb_traverse(Context & i_ctxt,
                     // Nope, create new block.
                     m_dirobj[i] = new DataBlockNode();
                     m_dirobj[i]->bn_persist(i_ctxt);
+
+                    // Store the reference.
                     m_dirref[i] = m_dirobj[i]->bn_blkref();
+
+                    // Increment the block count.
+                    m_inode.set_blocks(m_inode.blocks() + 1);
                 }
             }
 
@@ -320,6 +326,7 @@ FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
     o_statbuf->st_atime = m_inode.atime() / 1000000;
     o_statbuf->st_mtime = m_inode.mtime() / 1000000;
     o_statbuf->st_ctime = m_inode.ctime() / 1000000;
+    o_statbuf->st_blocks = m_inode.blocks() * 16;	// *= 8192 / 512
 
     return 0;
 }

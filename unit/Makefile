@@ -14,6 +14,7 @@ PYTESTS =	\
 			test_fs_readdir_02.py \
 			test_fs_write_01.py \
 			test_fs_bigfile_01.py \
+			test_fs_sparse_01.py \
 			$(NULL)
 
 SCRIPTS =	\

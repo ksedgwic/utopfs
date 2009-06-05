@@ -1,8 +1,11 @@
+Extend block traversal to indirect blocks.
+
+Fix block traversal to fault blocks in for write and use zero
+placeholder for read.
+
 Add filesystem identifier to scheme; use instead of "ROOT" in rootref.
 
-Make direct block persistence work.
-
-Extend block traversal to indirect blocks.
+RPM packaging.
 
 Figure out the uid an gid, are they in the file_info_t?
 

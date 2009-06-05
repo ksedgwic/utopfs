@@ -13,6 +13,7 @@ message INode
     required int64	atime	= 6;
     required int64	mtime	= 7;
     required int64	ctime	= 8;
+    required int32	blocks	= 9;
 }
 
 
