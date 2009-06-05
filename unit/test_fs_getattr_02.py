@@ -62,9 +62,13 @@ class Test_fs_getattr_01:
     st = self.fs.fs_getattr("/foo")
     assert S_ISDIR(st[ST_MODE])
     assert st[ST_NLINK] == 2
+    nblocks = st.st_blocks
+    assert nblocks == 16
 
   def test_can_getattr_file(self):
     # We should be able to stat "/foo/bar"
     st = self.fs.fs_getattr("/foo/bar")
     assert S_ISREG(st[ST_MODE])
     assert st[ST_NLINK] == 1
+    nblocks = st.st_blocks
+    assert nblocks == 16
