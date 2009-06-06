@@ -20,6 +20,7 @@
 #include "RefBlockNode.h"
 #include "DataBlockNode.h"
 #include "IndirectBlockNode.h"
+#include "DoubleIndBlockNode.h"
 #include "BlockRef.h"
 
 namespace UTFS {
@@ -117,6 +118,7 @@ private:
     // Cached Objects
     DataBlockNodeHandle			m_dirobj[NDIRECT];
     IndirectBlockNodeHandle		m_sinobj;
+    DoubleIndBlockNodeHandle	m_dinobj;
 };
 
 } // namespace UTFS

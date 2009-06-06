@@ -8,6 +8,10 @@
 
 namespace UTFS {
 
+class DoubleIndBlockNode;
+/// Handle to DoubleIndBlockNode object.
+typedef utp::RCPtr<DoubleIndBlockNode> DoubleIndBlockNodeHandle;
+
 class IndirectBlockNode;
 /// Handle to IndirectBlockNode object.
 typedef utp::RCPtr<IndirectBlockNode> IndirectBlockNodeHandle;

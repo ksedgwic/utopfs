@@ -1,7 +1,4 @@
-Extend block traversal to indirect blocks.
-
-Fix block traversal to fault blocks in for write and use zero
-placeholder for read.
+Extend sparse test to >2M (double indirect) block territory.
 
 Add filesystem identifier to scheme; use instead of "ROOT" in rootref.
 

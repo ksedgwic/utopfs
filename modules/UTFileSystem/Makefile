@@ -12,6 +12,7 @@ LIBSRC += 	\
 			BlockRef.cpp \
 			DataBlockNode.cpp \
 			DirNode.cpp \
+			DoubleIndBlockNode.cpp \
 			FileNode.cpp \
 			IndirectBlockNode.cpp \
 			RefBlockNode.cpp \

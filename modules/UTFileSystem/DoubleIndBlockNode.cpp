@@ -10,7 +10,7 @@
 #include "Context.h"
 #include "DataBlockNode.h"
 #include "FileNode.h"
-#include "IndirectBlockNode.h"
+#include "DoubleIndBlockNode.h"
 
 using namespace std;
 using namespace utp;
@@ -23,63 +23,25 @@ namespace {
 
 namespace UTFS {
 
-IndirectBlockNode::IndirectBlockNode()
+DoubleIndBlockNode::DoubleIndBlockNode()
 {
     LOG(lgr, 6, "CTOR");
 }
 
-IndirectBlockNode::IndirectBlockNode(Context & i_ctxt,
+DoubleIndBlockNode::DoubleIndBlockNode(Context & i_ctxt,
                                      BlockRef const & i_ref)
+    : IndirectBlockNode(i_ctxt, i_ref)
 {
     LOG(lgr, 6, "CTOR " << i_ref);
-
-    uint8 * ptr = (uint8 *) m_blkref;
-    size_t sz = BLKSZ;
-
-    // Read the block from the blockstore.
-    i_ctxt.m_bsh->bs_get_block(i_ref.data(), i_ref.size(), ptr, sz);
-
-    // Validate the block.
-    i_ref.validate(ptr, sz);
-
-    // Decrypt the block.
-    i_ctxt.m_cipher.decrypt(i_ref.iv(), ptr, sz);
 }
 
-IndirectBlockNode::~IndirectBlockNode()
+DoubleIndBlockNode::~DoubleIndBlockNode()
 {
     LOG(lgr, 6, "DTOR");
 }
 
-BlockRef
-IndirectBlockNode::bn_persist(Context & i_ctxt)
-{
-    // Copy the data into a buffer.
-    uint8 buf[BlockNode::BLKSZ];
-    ACE_OS::memset(buf, '\0', BlockNode::BLKSZ);
-    ACE_OS::memcpy(buf, m_blkref, sizeof(m_blkref));
-
-    // Construct an initvec.
-    utp::uint8 iv[16];
-    Random::fill(iv, sizeof(iv));
-
-    // Encrypt the entire block.
-    i_ctxt.m_cipher.encrypt(iv, buf, sizeof(buf));
-
-    // Set our reference value.
-    m_ref = BlockRef(Digest(buf, sizeof(buf)), iv);
-
-    LOG(lgr, 6, "persist " << bn_blkref());
-
-    // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_put_block(m_ref.data(), m_ref.size(),
-                               buf, sizeof(buf));
-
-    return m_ref;
-}
-
 bool
-IndirectBlockNode::rb_traverse(Context & i_ctxt,
+DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
                                FileNode & i_fn,
                                unsigned int i_flags,
                                off_t i_base,
@@ -89,7 +51,7 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
 {
     RefBlockNode::BindingSeq mods;
 
-    static size_t refspan = BLKSZ;
+    static size_t refspan = NUMREF * BLKSZ;
 
     // Are we beyond the target range?
     if (i_base > i_rngoff + off_t(i_rngsize))
@@ -105,13 +67,13 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
             goto done;
 
         // Find the block object to use.
-        DataBlockNodeHandle nh;
+        IndirectBlockNodeHandle nh;
 
         // Do we have one in the cache already?
         if (m_blkobj[ndx])
         {
             // Yep, use it.
-            nh = dynamic_cast<DataBlockNode *>(&*m_blkobj[ndx]);
+            nh = dynamic_cast<IndirectBlockNode *>(&*m_blkobj[ndx]);
         }
         else
         {
@@ -119,7 +81,7 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
             if (m_blkref[ndx])
             {
                 // Yes, read it from the blockstore.
-                nh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
+                nh = new IndirectBlockNode(i_ctxt, m_blkref[ndx]);
 
                 // Keep it in the cache.
                 m_blkobj[ndx] = nh;
@@ -127,7 +89,7 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
             else if (i_flags & RB_MODIFY)
             {
                 // Nope, create new block.
-                nh = new DataBlockNode();
+                nh = new IndirectBlockNode();
 
                 // Keep it in the cache.
                 m_blkobj[ndx] = nh;
@@ -138,18 +100,15 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
             else
             {
                 // Use the zero singleton.
-                nh = i_ctxt.m_zdatobj;
+                nh = i_ctxt.m_zsinobj;
 
                 // And *don't* keep it in the cache!
             }
         }
 
-        // Visit it, deal with possible updates.
-        if (i_trav.bt_visit(i_ctxt,
-                            nh->bn_data(),
-                            nh->bn_size(),
-                            off,
-                            i_fn.size()))
+        // Recursively traverse ...
+        if (nh->rb_traverse(i_ctxt, i_fn, i_flags, off,
+                            i_rngoff, i_rngsize, i_trav))
         {
             nh->bn_persist(i_ctxt);
             mods.push_back(make_pair(off, nh->bn_blkref()));
@@ -170,11 +129,11 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
 }
 
 void
-IndirectBlockNode::rb_update(Context & i_ctxt,
+DoubleIndBlockNode::rb_update(Context & i_ctxt,
                              off_t i_base,
                              RefBlockNode::BindingSeq const & i_bs)
 {
-    size_t refspan = BLKSZ;
+    size_t refspan = NUMREF * BLKSZ;
 
     for (unsigned i = 0; i < i_bs.size(); ++i)
     {
@@ -183,21 +142,21 @@ IndirectBlockNode::rb_update(Context & i_ctxt,
     }
 }
 
-ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
+ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i_nh)
 {
     LOG(lgr, 6, "CTOR");
 
     // Initialize all of our references to the zero data block.
     for (unsigned i = 0; i < NUMREF; ++i)
-        m_blkobj[i] = i_dbnh;
+        m_blkobj[i] = i_nh;
 }
 
 
 BlockRef
-ZeroIndirectBlockNode::bn_persist(Context & i_ctxt)
+ZeroDoubleIndBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
-                << "persisting the zero indirect block makes me sad");
+                << "persisting the zero double indirect block makes me sad");
 }
 
 } // namespace UTFS
