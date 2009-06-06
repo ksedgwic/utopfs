@@ -89,38 +89,55 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
         if (off > i_rngoff + off_t(i_rngsize))
             goto done;
 
-        // Do we have a cached version of this block?
-        if (!m_blkobj[ndx])
+        // Find the block object to use.
+        DataBlockNodeHandle dbh;
+
+        // Do we have one in the cache already?
+        if (m_blkobj[ndx])
+        {
+            // Yep, use it.
+            dbh = m_blkobj[ndx];
+        }
+        else
         {
             // Nope, does it have a digest yet?
             if (m_blkref[ndx])
             {
                 // Yes, read it from the blockstore.
-                m_blkobj[ndx] = new DataBlockNode(i_ctxt, m_blkref[ndx]);
+                dbh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
+
+                // Keep it in the cache.
+                m_blkobj[ndx] = dbh;
             }
             else if (i_flags & RB_MODIFY)
             {
                 // Nope, create new block.
-                m_blkobj[ndx] = new DataBlockNode();
+                dbh = new DataBlockNode();
+
+                // Keep it in the cache.
+                m_blkobj[ndx] = dbh;
 
                 // Increment the block count.
                 i_fn.blocks(i_fn.blocks() + 1);
             }
             else
             {
-                throwstream(InternalError, FILELINE
-                            << "read only traversal unimplemented");
+                // Use the zero singleton.
+                dbh = i_ctxt.m_zdatobj;
+
+                // And *don't* keep it in the cache!
             }
         }
 
+        // Visit it, deal with possible updates.
         if (i_trav.bt_visit(i_ctxt,
-                            m_blkobj[ndx]->bn_data(),
-                            m_blkobj[ndx]->bn_size(),
+                            dbh->bn_data(),
+                            dbh->bn_size(),
                             off,
                             i_fn.size()))
         {
-            m_blkobj[ndx]->bn_persist(i_ctxt);
-            mods.push_back(make_pair(off, m_blkobj[ndx]->bn_blkref()));
+            dbh->bn_persist(i_ctxt);
+            mods.push_back(make_pair(off, dbh->bn_blkref()));
         }
     }
 
@@ -147,6 +164,23 @@ IndirectBlockNode::rb_update(Context & i_ctxt,
         size_t ndx = (i_bs[i].first - i_base) / BLKSZ;
         m_blkref[ndx] = i_bs[i].second;
     }
+}
+
+ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
+{
+    LOG(lgr, 6, "CTOR");
+
+    // Initialize all of our references to the zero data block.
+    for (unsigned i = 0; i < NUMREF; ++i)
+        m_blkobj[i] = i_dbnh;
+}
+
+
+BlockRef
+ZeroIndirectBlockNode::bn_persist(Context & i_ctxt)
+{
+    throwstream(InternalError, FILELINE
+                << "persisting the zero indirect block makes me sad");
 }
 
 } // namespace UTFS

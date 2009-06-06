@@ -12,6 +12,7 @@
 #include "BlockCipher.h"
 
 #include "utfsexp.h"
+#include "utfsfwd.h"
 
 namespace UTFS {
 
@@ -19,6 +20,8 @@ struct UTFS_EXP Context
 {
     utp::BlockStoreHandle		m_bsh;
     utp::BlockCipher			m_cipher;
+    DataBlockNodeHandle			m_zdatobj;
+    IndirectBlockNodeHandle		m_zsinobj;
 };
 
 } // namespace UTFS

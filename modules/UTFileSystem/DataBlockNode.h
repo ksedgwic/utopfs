@@ -45,6 +45,20 @@ private:
     utp::uint8				m_data[BLKSZ];
 };
 
+// The ZeroDataBlockNode is a singleton which is used for read-only
+// traversals of a sparse files.  If the read heads in to
+// uninitialized territiory we route it through this block ...
+//
+class UTFS_EXP ZeroDataBlockNode : public DataBlockNode
+{
+public:
+    // Default constructor.
+    ZeroDataBlockNode();
+
+    // This would be a mistake.
+    virtual BlockRef bn_persist(Context & i_ctxt);
+};
+
 } // namespace UTFS
 
 // Local Variables:

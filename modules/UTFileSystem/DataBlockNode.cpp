@@ -75,6 +75,18 @@ DataBlockNode::bn_persist(Context & i_ctxt)
     return m_ref;
 }
 
+ZeroDataBlockNode::ZeroDataBlockNode()
+{
+    LOG(lgr, 6, "CTOR");
+}
+
+BlockRef
+ZeroDataBlockNode::bn_persist(Context & i_ctxt)
+{
+    throwstream(InternalError, FILELINE
+                << "persisting the zero data block makes me sad");
+}
+
 } // namespace UTFS
 
 // Local Variables:

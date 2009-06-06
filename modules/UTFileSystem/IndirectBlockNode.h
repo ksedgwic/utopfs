@@ -57,12 +57,26 @@ public:
                            off_t i_base,
                            BindingSeq const & i_bs);
 
-private:
+protected:
     // Block References
     BlockRef				m_blkref[NUMREF];
 
     // Cached Objects
     DataBlockNodeHandle		m_blkobj[NUMREF];
+};
+
+// The ZeroIndirectBlockNode is a singleton which is used for
+// read-only traversals of a sparse files.  If the read heads in to
+// uninitialized territiory we route it through this block ...
+//
+class UTFS_EXP ZeroIndirectBlockNode : public IndirectBlockNode
+{
+public:
+    // Constructor from a zero data block.
+    ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbh);
+
+    // This would be a mistake.
+    virtual BlockRef bn_persist(Context & i_ctxt);
 };
 
 } // namespace UTFS

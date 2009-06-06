@@ -267,6 +267,9 @@ FileNode::rb_traverse(Context & i_ctxt,
             // Does the range intersect this block?
             if (i_rngoff < off_t(off + BlockNode::BLKSZ))
             {
+                // Find the block object to use.
+                DataBlockNodeHandle dbh;
+
                 // Do we have a cached version of this block?
                 if (!m_dirobj[i])
                 {
@@ -274,20 +277,28 @@ FileNode::rb_traverse(Context & i_ctxt,
                     if (m_dirref[i])
                     {
                         // Yes, read it from the blockstore.
-                        m_dirobj[i] = new DataBlockNode(i_ctxt, m_dirref[i]);
+                        dbh = new DataBlockNode(i_ctxt, m_dirref[i]);
+
+                        // Keep it in the cache.
+                        m_dirobj[i] = dbh;
                     }
                     else if (i_flags & RB_MODIFY)
                     {
                         // Nope, create new block.
-                        m_dirobj[i] = new DataBlockNode();
+                        dbh = new DataBlockNode();
+
+                        // Keep it in the cache.
+                        m_dirobj[i] = dbh;
 
                         // Increment the block count.
                         i_fn.blocks(i_fn.blocks() + 1);
                     }
                     else
                     {
-                        throwstream(InternalError, FILELINE
-                                    << "read only traversal unimplemented");
+                        // Use the zero singleton.
+                        dbh = i_ctxt.m_zdatobj;
+
+                        // And *don't* keep it in the cache!
                     }
                 }
 
@@ -315,35 +326,51 @@ FileNode::rb_traverse(Context & i_ctxt,
     sz = IndirectBlockNode::NUMREF * BlockNode::BLKSZ;
     if (i_rngoff < off + sz)
     {
+        // Find the block object to use.
+        IndirectBlockNodeHandle ibh;
+
         // Do we have a cached version of this block?
-        if (!m_sinobj)
+        if (m_sinobj)
+        {
+            // Yup, use it.
+            ibh = m_sinobj;
+        }
+        else
         {
             // Nope, does it have a digest yet?
             if (m_sinref)
             {
                 // Yes, read it from the blockstore.
-                m_sinobj = new IndirectBlockNode(i_ctxt, m_sinref);
+                ibh = new IndirectBlockNode(i_ctxt, m_sinref);
+
+                // Keep it in the cache.
+                m_sinobj = ibh;
             }
             else if (i_flags & RB_MODIFY)
             {
                 // Nope, create a new one.
-                m_sinobj = new IndirectBlockNode();
+                ibh = new IndirectBlockNode();
+
+                // Keep it in the cache.
+                m_sinobj = ibh;
 
                 // Increment the block count.
                 m_inode.set_blocks(m_inode.blocks() + 1);
             }
             else
             {
-                throwstream(InternalError, FILELINE
-                            << "read only traversal unimplemented");
+                // Use the zero singleton.
+                ibh = i_ctxt.m_zsinobj;
+
+                // And *don't* keep it in the cache!
             }
         }
 
-        if (m_sinobj->rb_traverse(i_ctxt, *this, i_flags, off,
-                                  i_rngoff, i_rngsize, i_trav))
+        if (ibh->rb_traverse(i_ctxt, *this, i_flags, off,
+                             i_rngoff, i_rngsize, i_trav))
         {
-            m_sinobj->bn_persist(i_ctxt);
-            mods.push_back(make_pair(off, m_sinobj->bn_blkref()));
+            ibh->bn_persist(i_ctxt);
+            mods.push_back(make_pair(off, ibh->bn_blkref()));
         }
     }
 
