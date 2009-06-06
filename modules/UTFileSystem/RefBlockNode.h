@@ -56,6 +56,7 @@ public:
         //
         virtual void bt_update(Context & i_ctxt,
                                RefBlockNode & i_bn,
+                               off_t i_base,
                                BindingSeq const & i_bbs);
 
         int bt_retval() const { return m_retval; }
@@ -79,6 +80,7 @@ public:
 
     // Traverse range calling functor methods.
     virtual bool rb_traverse(Context & i_ctxt,
+                             FileNode & i_fn,
                              unsigned int i_flags,
                              off_t i_base,			// offset of this block
                              off_t i_rngoff,		// offset of range
@@ -86,7 +88,9 @@ public:
                              BlockTraverseFunc & i_trav) = 0;
 
     // Update references in this node and persist.
-    virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs) = 0;
+    virtual void rb_update(Context & i_ctxt,
+                           off_t i_base,
+                           BindingSeq const & i_bs) = 0;
 
 private:
 

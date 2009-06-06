@@ -24,9 +24,10 @@ namespace UTFS {
 void
 RefBlockNode::BlockTraverseFunc::bt_update(Context & i_ctxt,
                                            RefBlockNode & i_bn,
+                                           off_t i_base,
                                            BindingSeq const & i_bbs)
 {
-    i_bn.rb_update(i_ctxt, i_bbs);
+    i_bn.rb_update(i_ctxt, i_base, i_bbs);
 }
 
 RefBlockNode::~RefBlockNode()

@@ -212,6 +212,7 @@ FileNode::bn_persist(Context & i_ctxt)
 
 bool
 FileNode::rb_traverse(Context & i_ctxt,
+                      FileNode & i_fn,
                       unsigned int i_flags,
                       off_t i_base,
                       off_t i_rngoff,
@@ -248,7 +249,7 @@ FileNode::rb_traverse(Context & i_ctxt,
         goto done;
 
     // Does this region intersect the direct blocks?
-    sz = NDIRECT * BlockNode::BLKSZ;
+    sz = NDIRECT * BLKSZ;
     if (i_rngoff >= off + sz)
     {
         // Skip past the direct blocks.
@@ -281,7 +282,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                         m_dirobj[i] = new DataBlockNode();
 
                         // Increment the block count.
-                        m_inode.set_blocks(m_inode.blocks() + 1);
+                        i_fn.blocks(i_fn.blocks() + 1);
                     }
                     else
                     {
@@ -312,12 +313,7 @@ FileNode::rb_traverse(Context & i_ctxt,
 
     // Does this region intersect the single indirect block?
     sz = IndirectBlockNode::NUMREF * BlockNode::BLKSZ;
-    if (i_rngoff >= off + sz)
-    {
-        // Skip past the single indirect block ...
-        off += sz;
-    }
-    else
+    if (i_rngoff < off + sz)
     {
         // Do we have a cached version of this block?
         if (!m_sinobj)
@@ -343,13 +339,20 @@ FileNode::rb_traverse(Context & i_ctxt,
             }
         }
 
-        if (m_sinobj->rb_traverse(i_ctxt, i_flags, off,
+        if (m_sinobj->rb_traverse(i_ctxt, *this, i_flags, off,
                                   i_rngoff, i_rngsize, i_trav))
         {
             m_sinobj->bn_persist(i_ctxt);
             mods.push_back(make_pair(off, m_sinobj->bn_blkref()));
         }
     }
+
+    // On to the next block.
+    off += sz;
+
+    // Are we beyond the region?
+    if (off > i_rngoff + off_t(i_rngsize))
+        goto done;
 
     // If we get here we need to use the indirect block ...
     throwstream(InternalError, FILELINE
@@ -363,13 +366,13 @@ FileNode::rb_traverse(Context & i_ctxt,
     }
     else
     {
-        i_trav.bt_update(i_ctxt, *this, mods);
+        i_trav.bt_update(i_ctxt, *this, i_base, mods);
         return true;
     }
 }
 
 void
-FileNode::rb_update(Context & i_ctxt, BindingSeq const & i_bs)
+FileNode::rb_update(Context & i_ctxt, off_t i_base, BindingSeq const & i_bs)
 {
     for (unsigned i = 0; i < i_bs.size(); ++i)
     {
@@ -493,7 +496,7 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     try
     {
         ReadBTF rbtf(o_bufptr, i_size, i_off);
-        rb_traverse(i_ctxt, RB_DEFAULT, 0, i_off, i_size, rbtf);
+        rb_traverse(i_ctxt, *this, RB_DEFAULT, 0, i_off, i_size, rbtf);
         return rbtf.bt_retval();
     }
     catch (int const & i_errno)
@@ -571,7 +574,7 @@ FileNode::write(Context & i_ctxt,
     try
     {
         WriteBTF wbtf(i_data, i_size, i_off);
-        rb_traverse(i_ctxt, RB_MODIFY, 0, i_off, i_size, wbtf);
+        rb_traverse(i_ctxt, *this, RB_MODIFY, 0, i_off, i_size, wbtf);
 
         // Did the node get bigger?
         // If the file grew the size needs to be larger.

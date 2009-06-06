@@ -51,13 +51,16 @@ public:
     size_t bn_size() const { return sizeof(m_inl); }
 
     virtual bool rb_traverse(Context & i_ctxt,
+                             FileNode & i_fn,
                              unsigned int i_flags,
                              off_t i_base,
                              off_t i_rngoff,
                              size_t i_rngsize,
                              BlockTraverseFunc & i_trav);
 
-    virtual void rb_update(Context & i_ctxt, BindingSeq const & i_bs);
+    virtual void rb_update(Context & i_ctxt,
+                           off_t i_base,
+                           BindingSeq const & i_bs);
 
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
@@ -92,6 +95,10 @@ public:
 
     void mtime(utp::T64 const & i_mtime) { m_inode.set_mtime(i_mtime.usec()); }
 
+    size_t blocks() const { return m_inode.blocks(); }
+
+    void blocks(size_t i_blocks) { m_inode.set_blocks(i_blocks); }
+
 protected:
     size_t fixed_field_size() const;
 
@@ -100,7 +107,7 @@ private:
 
  	utp::uint8					m_inl[INLSZ];
 
-    // References
+    // Block References
     BlockRef					m_dirref[NDIRECT];	// Direct references
     BlockRef					m_sinref;			// Single indirect refs
     BlockRef					m_dinref;			// Double indirect refs
