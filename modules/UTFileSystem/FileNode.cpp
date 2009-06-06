@@ -223,6 +223,10 @@ FileNode::rb_traverse(Context & i_ctxt,
     off_t off = 0;
     off_t sz = 0;
 
+    // ----------------------------------------------------------------
+    // Inline Block
+    // ----------------------------------------------------------------
+
     // Our base needs to be 0 or else somebody is very confused.
     if (i_base != off)
         throwstream(InternalError, FILELINE
@@ -247,6 +251,10 @@ FileNode::rb_traverse(Context & i_ctxt,
     // Are we beyond the region?
     if (off > i_rngoff + off_t(i_rngsize))
         goto done;
+
+    // ----------------------------------------------------------------
+    // Direct References
+    // ----------------------------------------------------------------
 
     // Does this region intersect the direct blocks?
     sz = NDIRECT * BLKSZ;
@@ -322,6 +330,10 @@ FileNode::rb_traverse(Context & i_ctxt,
     if (off > i_rngoff + off_t(i_rngsize))
         goto done;
 
+    // ----------------------------------------------------------------
+    // Single Indirect Reference
+    // ----------------------------------------------------------------
+
     // Does this region intersect the single indirect block?
     sz = IndirectBlockNode::NUMREF * BlockNode::BLKSZ;
     if (i_rngoff < off + sz)
@@ -381,9 +393,80 @@ FileNode::rb_traverse(Context & i_ctxt,
     if (off > i_rngoff + off_t(i_rngsize))
         goto done;
 
-    // If we get here we need to use the indirect block ...
+    // ----------------------------------------------------------------
+    // Double Indirect Reference
+    // ----------------------------------------------------------------
+
+    // Does this region intersect the double indirect block?
+    sz =
+        IndirectBlockNode::NUMREF *
+        IndirectBlockNode::NUMREF *
+        BlockNode::BLKSZ;
+
+    if (i_rngoff < off + sz)
+    {
+        // Find the block object to use.
+        DoubleIndBlockNodeHandle nh;
+
+        // Do we have a cached version of this block?
+        if (m_dinobj)
+        {
+            // Yup, use it.
+            nh = m_dinobj;
+        }
+        else
+        {
+            // Nope, does it have a digest yet?
+            if (m_dinref)
+            {
+                // Yes, read it from the blockstore.
+                nh = new DoubleIndBlockNode(i_ctxt, m_dinref);
+
+                // Keep it in the cache.
+                m_dinobj = nh;
+            }
+            else if (i_flags & RB_MODIFY)
+            {
+                // Nope, create a new one.
+                nh = new DoubleIndBlockNode();
+
+                // Keep it in the cache.
+                m_dinobj = nh;
+
+                // Increment the block count.
+                m_inode.set_blocks(m_inode.blocks() + 1);
+            }
+            else
+            {
+                // Use the zero dingleton.
+                nh = i_ctxt.m_zdinobj;
+
+                // And *don't* keep it in the cache!
+            }
+        }
+
+        if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
+                             i_rngoff, i_rngsize, i_trav))
+        {
+            nh->bn_persist(i_ctxt);
+            mods.push_back(make_pair(off, nh->bn_blkref()));
+        }
+    }
+
+    // On to the next block.
+    off += sz;
+
+    // Are we beyond the region?
+    if (off > i_rngoff + off_t(i_rngsize))
+        goto done;
+
+    // ----------------------------------------------------------------
+    // Tripled Indirect Reference
+    // ----------------------------------------------------------------
+
+    // If we get here we need to code more.
     throwstream(InternalError, FILELINE
-                << "multiple indirect block traversal unimplemented");
+                << "more indirect block traversal implementation required");
 
  done:
     // Were there any modified regions?
@@ -425,6 +508,16 @@ FileNode::rb_update(Context & i_ctxt, off_t i_base, BindingSeq const & i_bs)
         }
 
         off -= off_t(IndirectBlockNode::NUMREF * BlockNode::BLKSZ);
+
+        if (off == 0)
+        {
+            m_dinref = i_bs[i].second;
+            continue;
+        }
+
+        off -= off_t(IndirectBlockNode::NUMREF *
+                     IndirectBlockNode::NUMREF *
+                     BlockNode::BLKSZ);
 
         // If we get here we need to implement more stuff ...
         throwstream(InternalError, FILELINE

@@ -50,6 +50,7 @@ UTFileSystem::fs_mkfs(string const & i_path,
     // Create zero blocks for sparse file reads.
     m_ctxt.m_zdatobj = new ZeroDataBlockNode();
     m_ctxt.m_zsinobj = new ZeroIndirectBlockNode(m_ctxt.m_zdatobj);
+    m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
 
     m_rdh = new RootDirNode();
     m_rdh->persist(m_ctxt);

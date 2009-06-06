@@ -53,6 +53,8 @@ class Test_fs_sparse_01:
     nblocks = st.st_blocks
     assert nblocks == (1 + 2) * 8192 / 512
 
+    # ---------------- indirect blocks ----------------
+
     # Write the buffer at 1Mbyte offset.
     rv = self.fs.fs_write("/sparse", buffer(jnkstr), 1024 * 1024)
 
@@ -83,6 +85,44 @@ class Test_fs_sparse_01:
     nblocks = st.st_blocks
     assert nblocks == (1 + 2 + 1 + 3) * 8192 / 512
 
+    # ---------------- double indirect ----------------
+
+    # Write the buffer at 100 Mbyte offset.
+    off = 100 * 1024 * 1024
+    rv = self.fs.fs_write("/sparse", buffer(jnkstr), off)
+
+    # Size should include the whole space.
+    st = self.fs.fs_getattr("/sparse")
+    nbytes = st.st_size
+    assert nbytes == 18000 + off
+
+    # But the number of blocks is much less ...
+    # inode + 2 data blocks
+    #       + indirect + 3 data blocks
+    #       + doubleind + 3 data blocks
+    #
+    nblocks = st.st_blocks
+    assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512
+
+    # We should be able to read the data.
+    buf = self.fs.fs_read("/sparse", 18000, off)
+    assert str(buf)[0:8] == "00000000"
+    assert str(buf)[18000-9:18000-1] == "00001999"
+
+    # Reading somewhere in the "hole" should see zeros.
+    buf = self.fs.fs_read("/sparse", 18000, off/2)
+    assert str(buf)[0] == '\0'
+    assert str(buf)[18000-1] == '\0'
+
+    # And the read shouldn't change the size or block count.
+    st = self.fs.fs_getattr("/sparse")
+    nbytes = st.st_size
+    assert nbytes == 18000 + off
+    nblocks = st.st_blocks
+    assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512
+
+    # ---------------- remount ----------------
+
     # Now we unmount the filesystem.
     self.fs.fs_unmount()
 
@@ -92,27 +132,27 @@ class Test_fs_sparse_01:
     # Size should include the whole space.
     st = self.fs.fs_getattr("/sparse")
     nbytes = st.st_size
-    assert nbytes == 18000 + (1024 * 1024)
+    assert nbytes == 18000 + off
 
     # But the number of blocks is much less ...
     # inode + 2 data blocks + indirect + 3 data blocks
     nblocks = st.st_blocks
-    assert nblocks == (1 + 2 + 1 + 3) * 8192 / 512
+    assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512
 
     # We should be able to read the data.
     self.fs.fs_open("/sparse", O_RDONLY)
-    buf = self.fs.fs_read("/sparse", 18000, 1024 * 1024)
+    buf = self.fs.fs_read("/sparse", 18000, off)
     assert str(buf)[0:8] == "00000000"
     assert str(buf)[18000-9:18000-1] == "00001999"
 
     # Reading somewhere in the "hole" should see zeros.
-    buf = self.fs.fs_read("/sparse", 18000, 512 * 1024)
+    buf = self.fs.fs_read("/sparse", 18000, off/2)
     assert str(buf)[0] == '\0'
     assert str(buf)[18000-1] == '\0'
 
     # And the read shouldn't change the size or block count.
     st = self.fs.fs_getattr("/sparse")
     nbytes = st.st_size
-    assert nbytes == 18000 + (1024 * 1024)
+    assert nbytes == 18000 + off
     nblocks = st.st_blocks
-    assert nblocks == (1 + 2 + 1 + 3) * 8192 / 512
+    assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512

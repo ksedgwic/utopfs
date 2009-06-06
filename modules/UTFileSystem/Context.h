@@ -22,6 +22,7 @@ struct UTFS_EXP Context
     utp::BlockCipher			m_cipher;
     DataBlockNodeHandle			m_zdatobj;
     IndirectBlockNodeHandle		m_zsinobj;
+    DoubleIndBlockNodeHandle	m_zdinobj;
 };
 
 } // namespace UTFS
