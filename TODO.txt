@@ -1,5 +1,3 @@
-Extend sparse test to >2M (double indirect) block territory.
-
 Add filesystem identifier to scheme; use instead of "ROOT" in rootref.
 
 RPM packaging.

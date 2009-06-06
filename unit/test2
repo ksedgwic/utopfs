@@ -26,7 +26,7 @@ try:
     fs = utp.FileSystem.instance()
 
     # Make a new filesystem.
-    fs.fs_mkfs(bspath, "");
+    fs.fs_mkfs(bspath, "", "");
 
     # Stat something.
     print fs.fs_getattr("/.utopfs");
@@ -36,7 +36,7 @@ try:
     fs.fs_readdir("/.utopfs", 0, decb)
 
     # Create a file
-    fs.fs_open("/foo", O_CREAT)
+    fs.fs_mknod("/foo", 0666, 0)
 
     # Stat the file
     print fs.fs_getattr("/foo")
@@ -45,7 +45,7 @@ try:
     fs.fs_unmount()
 
     # Mount the existing filesystem.
-    fs.fs_mount(bspath, "")
+    fs.fs_mount(bspath, "", "")
 
     # Stat the file
     print fs.fs_getattr("/foo")

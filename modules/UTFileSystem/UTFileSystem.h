@@ -11,8 +11,9 @@
 
 #include "utpfwd.h"
 
-#include "FileSystem.h"
 #include "BlockCipher.h"
+#include "Digest.h"
+#include "FileSystem.h"
 
 #include "Context.h"
 
@@ -31,14 +32,17 @@ public:
     // FileSystem methods.
 
     virtual void fs_mkfs(std::string const & i_path,
+                         std::string const & i_fsid,
                          std::string const & i_passphrase)
         throw (utp::InternalError,
                utp::ValueError);
 
     virtual void fs_mount(std::string const & i_path,
+                          std::string const & i_fsid,
                           std::string const & i_passphrase)
         throw (utp::InternalError,
-               utp::ValueError);
+               utp::ValueError,
+               utp::NotFoundError);
 
     virtual void fs_unmount()
         throw (utp::InternalError);
@@ -89,6 +93,8 @@ protected:
 
 private:
     typedef std::map<std::string, FileNodeHandle>	NodeMap;
+
+    utp::Digest				m_fsiddig;
 
     ACE_Thread_Mutex		m_utfsmutex;
 

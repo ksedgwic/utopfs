@@ -43,7 +43,7 @@ class Test_fs_readdir_01:
     self.fs = utp.FileSystem.instance()
     
     # Make the filesystem.
-    self.fs.fs_mkfs(self.bspath, "")
+    self.fs.fs_mkfs(self.bspath, "", "")
 
     # Make a directory.
     self.fs.fs_mkdir("/foo", 0755)
@@ -55,7 +55,7 @@ class Test_fs_readdir_01:
     self.fs.fs_unmount()
 
     # Now mount it again.
-    self.fs.fs_mount(self.bspath, "")
+    self.fs.fs_mount(self.bspath, "", "")
 
   def teardown_class(self):
     shutil.rmtree(self.bspath,True) 

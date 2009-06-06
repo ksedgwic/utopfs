@@ -21,7 +21,7 @@ class Test_fs_persist_02:
     self.fs = utp.FileSystem.instance()
     
     # Make the filesystem.
-    self.fs.fs_mkfs(self.bspath, "")
+    self.fs.fs_mkfs(self.bspath, "", "")
 
   def teardown_class(self):
     shutil.rmtree(self.bspath,True) 
@@ -46,7 +46,7 @@ class Test_fs_persist_02:
     self.fs.fs_unmount()
 
     # Now mount it again.
-    self.fs.fs_mount(self.bspath, "")
+    self.fs.fs_mount(self.bspath, "", "")
 
     # Now we should be able to stat the directory.
     st = self.fs.fs_getattr("/foo");

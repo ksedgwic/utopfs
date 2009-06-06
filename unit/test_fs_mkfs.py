@@ -19,7 +19,7 @@ class Test_fs_mkfs:
     self.fs = utp.FileSystem.instance()
     
     # Make the filesystem.
-    self.fs.fs_mkfs(self.bspath, "")
+    self.fs.fs_mkfs(self.bspath, "", "")
 
   def teardown_class(self):
     shutil.rmtree(self.bspath,True) 

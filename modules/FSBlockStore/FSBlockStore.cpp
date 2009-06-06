@@ -100,9 +100,20 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     
     struct stat statbuff;
     
-    stat(s_filename.c_str(), &statbuff);
+    int rv = stat(s_filename.c_str(), &statbuff);
+    if (rv == -1)
+    {
+        if (errno == ENOENT)
+            throwstream(NotFoundError,
+                        Base32::encode(i_keydata, i_keysize) << ": not found");
+        else
+            throwstream(InternalError, FILELINE
+                        << "FSBlockStore::bs_get_block: "
+                        << Base32::encode(i_keydata, i_keysize)
+                        << ": error: " << ACE_OS::strerror(errno));
+    }
     
-    if (statbuff.st_size > i_outsize) {
+    if (statbuff.st_size > off_t(i_outsize)) {
         throwstream(InternalError, FILELINE
                 << "Passed buffer not big enough to hold block");
     }

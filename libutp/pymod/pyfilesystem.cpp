@@ -19,14 +19,15 @@ static PyObject *
 FileSystem_fs_mkfs(FileSystemObject *self, PyObject *args)
 {
     char * path;
+    char * fsid;
     char * passphrase;
-    if (!PyArg_ParseTuple(args, "ss:fs_mkfs", &path, &passphrase))
+    if (!PyArg_ParseTuple(args, "sss:fs_mkfs", &path, &fsid, &passphrase))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_mkfs(path, passphrase);
+        self->m_fsh->fs_mkfs(path, fsid, passphrase);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -37,14 +38,15 @@ static PyObject *
 FileSystem_fs_mount(FileSystemObject *self, PyObject *args)
 {
     char * path;
+    char * fsid;
     char * passphrase;
-    if (!PyArg_ParseTuple(args, "ss:fs_mount", &path, &passphrase))
+    if (!PyArg_ParseTuple(args, "sss:fs_mount", &path, &fsid, &passphrase))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_mount(path, passphrase);
+        self->m_fsh->fs_mount(path, fsid, passphrase);
         Py_INCREF(Py_None);
         return Py_None;
     }

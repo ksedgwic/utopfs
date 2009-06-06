@@ -43,11 +43,14 @@ public:
     /// Create a filesystem
     ///
     /// @param[in] i_path Path for the filesystem block device.
+    /// @param[in] i_fsid FileSystem identifier.
+    /// @param[in] i_passphrase FileSystem passphrase.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError Something is wrong with the path argument.
     ///
     virtual void fs_mkfs(std::string const & i_path,
+                         std::string const & i_fsid,
                          std::string const & i_passphrase)
         throw (utp::InternalError,
                utp::ValueError) = 0;
@@ -55,14 +58,19 @@ public:
     /// Mount an existing filesystem
     ///
     /// @param[in] i_path Path for the filesystem block device.
+    /// @param[in] i_fsid FileSystem identifier.
+    /// @param[in] i_passphrase FileSystem passphrase.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError Something is wrong with the path argument.
+    /// @throw NotFoundError Specified filesystem was not found.
     ///
     virtual void fs_mount(std::string const & i_path,
+                          std::string const & i_fsid,
                           std::string const & i_passphrase)
         throw (utp::InternalError,
-               utp::ValueError) = 0;
+               utp::ValueError,
+               utp::NotFoundError) = 0;
 
     /// Unmount the filesystem
     ///

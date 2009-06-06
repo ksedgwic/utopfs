@@ -4,7 +4,7 @@ include $(ROOTDIR)/config/define.mk
 
 PYTESTS =	\
 			test_bs_unopened.py \
-			test_fileblockstore.py \
+			test_bs_basic_01.py \
 			test_fs_mkfs.py \
 			test_fs_persist_01.py \
 			test_fs_persist_02.py \
@@ -15,6 +15,7 @@ PYTESTS =	\
 			test_fs_write_01.py \
 			test_fs_bigfile_01.py \
 			test_fs_sparse_01.py \
+			test_fs_fsid_01.py \
 			$(NULL)
 
 SCRIPTS =	\

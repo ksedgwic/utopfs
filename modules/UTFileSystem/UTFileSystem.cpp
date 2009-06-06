@@ -32,16 +32,20 @@ UTFileSystem::~UTFileSystem()
 
 void
 UTFileSystem::fs_mkfs(string const & i_path,
+                      string const & i_fsid,
                       string const & i_passphrase)
-    throw (utp::InternalError,
-           utp::ValueError)
+    throw (InternalError,
+           ValueError)
 {
-    LOG(lgr, 4, "fs_mkfs " << i_path);
+    LOG(lgr, 4, "fs_mkfs " << i_fsid << ' ' << i_path);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     m_ctxt.m_bsh = BlockStore::instance();
     m_ctxt.m_bsh->bs_create(i_path);
+
+    // Save the digest of the fsid.
+    m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
 
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
@@ -59,27 +63,40 @@ UTFileSystem::fs_mkfs(string const & i_path,
 
 void
 UTFileSystem::fs_mount(string const & i_path,
+                       string const & i_fsid,
                        string const & i_passphrase)
-    throw (utp::InternalError,
-           utp::ValueError)
+    throw (InternalError,
+           ValueError,
+           NotFoundError)
 {
-    LOG(lgr, 4, "fs_mount " << i_path);
+    LOG(lgr, 4, "fs_mount " << i_fsid << ' ' << i_path);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     m_ctxt.m_bsh = BlockStore::instance();
     m_ctxt.m_bsh->bs_open(i_path);
 
+    // Save the digest of the fsid.
+    m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
+
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
     m_ctxt.m_cipher.set_key(dig.data(), dig.size());
 
-    m_rdh = new RootDirNode(m_ctxt, rootref());
+    try
+    {
+        m_rdh = new RootDirNode(m_ctxt, rootref());
+    }
+    catch (NotFoundError const & ex)
+    {
+        // Root directory not found.
+        throwstream(NotFoundError, "filesystem root block not found");
+    }
 }
 
 void
 UTFileSystem::fs_unmount()
-    throw (utp::InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 4, "fs_unmount ");
 
@@ -88,6 +105,7 @@ UTFileSystem::fs_unmount()
     m_rdh = NULL;
     m_ctxt.m_bsh = NULL;
     m_ctxt.m_cipher.unset_key();
+    m_fsiddig = Digest();
 }
 
 class GetAttrTraverseFunc : public DirNode::NodeTraverseFunc
@@ -107,7 +125,7 @@ private:
 int
 UTFileSystem::fs_getattr(string const & i_path,
                          struct stat * o_stbuf)
-    throw (utp::InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 6, "fs_getattr " << i_path);
 
@@ -149,7 +167,7 @@ int
 UTFileSystem::fs_mknod(string const & i_path,
                        mode_t i_mode,
                        dev_t i_dev)
-        throw (utp::InternalError)
+        throw (InternalError)
 {
     LOG(lgr, 6, "fs_mknod " << i_path);
 
@@ -188,7 +206,7 @@ private:
 
 int
 UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
-    throw (utp::InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 6, "fs_mkdir " << i_path);
 
@@ -227,7 +245,7 @@ private:
 
 int
 UTFileSystem::fs_open(string const & i_path, int i_flags)
-    throw (utp::InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 6, "fs_open " << i_path);
 
@@ -270,7 +288,7 @@ UTFileSystem::fs_read(string const & i_path,
                       void * o_bufptr,
                       size_t i_size,
                       off_t i_off)
-    throw (utp::InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 6, "fs_read " << i_path << " sz=" << i_size << " off=" << i_off);
 
@@ -312,7 +330,7 @@ UTFileSystem::fs_write(string const & i_path,
                        void const * i_data,
                        size_t i_size,
                        off_t i_off)
-    throw (utp::InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 6, "fs_write " << i_path << " sz=" << i_size << " off=" << i_off);
 
@@ -360,7 +378,7 @@ int
 UTFileSystem::fs_readdir(string const & i_path,
                          off_t i_offset,
                          DirEntryFunc & o_entryfunc)
-    throw (utp::InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 6, "fs_readdir " << i_path);
 
@@ -402,7 +420,7 @@ int
 UTFileSystem::fs_utime(string const & i_path,
                        T64 const & i_atime,
                        T64 const & i_mtime)
-        throw (utp::InternalError)
+        throw (InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
@@ -434,9 +452,7 @@ UTFileSystem::rootref(BlockRef const & i_blkref)
 
     m_ctxt.m_cipher.encrypt(iv, buffer, sizeof(buffer));
 
-    string key = "ROOT";
-    
-    m_ctxt.m_bsh->bs_put_block(key.data(), key.size(),
+    m_ctxt.m_bsh->bs_put_block(m_fsiddig.data(), m_fsiddig.size(),
                                buffer, sizeof(buffer));
 }
 
@@ -446,9 +462,7 @@ UTFileSystem::rootref()
     string refstr;
     refstr.resize(sizeof(BlockRef));
 
-    string key = "ROOT";
-    
-    m_ctxt.m_bsh->bs_get_block(key.data(), key.size(),
+    m_ctxt.m_bsh->bs_get_block(m_fsiddig.data(), m_fsiddig.size(),
                                &refstr[0], refstr.size());
 
     // Can this block be validated?

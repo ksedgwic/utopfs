@@ -8,7 +8,7 @@ import utp.BlockStore
 class TestBlockStore:
 
   def setup_class(self):
-    self.bspath = "myfsbs1"
+    self.bspath = "bs_basic_01"
     # Find the BlockStore singleton.
     self.bs = utp.BlockStore.instance()
     

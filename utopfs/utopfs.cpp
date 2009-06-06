@@ -36,6 +36,7 @@ struct utopfs
 {
     struct fuse_args utop_args;
     string path;
+    string fsid;
     string passphrase;
     bool do_mkfs;
 };
@@ -186,6 +187,7 @@ static const char *utop_opts[] = {
 
 enum {
     KEY_MKFS,
+    KEY_FSID,
     KEY_PASSPHRASE,
 	KEY_HELP,
 	KEY_VERSION,
@@ -197,7 +199,8 @@ enum {
 
 static struct fuse_opt utopfs_opts[] = {
 	FUSE_OPT_KEY("-M",             KEY_MKFS),
-	FUSE_OPT_KEY("-P ",             KEY_PASSPHRASE),
+	FUSE_OPT_KEY("-F ",            KEY_FSID),
+	FUSE_OPT_KEY("-P ",            KEY_PASSPHRASE),
 	FUSE_OPT_KEY("-V",             KEY_VERSION),
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("-h",             KEY_HELP),
@@ -240,6 +243,10 @@ static int utopfs_opt_proc(void * data,
     {
     case KEY_MKFS:
         utopfs.do_mkfs = true;
+        return 0;
+
+    case KEY_FSID:
+        utopfs.fsid = arg;
         return 0;
 
     case KEY_PASSPHRASE:
@@ -301,9 +308,13 @@ main(int argc, char ** argv)
     try
     {
         if (utopfs.do_mkfs)
-            FileSystem::instance()->fs_mkfs(utopfs.path, utopfs.passphrase);
+            FileSystem::instance()->fs_mkfs(utopfs.path,
+                                            utopfs.fsid,
+                                            utopfs.passphrase);
         else
-            FileSystem::instance()->fs_mount(utopfs.path, utopfs.passphrase);
+            FileSystem::instance()->fs_mount(utopfs.path,
+                                             utopfs.fsid,
+                                             utopfs.passphrase);
     }
     catch (utp::Exception const & ex)
     {

@@ -20,7 +20,7 @@ class Test_fs_getattr_01:
     self.fs = utp.FileSystem.instance()
     
     # Make the filesystem.
-    self.fs.fs_mkfs(self.bspath, "")
+    self.fs.fs_mkfs(self.bspath, "", "")
 
     # Make a directory.
     self.fs.fs_mkdir("/foo", 0755)
