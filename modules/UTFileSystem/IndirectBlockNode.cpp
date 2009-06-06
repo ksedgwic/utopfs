@@ -30,8 +30,19 @@ IndirectBlockNode::IndirectBlockNode()
 IndirectBlockNode::IndirectBlockNode(Context & i_ctxt,
                                      BlockRef const & i_ref)
 {
-    throwstream(InternalError, FILELINE
-                << "IndirectBlockNode::IndirectBlockNode unimplemented");
+    LOG(lgr, 6, "CTOR " << i_ref);
+
+    uint8 * ptr = (uint8 *) m_blkref;
+    size_t sz = BLKSZ;
+
+    // Read the block from the blockstore.
+    i_ctxt.m_bsh->bs_get_block(i_ref.data(), i_ref.size(), ptr, sz);
+
+    // Validate the block.
+    i_ref.validate(ptr, sz);
+
+    // Decrypt the block.
+    i_ctxt.m_cipher.decrypt(i_ref.iv(), ptr, sz);
 }
 
 IndirectBlockNode::~IndirectBlockNode()
