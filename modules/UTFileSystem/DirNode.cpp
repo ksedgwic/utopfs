@@ -42,7 +42,8 @@ DirNode::pathsplit(string const & i_path)
         return make_pair(i_path.substr(1, pos - 1), i_path.substr(pos));
 }
 
-DirNode::DirNode()
+DirNode::DirNode(mode_t i_mode)
+    : FileNode(i_mode)
 {
     LOG(lgr, 4, "CTOR");
 
@@ -216,7 +217,7 @@ DirNode::mknod(Context & i_ctxt,
     if (!fnh)
     {
         // Create a new file.
-        fnh = new FileNode();
+        fnh = new FileNode(i_mode);
 
         // Persist it (sets the blkref).
         fnh->bn_persist(i_ctxt);
@@ -244,10 +245,7 @@ DirNode::mkdir(Context & i_ctxt,
         throw EEXIST;
 
     // Create the new directory node.
-    DirNodeHandle dnh = new DirNode();
-
-    // Set the mode.
-    dnh->mode(i_mode | S_IFDIR);
+    DirNodeHandle dnh = new DirNode(i_mode);
 
     // Persist it (sets the digest).
     dnh->persist(i_ctxt);

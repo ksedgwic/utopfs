@@ -121,6 +121,19 @@ public:
                          mode_t i_mode)
         throw (utp::InternalError) = 0;
 
+    /// Change the permissions of a file.
+    ///
+    /// @param[in] i_path Path to the directory.
+    /// @param[in] i_mode Permission bits.
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_chmod(std::string const & i_path,
+                         mode_t i_mode)
+        throw (utp::InternalError) = 0;
+
     /// File open operation
     ///
     /// @param[in] i_path Path to the file.

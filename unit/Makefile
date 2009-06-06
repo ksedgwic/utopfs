@@ -16,6 +16,7 @@ PYTESTS =	\
 			test_fs_bigfile_01.py \
 			test_fs_sparse_01.py \
 			test_fs_fsid_01.py \
+			test_fs_chmod_01.py \
 			$(NULL)
 
 SCRIPTS =	\

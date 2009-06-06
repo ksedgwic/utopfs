@@ -61,13 +61,13 @@ string mygname()
 
 namespace UTFS {
 
-FileNode::FileNode()
+FileNode::FileNode(mode_t i_mode)
 {
     LOG(lgr, 4, "CTOR");
 
     T64 now = T64::now();
 
-    m_inode.set_mode(S_IRUSR | S_IWUSR | S_IRGRP | S_IFREG);
+    m_inode.set_mode(i_mode | S_IFREG);
     m_inode.set_nlink(1);
     m_inode.set_uname(myuname());
     m_inode.set_gname(mygname());
@@ -540,6 +540,20 @@ FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
     o_statbuf->st_mtime = m_inode.mtime() / 1000000;
     o_statbuf->st_ctime = m_inode.ctime() / 1000000;
     o_statbuf->st_blocks = m_inode.blocks() * 16;	// *= 8192 / 512
+
+    return 0;
+}
+
+int
+FileNode::chmod(Context & i_ctxt, mode_t i_mode)
+{
+    // We only update the permissions bits.
+    mode_t md = mode();
+    md &= ~ALLPERMS;			// Remove existing permissions.
+    md |= (i_mode & ALLPERMS);	// Add permissions from arg.
+    mode(md);
+
+    bn_persist(i_ctxt);
 
     return 0;
 }

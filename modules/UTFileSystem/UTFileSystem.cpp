@@ -227,6 +227,43 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
     }
 }
 
+class ChmodTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    ChmodTraverseFunc(mode_t i_mode) : m_mode(i_mode) {}
+
+    virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
+    {
+        nt_retval(i_fn.chmod(i_ctxt, m_mode));
+    }
+
+private:
+    mode_t		m_mode;
+};
+
+int
+UTFileSystem::fs_chmod(string const & i_path, mode_t i_mode)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_chmod " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ChmodTraverseFunc ctf(i_mode);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
+                             ps.first, ps.second, ctf);
+        rootref(m_rdh->bn_blkref());
+        return ctf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
+}
+
 class OpenTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:

@@ -35,7 +35,7 @@ public:
     static const size_t NDIRECT = 20;
 
     // Default constructor.
-    FileNode();
+    FileNode(mode_t i_mode);
 
     // Constructor from blockstore persisted data.
     FileNode(Context & i_ctxt, BlockRef const & i_ref);
@@ -65,6 +65,9 @@ public:
 
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
+
+    virtual int chmod(Context & i_ctxt,
+                      mode_t i_mode);
 
     virtual int read(Context & i_ctxt,
                      void * o_bufptr,

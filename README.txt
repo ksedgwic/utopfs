@@ -28,13 +28,13 @@ Create file system in "BLOCKS" and mount it on "mnt":
     cd utopfs/Linux.WORKCFG
     . ./env.sh
     rm -rf BLOCKS
-    ../Linux.DBGOBJ/utopfs -f -M -P "" BLOCKS mnt
+    ../Linux.DBGOBJ/utopfs -f -M -F "myfs" -P "" BLOCKS mnt
 
 Mount existing file system in "BLOCKS":
 
     cd utopfs/Linux.WORKCFG
     . ./env.sh
-    ../Linux.DBGOBJ/utopfs -f -P "" BLOCKS mnt
+    ../Linux.DBGOBJ/utopfs -f -F "myfs" -P "" BLOCKS mnt
 
 
 Debugging
@@ -45,4 +45,4 @@ Run a unit test under the debugger:
     cd unit/Linux.WORKCFG
     . ./env.sh
     gdb python
-    r /usr/bin/py.test --nocapture test_fs_sparse_01.py
+    (gdb) r /usr/bin/py.test --nocapture test_fs_sparse_01.py

@@ -1,4 +1,13 @@
-Add filesystem identifier to scheme; use instead of "ROOT" in rootref.
+Make Milestone
+
+  chmod +x foo -> function not implemented
+
+    unique: 171, opcode: SETATTR (4), nodeid: 2, insize: 128
+       unique: 171, error: -38 (Function not implemented), outsize: 16
+    unique: 172, opcode: SETATTR (4), nodeid: 2, insize: 128
+       unique: 172, error: -38 (Function not implemented), outsize: 16
+
+Change FileSystem module interface to factory instead of service.
 
 RPM packaging.
 

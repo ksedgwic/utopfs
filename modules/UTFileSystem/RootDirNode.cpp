@@ -14,6 +14,7 @@ using namespace utp;
 namespace UTFS {
 
 RootDirNode::RootDirNode()
+    : DirNode(0777)
 {
     LOG(lgr, 4, "CTOR");
 

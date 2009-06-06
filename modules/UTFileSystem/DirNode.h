@@ -67,7 +67,7 @@ public:
         pathsplit(std::string const & i_path);
 
     // Default Constructor.
-    DirNode();
+    DirNode(mode_t i_mode);
 
     // "Upgrade FileNode to a DirNode" copy constructor.
     DirNode(FileNode const & i_fn);
