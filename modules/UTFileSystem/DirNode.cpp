@@ -179,6 +179,7 @@ DirNode::persist(Context & i_ctxt)
     }
 
     // Persist our directory map.
+    ACE_OS::memset(bn_data(), '\0', bn_size());
     bool rv = m_dir.SerializeToArray(bn_data(), bn_size());
     if (!rv)
         throwstream(InternalError, FILELINE << "dir serialization error");
@@ -280,8 +281,7 @@ DirNode::mkdir(Context & i_ctxt,
 }
 
 int
-DirNode::unlink(Context & i_ctxt,
-                string const & i_entry)
+DirNode::unlink(Context & i_ctxt, string const & i_entry)
 {
     // Lookup the entry.
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
@@ -400,6 +400,17 @@ DirNode::deserialize()
     if (!m_dir.ParseFromCodedStream(&decoder))
         throwstream(InternalError, FILELINE
                     << "dir deserialization failed");
+
+    LOG(lgr, 6, "deserialize");
+    if (lgr.is_enabled(6))
+    {
+        for (int i = 0; i < m_dir.entry_size(); ++i)
+        {
+            Directory::Entry const & ent = m_dir.entry(i);
+            LOG(lgr, 6, "[" << i << "]: "
+                << BlockRef(ent.blkref()) << " " << ent.name());
+        }
+    }
 }
 
 } // namespace UTFS

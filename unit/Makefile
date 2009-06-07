@@ -18,6 +18,7 @@ PYTESTS =	\
 			test_fs_fsid_01.py \
 			test_fs_chmod_01.py \
 			test_fs_unlink_01.py \
+			test_fs_unlink_02.py \
 			$(NULL)
 
 SCRIPTS =	\
