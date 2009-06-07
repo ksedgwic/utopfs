@@ -66,6 +66,10 @@ public:
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
 
+    virtual int readlink(Context & i_ctxt,
+                         char * o_obuf,
+                         size_t i_size);
+
     virtual int chmod(Context & i_ctxt,
                       mode_t i_mode);
 

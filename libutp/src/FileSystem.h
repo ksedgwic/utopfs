@@ -94,6 +94,21 @@ public:
                            struct stat * o_statbuf)
         throw (utp::InternalError) = 0;
 
+    /// Read the target of a symbolic link.
+    ///
+    /// @param[in] i_path Path to the file.
+    /// @param[out] o_obuf Pointer to output buffer.
+    /// @param[in] i_size Size of output buffer.
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_readlink(std::string const & i_path,
+                            char * o_obuf,
+                            size_t i_size)
+        throw (utp::InternalError) = 0;
+
     /// Create a file node.
     ///
     /// @param[in] i_path Path to the file.
@@ -141,6 +156,19 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     ///
     virtual int fs_rmdir(std::string const & i_path)
+        throw (utp::InternalError) = 0;
+
+    /// Create a symbolic link.
+    ///
+    /// @param[in] i_opath Old path.
+    /// @param[in] i_npath New path.
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_symlink(std::string const & i_opath,
+                           std::string const & i_npath)
         throw (utp::InternalError) = 0;
 
     /// Change the permissions of a file.

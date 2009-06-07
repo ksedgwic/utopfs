@@ -43,20 +43,6 @@ struct utopfs
 
 static struct utopfs utopfs;
 
-static int
-utopfs_getattr(char const * i_path,
-               struct stat * stbuf)
-{
-    try
-    {
-        return FileSystem::instance()->fs_getattr(i_path, stbuf);
-    }
-    catch (utp::Exception const & ex)
-    {
-        return fatal(ex.what());
-    }
-}
-
 struct MyDirEntryFunc : public utp::FileSystem::DirEntryFunc
 {
     void *				m_buf;
@@ -72,6 +58,35 @@ struct MyDirEntryFunc : public utp::FileSystem::DirEntryFunc
         return m_filler(m_buf, i_name.c_str(), i_stbuf, i_off) != 0;
     }
 };
+
+static int
+utopfs_getattr(char const * i_path,
+               struct stat * stbuf)
+{
+    try
+    {
+        return FileSystem::instance()->fs_getattr(i_path, stbuf);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
+utopfs_readlink(char const * i_path,
+                char * o_obuf,
+                size_t i_size)
+{
+    try
+    {
+        return FileSystem::instance()->fs_readlink(i_path, o_obuf, i_size);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
 
 static int
 utopfs_mknod(char const * i_path, mode_t i_mode, dev_t i_dev)
@@ -118,6 +133,19 @@ utopfs_rmdir(char const * i_path)
     try
     {
         return FileSystem::instance()->fs_rmdir(i_path);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
+utopfs_symlink(char const * i_opath, char const * i_npath)
+{
+    try
+    {
+        return FileSystem::instance()->fs_symlink(i_opath, i_npath);
     }
     catch (utp::Exception const & ex)
     {
@@ -333,10 +361,12 @@ main(int argc, char ** argv)
         fatal("option parsing failed");
 
     utopfs_oper.getattr		= utopfs_getattr;
+    utopfs_oper.readlink	= utopfs_readlink;
     utopfs_oper.mknod		= utopfs_mknod;
     utopfs_oper.mkdir		= utopfs_mkdir;
     utopfs_oper.unlink		= utopfs_unlink;
     utopfs_oper.rmdir		= utopfs_rmdir;
+    utopfs_oper.symlink		= utopfs_symlink;
     utopfs_oper.chmod		= utopfs_chmod;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;

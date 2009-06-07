@@ -92,6 +92,29 @@ FileSystem_fs_getattr(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_readlink(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    if (!PyArg_ParseTuple(args, "s:fs_readlink", &path))
+        return NULL;
+
+    char buffer[MAXPATHLEN];
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_readlink(path, buffer, sizeof(buffer));
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    return PyString_FromString(buffer);
+}
+
+static PyObject *
 FileSystem_fs_mknod(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -171,6 +194,29 @@ FileSystem_fs_rmdir(FileSystemObject *self, PyObject *args)
     {
         PYUTP_THREADED_SCOPE scope;
         errno = - self->m_fsh->fs_rmdir(path);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
+FileSystem_fs_symlink(FileSystemObject *self, PyObject *args)
+{
+    char * opath;
+    char * npath;
+    if (!PyArg_ParseTuple(args, "ss:fs_symlink", &opath, &npath))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_symlink(opath, npath);
     }
     PYUTP_CATCH_ALL;
 
@@ -362,10 +408,12 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
     {"fs_unmount",		(PyCFunction)FileSystem_fs_unmount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
+    {"fs_readlink",		(PyCFunction)FileSystem_fs_readlink,	METH_VARARGS},
     {"fs_mknod",		(PyCFunction)FileSystem_fs_mknod,		METH_VARARGS},
     {"fs_mkdir",		(PyCFunction)FileSystem_fs_mkdir,		METH_VARARGS},
     {"fs_unlink",		(PyCFunction)FileSystem_fs_unlink,		METH_VARARGS},
     {"fs_rmdir",		(PyCFunction)FileSystem_fs_rmdir,		METH_VARARGS},
+    {"fs_symlink",		(PyCFunction)FileSystem_fs_symlink,		METH_VARARGS},
     {"fs_chmod",		(PyCFunction)FileSystem_fs_chmod,		METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},

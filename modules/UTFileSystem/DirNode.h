@@ -69,7 +69,7 @@ public:
     // Default Constructor.
     DirNode(mode_t i_mode);
 
-    // "Upgrade FileNode to a DirNode" copy constructor.
+    // "Upgrade Constructor" from FileNode.
     DirNode(FileNode const & i_fn);
 
     // Constructor from blockstore persisted data.
@@ -118,6 +118,10 @@ public:
 
     virtual int rmdir(Context & i_ctxt,
                       std::string const & i_entry);
+
+    virtual int symlink(Context & i_ctxt,
+                        std::string const & i_entry,
+                        std::string const & i_opath);
 
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,

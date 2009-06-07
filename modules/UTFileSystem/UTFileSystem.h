@@ -51,6 +51,11 @@ public:
                            struct stat * o_statbuf)
         throw (utp::InternalError);
 
+    virtual int fs_readlink(std::string const & i_path,
+                            char * o_obuf,
+                            size_t i_size)
+        throw (utp::InternalError);
+
     virtual int fs_mknod(std::string const & i_path,
                          mode_t i_mode,
                          dev_t i_dev)
@@ -64,6 +69,10 @@ public:
         throw (utp::InternalError);
 
     virtual int fs_rmdir(std::string const & i_path)
+        throw (utp::InternalError);
+
+    virtual int fs_symlink(std::string const & i_opath,
+                           std::string const & i_npath)
         throw (utp::InternalError);
 
     virtual int fs_chmod(std::string const & i_path,

@@ -14,12 +14,13 @@ using namespace std;
 using namespace utp;
 using namespace google::protobuf::io;
 
-namespace {
-
-
-} // end namespace
-
 namespace UTFS {
+
+BlockNode::BlockNode(BlockRef const & i_ref)
+  : m_ref(i_ref)
+{
+    LOG(lgr, 6, "CTOR " << i_ref);
+}
 
 BlockNode::~BlockNode()
 {

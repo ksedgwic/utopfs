@@ -137,10 +137,58 @@ UTFileSystem::fs_getattr(string const & i_path,
         GetAttrTraverseFunc gatf(o_stbuf);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
                              ps.first, ps.second, gatf);
+
+        LOG(lgr, 6, "fs_getattr " << i_path << " -> " << gatf.nt_retval());
         return gatf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_getattr " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
+class ReadLinkTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    ReadLinkTraverseFunc(char * o_obuf, size_t i_size)
+        : m_obuf(o_obuf), m_size(i_size) {}
+
+    virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
+    {
+        nt_retval(i_fn.readlink(i_ctxt, m_obuf, m_size));
+    }
+
+private:
+    char *		m_obuf;
+    size_t		m_size;
+};
+
+int
+UTFileSystem::fs_readlink(string const & i_path,
+                          char * o_obuf,
+                          size_t i_size)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_readlink " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ReadLinkTraverseFunc rltf(o_obuf, i_size);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
+                             ps.first, ps.second, rltf);
+
+        LOG(lgr, 6, "fs_readlink " << i_path << " -> " << rltf.nt_retval());
+        return rltf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_readlink " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -180,10 +228,14 @@ UTFileSystem::fs_mknod(string const & i_path,
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
         rootref(m_rdh->bn_blkref());
+
+        LOG(lgr, 6, "fs_mknod " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_mknod " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -219,10 +271,13 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
         rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_mkdir " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_mkdir " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -257,10 +312,13 @@ UTFileSystem::fs_unlink(string const & i_path)
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, utf);
         rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_unlink " << i_path << " -> " << utf.nt_retval());
         return utf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_unlink " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -295,10 +353,56 @@ UTFileSystem::fs_rmdir(string const & i_path)
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, rtf);
         rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_rmdir " << i_path << " -> " << rtf.nt_retval());
         return rtf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_rmdir " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
+class SymlinkTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    SymlinkTraverseFunc(string const & i_opath) : m_opath(i_opath) {}
+
+    virtual void nt_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
+    {
+        nt_retval(i_dn.symlink(i_ctxt, i_entry, m_opath));
+    }
+
+private:
+    string		m_opath;
+};
+
+int
+UTFileSystem::fs_symlink(string const & i_opath, string const & i_npath)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_symlink " << i_opath << ' ' << i_npath);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_npath);
+        SymlinkTraverseFunc stf(i_opath);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
+                             ps.first, ps.second, stf);
+        rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_symlink " << i_opath << ' ' << i_npath
+            << " -> " << stf.nt_retval());
+        return stf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_symlink " << i_opath << ' ' << i_npath
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -332,10 +436,13 @@ UTFileSystem::fs_chmod(string const & i_path, mode_t i_mode)
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, ctf);
         rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_chmod " << i_path << " -> " << ctf.nt_retval());
         return ctf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_chmod " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -370,11 +477,13 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
         OpenTraverseFunc otf(i_flags);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT,
                              ps.first, ps.second, otf);
-        // rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_open " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_open " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -413,10 +522,13 @@ UTFileSystem::fs_read(string const & i_path,
         ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
                              ps.first, ps.second, wtf);
+        LOG(lgr, 6, "fs_read " << i_path << " -> " << wtf.nt_retval());
         return wtf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_read " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -456,10 +568,13 @@ UTFileSystem::fs_write(string const & i_path,
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, wtf);
         rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_write " << i_path << " -> " << wtf.nt_retval());
         return wtf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_write " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -503,10 +618,13 @@ UTFileSystem::fs_readdir(string const & i_path,
         ReadDirTraverseFunc rdtf(i_offset, o_entryfunc);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
                              ps.first, ps.second, rdtf);
+        LOG(lgr, 6, "fs_readdir " << i_path << " -> " << rdtf.nt_retval());
         return rdtf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_readdir " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }
@@ -535,6 +653,8 @@ UTFileSystem::fs_utime(string const & i_path,
                        T64 const & i_mtime)
         throw (InternalError)
 {
+    LOG(lgr, 6, "fs_utime " << i_path << ' ' << i_atime << ' ' << i_mtime);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
@@ -544,10 +664,13 @@ UTFileSystem::fs_utime(string const & i_path,
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
         rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_utime " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
     }
     catch (int const & i_errno)
     {
+        LOG(lgr, 6, "fs_utime " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
 }

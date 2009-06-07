@@ -550,6 +550,15 @@ FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 }
 
 int
+FileNode::readlink(Context & i_ctxt,
+                      char * o_obuf,
+                      size_t i_size)
+{
+    // We are not a symbolic link!
+    throw EINVAL;
+}
+
+int
 FileNode::chmod(Context & i_ctxt, mode_t i_mode)
 {
     // We only update the permissions bits.

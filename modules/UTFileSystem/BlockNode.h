@@ -31,7 +31,7 @@ public:
     BlockNode() {}
 
     // Constructor which initializes the cached digest.
-    BlockNode(BlockRef const & i_ref) : m_ref(i_ref) {}
+    BlockNode(BlockRef const & i_ref);
 
     // Destructor.
     virtual ~BlockNode();

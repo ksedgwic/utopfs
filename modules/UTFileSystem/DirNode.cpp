@@ -9,6 +9,7 @@
 #include "utfslog.h"
 
 #include "DirNode.h"
+#include "SymlinkNode.h"
 
 using namespace std;
 using namespace utp;
@@ -61,7 +62,7 @@ DirNode::DirNode(mode_t i_mode)
 DirNode::DirNode(FileNode const & i_fn)
     : FileNode(i_fn)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 4, "CTOR " << bn_blkref());
 
     deserialize();
 }
@@ -330,6 +331,35 @@ DirNode::rmdir(Context & i_ctxt, string const & i_entry)
 }
 
 int
+DirNode::symlink(Context & i_ctxt,
+                 string const & i_entry,
+                 string const & i_opath)
+{
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+
+    // It needs to not exist.
+    if (fnh)
+        throw EEXIST;
+
+    // Create the symbolic link.
+    fnh = new SymlinkNode(i_opath);
+
+    // Persist it (set's the blkref).
+    fnh->bn_persist(i_ctxt);
+
+    // Insert into our Directory collection.
+    Directory::Entry * de = m_dir.add_entry();
+    de->set_name(i_entry);
+    de->set_blkref(fnh->bn_blkref());
+
+    // Insert into the cache.
+    m_cache.insert(make_pair(i_entry, fnh));
+
+    return 0;
+    
+}
+
+int
 DirNode::open(Context & i_ctxt, string const & i_entry, int i_flags)
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
@@ -379,6 +409,10 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
                 // Is it really a directory?  Upgrade object ...
                 if (S_ISDIR(nh->mode()))
                     nh = new DirNode(*nh);
+
+                // Is it really a symlink?  Upgrade object ...
+                else if (S_ISLNK(nh->mode()))
+                    nh = new SymlinkNode(*nh);
 
                 m_cache.insert(make_pair(i_entry, nh));
                 return nh;
