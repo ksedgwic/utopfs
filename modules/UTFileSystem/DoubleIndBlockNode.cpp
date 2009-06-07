@@ -37,7 +37,7 @@ DoubleIndBlockNode::DoubleIndBlockNode(Context & i_ctxt,
 
 DoubleIndBlockNode::~DoubleIndBlockNode()
 {
-    LOG(lgr, 6, "DTOR");
+    LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
 bool
@@ -144,7 +144,7 @@ DoubleIndBlockNode::rb_update(Context & i_ctxt,
 
 ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i_nh)
 {
-    LOG(lgr, 6, "CTOR");
+    LOG(lgr, 6, "CTOR " << "ZERO");
 
     // Initialize all of our references to the zero data block.
     for (unsigned i = 0; i < NUMREF; ++i)

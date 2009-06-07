@@ -20,6 +20,7 @@ PYTESTS =	\
 			test_fs_unlink_01.py \
 			test_fs_unlink_02.py \
 			test_fs_read_01.py \
+			test_fs_rmdir_01.py \
 			$(NULL)
 
 SCRIPTS =	\

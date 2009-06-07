@@ -76,7 +76,7 @@ DirNode::DirNode(Context & i_ctxt, BlockRef const & i_ref)
 
 DirNode::~DirNode()
 {
-    LOG(lgr, 4, "DTOR");
+    LOG(lgr, 4, "DTOR " << bn_blkref());
 }
 
 void
@@ -221,6 +221,12 @@ DirNode::update(Context & i_ctxt,
     persist(i_ctxt);
 }
 
+size_t
+DirNode::numentries() const
+{
+    return m_dir.entry_size();
+}
+
 int
 DirNode::mknod(Context & i_ctxt,
                string const & i_entry,
@@ -294,34 +300,31 @@ DirNode::unlink(Context & i_ctxt, string const & i_entry)
     if (S_ISDIR(fnh->mode()))
         throw EISDIR;
 
-    // Remove from our Directory collection.
-    //
-    // Wow, this loop sucks.  I think it is what is required though.
-    // See /usr/include/protobuf/repeated_field.h: "RemoveLast".
-    //
-    // NOTE - We swap the item w/ the last item and shorten the list.
-    //
-    // No need to scan to the last item since we know the item is
-    // in the list.
-    //
-    for (int i = 0; i < m_dir.entry_size() - 1; ++i)
-    {
-        if (m_dir.entry(i).name() == i_entry)
-        {
-            // Get mutable reference to this entry.
-            Directory::Entry * me = m_dir.mutable_entry(i);
+    remove(i_entry);
 
-            // Copy last entry into this slot.
-            *me = m_dir.entry(m_dir.entry_size() - 1);
+    return 0;
+}
 
-            // Deed is done ...
-            break;
-        }
-    }
-    m_dir.mutable_entry()->RemoveLast();
+int
+DirNode::rmdir(Context & i_ctxt, string const & i_entry)
+{
+    // Lookup the entry.
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
 
-    // Remove from the cache.
-    m_cache.erase(i_entry);
+    // It needs to exist.
+    if (!fnh)
+        throw ENOENT;
+
+    // We only remove directories.
+    if (!S_ISDIR(fnh->mode()))
+        throw ENOTDIR;
+
+    // Directory needs to be empty.
+    DirNodeHandle dnh = dynamic_cast<DirNode *>(&*fnh);
+    if (dnh->numentries() != 0)
+        throw ENOTEMPTY;
+
+    remove(i_entry);
 
     return 0;
 }
@@ -373,7 +376,7 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
                 FileNodeHandle nh =
                     new FileNode(i_ctxt, m_dir.entry(i).blkref());
 
-                // Is it really a directory?
+                // Is it really a directory?  Upgrade object ...
                 if (S_ISDIR(nh->mode()))
                     nh = new DirNode(*nh);
 
@@ -409,6 +412,41 @@ DirNode::deserialize()
                 << BlockRef(ent.blkref()) << " " << ent.name());
         }
     }
+}
+
+void
+DirNode::remove(string const & i_entry)
+{
+    LOG(lgr, 6, "remove " << i_entry);
+
+    // Remove from our Directory collection.
+    //
+    // Wow, this loop sucks.  I think it is what is required though.
+    // See /usr/include/protobuf/repeated_field.h: "RemoveLast".
+    //
+    // NOTE - We swap the item w/ the last item and shorten the list.
+    //
+    // No need to scan to the last item since we know the item is
+    // in the list.
+    //
+    for (int i = 0; i < m_dir.entry_size() - 1; ++i)
+    {
+        if (m_dir.entry(i).name() == i_entry)
+        {
+            // Get mutable reference to this entry.
+            Directory::Entry * me = m_dir.mutable_entry(i);
+
+            // Copy last entry into this slot.
+            *me = m_dir.entry(m_dir.entry_size() - 1);
+
+            // Deed is done ...
+            break;
+        }
+    }
+    m_dir.mutable_entry()->RemoveLast();
+
+    // Remove from the cache.
+    m_cache.erase(i_entry);
 }
 
 } // namespace UTFS

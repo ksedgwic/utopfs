@@ -11,8 +11,6 @@ unique: 321, opcode: CREATE (35), nodeid: 1, insize: 53
 Make Milestone
 ----------------------------------------------------------------
 
-  rmdir
-
   symlink
 
   rename
@@ -24,6 +22,8 @@ Make Milestone
 
 Other Stuff
 ----------------------------------------------------------------
+
+Large directories >60 items not implemented.
 
 Change FileSystem module interface to factory instead of service.
 

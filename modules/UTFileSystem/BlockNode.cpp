@@ -23,7 +23,7 @@ namespace UTFS {
 
 BlockNode::~BlockNode()
 {
-    LOG(lgr, 6, "DTOR");
+    LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
 } // namespace UTFS

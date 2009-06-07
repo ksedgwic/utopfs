@@ -132,6 +132,17 @@ public:
     virtual int fs_unlink(std::string const & i_path)
         throw (utp::InternalError) = 0;
 
+    /// Remove a directory.
+    ///
+    /// @param[in] i_path Path to the directory.
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_rmdir(std::string const & i_path)
+        throw (utp::InternalError) = 0;
+
     /// Change the permissions of a file.
     ///
     /// @param[in] i_path Path to the directory.

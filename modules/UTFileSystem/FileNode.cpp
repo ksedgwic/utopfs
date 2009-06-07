@@ -143,7 +143,7 @@ FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
 
 FileNode::~FileNode()
 {
-    LOG(lgr, 6, "DTOR");
+    LOG(lgr, 4, "DTOR " << bn_blkref());
 }
 
 BlockRef

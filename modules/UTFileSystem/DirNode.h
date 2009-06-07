@@ -101,6 +101,9 @@ public:
                         std::string const & i_entry,
                         BlockRef const & i_ref);
 
+    // Returns the number of entries in the directory.
+    virtual size_t numentries() const;
+
     virtual int mknod(Context & i_ctxt,
                       std::string const & i_entry,
                       mode_t i_mode,
@@ -112,6 +115,9 @@ public:
 
     virtual int unlink(Context & i_ctxt,
                        std::string const & i_entry);
+
+    virtual int rmdir(Context & i_ctxt,
+                      std::string const & i_entry);
 
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,
@@ -126,6 +132,8 @@ protected:
                                   std::string const & i_entry);
 
     void deserialize();
+
+    void remove(std::string const & i_entry);
 
 private:
     typedef std::map<std::string, FileNodeHandle> EntryMap;

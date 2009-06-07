@@ -63,6 +63,9 @@ public:
     virtual int fs_unlink(std::string const & i_path)
         throw (utp::InternalError);
 
+    virtual int fs_rmdir(std::string const & i_path)
+        throw (utp::InternalError);
+
     virtual int fs_chmod(std::string const & i_path,
                          mode_t i_mode)
         throw (utp::InternalError);

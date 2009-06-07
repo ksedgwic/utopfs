@@ -48,7 +48,7 @@ IndirectBlockNode::IndirectBlockNode(Context & i_ctxt,
 
 IndirectBlockNode::~IndirectBlockNode()
 {
-    LOG(lgr, 6, "DTOR");
+    LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
 BlockRef
@@ -185,7 +185,7 @@ IndirectBlockNode::rb_update(Context & i_ctxt,
 
 ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
 {
-    LOG(lgr, 6, "CTOR");
+    LOG(lgr, 6, "CTOR " << "ZERO");
 
     // Initialize all of our references to the zero data block.
     for (unsigned i = 0; i < NUMREF; ++i)

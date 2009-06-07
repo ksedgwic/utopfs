@@ -161,6 +161,28 @@ FileSystem_fs_unlink(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_rmdir(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    if (!PyArg_ParseTuple(args, "s:fs_rmdir", &path))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_rmdir(path);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
 FileSystem_fs_chmod(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -343,6 +365,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_mknod",		(PyCFunction)FileSystem_fs_mknod,		METH_VARARGS},
     {"fs_mkdir",		(PyCFunction)FileSystem_fs_mkdir,		METH_VARARGS},
     {"fs_unlink",		(PyCFunction)FileSystem_fs_unlink,		METH_VARARGS},
+    {"fs_rmdir",		(PyCFunction)FileSystem_fs_rmdir,		METH_VARARGS},
     {"fs_chmod",		(PyCFunction)FileSystem_fs_chmod,		METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},

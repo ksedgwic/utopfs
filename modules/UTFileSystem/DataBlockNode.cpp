@@ -46,7 +46,7 @@ DataBlockNode::DataBlockNode(Context & i_ctxt, BlockRef const & i_ref)
 
 DataBlockNode::~DataBlockNode()
 {
-    LOG(lgr, 6, "DTOR");
+    LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
 BlockRef
@@ -77,7 +77,7 @@ DataBlockNode::bn_persist(Context & i_ctxt)
 
 ZeroDataBlockNode::ZeroDataBlockNode()
 {
-    LOG(lgr, 6, "CTOR");
+    LOG(lgr, 6, "CTOR " << "ZERO");
 }
 
 BlockRef
