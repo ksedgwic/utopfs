@@ -110,6 +110,9 @@ public:
                       std::string const & i_entry,
                       mode_t i_mode);
 
+    virtual int unlink(Context & i_ctxt,
+                       std::string const & i_entry);
+
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,
                      int i_flags);

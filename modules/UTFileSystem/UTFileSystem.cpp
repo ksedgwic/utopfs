@@ -227,6 +227,44 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
     }
 }
 
+class UnlinkTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    UnlinkTraverseFunc() {}
+
+    virtual void nt_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
+    {
+        nt_retval(i_dn.unlink(i_ctxt, i_entry));
+    }
+
+private:
+};
+
+int
+UTFileSystem::fs_unlink(string const & i_path)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_unlink " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        UnlinkTraverseFunc utf;
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
+                             ps.first, ps.second, utf);
+        rootref(m_rdh->bn_blkref());
+        return utf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        return -i_errno;
+    }
+}
+
 class ChmodTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:

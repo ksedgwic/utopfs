@@ -100,6 +100,19 @@ utopfs_mkdir(char const * i_path, mode_t i_mode)
 }
 
 static int
+utopfs_unlink(char const * i_path)
+{
+    try
+    {
+        return FileSystem::instance()->fs_unlink(i_path);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
 utopfs_chmod(char const * i_path, mode_t i_mode)
 {
     try
@@ -309,6 +322,7 @@ main(int argc, char ** argv)
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.mknod		= utopfs_mknod;
     utopfs_oper.mkdir		= utopfs_mkdir;
+    utopfs_oper.unlink		= utopfs_unlink;
     utopfs_oper.chmod		= utopfs_chmod;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;

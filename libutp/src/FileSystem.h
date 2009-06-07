@@ -121,6 +121,17 @@ public:
                          mode_t i_mode)
         throw (utp::InternalError) = 0;
 
+    /// Remove a file.
+    ///
+    /// @param[in] i_path Path to the file.
+    ///
+    /// @return Returns 0 on success or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_unlink(std::string const & i_path)
+        throw (utp::InternalError) = 0;
+
     /// Change the permissions of a file.
     ///
     /// @param[in] i_path Path to the directory.

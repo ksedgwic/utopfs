@@ -9,10 +9,10 @@ import shutil
 import utp
 import utp.FileSystem
 
-class Test_fs_chmod_01:
+class Test_fs_unlink_01:
 
   def setup_class(self):
-    self.bspath = "fs_chmod_01.bs"
+    self.bspath = "fs_unlink_01.bs"
 
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
@@ -26,34 +26,39 @@ class Test_fs_chmod_01:
   def teardown_class(self):
     shutil.rmtree(self.bspath,True) 
 
-  def test_chmod(self):
-
-    # Open up our umask for this experiment
-    umask(0000)
+  def test_unlink(self):
 
     # Create a file
     self.fs.fs_mknod("/bar", 0666, 0)
 
-    # Now we should be able to stat the file.
-    st = self.fs.fs_getattr("/bar");
-    assert st[ST_MODE] & 0777 == 0666
-
-    # Now we chmod the file.
-    self.fs.fs_chmod("/bar", 0640)
-    
-    # Now we should be able to stat the file.
-    st = self.fs.fs_getattr("/bar");
-    assert st[ST_MODE] & 0777 == 0640
-
     # Create a directory
     self.fs.fs_mkdir("/foo", 0555)
 
-    # Now we chmod the directory.
-    self.fs.fs_chmod("/foo", 0510)
-    
+    # Now we should be able to stat the file.
+    st = self.fs.fs_getattr("/bar");
+
     # Now we should be able to stat the dir.
     st = self.fs.fs_getattr("/foo");
-    assert st[ST_MODE] & 0777 == 0510
+
+    # Shouldn't be able to unlink the directory.
+    try:
+      self.fs.fs_unlink("/foo");
+      assert False
+    except OSError, ex:
+      assert ex.errno == 21
+
+    # Should be able to unlink the file.
+    self.fs.fs_unlink("/bar");
+
+    # Now the file shouldn't stat
+    try:
+      st = self.fs.fs_getattr("/bar");
+      assert False
+    except OSError, ex:
+      assert ex.errno == 2
+
+    # But we should be able to stat the dir.
+    st = self.fs.fs_getattr("/foo");
 
     # Now we unmount the filesystem.
     self.fs.fs_unmount()
@@ -61,10 +66,13 @@ class Test_fs_chmod_01:
     # Now mount it again.
     self.fs.fs_mount(self.bspath, "", "")
 
-    # Now we should be able to stat the file.
-    st = self.fs.fs_getattr("/bar");
-    assert st[ST_MODE] & 0777 == 0640
+    # Now the file shouldn't stat
+    try:
+      st = self.fs.fs_getattr("/bar");
+      assert False
+    except OSError, ex:
+      assert ex.errno == 2
 
-    # Now we should be able to stat the dir.
+    # But we should be able to stat the dir.
     st = self.fs.fs_getattr("/foo");
-    assert st[ST_MODE] & 0777 == 0510
+

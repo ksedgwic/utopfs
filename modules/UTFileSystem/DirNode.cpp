@@ -103,7 +103,15 @@ DirNode::node_traverse(Context & i_ctxt,
                 // Need to redo the lookup because it might have changed.
                 fnh = lookup(i_ctxt, i_entry);
                 if (fnh)
+                {
+                    // Insert or update.
                     i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
+                }
+                else
+                {
+                    // Erase.
+                    i_trav.nt_update(i_ctxt, *this, i_entry, BlockRef());
+                }
             }
         }
         else
@@ -186,6 +194,13 @@ DirNode::update(Context & i_ctxt,
 {
     LOG(lgr, 6, "update " << i_entry << " " << i_ref);
 
+    // Was this a delete?
+    if (!i_ref)
+    {
+        persist(i_ctxt);
+        return;
+    }
+
     // Does this entry exist already?
     for (int i = 0; i < m_dir.entry_size(); ++i)
     {
@@ -260,6 +275,53 @@ DirNode::mkdir(Context & i_ctxt,
 
     // Increment our link count.
     nlink(nlink() + 1);
+
+    return 0;
+}
+
+int
+DirNode::unlink(Context & i_ctxt,
+                string const & i_entry)
+{
+    // Lookup the entry.
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+
+    // It needs to exist.
+    if (!fnh)
+        throw ENOENT;
+
+    // We don't remove directories.
+    if (S_ISDIR(fnh->mode()))
+        throw EISDIR;
+
+    // Remove from our Directory collection.
+    //
+    // Wow, this loop sucks.  I think it is what is required though.
+    // See /usr/include/protobuf/repeated_field.h: "RemoveLast".
+    //
+    // NOTE - We swap the item w/ the last item and shorten the list.
+    //
+    // No need to scan to the last item since we know the item is
+    // in the list.
+    //
+    for (int i = 0; i < m_dir.entry_size() - 1; ++i)
+    {
+        if (m_dir.entry(i).name() == i_entry)
+        {
+            // Get mutable reference to this entry.
+            Directory::Entry * me = m_dir.mutable_entry(i);
+
+            // Copy last entry into this slot.
+            *me = m_dir.entry(m_dir.entry_size() - 1);
+
+            // Deed is done ...
+            break;
+        }
+    }
+    m_dir.mutable_entry()->RemoveLast();
+
+    // Remove from the cache.
+    m_cache.erase(i_entry);
 
     return 0;
 }
