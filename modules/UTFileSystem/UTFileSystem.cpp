@@ -629,6 +629,45 @@ UTFileSystem::fs_readdir(string const & i_path,
     }
 }
 
+class AccessTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    AccessTraverseFunc(int i_mode) : m_mode(i_mode) {}
+
+    virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
+    {
+        nt_retval(i_fn.access(i_ctxt, m_mode));
+    }
+
+private:
+    int		m_mode;
+};
+
+int
+UTFileSystem::fs_access(string const & i_path, int i_mode)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_access " << i_path);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        AccessTraverseFunc atf(i_mode);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
+                             ps.first, ps.second, atf);
+        LOG(lgr, 6, "fs_access " << i_path << " -> " << atf.nt_retval());
+        return atf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_access " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
 class UtimeTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:

@@ -739,6 +739,15 @@ FileNode::write(Context & i_ctxt,
     }
 }
 
+int
+FileNode::access(Context & i_ctxt, mode_t i_mode)
+{
+    // FIXME - This routine is obviously broken.  But it needs
+    // proper uid/gid support before we can do it correctly.
+    //
+    return 0;
+}
+
 size_t
 FileNode::fixed_field_size() const
 {

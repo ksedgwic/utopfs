@@ -4,6 +4,7 @@ import py
 
 from os import *
 from stat import *
+from errno import *
 
 import shutil
 import utp
@@ -44,7 +45,7 @@ class Test_fs_unlink_02:
       st = self.fs.fs_getattr("/bar");
       assert False
     except OSError, ex:
-      assert ex.errno == 2
+      assert ex.errno == ENOENT
 
     # Now we unmount the filesystem.
     self.fs.fs_unmount()
@@ -57,4 +58,4 @@ class Test_fs_unlink_02:
       st = self.fs.fs_getattr("/bar");
       assert False
     except OSError, ex:
-      assert ex.errno == 2
+      assert ex.errno == ENOENT

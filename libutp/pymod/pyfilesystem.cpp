@@ -380,6 +380,29 @@ FileSystem_fs_readdir(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_access(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    int mode;
+    if (!PyArg_ParseTuple(args, "si:fs_access", &path, &mode))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_access(path, mode);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
 FileSystem_fs_utime(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -419,6 +442,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},
     {"fs_write",		(PyCFunction)FileSystem_fs_write,		METH_VARARGS},
     {"fs_readdir",		(PyCFunction)FileSystem_fs_readdir,		METH_VARARGS},
+    {"fs_access",		(PyCFunction)FileSystem_fs_access,		METH_VARARGS},
     {"fs_utime",		(PyCFunction)FileSystem_fs_utime,		METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };

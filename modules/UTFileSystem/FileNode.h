@@ -83,6 +83,9 @@ public:
                       size_t i_size,
                       off_t i_off);
 
+    virtual int access(Context & i_ctxt,
+                      mode_t i_mode);
+
     mode_t mode() const { return m_inode.mode(); }
 
     void mode(mode_t i_mode) { m_inode.set_mode(i_mode); }

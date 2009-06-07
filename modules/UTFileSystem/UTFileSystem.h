@@ -100,6 +100,10 @@ public:
                            DirEntryFunc & o_entryfunc)
         throw (utp::InternalError);
 
+    virtual int fs_access(std::string const & i_path,
+                          int i_mode)
+        throw (utp::InternalError);
+
     virtual int fs_utime(std::string const & i_path,
                          utp::T64 const & i_atime,
                          utp::T64 const & i_mtime)

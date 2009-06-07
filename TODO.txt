@@ -1,17 +1,17 @@
 Emacs Milestone
 ----------------------------------------------------------------
 
-unique: 262, opcode: SYMLINK (6), nodeid: 1, insize: 88
-   unique: 262, error: -38 (Function not implemented), outsize: 16
-unique: 313, opcode: SETATTR (4), nodeid: 3, insize: 128
-   unique: 313, error: -38 (Function not implemented), outsize: 16
-unique: 321, opcode: CREATE (35), nodeid: 1, insize: 53
-   unique: 321, error: -38 (Function not implemented), outsize: 16
+unique: 157, opcode: ACCESS (34), nodeid: 2, insize: 48
+ACCESS /blat 02
+   unique: 157, error: -38 (Function not implemented), outsize: 16
+
+unique: 199, opcode: SETATTR (4), nodeid: 2, insize: 128
+   unique: 199, error: -38 (Function not implemented), outsize: 16
+
+
 
 Make Milestone
 ----------------------------------------------------------------
-
-  symlink
 
   rename
 
@@ -22,6 +22,9 @@ Make Milestone
 
 Other Stuff
 ----------------------------------------------------------------
+
+The "access" call implementation is trivially permissive.  Fix this or
+get rid of it ...
 
 Large directories >60 items not implemented.
 

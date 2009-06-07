@@ -232,6 +232,20 @@ utopfs_readdir(char const * i_path,
 }
 
 static int
+utopfs_access(char const * i_path,
+              int i_mode)
+{
+    try
+    {
+        return FileSystem::instance()->fs_access(i_path, i_mode);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
 utopfs_utimens(char const * i_path, struct timespec const i_tv[2])
 {
     try
@@ -372,6 +386,7 @@ main(int argc, char ** argv)
     utopfs_oper.read		= utopfs_read;
     utopfs_oper.write		= utopfs_write;
     utopfs_oper.readdir		= utopfs_readdir;
+    utopfs_oper.access		= utopfs_access;
     utopfs_oper.utimens		= utopfs_utimens;
 
     ACE_Service_Config::open(argv[0]);
