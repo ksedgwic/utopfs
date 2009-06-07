@@ -1,6 +1,15 @@
-Make Milestone
+Emacs Milestone
+----------------------------------------------------------------
 
-  unlink
+unique: 262, opcode: SYMLINK (6), nodeid: 1, insize: 88
+   unique: 262, error: -38 (Function not implemented), outsize: 16
+unique: 313, opcode: SETATTR (4), nodeid: 3, insize: 128
+   unique: 313, error: -38 (Function not implemented), outsize: 16
+unique: 321, opcode: CREATE (35), nodeid: 1, insize: 53
+   unique: 321, error: -38 (Function not implemented), outsize: 16
+
+Make Milestone
+----------------------------------------------------------------
 
   rmdir
 
@@ -11,7 +20,11 @@ Make Milestone
   link
 
   truncate
-  
+
+
+Other Stuff
+----------------------------------------------------------------
+
 Change FileSystem module interface to factory instead of service.
 
 RPM packaging.
