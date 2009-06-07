@@ -327,9 +327,7 @@ DirNode::unlink(Context & i_ctxt, string const & i_entry)
 }
 
 int
-DirNode::open(Context & i_ctxt,
-              string const & i_entry,
-              int i_flags)
+DirNode::open(Context & i_ctxt, string const & i_entry, int i_flags)
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
 

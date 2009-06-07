@@ -249,7 +249,7 @@ FileNode::rb_traverse(Context & i_ctxt,
     off += sizeof(m_inl);
 
     // Are we beyond the region?
-    if (off > i_rngoff + off_t(i_rngsize))
+    if (off >= i_rngoff + off_t(i_rngsize))
         goto done;
 
     // ----------------------------------------------------------------
@@ -279,7 +279,12 @@ FileNode::rb_traverse(Context & i_ctxt,
                 DataBlockNodeHandle dbh;
 
                 // Do we have a cached version of this block?
-                if (!m_dirobj[i])
+                if (m_dirobj[i])
+                {
+                    // Yep, use it.
+                    dbh = m_dirobj[i];
+                }
+                else
                 {
                     // Nope, does it have a digest yet?
                     if (m_dirref[i])
@@ -311,13 +316,13 @@ FileNode::rb_traverse(Context & i_ctxt,
                 }
 
                 if (i_trav.bt_visit(i_ctxt,
-                                    m_dirobj[i]->bn_data(),
-                                    m_dirobj[i]->bn_size(),
+                                    dbh->bn_data(),
+                                    dbh->bn_size(),
                                     off,
                                     size()))
                 {
-                    m_dirobj[i]->bn_persist(i_ctxt);
-                    mods.push_back(make_pair(off, m_dirobj[i]->bn_blkref()));
+                    dbh->bn_persist(i_ctxt);
+                    mods.push_back(make_pair(off, dbh->bn_blkref()));
                 }
             }
 
@@ -327,7 +332,7 @@ FileNode::rb_traverse(Context & i_ctxt,
     }
 
     // Are we beyond the region?
-    if (off > i_rngoff + off_t(i_rngsize))
+    if (off >= i_rngoff + off_t(i_rngsize))
         goto done;
 
     // ----------------------------------------------------------------
@@ -390,7 +395,7 @@ FileNode::rb_traverse(Context & i_ctxt,
     off += sz;
 
     // Are we beyond the region?
-    if (off > i_rngoff + off_t(i_rngsize))
+    if (off >= i_rngoff + off_t(i_rngsize))
         goto done;
 
     // ----------------------------------------------------------------
@@ -457,7 +462,7 @@ FileNode::rb_traverse(Context & i_ctxt,
     off += sz;
 
     // Are we beyond the region?
-    if (off > i_rngoff + off_t(i_rngsize))
+    if (off >= i_rngoff + off_t(i_rngsize))
         goto done;
 
     // ----------------------------------------------------------------
