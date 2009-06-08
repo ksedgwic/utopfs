@@ -43,9 +43,15 @@ SymlinkNode::readlink(Context & i_ctxt,
                       char * o_obuf,
                       size_t i_size)
 {
-    size_t sz = min(size(), i_size);
+    // NOTE - It's a little unclear what we should do if the string is
+    // larger then the provided buffer.  Truncate, sure, but what
+    // about the terminating NULL?
+
+    // Compute the size of the string, leave room for a NULL always.
+    size_t sz = min(size(), i_size - 1);
 
     ACE_OS::memcpy(o_obuf, bn_data(), sz);
+    o_obuf[sz] = '\0';
 
     return 0;
 }
