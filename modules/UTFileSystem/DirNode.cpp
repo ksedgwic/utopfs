@@ -20,7 +20,7 @@ namespace UTFS {
 void
 DirNode::NodeTraverseFunc::nt_update(Context & i_ctxt,
                                      DirNode & i_dn,
-                                     std::string const & i_entry,
+                                     string const & i_entry,
                                      BlockRef const & i_ref)
 {
     i_dn.update(i_ctxt, i_entry, i_ref);
@@ -236,6 +236,8 @@ DirNode::mknod(Context & i_ctxt,
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
 
+    // This routine should look more like mkdir!
+
     // We're creating this file.
     if (!fnh)
     {
@@ -288,7 +290,7 @@ DirNode::mkdir(Context & i_ctxt,
 }
 
 int
-DirNode::unlink(Context & i_ctxt, string const & i_entry)
+DirNode::unlink(Context & i_ctxt, string const & i_entry, bool i_dirstoo)
 {
     // Lookup the entry.
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
@@ -298,7 +300,7 @@ DirNode::unlink(Context & i_ctxt, string const & i_entry)
         throw ENOENT;
 
     // We don't remove directories.
-    if (S_ISDIR(fnh->mode()))
+    if (!i_dirstoo && S_ISDIR(fnh->mode()))
         throw EISDIR;
 
     remove(i_entry);
@@ -357,6 +359,34 @@ DirNode::symlink(Context & i_ctxt,
 
     return 0;
     
+}
+
+BlockRef
+DirNode::linksrc(Context & i_ctxt,
+                 string const & i_entry)
+{
+    return find_blkref(i_entry);
+}
+
+int
+DirNode::linkdst(Context & i_ctxt,
+                 string const & i_entry,
+                 BlockRef const & i_blkref)
+{
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+
+    // The entry better not exist already.
+    if (fnh)
+        throw EEXIST;
+
+    // Insert into our Directory collection.
+    Directory::Entry * de = m_dir.add_entry();
+    de->set_name(i_entry);
+    de->set_blkref(i_blkref);
+
+    // Should we insert in the cache here?
+
+    return 0;
 }
 
 int
@@ -421,6 +451,18 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
     }
 
     return NULL;
+}
+
+BlockRef
+DirNode::find_blkref(string const & i_entry)
+{
+    // Is it in the directories digest table?
+    for (int i = 0; i < m_dir.entry_size(); ++i)
+        if (m_dir.entry(i).name() == i_entry)
+            return BlockRef(m_dir.entry(i).blkref());
+
+    // Not found, nil reference.
+    return BlockRef();
 }
 
 void

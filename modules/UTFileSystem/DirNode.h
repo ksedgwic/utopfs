@@ -114,7 +114,8 @@ public:
                       mode_t i_mode);
 
     virtual int unlink(Context & i_ctxt,
-                       std::string const & i_entry);
+                       std::string const & i_entry,
+                       bool i_dirstoo);
 
     virtual int rmdir(Context & i_ctxt,
                       std::string const & i_entry);
@@ -122,6 +123,13 @@ public:
     virtual int symlink(Context & i_ctxt,
                         std::string const & i_entry,
                         std::string const & i_opath);
+
+    virtual BlockRef linksrc(Context & i_ctxt,
+                             std::string const & i_entry);
+
+    virtual int linkdst(Context & i_ctxt,
+                        std::string const & i_entry,
+                        BlockRef const & i_blkref);
 
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,
@@ -134,6 +142,8 @@ public:
 protected:
     virtual FileNodeHandle lookup(Context & i_ctxt,
                                   std::string const & i_entry);
+
+    virtual BlockRef find_blkref(std::string const & i_entry);
 
     void deserialize();
 

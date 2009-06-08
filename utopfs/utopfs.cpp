@@ -154,6 +154,19 @@ utopfs_symlink(char const * i_opath, char const * i_npath)
 }
 
 static int
+utopfs_rename(char const * i_opath, char const * i_npath)
+{
+    try
+    {
+        return FileSystem::instance()->fs_rename(i_opath, i_npath);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
 utopfs_chmod(char const * i_path, mode_t i_mode)
 {
     try
@@ -394,6 +407,7 @@ main(int argc, char ** argv)
     utopfs_oper.unlink		= utopfs_unlink;
     utopfs_oper.rmdir		= utopfs_rmdir;
     utopfs_oper.symlink		= utopfs_symlink;
+    utopfs_oper.rename		= utopfs_rename;
     utopfs_oper.chmod		= utopfs_chmod;
     utopfs_oper.truncate	= utopfs_truncate;
     utopfs_oper.open		= utopfs_open;

@@ -285,16 +285,17 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
 class UnlinkTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:
-    UnlinkTraverseFunc() {}
+    UnlinkTraverseFunc(bool i_dirstoo) : m_dirstoo(i_dirstoo) {}
 
     virtual void nt_parent(Context & i_ctxt,
                            DirNode & i_dn,
                            string const & i_entry)
     {
-        nt_retval(i_dn.unlink(i_ctxt, i_entry));
+        nt_retval(i_dn.unlink(i_ctxt, i_entry, m_dirstoo));
     }
 
 private:
+    bool	m_dirstoo;
 };
 
 int
@@ -308,7 +309,7 @@ UTFileSystem::fs_unlink(string const & i_path)
     try
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
-        UnlinkTraverseFunc utf;
+        UnlinkTraverseFunc utf(false);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, utf);
         rootref(m_rdh->bn_blkref());
@@ -402,6 +403,83 @@ UTFileSystem::fs_symlink(string const & i_opath, string const & i_npath)
     catch (int const & i_errno)
     {
         LOG(lgr, 6, "fs_symlink " << i_opath << ' ' << i_npath
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
+class LinkSrcTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    LinkSrcTraverseFunc() {}
+
+    virtual void nt_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
+    {
+        m_blkref = i_dn.linksrc(i_ctxt, i_entry);
+    }
+
+    BlockRef const & blkref() const { return m_blkref; }
+
+private:
+    BlockRef	m_blkref;
+};
+
+class LinkDstTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    LinkDstTraverseFunc(BlockRef const & i_blkref) : m_blkref(i_blkref) {}
+
+    virtual void nt_parent(Context & i_ctxt,
+                           DirNode & i_dn,
+                           string const & i_entry)
+    {
+        nt_retval(i_dn.linkdst(i_ctxt, i_entry, m_blkref));
+    }
+
+private:
+    BlockRef	m_blkref;
+};
+
+int
+UTFileSystem::fs_rename(string const & i_opath, string const & i_npath)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_rename " << i_opath << ' ' << i_npath);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ops = DirNode::pathsplit(i_opath);
+        pair<string, string> nps = DirNode::pathsplit(i_npath);
+
+        // First determine the blkref of the source.
+        LinkSrcTraverseFunc lstf;
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT,
+                             ops.first, ops.second, lstf);
+
+        // Then add the blkref as the new name.
+        LinkDstTraverseFunc ldtf(lstf.blkref());
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
+                             nps.first, nps.second, ldtf);
+
+        // Then unlink the old path.
+        UnlinkTraverseFunc utf(true);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
+                             ops.first, ops.second, utf);
+
+        // Update the root reference.
+        rootref(m_rdh->bn_blkref());
+
+        LOG(lgr, 6, "fs_rename " << i_opath << ' ' << i_npath
+            << " -> " << utf.nt_retval());
+        return utf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_rename " << i_opath << ' ' << i_npath
             << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
