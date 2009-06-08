@@ -183,6 +183,85 @@ IndirectBlockNode::rb_update(Context & i_ctxt,
     }
 }
 
+size_t
+IndirectBlockNode::rb_truncate(Context & i_ctxt,
+                               off_t i_base,
+                               off_t i_size)
+{
+    size_t nblocks = 1;		// Start w/ this node.
+    off_t off = i_base;
+
+    for (unsigned ndx = 0; ndx < NUMREF; ++ndx)
+    {
+        // Is this block prior to the truncation?
+        if (off + BLKSZ <= i_size)
+        {
+            // Increment the block counter if there is a data
+            // block.
+            //
+            if (m_blkref[ndx])
+                ++nblocks;
+        }
+
+        // Is the truncation inside this block?
+        else if (off < i_size)
+        {
+            DataBlockNodeHandle dbh;
+
+            // Do we have a cached version of this block?
+            if (m_blkobj[ndx])
+            {
+                // Yep, use it.
+                dbh = dynamic_cast<DataBlockNode *>(&*m_blkobj[ndx]);
+            }
+            else
+            {
+                // Nope, does it have a digest yet?
+                if (m_blkref[ndx])
+                {
+                    // Yes, read it from the blockstore.
+                    dbh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
+
+                    // Keep it in the cache.
+                    m_blkobj[ndx] = dbh;
+                }
+                else
+                {
+                    // We don't have to create a new block
+                    // since we are just going to zero part
+                    // of it ...
+                }
+            }
+
+            if (dbh)
+            {
+                // There is a block involved.
+                ++nblocks;
+
+                // Zero the data after the truncation.
+                off_t off0 = i_size - (off + (ndx * BLKSZ));
+                ACE_OS::memset(dbh->bn_data() + off0,
+                               '\0', 
+                               dbh->bn_size() - off0);
+                dbh->bn_persist(i_ctxt);
+                m_blkref[ndx] = dbh->bn_blkref();
+            }
+        }
+
+        // This block is after the truncation.
+        else
+        {
+            // We're just removing the references.
+            m_blkref[ndx].clear();
+            m_blkobj[ndx] = NULL;
+        }
+
+        off += BLKSZ;
+    }
+
+    return nblocks;
+}
+
 ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
 {
     LOG(lgr, 6, "CTOR " << "ZERO");

@@ -447,6 +447,46 @@ UTFileSystem::fs_chmod(string const & i_path, mode_t i_mode)
     }
 }
 
+class TruncateTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    TruncateTraverseFunc(off_t i_size) : m_size(i_size) {}
+
+    virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
+    {
+        nt_retval(i_fn.truncate(i_ctxt, m_size));
+    }
+
+private:
+    off_t		m_size;
+};
+
+int
+UTFileSystem::fs_truncate(string const & i_path, off_t i_size)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_truncate " << i_path << ' ' << i_size);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        TruncateTraverseFunc ttf(i_size);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
+                             ps.first, ps.second, ttf);
+        rootref(m_rdh->bn_blkref());
+        LOG(lgr, 6, "fs_truncate " << i_path << " -> " << ttf.nt_retval());
+        return ttf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_truncate " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
 class OpenTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:

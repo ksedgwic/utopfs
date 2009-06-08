@@ -25,7 +25,7 @@ class UTFS_EXP BlockNode : public virtual utp::RCObj
 {
 public:
     // Fundamental block size of the filesystem.
-    static const size_t BLKSZ = 8192;
+    static off_t const BLKSZ = 8192;
 
     // Default constructor.
     BlockNode() {}

@@ -23,6 +23,8 @@ PYTESTS =	\
 			test_fs_rmdir_01.py \
 			test_fs_symlink_01.py \
 			test_fs_symlink_02.py \
+			test_fs_truncate_01.py \
+			test_fs_truncate_02.py \
 			$(NULL)
 
 SCRIPTS =	\

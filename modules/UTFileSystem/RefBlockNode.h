@@ -92,6 +92,11 @@ public:
                            off_t i_base,
                            BindingSeq const & i_bs) = 0;
 
+    // Traverse performing file truncation.  Returns blocks count.
+    virtual size_t rb_truncate(Context & i_ctxt,
+                               off_t i_base,
+                               off_t i_size) = 0;
+
 private:
 
 };

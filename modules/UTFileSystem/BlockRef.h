@@ -47,6 +47,9 @@ public:
     /// Non-nil predicate.
     operator bool() const { return !operator!(); }
 
+    /// Clear the reference.
+    void clear();
+
     utp::uint8 const * data() const { return m_ref; }
 
     size_t size() const { return sizeof(m_ref); }

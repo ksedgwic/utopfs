@@ -167,6 +167,19 @@ utopfs_chmod(char const * i_path, mode_t i_mode)
 }
 
 static int
+utopfs_truncate(char const * i_path, off_t i_size)
+{
+    try
+    {
+        return FileSystem::instance()->fs_truncate(i_path, i_size);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
 utopfs_open(char const * i_path, struct fuse_file_info *fi)
 {
     try
@@ -382,6 +395,7 @@ main(int argc, char ** argv)
     utopfs_oper.rmdir		= utopfs_rmdir;
     utopfs_oper.symlink		= utopfs_symlink;
     utopfs_oper.chmod		= utopfs_chmod;
+    utopfs_oper.truncate	= utopfs_truncate;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;
     utopfs_oper.write		= utopfs_write;

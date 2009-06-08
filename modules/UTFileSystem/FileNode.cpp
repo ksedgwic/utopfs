@@ -531,6 +531,164 @@ FileNode::rb_update(Context & i_ctxt, off_t i_base, BindingSeq const & i_bs)
     }
 }
 
+size_t
+FileNode::rb_truncate(Context & i_ctxt,
+                      off_t i_base,
+                      off_t i_size)
+{
+    // NOTE - This traversal is similar to the rb_traverse traversal.
+    //
+    // The traversal has three parts:
+    //
+    // 1) Blocks that are completely inside the new size are
+    //    counted for the nblocks return value.
+    //
+    // 2) The block which contains the boundary (if the size is
+    //    not block aligned) is zeroed after the size.
+    //
+    // 3) All blocks greater then the new boundary are dereferenced.
+
+    size_t nblocks = 1;		// Start w/ the inode itself.
+    off_t off = 0;
+    off_t sz = 0;
+
+    // Does the truncation intersect the inline blocks?
+    //
+    sz = INLSZ;
+    if (i_size < off + sz)
+    {
+        // Zero the portion after the truncation.
+        ACE_OS::memset(m_inl + i_size, '\0', sizeof(m_inl) - i_size);
+        off += INLSZ;
+    }
+
+    off += INLSZ;
+
+    // ---------------- Direct Blocks ----------------
+
+    for (unsigned ndx = 0; ndx < NDIRECT; ++ndx)
+    {
+        // Is this block prior to the truncation?
+        if (off + BLKSZ <= i_size)
+        {
+            // Increment the block counter if there is a data
+            // block.
+            //
+            if (m_dirref[ndx])
+                ++nblocks;
+        }
+
+        // Is the truncation inside this block?
+        else if (off < i_size)
+        {
+            DataBlockNodeHandle dbh;
+
+            // Do we have a cached version of this block?
+            if (m_dirobj[ndx])
+            {
+                // Yep, use it.
+                dbh = m_dirobj[ndx];
+            }
+            else
+            {
+                // Nope, does it have a digest yet?
+                if (m_dirref[ndx])
+                {
+                    // Yes, read it from the blockstore.
+                    dbh = new DataBlockNode(i_ctxt, m_dirref[ndx]);
+
+                    // Keep it in the cache.
+                    m_dirobj[ndx] = dbh;
+                }
+                else
+                {
+                    // We don't have to create a new block
+                    // since we are just going to zero part
+                    // of it ...
+                }
+            }
+
+            if (dbh)
+            {
+                // There is a block involved.
+                ++nblocks;
+
+                // Zero the data after the truncation.
+                off_t off0 = i_size - (off + (ndx * BLKSZ));
+                ACE_OS::memset(dbh->bn_data() + off0,
+                               '\0', 
+                               dbh->bn_size() - off0);
+                dbh->bn_persist(i_ctxt);
+                m_dirref[ndx] = dbh->bn_blkref();
+            }
+        }
+
+        // This block is after the truncation.
+        else
+        {
+            // We're just removing the references.
+            m_dirref[ndx].clear();
+            m_dirobj[ndx] = NULL;
+        }
+
+        off += BLKSZ;
+    }
+
+    // ---------------- Single Indirect ----------------
+
+    sz = IndirectBlockNode::NUMREF * BLKSZ;
+
+    // Is there an indirect block?
+    if (m_sinref)
+    {
+        // Does it overlap the live portion of the file?
+        if (off < i_size)
+        {
+            IndirectBlockNodeHandle nh;
+
+            // Is there a cached version?
+            if (m_sinobj)
+            {
+                // Yes, just use it.
+                nh = m_sinobj;
+            }
+            else
+            {
+                // Nope, read from the blockstore.
+                nh = new IndirectBlockNode(i_ctxt, m_sinref);
+
+                // Keep it in the cache.
+                m_sinobj = nh;
+            }
+
+            // Traverse the indirect block.
+            size_t nb = nh->rb_truncate(i_ctxt, off, i_size);
+
+            // Did it have child blocks?  If not purge it ...
+            if (nb > 1)
+            {
+                // It had children, keep it.
+                nblocks += nb;
+            }
+            else
+            {
+                m_sinref.clear();
+                m_sinobj = NULL;
+            }
+        }
+        else
+        {
+            // Nope, this is in the truncated portion of the file.
+            m_sinref.clear();
+            m_sinobj = NULL;
+        }
+    }
+
+    off += sz;
+
+    return nblocks;
+}
+
 int
 FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 {
@@ -566,6 +724,21 @@ FileNode::chmod(Context & i_ctxt, mode_t i_mode)
     md &= ~ALLPERMS;			// Remove existing permissions.
     md |= (i_mode & ALLPERMS);	// Add permissions from arg.
     mode(md);
+
+    bn_persist(i_ctxt);
+
+    return 0;
+}
+
+int
+FileNode::truncate(Context & i_ctxt, off_t i_size)
+{
+    // Traverse adjusting block references.
+    size_t nblocks = rb_truncate(i_ctxt, 0, i_size);
+
+    // Set the metadata.
+    blocks(nblocks);
+    size(i_size);
 
     bn_persist(i_ctxt);
 
@@ -744,6 +917,9 @@ FileNode::access(Context & i_ctxt, mode_t i_mode)
 {
     // FIXME - This routine is obviously broken.  But it needs
     // proper uid/gid support before we can do it correctly.
+    //
+    // I'm confused; how do we know the uid/gid of the user making
+    // this call?
     //
     return 0;
 }

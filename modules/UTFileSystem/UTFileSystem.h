@@ -79,6 +79,10 @@ public:
                          mode_t i_mode)
         throw (utp::InternalError);
 
+    virtual int fs_truncate(std::string const & i_path,
+                            off_t i_size)
+        throw (utp::InternalError);
+
     virtual int fs_open(std::string const & i_path,
                         int i_flags)
         throw (utp::InternalError);

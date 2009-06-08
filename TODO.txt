@@ -8,6 +8,11 @@ ACCESS /blat 02
 unique: 199, opcode: SETATTR (4), nodeid: 2, insize: 128
    unique: 199, error: -38 (Function not implemented), outsize: 16
 
+http://osdir.com/ml/file-systems.fuse.devel/2005-09/msg00056.html
+   
+    SETATTR is actually 4 different methods rolled into one: chmod,
+    chown, truncate and utime. You need to implement at least
+    truncate() for open(... O_TRUNC) to work. */
 
 
 Make Milestone

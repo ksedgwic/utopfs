@@ -29,10 +29,10 @@ class UTFS_EXP FileNode : public RefBlockNode
 {
 public:
     // How much data is "inlined" in the FileNode itself.
-    static const size_t INLSZ = 4096;
+    static off_t const INLSZ = 4096;
 
     // How many direct references does the FileNode contain?
-    static const size_t NDIRECT = 20;
+    static off_t const NDIRECT = 20;
 
     // Default constructor.
     FileNode(mode_t i_mode);
@@ -63,6 +63,10 @@ public:
                            off_t i_base,
                            BindingSeq const & i_bs);
 
+    virtual size_t rb_truncate(Context & i_ctxt,
+                               off_t i_base,
+                               off_t i_size);
+
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
 
@@ -72,6 +76,9 @@ public:
 
     virtual int chmod(Context & i_ctxt,
                       mode_t i_mode);
+
+    virtual int truncate(Context & i_ctxt,
+                         off_t i_size);
 
     virtual int read(Context & i_ctxt,
                      void * o_bufptr,

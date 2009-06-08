@@ -252,6 +252,29 @@ FileSystem_fs_chmod(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_truncate(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    long int size;
+    if (!PyArg_ParseTuple(args, "sl:fs_truncate", &path, &size))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_truncate(path, size);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
 FileSystem_fs_open(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -438,6 +461,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_rmdir",		(PyCFunction)FileSystem_fs_rmdir,		METH_VARARGS},
     {"fs_symlink",		(PyCFunction)FileSystem_fs_symlink,		METH_VARARGS},
     {"fs_chmod",		(PyCFunction)FileSystem_fs_chmod,		METH_VARARGS},
+    {"fs_truncate",		(PyCFunction)FileSystem_fs_truncate,	METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},
     {"fs_write",		(PyCFunction)FileSystem_fs_write,		METH_VARARGS},

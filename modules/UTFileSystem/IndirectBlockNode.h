@@ -24,7 +24,7 @@ class UTFS_EXP IndirectBlockNode : public RefBlockNode
 {
 public:
     // How many digests fit in a packed block.
-    static const size_t NUMREF = (BLKSZ / sizeof(BlockRef));
+    static off_t const NUMREF = (BLKSZ / sizeof(BlockRef));
 
     // Default constructor.
     IndirectBlockNode();
@@ -56,6 +56,10 @@ public:
     virtual void rb_update(Context & i_ctxt,
                            off_t i_base,
                            BindingSeq const & i_bs);
+
+    virtual size_t rb_truncate(Context & i_ctxt,
+                               off_t i_base,
+                               off_t i_size);
 
 protected:
     // Block References

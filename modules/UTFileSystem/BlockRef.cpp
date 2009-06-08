@@ -49,6 +49,12 @@ BlockRef::operator!() const
 }
 
 void
+BlockRef::clear()
+{
+    ACE_OS::memset(m_ref, '\0', sizeof(m_ref));
+}
+
+void
 BlockRef::validate(uint8 const * i_data, size_t i_size) const
     throw(VerificationError)
 {

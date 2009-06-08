@@ -51,7 +51,7 @@ DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
 {
     RefBlockNode::BindingSeq mods;
 
-    static size_t refspan = NUMREF * BLKSZ;
+    static off_t const refspan = NUMREF * BLKSZ;
 
     // Are we beyond the target range?
     if (i_base > i_rngoff + off_t(i_rngsize))
@@ -140,6 +140,75 @@ DoubleIndBlockNode::rb_update(Context & i_ctxt,
         size_t ndx = (i_bs[i].first - i_base) / refspan;
         m_blkref[ndx] = i_bs[i].second;
     }
+}
+
+size_t
+DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
+                                off_t i_base,
+                                off_t i_size)
+{
+    static off_t const refspan = NUMREF * BLKSZ;
+
+    size_t nblocks = 1;		// Start w/ this node.
+    off_t off = i_base;
+
+    for (unsigned ndx = 0; ndx < NUMREF; ++ndx)
+    {
+        // Is it possibly overlapping the live portion of the file?
+        if (off < i_size)
+        {
+            // Yes, it's part of the live file.
+            if (m_blkref[ndx])
+            {
+                IndirectBlockNodeHandle nh;
+            
+                // Do we have one in the cache already?
+                if (m_blkobj[ndx])
+                {
+                    // Yep, use it.
+                    nh = dynamic_cast<IndirectBlockNode *>(&*m_blkobj[ndx]);
+                }
+                else
+                {
+                    // Nope, does it have a digest yet?
+                    if (m_blkref[ndx])
+                    {
+                        // Yes, read it from the blockstore.
+                        nh = new IndirectBlockNode(i_ctxt, m_blkref[ndx]);
+
+                        // Keep it in the cache.
+                        m_blkobj[ndx] = nh;
+                    }
+                }
+
+                // Traverse the child.
+                size_t nb = nh->rb_truncate(i_ctxt, off, i_size);
+
+                // Did it have child blocks?  If not purge it ...
+                if (nb > 1)
+                {
+                    // It had children, keep it.
+                    nblocks += nb;
+                }
+                else
+                {
+                    m_blkref[ndx].clear();
+                    m_blkobj[ndx] = NULL;
+                }
+            }
+        }
+        else
+        {
+            // Nope, it's truncated.
+            // We're just removing the references.
+            m_blkref[ndx].clear();
+            m_blkobj[ndx] = NULL;
+        }
+
+        off += refspan;
+    }
+
+    return nblocks;
 }
 
 ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i_nh)
