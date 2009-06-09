@@ -2,8 +2,6 @@
 Make Milestone
 ----------------------------------------------------------------
 
-  rename
-
   link
 
 
@@ -12,10 +10,10 @@ Other Stuff
 
 Make mknod more like mkdir ...
 
+Large directories >60 items not implemented.
+
 The "access" call implementation is trivially permissive.  Fix this or
 get rid of it ...
-
-Large directories >60 items not implemented.
 
 Change FileSystem module interface to factory instead of service.
 

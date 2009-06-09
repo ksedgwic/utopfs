@@ -26,6 +26,7 @@ PYTESTS =	\
 			test_fs_truncate_01.py \
 			test_fs_truncate_02.py \
 			test_fs_rename_01.py \
+			test_fs_rename_02.py \
 			$(NULL)
 
 SCRIPTS =	\

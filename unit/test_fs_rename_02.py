@@ -10,12 +10,12 @@ import shutil
 import utp
 import utp.FileSystem
 
-# Test basic rename operations.
+# Make sure rename can replace existing files.
 
-class Test_fs_rename_01:
+class Test_fs_rename_02:
 
   def setup_class(self):
-    self.bspath = "fs_rename_01.bs"
+    self.bspath = "fs_rename_02.bs"
 
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
@@ -55,14 +55,29 @@ class Test_fs_rename_01:
 
     # And the new one should.
     st = self.fs.fs_getattr("/foo/blat");
+    assert st.st_size == 8
 
-    # Should be able to rename a directory.
-    self.fs.fs_rename("/foo", "/bar")
+    # Should be able to replace a file w/ rename
+    self.fs.fs_mknod("/foo/new", 0666, 0)
+
+    # Open the file.
+    self.fs.fs_open("/foo/new", O_RDWR)
+
+    # Write some bytes into the file.
+    self.fs.fs_write("/foo/new", buffer("newdata"))
+
+    # Rename the new over the old.
+    self.fs.fs_rename("/foo/new", "/foo/blat")
+
+    # Now the old name shouldn't exist.
+    try:
+      st = self.fs.fs_getattr("/foo/new");
+      assert False
+    except OSError, ex:
+      assert ex.errno == ENOENT
+
+    # And the new one should.
+    st = self.fs.fs_getattr("/foo/blat");
+    assert st.st_size == 7
+
     
-    # The file should be accessable in the new directory.
-    st = self.fs.fs_getattr("/bar/blat");
-
-    # Should be able to rename into a directory.
-    self.fs.fs_mkdir("/adir", 0555)
-    self.fs.fs_rename("/bar/blat", "/adir")
-    st = self.fs.fs_getattr("/adir/blat");
