@@ -196,6 +196,8 @@ DirNode::update(Context & i_ctxt,
 {
     LOG(lgr, 6, "update " << i_entry << " " << i_ref);
 
+    mtime(T64::now());
+
     // Was this a delete?
     if (!i_ref)
     {

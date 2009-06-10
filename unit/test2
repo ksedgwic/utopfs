@@ -39,7 +39,8 @@ try:
     fs.fs_mknod("/foo", 0666, 0)
 
     # Stat the file
-    print fs.fs_getattr("/foo")
+    st = fs.fs_getattr("/foo")
+    print st.st_mtime 
 
     # Unmount the filesystem.
     fs.fs_unmount()

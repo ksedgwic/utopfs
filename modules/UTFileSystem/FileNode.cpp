@@ -529,6 +529,9 @@ FileNode::rb_update(Context & i_ctxt, off_t i_base, BindingSeq const & i_bs)
                     << "FileNode::rb_update "
                     << "for multi indirect blocks unimplemented");
     }
+
+    // Update the modification time.
+    mtime(T64::now());
 }
 
 size_t
@@ -725,6 +728,8 @@ FileNode::chmod(Context & i_ctxt, mode_t i_mode)
     md |= (i_mode & ALLPERMS);	// Add permissions from arg.
     mode(md);
 
+    // Doesn't look like chmod sets the modifiction time.
+
     bn_persist(i_ctxt);
 
     return 0;
@@ -739,6 +744,8 @@ FileNode::truncate(Context & i_ctxt, off_t i_size)
     // Set the metadata.
     blocks(nblocks);
     size(i_size);
+
+    mtime(T64::now());
 
     bn_persist(i_ctxt);
 

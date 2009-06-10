@@ -1,12 +1,7 @@
 
-Make Milestone
-----------------------------------------------------------------
+Modification timestamps.
 
-  link
-
-
-Other Stuff
-----------------------------------------------------------------
+Implement hard links.
 
 Make mknod more like mkdir ...
 
