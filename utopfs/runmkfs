@@ -27,5 +27,8 @@ CGCMD="valgrind \
 # Make a mount point; ignore errors (might already exist).
 mkdir mnt 2> /dev/null
 
+# Remvoe any previously existing blockstore; ignore errors.
+rm -rf BLOCKS
+
 # Run the utopfs in the foreground.
 ${USEVG} BINPATHU(utopfs) -M -f -F "" -P "" BLOCKS mnt

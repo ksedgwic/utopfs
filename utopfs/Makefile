@@ -10,7 +10,8 @@ PRGEXE = 	utopfs
 
 
 SCRIPTS =	\
-			runutopfs \
+			runmkfs \
+			runmount \
 			$(NULL)
 
 CFG =		\

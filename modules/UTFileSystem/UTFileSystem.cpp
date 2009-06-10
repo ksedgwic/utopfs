@@ -83,6 +83,11 @@ UTFileSystem::fs_mount(string const & i_path,
     Digest dig(i_passphrase.data(), i_passphrase.size());
     m_ctxt.m_cipher.set_key(dig.data(), dig.size());
 
+    // Create zero blocks for sparse file reads.
+    m_ctxt.m_zdatobj = new ZeroDataBlockNode();
+    m_ctxt.m_zsinobj = new ZeroIndirectBlockNode(m_ctxt.m_zdatobj);
+    m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
+
     try
     {
         m_rdh = new RootDirNode(m_ctxt, rootref());
