@@ -371,13 +371,19 @@ DirNode::linksrc(Context & i_ctxt,
 int
 DirNode::linkdst(Context & i_ctxt,
                  string const & i_entry,
-                 BlockRef const & i_blkref)
+                 BlockRef const & i_blkref,
+                 bool i_force)
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
 
-    // The entry better not exist already.
+    // Does the target path exist already?
     if (fnh)
-        throw EEXIST;
+    {
+        if (i_force)
+            remove(i_entry);
+        else
+            throw EEXIST;
+    }
 
     // Insert into our Directory collection.
     Directory::Entry * de = m_dir.add_entry();

@@ -129,7 +129,8 @@ public:
 
     virtual int linkdst(Context & i_ctxt,
                         std::string const & i_entry,
-                        BlockRef const & i_blkref);
+                        BlockRef const & i_blkref,
+                        bool i_force);
 
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,

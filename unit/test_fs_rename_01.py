@@ -64,5 +64,5 @@ class Test_fs_rename_01:
 
     # Should be able to rename into a directory.
     self.fs.fs_mkdir("/adir", 0555)
-    self.fs.fs_rename("/bar/blat", "/adir")
+    self.fs.fs_rename("/bar/blat", "/adir/blat")
     st = self.fs.fs_getattr("/adir/blat");

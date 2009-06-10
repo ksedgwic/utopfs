@@ -429,17 +429,21 @@ private:
 class LinkDstTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:
-    LinkDstTraverseFunc(BlockRef const & i_blkref) : m_blkref(i_blkref) {}
+    LinkDstTraverseFunc(BlockRef const & i_blkref, bool i_force)
+        : m_blkref(i_blkref)
+        , m_force(i_force)
+    {}
 
     virtual void nt_parent(Context & i_ctxt,
                            DirNode & i_dn,
                            string const & i_entry)
     {
-        nt_retval(i_dn.linkdst(i_ctxt, i_entry, m_blkref));
+        nt_retval(i_dn.linkdst(i_ctxt, i_entry, m_blkref, m_force));
     }
 
 private:
     BlockRef	m_blkref;
+    bool		m_force;
 };
 
 int
@@ -461,7 +465,7 @@ UTFileSystem::fs_rename(string const & i_opath, string const & i_npath)
                              ops.first, ops.second, lstf);
 
         // Then add the blkref as the new name.
-        LinkDstTraverseFunc ldtf(lstf.blkref());
+        LinkDstTraverseFunc ldtf(lstf.blkref(), true);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              nps.first, nps.second, ldtf);
 
