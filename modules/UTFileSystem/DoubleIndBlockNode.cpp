@@ -53,12 +53,14 @@ DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
 
     static off_t const refspan = NUMREF * BLKSZ;
 
+    off_t startoff = max(i_rngoff, i_base);
+
     // Are we beyond the target range?
     if (i_base > i_rngoff + off_t(i_rngsize))
         goto done;
 
     // Figure out which index we start with.
-    for (off_t ndx = (i_rngoff - i_base) / refspan; ndx < off_t(NUMREF); ++ndx)
+    for (off_t ndx = (startoff - i_base) / refspan; ndx < off_t(NUMREF); ++ndx)
     {
         off_t off = i_base + (ndx * refspan);
 

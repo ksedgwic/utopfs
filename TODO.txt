@@ -29,3 +29,57 @@ Check object lifetimes of the python direntry callback objects.
 Notes
 ----------------------------------------------------------------
 
+2009-06-10 08:06:03.752 T2 UTFS  UTFileSystem.cpp:642 fs_read /utopfs/modules/FSBlockStore/Linux.DBGOBJ/FSBlockStore.o sz=28672 off=155648
+2009-06-10 08:06:03.752 T2 UTFS  DataBlockNode.cpp:34 CTOR 5LGNQPMT...
+2009-06-10 08:06:03.752 T2 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.753 T2 UTFS  IndirectBlockNode.cpp:34 CTOR CB5FPYHP...
+2009-06-10 08:06:03.753 T2 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.753 T2 UTFS  UTFileSystem.cpp:652 fs_read /utopfs/modules/FSBlockStore/Linux.DBGOBJ/FSBlockStore.o -> 12288
+
+2009-06-10 08:06:03.765 T4 UTFS  UTFileSystem.cpp:642 fs_read /utopfs/modules/FSBlockStore/Linux.DBGOBJ/FSBlockStore.o sz=53248 off=225280
+2009-06-10 08:06:03.765 T4 UTFS  DataBlockNode.cpp:34 CTOR 7OMNAOXO...
+2009-06-10 08:06:03.765 T4 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.765 T4 UTFS  DataBlockNode.cpp:34 CTOR SA4NHB47...
+2009-06-10 08:06:03.766 T4 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.766 T4 UTFS  DataBlockNode.cpp:34 CTOR TSUBOZFZ...
+2009-06-10 08:06:03.766 T4 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.766 T4 UTFS  DataBlockNode.cpp:34 CTOR DWSJMDIE...
+2009-06-10 08:06:03.766 T4 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.767 T4 UTFS  DataBlockNode.cpp:34 CTOR LCJFYDKR...
+2009-06-10 08:06:03.767 T4 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.767 T4 UTFS  DataBlockNode.cpp:34 CTOR DO66LQAY...
+2009-06-10 08:06:03.767 T4 FSBS  FSBlockStore.cpp:93 bs_get_block
+2009-06-10 08:06:03.767 T4 UTFS  UTFileSystem.cpp:652 fs_read /utopfs/modules/FSBlockStore/Linux.DBGOBJ/FSBlockStore.o -> 51752
+
+wanted: 155648 + 28672
+   got: 155648 + 12288
+
+wanted: 225280 + 53248
+   got: 225280 + 51752 = 277032
+
+# in utopfs
+  2273   4576 277032 FSBlockStore.o
+
+# reference outside
+  -rw-rw-r-- 1 ksedgwic ksedgwic 271K 2009-06-06 13:48 FSBlockStore.o
+                                 277000
+
+
+2009-06-10 08:06:03.823 T5 UTFS  UTFileSystem.cpp:642 fs_read /utopfs/modules/FSBlockStore/Linux.DBGOBJ/FSBSSvc.o sz=28672 off=65536
+2009-06-10 08:06:03.823 T5 UTFS  UTFileSystem.cpp:652 fs_read /utopfs/modules/FSBlockStore/Linux.DBGOBJ/FSBSSvc.o -> 27792
+
+65536 + 27792
+
+IndirectBlockNode.cpp:99
+
+UTFS::IndirectBlockNode::rb_traverse (this=0x6fb140, i_ctxt=@0x640838, i_fn=@0x6b7fe0, i_flags=0, i_base=167936, i_rngoff=155648, i_rngsize=28672, i_trav=@0x7ffff5dc81c0) at IndirectBlockNode.cpp:90
+(gdb) 
+(gdb) p refspan
+$9 = 8192
+(gdb) p i_rngoff
+$10 = 155648
+(gdb) p i_base
+$11 = 167936
+(gdb) 
+
+It's negative, doesn't get the iteration.
