@@ -252,6 +252,29 @@ FileSystem_fs_rename(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_link(FileSystemObject *self, PyObject *args)
+{
+    char * opath;
+    char * npath;
+    if (!PyArg_ParseTuple(args, "ss:fs_link", &opath, &npath))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_link(opath, npath);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
 FileSystem_fs_chmod(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -484,6 +507,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_rmdir",		(PyCFunction)FileSystem_fs_rmdir,		METH_VARARGS},
     {"fs_symlink",		(PyCFunction)FileSystem_fs_symlink,		METH_VARARGS},
     {"fs_rename",		(PyCFunction)FileSystem_fs_rename,		METH_VARARGS},
+    {"fs_link",			(PyCFunction)FileSystem_fs_link,		METH_VARARGS},
     {"fs_chmod",		(PyCFunction)FileSystem_fs_chmod,		METH_VARARGS},
     {"fs_truncate",		(PyCFunction)FileSystem_fs_truncate,	METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},

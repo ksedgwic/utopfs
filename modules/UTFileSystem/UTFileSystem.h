@@ -79,6 +79,10 @@ public:
                           std::string const & i_npath)
         throw (utp::InternalError);
 
+    virtual int fs_link(std::string const & i_opath,
+                        std::string const & i_npath)
+        throw (utp::InternalError);
+
     virtual int fs_chmod(std::string const & i_path,
                          mode_t i_mode)
         throw (utp::InternalError);

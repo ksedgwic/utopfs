@@ -494,6 +494,44 @@ UTFileSystem::fs_rename(string const & i_opath, string const & i_npath)
     }
 }
 
+int
+UTFileSystem::fs_link(string const & i_opath, string const & i_npath)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_link " << i_opath << ' ' << i_npath);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        pair<string, string> ops = DirNode::pathsplit(i_opath);
+        pair<string, string> nps = DirNode::pathsplit(i_npath);
+
+        // First determine the blkref of the source.
+        LinkSrcTraverseFunc lstf;
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT,
+                             ops.first, ops.second, lstf);
+
+        // Then add the blkref as the new name.
+        LinkDstTraverseFunc ldtf(lstf.blkref(), false);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
+                             nps.first, nps.second, ldtf);
+
+        // Update the root reference.
+        rootref(m_rdh->bn_blkref());
+
+        LOG(lgr, 6, "fs_link " << i_opath << ' ' << i_npath
+            << " -> " << ldtf.nt_retval());
+        return ldtf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_link " << i_opath << ' ' << i_npath
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
 class ChmodTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:
