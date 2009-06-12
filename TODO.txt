@@ -1,5 +1,3 @@
-Implement hard links.
-
 Make mknod more like mkdir ...
 
 Large directories >60 items not implemented.

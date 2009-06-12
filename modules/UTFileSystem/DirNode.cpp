@@ -237,26 +237,22 @@ DirNode::mknod(Context & i_ctxt,
                dev_t i_dev)
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    if (fnh)
+        throw EEXIST;
 
-    // This routine should look more like mkdir!
+    // Create a new file.
+    fnh = new FileNode(i_mode);
 
-    // We're creating this file.
-    if (!fnh)
-    {
-        // Create a new file.
-        fnh = new FileNode(i_mode);
+    // Persist it (sets the blkref).
+    fnh->bn_persist(i_ctxt);
 
-        // Persist it (sets the blkref).
-        fnh->bn_persist(i_ctxt);
+    // Insert into our Directory collection.
+    Directory::Entry * de = m_dir.add_entry();
+    de->set_name(i_entry);
+    de->set_blkref(fnh->bn_blkref());
 
-        // Insert into our Directory collection.
-        Directory::Entry * de = m_dir.add_entry();
-        de->set_name(i_entry);
-        de->set_blkref(fnh->bn_blkref());
-
-        // Insert into the cache.
-        m_cache.insert(make_pair(i_entry, fnh));
-    }
+    // Insert into the cache.
+    m_cache.insert(make_pair(i_entry, fnh));
 
     return 0;
 }
