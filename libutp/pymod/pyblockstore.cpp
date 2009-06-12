@@ -1,4 +1,8 @@
 #include <memory>
+#include <string>
+
+#include "Types.h"
+#include "BlockStoreFactory.h"
 
 #include "pyutpinit.h"
 #include "pyblockstore.h"
@@ -243,21 +247,68 @@ mkBlockStoreObject(BlockStoreHandle const & i_nmh)
 //----------------------------------------------------------------
 
 static PyObject *
-BlockStoreModule_instance(PyObject *self, PyObject *args)
+BlockStoreModule_create(PyObject *self, PyObject *i_args)
 {
-    if (!PyArg_ParseTuple(args, ":instance"))
+    char * name;
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "sO!:create", &name, &PyTuple_Type, &tup))
 		return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "BlockStore::create arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        return mkBlockStoreObject(BlockStore::instance());
+        return mkBlockStoreObject(BlockStoreFactory::create(name, args));
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+BlockStoreModule_open(PyObject *self, PyObject *i_args)
+{
+    char * name;
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "sO!:open", &name, &PyTuple_Type, &tup))
+		return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "BlockStore::open arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        return mkBlockStoreObject(BlockStoreFactory::open(name, args));
     }
     PYUTP_CATCH_ALL;
 }
 
 static PyMethodDef BlockStoreModule_methods[] = {
-	{"instance",		BlockStoreModule_instance,			METH_VARARGS},
+	{"create",		BlockStoreModule_create,			METH_VARARGS},
+    {"open",		BlockStoreModule_open,				METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

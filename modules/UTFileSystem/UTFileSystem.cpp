@@ -4,7 +4,7 @@
 #include <ace/Guard_T.h>
 
 #include "Base32.h"
-#include "BlockStore.h"
+#include "BlockStoreFactory.h"
 #include "Log.h"
 
 #include "utfslog.h"
@@ -41,8 +41,10 @@ UTFileSystem::fs_mkfs(string const & i_path,
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    m_ctxt.m_bsh = BlockStore::instance();
-    m_ctxt.m_bsh->bs_create(i_path);
+    // FIXME - This is temporary.
+    StringSeq args;
+    args.push_back(i_path);
+    m_ctxt.m_bsh = BlockStoreFactory::create("FSBS", args);
 
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
@@ -73,8 +75,10 @@ UTFileSystem::fs_mount(string const & i_path,
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    m_ctxt.m_bsh = BlockStore::instance();
-    m_ctxt.m_bsh->bs_open(i_path);
+    // FIXME - This is temporary.
+    StringSeq args;
+    args.push_back(i_path);
+    m_ctxt.m_bsh = BlockStoreFactory::open("FSBS", args);
 
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());

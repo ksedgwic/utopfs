@@ -17,15 +17,6 @@ namespace utp {
 class UTP_EXP BlockStore : public virtual RCObj
 {
 public:
-    /// Assign the singleton instance
-    ///
-    static void instance(BlockStoreHandle const & i_ash);
-
-    /// Retrieve the singleton instance
-    ///
-    static BlockStoreHandle instance()
-        throw(NotFoundError);
-
     /// Destructor
     ///
     virtual ~BlockStore();

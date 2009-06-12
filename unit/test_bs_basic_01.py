@@ -5,20 +5,18 @@ import shutil
 import utp
 import utp.BlockStore
 
+import CONFIG
+
 class TestBlockStore:
 
   def setup_class(self):
     self.bspath = "bs_basic_01"
-    # Find the BlockStore singleton.
-    self.bs = utp.BlockStore.instance()
-    
-    # Create the BlockStore at a path.
     shutil.rmtree(self.bspath,True)
-    self.bs.bs_create(self.bspath)
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
     
   def teardown_class(self):
     self.bs.bs_close()
-
+    shutil.rmtree(self.bspath,True)
 
   def test_put_and_get_block(self):    
         

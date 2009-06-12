@@ -37,6 +37,7 @@ SCRIPTS =	\
 			$(NULL)
 
 CFG =		\
+			CONFIG.py \
 			svc.conf \
 			$(NULL)
 

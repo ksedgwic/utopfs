@@ -32,11 +32,11 @@ extern PYUTP_EXP PyObject * ParseErrorObject;
     
 extern PYUTP_EXP void PyError_FromException(std::exception const & ex);
 
-#define PYUTP_TRY                            \
+#define PYUTP_TRY                               \
     do {                                        \
     try {
 
-#define PYUTP_CATCH_ALL                      \
+#define PYUTP_CATCH_ALL                         \
     }                                           \
         catch(std::exception const & ex) {      \
             utp::PyError_FromException(ex);     \

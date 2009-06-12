@@ -1,8 +1,8 @@
-#ifndef FSBSSvc_h__
-#define FSBSSvc_h__
+#ifndef FSBSFactory_h__
+#define FSBSFactory_h__
 
-/// @file FSBSSvc.h
-/// FSBS Service
+/// @file FSBSFactory.h
+/// FSBS Factory
 
 #include <ace/svc_export.h>
 #include <ace/Service_Object.h>
@@ -10,17 +10,20 @@
 
 #include "utpfwd.h"
 
+#include "BlockStoreFactory.h"
+
 #include "fsbsexp.h"
 
-class FSBS_EXP FSBSSvc
+class FSBS_EXP FSBSFactory
     : public ACE_Service_Object
+    , public utp::BlockStoreFactory
 {
 public:
     /// Default constructor.
-    FSBSSvc();
+    FSBSFactory();
 
     /// Destructor
-    virtual ~FSBSSvc();
+    virtual ~FSBSFactory();
 
     /// ACE_Service_Object methods.
 
@@ -32,11 +35,17 @@ public:
 
     virtual int resume(void);
 
+    /// BlockStoreFactory methods.
+
+    virtual utp::BlockStoreHandle bsf_create(utp::StringSeq const & i_args);
+
+    virtual utp::BlockStoreHandle bsf_open(utp::StringSeq const & i_args);
+
 protected:
 };
 
-ACE_STATIC_SVC_DECLARE(FSBSSvc)
-ACE_SVC_FACTORY_DECLARE(FSBSSvc)
+ACE_STATIC_SVC_DECLARE(FSBSFactory)
+ACE_SVC_FACTORY_DECLARE(FSBSFactory)
 
 // Local Variables:
 // mode: C++
@@ -45,4 +54,4 @@ ACE_SVC_FACTORY_DECLARE(FSBSSvc)
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // FSBSSvc_h__
+#endif // FSBSFactory_h__

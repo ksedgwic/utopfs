@@ -4,8 +4,9 @@ include $(ROOTDIR)/config/define.mk
 
 LIBSRC =	\
 			Base32.cpp \
-			BlockStore.cpp \
 			BlockCipher.cpp \
+			BlockStore.cpp \
+			BlockStoreFactory.cpp \
 			Digest.cpp \
 			Except.cpp \
 			FileSystem.cpp \
@@ -16,6 +17,7 @@ LIBSRC =	\
 			Random.cpp \
 			StreamCipher.cpp \
 			T64.cpp \
+			utplog.cpp \
 			$(NULL)
 
 LIBSO =		libutp

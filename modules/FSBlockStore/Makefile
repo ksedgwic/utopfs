@@ -3,9 +3,9 @@ ROOTDIR =	../..
 include $(ROOTDIR)/config/define.mk
 
 LIBSRC += 	\
-			FSBSSvc.cpp \
-			fsbslog.cpp \
 			FSBlockStore.cpp \
+			FSBSFactory.cpp \
+			fsbslog.cpp \
 			$(NULL)
 
 MODSO =		UTPFS-FSBS

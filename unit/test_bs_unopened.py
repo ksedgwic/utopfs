@@ -6,6 +6,7 @@ import os
 import utp
 import utp.BlockStore
 
+import CONFIG
 
 class TestUnopenedBlockStore:
 
@@ -13,29 +14,32 @@ class TestUnopenedBlockStore:
     self.bspath = "fs_unopened.bs"
     shutil.rmtree(self.bspath,True)
 
-    # Find the BlockStore singleton.
-    self.bs = utp.BlockStore.instance()
-    
-
   def teardown_class(self):
-    self.bs.bs_close()    
+    pass
     
   def test_open_on_nonexistent(self):
     # If you open an non-existent blockstore you should get
     # a NotFound Exception.
-    py.test.raises(Exception,"self.bs.bs_open(\"NOEXIST\")")
+    py.test.raises(utp.NotFoundError,
+                   utp.BlockStore.open, CONFIG.BSTYPE, ("NOEXIST",))
     
   def test_create(self):    
     shutil.rmtree(self.bspath,True)  
-    #  self.remove_blockstore()
-    self.bs.bs_create(self.bspath)  
-    self.bs.bs_close()
+
+    bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
+    bs.bs_close()
+
+    shutil.rmtree(self.bspath,True)  
   
   def test_create_on_prexisting_should_throw_error(self):
     shutil.rmtree(self.bspath,True)  
-    self.bs.bs_create(self.bspath)
-    py.test.raises(Exception,"self.bs.bs_create(self.bspath)")
-    
-    
-    
+
+    bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
+
+    # This is bogus, can't make NotUniqueError work here!
+    py.test.raises(Exception,
+                   utp.BlockStore.create, CONFIG.BSTYPE, (self.bspath,))
+    bs.bs_close()
+
+    shutil.rmtree(self.bspath,True)  
 

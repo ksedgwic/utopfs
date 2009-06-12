@@ -2,6 +2,7 @@
 #define utp_Types_h__
 
 #include <vector>
+#include <string>
 
 namespace utp {
 
@@ -15,6 +16,8 @@ typedef signed long long	int64;
 typedef unsigned long long	uint64;
 
 typedef std::vector<uint8> OctetSeq;
+
+typedef std::vector<std::string> StringSeq;
 
 } // end namespace utp
 
