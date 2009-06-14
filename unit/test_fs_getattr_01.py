@@ -32,7 +32,9 @@ class Test_fs_getattr_01:
     self.fs.fs_mknod("/foo/bar", 0666, 0)
 
   def teardown_class(self):
-    shutil.rmtree(self.bspath,True) 
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    utp.FileSystem.logoff()
+    shutil.rmtree(self.bspath, True) 
 
   def test_can_getattr_root(self):
     # We should be able to stat "/"

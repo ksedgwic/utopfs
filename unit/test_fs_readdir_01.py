@@ -54,6 +54,8 @@ class Test_fs_readdir_01:
     self.fs.fs_mknod("/foo/bar", 0666, 0)
 
   def teardown_class(self):
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    utp.FileSystem.logoff()
     shutil.rmtree(self.bspath,True) 
 
   def test_can_readdir_root(self):

@@ -1,6 +1,7 @@
 #include <memory>
 #include <vector>
 
+#include "Log.h"
 #include "FileSystemFactory.h"
 
 #include "pyblockstore.h"
@@ -652,9 +653,27 @@ FileSystemModule_mount(PyObject *self, PyObject *i_args)
     PYUTP_CATCH_ALL;
 }
 
+static PyObject *
+FileSystemModule_logoff(PyObject *self, PyObject *i_args)
+{
+    if (!PyArg_ParseTuple(i_args, ":logoff"))
+		return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        theRootLogCategory.level(-1, true);
+    }
+    PYUTP_CATCH_ALL;
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyMethodDef FileSystemModule_methods[] = {
 	{"mkfs",			FileSystemModule_mkfs,			METH_VARARGS},
 	{"mount",			FileSystemModule_mount,			METH_VARARGS},
+	{"logoff",			FileSystemModule_logoff,		METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

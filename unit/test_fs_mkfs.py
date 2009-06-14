@@ -24,6 +24,8 @@ class Test_fs_mkfs:
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "", CONFIG.FSARGS)
 
   def teardown_class(self):
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    utp.FileSystem.logoff()
     shutil.rmtree(self.bspath,True) 
 
   def test_hasno_foodir(self):

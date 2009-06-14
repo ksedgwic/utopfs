@@ -30,6 +30,8 @@ class Test_fs_symlink_02:
                                   "", "", CONFIG.FSARGS)
 
   def teardown_class(self):
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    utp.FileSystem.logoff()
     shutil.rmtree(self.bspath,True) 
 
   def test_symlink(self):
