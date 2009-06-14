@@ -45,7 +45,7 @@ class Test_fs_write_01:
     assert st[ST_SIZE] == 8
     
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

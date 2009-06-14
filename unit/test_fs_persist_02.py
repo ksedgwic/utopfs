@@ -45,7 +45,7 @@ class Test_fs_persist_02:
     assert S_ISREG(st[ST_MODE])
     
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

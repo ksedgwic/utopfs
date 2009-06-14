@@ -50,7 +50,7 @@ class Test_fs_unlink_02:
       assert ex.errno == ENOENT
 
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

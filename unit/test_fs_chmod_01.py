@@ -58,7 +58,7 @@ class Test_fs_chmod_01:
     assert st[ST_MODE] & 0777 == 0510
 
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

@@ -46,7 +46,7 @@ public:
                utp::ValueError,
                utp::NotFoundError);
 
-    virtual void fs_unmount()
+    virtual void fs_umount()
         throw (utp::InternalError);
 
     virtual int fs_getattr(std::string const & i_path,

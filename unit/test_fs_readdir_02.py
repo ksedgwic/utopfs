@@ -56,7 +56,7 @@ class Test_fs_readdir_01:
     self.fs.fs_mknod("/foo/bar", 0666, 0)
 
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

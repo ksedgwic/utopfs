@@ -100,10 +100,10 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 }
 
 void
-UTFileSystem::fs_unmount()
+UTFileSystem::fs_umount()
     throw (InternalError)
 {
-    LOG(lgr, 4, "fs_unmount ");
+    LOG(lgr, 4, "fs_umount ");
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 

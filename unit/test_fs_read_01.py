@@ -51,7 +51,7 @@ class Test_fs_read_01:
     assert str(buf) == "testdata"
     
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

@@ -34,7 +34,7 @@ class Test_fs_fsid_01:
     self.fs.fs_mknod("/first", 0666, 0)
 
     # Unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

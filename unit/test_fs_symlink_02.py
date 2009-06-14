@@ -64,7 +64,7 @@ class Test_fs_symlink_02:
     self.fs.fs_symlink("/foo/bar", "/foobar")
 
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

@@ -64,7 +64,7 @@ class Test_fs_rmdir_01:
     st = self.fs.fs_getattr("/bar");
 
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

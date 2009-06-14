@@ -83,7 +83,7 @@ class Test_fs_truncate_02:
     # ---------------- remount ----------------
 
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

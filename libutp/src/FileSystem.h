@@ -72,7 +72,7 @@ public:
     ///
     /// @throw InternalError An non-recoverable error occurred.
     ///
-    virtual void fs_unmount()
+    virtual void fs_umount()
         throw (utp::InternalError) = 0;
 
     /// Get file attributes

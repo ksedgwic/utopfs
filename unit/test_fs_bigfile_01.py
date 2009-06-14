@@ -60,7 +60,7 @@ class Test_fs_bigfile_01:
     assert str(buf)[18000-9:18000-1] == "00001999"
 
     # Now we unmount the filesystem.
-    self.fs.fs_unmount()
+    self.fs.fs_umount()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

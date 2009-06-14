@@ -19,15 +19,15 @@ static PyObject * FileSystemErrorObject;
 /* FileSystem methods */
 
 static PyObject *
-FileSystem_fs_unmount(FileSystemObject *self, PyObject *args)
+FileSystem_fs_umount(FileSystemObject *self, PyObject *args)
 {
-    if (!PyArg_ParseTuple(args, ":fs_unmount"))
+    if (!PyArg_ParseTuple(args, ":fs_umount"))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_unmount();
+        self->m_fsh->fs_umount();
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -461,7 +461,7 @@ FileSystem_fs_utime(FileSystemObject *self, PyObject *args)
 }
 
 static PyMethodDef FileSystem_methods[] = {
-    {"fs_unmount",		(PyCFunction)FileSystem_fs_unmount,		METH_VARARGS},
+    {"fs_umount",		(PyCFunction)FileSystem_fs_umount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
     {"fs_readlink",		(PyCFunction)FileSystem_fs_readlink,	METH_VARARGS},
     {"fs_mknod",		(PyCFunction)FileSystem_fs_mknod,		METH_VARARGS},
