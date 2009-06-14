@@ -1,12 +1,16 @@
 import sys
 import random
 import py
+import shutil
+
 from os import *
 from stat import *
 
-import shutil
+import CONFIG
 import utp
+import utp.BlockStore
 import utp.FileSystem
+
 import utp.PyDirEntryFunc
 
 # This callback is constructed with a list of expected entries.  It
@@ -37,11 +41,11 @@ class Test_fs_readdir_01:
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
-    # Find the FileSystem singleton.
-    self.fs = utp.FileSystem.instance()
-    
-    # Make the filesystem.
-    self.fs.fs_mkfs(self.bspath, "", "")
+    # Create the filesystem
+    bsargs = (self.bspath,) + CONFIG.BSARGS
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
+    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
+                                  "", "", CONFIG.FSARGS)
 
     # Make a directory.
     self.fs.fs_mkdir("/foo", 0755)

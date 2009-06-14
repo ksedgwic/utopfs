@@ -31,20 +31,18 @@ UTFileSystem::~UTFileSystem()
 }
 
 void
-UTFileSystem::fs_mkfs(string const & i_path,
+UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
                       string const & i_fsid,
-                      string const & i_passphrase)
+                      string const & i_passphrase,
+                      StringSeq const & i_args)
     throw (InternalError,
            ValueError)
 {
-    LOG(lgr, 4, "fs_mkfs " << i_fsid << ' ' << i_path);
+    LOG(lgr, 4, "fs_mkfs " << i_fsid);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    // FIXME - This is temporary.
-    StringSeq args;
-    args.push_back(i_path);
-    m_ctxt.m_bsh = BlockStoreFactory::create("FSBS", args);
+    m_ctxt.m_bsh = i_bsh;
 
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
@@ -64,21 +62,19 @@ UTFileSystem::fs_mkfs(string const & i_path,
 }
 
 void
-UTFileSystem::fs_mount(string const & i_path,
+UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
                        string const & i_fsid,
-                       string const & i_passphrase)
+                       string const & i_passphrase,
+                       StringSeq const & i_args)
     throw (InternalError,
            ValueError,
            NotFoundError)
 {
-    LOG(lgr, 4, "fs_mount " << i_fsid << ' ' << i_path);
+    LOG(lgr, 4, "fs_mount " << i_fsid);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    // FIXME - This is temporary.
-    StringSeq args;
-    args.push_back(i_path);
-    m_ctxt.m_bsh = BlockStoreFactory::open("FSBS", args);
+    m_ctxt.m_bsh = i_bsh;
 
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());

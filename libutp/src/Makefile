@@ -10,6 +10,7 @@ LIBSRC =	\
 			Digest.cpp \
 			Except.cpp \
 			FileSystem.cpp \
+			FileSystemFactory.cpp \
 			FormatterBase.cpp \
 			Log.cpp \
 			LogField.cpp \

@@ -27,37 +27,30 @@ public:
                                off_t i_off) = 0;
     };
 
-    /// Assign the singleton instance
-    ///
-    static void instance(FileSystemHandle const & i_ash);
-
-    /// Retrieve the singleton instance
-    ///
-    static FileSystemHandle instance()
-        throw (utp::NotFoundError);
-
     /// Destructor
     ///
     virtual ~FileSystem();
 
     /// Create a filesystem
     ///
-    /// @param[in] i_path Path for the filesystem block device.
+    /// @param[in] i_bsh BlockStore to hold filesystem data.
     /// @param[in] i_fsid FileSystem identifier.
     /// @param[in] i_passphrase FileSystem passphrase.
+    /// @param[in] i_args FileSystem specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError Something is wrong with the path argument.
     ///
-    virtual void fs_mkfs(std::string const & i_path,
+    virtual void fs_mkfs(BlockStoreHandle const & i_bsh,
                          std::string const & i_fsid,
-                         std::string const & i_passphrase)
+                         std::string const & i_passphrase,
+                         utp::StringSeq const & i_args)
         throw (utp::InternalError,
                utp::ValueError) = 0;
 
     /// Mount an existing filesystem
     ///
-    /// @param[in] i_path Path for the filesystem block device.
+    /// @param[in] i_bsh BlockStore holding filesystem data.
     /// @param[in] i_fsid FileSystem identifier.
     /// @param[in] i_passphrase FileSystem passphrase.
     ///
@@ -65,9 +58,10 @@ public:
     /// @throw ValueError Something is wrong with the path argument.
     /// @throw NotFoundError Specified filesystem was not found.
     ///
-    virtual void fs_mount(std::string const & i_path,
+    virtual void fs_mount(BlockStoreHandle const & i_bsh,
                           std::string const & i_fsid,
-                          std::string const & i_passphrase)
+                          std::string const & i_passphrase,
+                          utp::StringSeq const & i_args)
         throw (utp::InternalError,
                utp::ValueError,
                utp::NotFoundError) = 0;

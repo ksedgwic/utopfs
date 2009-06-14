@@ -31,15 +31,17 @@ public:
 
     // FileSystem methods.
 
-    virtual void fs_mkfs(std::string const & i_path,
+    virtual void fs_mkfs(utp::BlockStoreHandle const & i_bsh,
                          std::string const & i_fsid,
-                         std::string const & i_passphrase)
+                         std::string const & i_passphrase,
+                         utp::StringSeq const & i_args)
         throw (utp::InternalError,
                utp::ValueError);
 
-    virtual void fs_mount(std::string const & i_path,
+    virtual void fs_mount(utp::BlockStoreHandle const & i_bsh,
                           std::string const & i_fsid,
-                          std::string const & i_passphrase)
+                          std::string const & i_passphrase,
+                          utp::StringSeq const & i_args)
         throw (utp::InternalError,
                utp::ValueError,
                utp::NotFoundError);

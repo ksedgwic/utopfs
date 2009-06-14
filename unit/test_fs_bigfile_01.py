@@ -1,13 +1,15 @@
 import sys
 import random
 import py
+import shutil
+
 from os import *
 from stat import *
 
-import shutil
+import CONFIG
 import utp
+import utp.BlockStore
 import utp.FileSystem
-import utp.PyDirEntryFunc
 
 # This test ensures that multiple block files are working correctly.
 
@@ -19,11 +21,11 @@ class Test_fs_bigfile_01:
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
-    # Find the FileSystem singleton.
-    self.fs = utp.FileSystem.instance()
-    
-    # Make the filesystem.
-    self.fs.fs_mkfs(self.bspath, "", "")
+    # Create the filesystem
+    bsargs = (self.bspath,) + CONFIG.BSARGS
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
+    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
+                                  "", "", CONFIG.FSARGS)
 
   def teardown_class(self):
     shutil.rmtree(self.bspath,True) 
@@ -61,7 +63,10 @@ class Test_fs_bigfile_01:
     self.fs.fs_unmount()
 
     # Now mount it again.
-    self.fs.fs_mount(self.bspath, "", "")
+    bsargs = (self.bspath,) + CONFIG.BSARGS
+    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
+    self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs,
+                                   "", "", CONFIG.FSARGS)
 
     # Stat should show the size.
     st = self.fs.fs_getattr("/bigfile");

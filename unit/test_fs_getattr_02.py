@@ -1,11 +1,14 @@
 import sys
 import random
 import py
+import shutil
+
 from os import *
 from stat import *
 
-import shutil
+import CONFIG
 import utp
+import utp.BlockStore
 import utp.FileSystem
 
 # Similar to fs_getattr_01 but tests after re-mounting.
@@ -18,11 +21,11 @@ class Test_fs_getattr_01:
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
-    # Find the FileSystem singleton.
-    self.fs = utp.FileSystem.instance()
-    
-    # Make the filesystem.
-    self.fs.fs_mkfs(self.bspath, "", "")
+    # Create the filesystem
+    bsargs = (self.bspath,) + CONFIG.BSARGS
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
+    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
+                                  "", "", CONFIG.FSARGS)
 
     # Make a directory.
     self.fs.fs_mkdir("/foo", 0755)
@@ -34,7 +37,11 @@ class Test_fs_getattr_01:
     self.fs.fs_unmount()
 
     # Now mount it again.
-    self.fs.fs_mount(self.bspath, "", "")
+    bsargs = (self.bspath,) + CONFIG.BSARGS
+    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
+    self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs,
+                                   "", "", CONFIG.FSARGS)
+
 
   def teardown_class(self):
     shutil.rmtree(self.bspath,True) 

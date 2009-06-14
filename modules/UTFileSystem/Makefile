@@ -22,7 +22,7 @@ LIBSRC += 	\
 			SymlinkNode.cpp \
 			UTFileSystem.cpp \
 			utfslog.cpp \
-			UTFSSvc.cpp \
+			UTFSFactory.cpp \
 			$(NULL)
 
 MODSO =		UTPFS-UTFS

@@ -1,6 +1,9 @@
 #include <memory>
 #include <vector>
 
+#include "FileSystemFactory.h"
+
+#include "pyblockstore.h"
 #include "pydirentryfunc.h"
 #include "pyfilesystem.h"
 #include "pystat.h"
@@ -14,44 +17,6 @@ namespace utp {
 static PyObject * FileSystemErrorObject;
 
 /* FileSystem methods */
-
-static PyObject *
-FileSystem_fs_mkfs(FileSystemObject *self, PyObject *args)
-{
-    char * path;
-    char * fsid;
-    char * passphrase;
-    if (!PyArg_ParseTuple(args, "sss:fs_mkfs", &path, &fsid, &passphrase))
-        return NULL;
-
-    PYUTP_TRY
-    {
-        PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_mkfs(path, fsid, passphrase);
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PYUTP_CATCH_ALL;
-}
-
-static PyObject *
-FileSystem_fs_mount(FileSystemObject *self, PyObject *args)
-{
-    char * path;
-    char * fsid;
-    char * passphrase;
-    if (!PyArg_ParseTuple(args, "sss:fs_mount", &path, &fsid, &passphrase))
-        return NULL;
-
-    PYUTP_TRY
-    {
-        PYUTP_THREADED_SCOPE scope;
-        self->m_fsh->fs_mount(path, fsid, passphrase);
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PYUTP_CATCH_ALL;
-}
 
 static PyObject *
 FileSystem_fs_unmount(FileSystemObject *self, PyObject *args)
@@ -496,8 +461,6 @@ FileSystem_fs_utime(FileSystemObject *self, PyObject *args)
 }
 
 static PyMethodDef FileSystem_methods[] = {
-    {"fs_mkfs",			(PyCFunction)FileSystem_fs_mkfs,		METH_VARARGS},
-    {"fs_mount",		(PyCFunction)FileSystem_fs_mount,		METH_VARARGS},
     {"fs_unmount",		(PyCFunction)FileSystem_fs_unmount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
     {"fs_readlink",		(PyCFunction)FileSystem_fs_readlink,	METH_VARARGS},
@@ -604,21 +567,94 @@ mkFileSystemObject(FileSystemHandle const & i_nmh)
 //----------------------------------------------------------------
 
 static PyObject *
-FileSystemModule_instance(PyObject *self, PyObject *args)
+FileSystemModule_mkfs(PyObject *self, PyObject *i_args)
 {
-    if (!PyArg_ParseTuple(args, ":instance"))
+    char * name;
+    char * fsid;
+    char * pass;
+    PyObject * bsobj;
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "sO!ssO!:mkfs",
+                          &name,
+                          &BlockStore_Type, &bsobj,
+                          &fsid, &pass,
+                          &PyTuple_Type, &tup))
 		return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "FileSystem::mkfs arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
+
+    BlockStoreObject * bsop = (BlockStoreObject *) bsobj;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        return mkFileSystemObject(FileSystem::instance());
+        return mkFileSystemObject(FileSystemFactory::mkfs(name,
+                                                          bsop->m_bsh,
+                                                          fsid,
+                                                          pass,
+                                                          args));
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+FileSystemModule_mount(PyObject *self, PyObject *i_args)
+{
+    char * name;
+    char * fsid;
+    char * pass;
+    PyObject * bsobj;
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "sO!ssO!:mount",
+                          &name,
+                          &BlockStore_Type, &bsobj,
+                          &fsid, &pass,
+                          &PyTuple_Type, &tup))
+		return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "FileSystem::mount arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
+
+    BlockStoreObject * bsop = (BlockStoreObject *) bsobj;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        return mkFileSystemObject(FileSystemFactory::mount(name,
+                                                           bsop->m_bsh,
+                                                           fsid,
+                                                           pass,
+                                                           args));
     }
     PYUTP_CATCH_ALL;
 }
 
 static PyMethodDef FileSystemModule_methods[] = {
-	{"instance",		FileSystemModule_instance,			METH_VARARGS},
+	{"mkfs",			FileSystemModule_mkfs,			METH_VARARGS},
+	{"mount",			FileSystemModule_mount,			METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

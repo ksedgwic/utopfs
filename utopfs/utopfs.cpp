@@ -18,6 +18,8 @@
 
 #include "Except.h"
 #include "FileSystem.h"
+#include "FileSystemFactory.h"
+#include "BlockStoreFactory.h"
 
 using namespace std;
 using namespace utp;
@@ -39,6 +41,7 @@ struct utopfs
     string fsid;
     string passphrase;
     bool do_mkfs;
+    FileSystemHandle fsh;
 };
 
 static struct utopfs utopfs;
@@ -65,7 +68,7 @@ utopfs_getattr(char const * i_path,
 {
     try
     {
-        return FileSystem::instance()->fs_getattr(i_path, stbuf);
+        return utopfs.fsh->fs_getattr(i_path, stbuf);
     }
     catch (utp::Exception const & ex)
     {
@@ -80,7 +83,7 @@ utopfs_readlink(char const * i_path,
 {
     try
     {
-        return FileSystem::instance()->fs_readlink(i_path, o_obuf, i_size);
+        return utopfs.fsh->fs_readlink(i_path, o_obuf, i_size);
     }
     catch (utp::Exception const & ex)
     {
@@ -93,7 +96,7 @@ utopfs_mknod(char const * i_path, mode_t i_mode, dev_t i_dev)
 {
     try
     {
-        return FileSystem::instance()->fs_mknod(i_path, i_mode, i_dev);
+        return utopfs.fsh->fs_mknod(i_path, i_mode, i_dev);
     }
     catch (utp::Exception const & ex)
     {
@@ -106,7 +109,7 @@ utopfs_mkdir(char const * i_path, mode_t i_mode)
 {
     try
     {
-        return FileSystem::instance()->fs_mkdir(i_path, i_mode);
+        return utopfs.fsh->fs_mkdir(i_path, i_mode);
     }
     catch (utp::Exception const & ex)
     {
@@ -119,7 +122,7 @@ utopfs_unlink(char const * i_path)
 {
     try
     {
-        return FileSystem::instance()->fs_unlink(i_path);
+        return utopfs.fsh->fs_unlink(i_path);
     }
     catch (utp::Exception const & ex)
     {
@@ -132,7 +135,7 @@ utopfs_rmdir(char const * i_path)
 {
     try
     {
-        return FileSystem::instance()->fs_rmdir(i_path);
+        return utopfs.fsh->fs_rmdir(i_path);
     }
     catch (utp::Exception const & ex)
     {
@@ -145,7 +148,7 @@ utopfs_symlink(char const * i_opath, char const * i_npath)
 {
     try
     {
-        return FileSystem::instance()->fs_symlink(i_opath, i_npath);
+        return utopfs.fsh->fs_symlink(i_opath, i_npath);
     }
     catch (utp::Exception const & ex)
     {
@@ -158,7 +161,7 @@ utopfs_rename(char const * i_opath, char const * i_npath)
 {
     try
     {
-        return FileSystem::instance()->fs_rename(i_opath, i_npath);
+        return utopfs.fsh->fs_rename(i_opath, i_npath);
     }
     catch (utp::Exception const & ex)
     {
@@ -171,7 +174,7 @@ utopfs_link(char const * i_opath, char const * i_npath)
 {
     try
     {
-        return FileSystem::instance()->fs_link(i_opath, i_npath);
+        return utopfs.fsh->fs_link(i_opath, i_npath);
     }
     catch (utp::Exception const & ex)
     {
@@ -184,7 +187,7 @@ utopfs_chmod(char const * i_path, mode_t i_mode)
 {
     try
     {
-        return FileSystem::instance()->fs_chmod(i_path, i_mode);
+        return utopfs.fsh->fs_chmod(i_path, i_mode);
     }
     catch (utp::Exception const & ex)
     {
@@ -197,7 +200,7 @@ utopfs_truncate(char const * i_path, off_t i_size)
 {
     try
     {
-        return FileSystem::instance()->fs_truncate(i_path, i_size);
+        return utopfs.fsh->fs_truncate(i_path, i_size);
     }
     catch (utp::Exception const & ex)
     {
@@ -210,7 +213,7 @@ utopfs_open(char const * i_path, struct fuse_file_info *fi)
 {
     try
     {
-        return FileSystem::instance()->fs_open(i_path, fi->flags);
+        return utopfs.fsh->fs_open(i_path, fi->flags);
     }
     catch (utp::Exception const & ex)
     {
@@ -227,7 +230,7 @@ utopfs_read(char const * i_path,
 {
     try
     {
-        return FileSystem::instance()->fs_read(i_path, buf, size, offset);
+        return utopfs.fsh->fs_read(i_path, buf, size, offset);
     }
     catch (utp::Exception const & ex)
     {
@@ -244,7 +247,7 @@ utopfs_write(char const * i_path,
 {
     try
     {
-        return FileSystem::instance()->fs_write(i_path, buf, size, offset);
+        return utopfs.fsh->fs_write(i_path, buf, size, offset);
     }
     catch (utp::Exception const & ex)
     {
@@ -262,7 +265,7 @@ utopfs_readdir(char const * i_path,
     try
     {
         MyDirEntryFunc mdef(buf, filler);
-        return FileSystem::instance()->fs_readdir(i_path, offset, mdef);
+        return utopfs.fsh->fs_readdir(i_path, offset, mdef);
     }
     catch (utp::Exception const & ex)
     {
@@ -276,7 +279,7 @@ utopfs_access(char const * i_path,
 {
     try
     {
-        return FileSystem::instance()->fs_access(i_path, i_mode);
+        return utopfs.fsh->fs_access(i_path, i_mode);
     }
     catch (utp::Exception const & ex)
     {
@@ -289,7 +292,7 @@ utopfs_utimens(char const * i_path, struct timespec const i_tv[2])
 {
     try
     {
-        return FileSystem::instance()->fs_utime(i_path, i_tv[0], i_tv[1]);
+        return utopfs.fsh->fs_utime(i_path, i_tv[0], i_tv[1]);
     }
     catch (utp::Exception const & ex)
     {
@@ -437,13 +440,31 @@ main(int argc, char ** argv)
     try
     {
         if (utopfs.do_mkfs)
-            FileSystem::instance()->fs_mkfs(utopfs.path,
-                                            utopfs.fsid,
-                                            utopfs.passphrase);
+        {
+            StringSeq bsargs;
+            bsargs.push_back(utopfs.path);
+            BlockStoreHandle bsh = BlockStoreFactory::create("FSBS", bsargs);
+
+            StringSeq fsargs;
+            utopfs.fsh = FileSystemFactory::mkfs("UTFS",
+                                                 bsh,
+                                                 utopfs.fsid,
+                                                 utopfs.passphrase,
+                                                 fsargs);
+        }
         else
-            FileSystem::instance()->fs_mount(utopfs.path,
-                                             utopfs.fsid,
-                                             utopfs.passphrase);
+        {
+            StringSeq bsargs;
+            bsargs.push_back(utopfs.path);
+            BlockStoreHandle bsh = BlockStoreFactory::open("FSBS", bsargs);
+
+            StringSeq fsargs;
+            utopfs.fsh = FileSystemFactory::mount("UTFS",
+                                                  bsh,
+                                                  utopfs.fsid,
+                                                  utopfs.passphrase,
+                                                  fsargs);
+        }
     }
     catch (utp::Exception const & ex)
     {
