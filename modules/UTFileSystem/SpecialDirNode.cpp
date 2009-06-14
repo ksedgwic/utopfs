@@ -10,7 +10,7 @@ using namespace utp;
 
 namespace {
 
-    char const * utopfs_ver_str = "utopfs version 0.1\n";
+    char const * utopfs_ver_str = "utopfs version 0.2\n";
 
 } // end namespace
 

@@ -1,3 +1,7 @@
+What happens w/ unlinked open references? (open, unlink, close).
+
+Why is the DTOR stuff coming out on stderr in the unit test framework?
+
 Figure out the problem w/ matching exception types in python.  Search
 for BOGUS in the unit directory ...
 
@@ -5,8 +9,6 @@ Large directories >60 items not implemented.
 
 The "access" call implementation is trivially permissive.  Fix this or
 get rid of it ...
-
-Change FileSystem module interface to factory instead of service.
 
 RPM packaging.
 
