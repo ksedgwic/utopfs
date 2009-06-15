@@ -3,6 +3,8 @@
 
 /// @file BlockNode.h
 /// Utopia FileSystem Block Node Object.
+///
+/// See README.txt for inheritance diagram.
 
 #include <vector>
 
@@ -28,7 +30,7 @@ public:
     static off_t const BLKSZ = 8192;
 
     // Default constructor.
-    BlockNode() {}
+    BlockNode();
 
     // Constructor which initializes the cached digest.
     BlockNode(BlockRef const & i_ref);
@@ -56,8 +58,15 @@ public:
     //
     virtual size_t bn_size() const = 0;
 
+    /// Set the dirty state of this object.
+    virtual void isdirty(bool i_isdirty) { m_isdirty = i_isdirty; }
+
+    /// Returns the dirty state of this object.
+    virtual bool isdirty() const { return m_isdirty; }
+
 protected:
     BlockRef			m_ref;
+    bool				m_isdirty;
  };
 
 } // namespace UTFS

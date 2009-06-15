@@ -3,6 +3,8 @@
 
 /// @file DirNode.h
 /// Utopia FileSystem Directory Node Object.
+///
+/// See README.txt for inheritance diagram.
 
 #include <map>
 #include <string>

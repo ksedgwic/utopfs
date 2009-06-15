@@ -5,6 +5,8 @@
 /// Utopia FileSystem Special Directory Node Object.
 ///
 /// This object implements the special ".utopfs" directory.
+///
+/// See README.txt for inheritance diagram.
 
 #include <string>
 

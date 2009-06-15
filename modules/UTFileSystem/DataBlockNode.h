@@ -3,6 +3,8 @@
 
 /// @file DataBlockNode.h
 /// Utopia FileSystem Block Node Object.
+///
+/// See README.txt for inheritance diagram.
 
 #include <vector>
 

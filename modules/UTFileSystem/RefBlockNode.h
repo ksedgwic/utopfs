@@ -3,6 +3,8 @@
 
 /// @file RefBlockNode.h
 /// Utopia FileSystem Reference Block Node Object.
+///
+/// See README.txt for inheritance diagram.
 
 #include <vector>
 

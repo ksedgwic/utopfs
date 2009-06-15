@@ -3,6 +3,8 @@
 
 /// @file BlockNode.h
 /// Utopia FileSystem Indirect Block Node Object.
+///
+/// See README.txt for inheritance diagram.
 
 #include <vector>
 

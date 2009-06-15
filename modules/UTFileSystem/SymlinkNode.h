@@ -5,6 +5,8 @@
 /// Utopia FileSystem Symlink Node Object.
 ///
 /// This object implements symlinks.
+///
+/// See README.txt for inheritance diagram.
 
 #include <string>
 

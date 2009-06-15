@@ -3,6 +3,8 @@
 
 /// @file FileNode.h
 /// Utopia FileSystem File Node Object.
+///
+/// See README.txt for inheritance diagram.
 
 #include <string>
 

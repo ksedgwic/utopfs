@@ -16,8 +16,14 @@ using namespace google::protobuf::io;
 
 namespace UTFS {
 
+BlockNode::BlockNode()
+    : m_isdirty(true)
+{
+}
+
 BlockNode::BlockNode(BlockRef const & i_ref)
   : m_ref(i_ref)
+  , m_isdirty(false)
 {
     LOG(lgr, 6, "CTOR " << i_ref);
 }

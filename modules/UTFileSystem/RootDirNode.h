@@ -3,6 +3,8 @@
 
 /// @file RootDirNode.h
 /// Utopia FileSystem Root Directory Node Object.
+///
+/// See README.txt for inheritance diagram.
 
 #include <string>
 
