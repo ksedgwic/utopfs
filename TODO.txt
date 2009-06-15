@@ -2,8 +2,6 @@ Write multiple filesystems in common blockstore test.
 
 Write two FileSystem objects attached to same fsid test.
 
-Add use cases to the wiki.
-
 Add "snap together" protocol modules concept to wiki.
 
 Figure out the problem w/ matching exception types in python.  Search
