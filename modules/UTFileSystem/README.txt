@@ -25,14 +25,15 @@ Node Inheritance Diagram
       |               |       +- ZeroDoubleIndBlockNode
 BlockNode             |       |
       |               +- DoubleIndBlockNode
-      |                       |
-      |                       |       +- ZeroTripleIndBlockNode
-      |                       |       |
-      |                       +- TripleIndBlockNode
-      |                               |
-      |                               |       +- ZeroQuadIndBlockNode
-      |                               |       |
-      |                               +- QuadIndBlockNode
+      |               |
+      |               |       +- ZeroTripleIndBlockNode
+      |               |       |
+      |               +- TripleIndBlockNode
+      |               |
+      |               |       +- ZeroQuadIndBlockNode
+      |               |       |
+      |               +- QuadIndBlockNode
+      |
       +- DataBlockNode
               |
               +- ZeroDataBlockNode
