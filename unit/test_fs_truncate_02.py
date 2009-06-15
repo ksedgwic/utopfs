@@ -18,6 +18,11 @@ class Test_fs_truncate_02:
   def setup_class(self):
     self.bspath = "fs_truncate_02.bs"
 
+  def teardown_class(self):
+    shutil.rmtree(self.bspath,True) 
+
+  def test_can_write_sparse(self):
+
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
@@ -26,13 +31,6 @@ class Test_fs_truncate_02:
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
                                   "", "", CONFIG.FSARGS)
-
-  def teardown_class(self):
-    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
-    shutil.rmtree(self.bspath,True) 
-
-  def test_can_write_sparse(self):
 
     # Create a new file.
     self.fs.fs_mknod("/sparse", 0666, 0)
@@ -98,3 +96,8 @@ class Test_fs_truncate_02:
     assert nbytes == 512 * 1024
     nblocks = st.st_blocks
     assert nblocks == (1 + 2) * 8192 / 512
+
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs = None
+    self.fs = None
+

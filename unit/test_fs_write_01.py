@@ -22,18 +22,16 @@ class Test_fs_write_01:
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
+  def teardown_class(self):
+    shutil.rmtree(self.bspath,True) 
+
+  def test_write(self):
+
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
                                   "", "", CONFIG.FSARGS)
-
-  def teardown_class(self):
-    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
-    shutil.rmtree(self.bspath,True) 
-
-  def test_write(self):
 
     # Create a file.
     self.fs.fs_mknod("/foo", 0666, 0)
@@ -64,3 +62,7 @@ class Test_fs_write_01:
     self.fs.fs_open("/foo", O_RDONLY)
     buf = self.fs.fs_read("/foo", 1024)
     assert str(buf) == "testdata"
+
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs = None
+    self.fs = None

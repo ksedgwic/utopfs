@@ -20,8 +20,6 @@ class Test_fs_fsid_01:
     shutil.rmtree(self.bspath,True)  
 
   def teardown_class(self):
-    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
     shutil.rmtree(self.bspath,True) 
 
   def test_separate_fsid(self):
@@ -58,3 +56,7 @@ class Test_fs_fsid_01:
 
     # File should be there.
     st = self.fs.fs_getattr("/first")
+
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs = None
+    self.fs = None

@@ -30,7 +30,11 @@ class Test_fs_rename_01:
 
   def teardown_class(self):
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
+    olvl = utp.FileSystem.loglevel(-1)
+    self.bs = None
+    self.fs = None
+    utp.FileSystem.loglevel(olvl)
+
     shutil.rmtree(self.bspath,True) 
 
   def test_rename(self):

@@ -17,6 +17,11 @@ class Test_fs_unlink_01:
   def setup_class(self):
     self.bspath = "fs_unlink_01.bs"
 
+  def teardown_class(self):
+    shutil.rmtree(self.bspath,True) 
+
+  def test_unlink(self):
+
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
@@ -25,13 +30,6 @@ class Test_fs_unlink_01:
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
                                   "", "", CONFIG.FSARGS)
-
-  def teardown_class(self):
-    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
-    shutil.rmtree(self.bspath,True) 
-
-  def test_unlink(self):
 
     # Create a file
     self.fs.fs_mknod("/bar", 0666, 0)
@@ -84,3 +82,6 @@ class Test_fs_unlink_01:
     # But we should be able to stat the dir.
     st = self.fs.fs_getattr("/foo");
 
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs = None
+    self.fs = None

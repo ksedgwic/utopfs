@@ -16,6 +16,10 @@ class Test_fs_persist_01:
   def setup_class(self):
     self.bspath = "fs_persist_01.bs"
 
+  def teardown_class(self):
+    shutil.rmtree(self.bspath,True) 
+
+  def test_persistence(self):
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
@@ -25,12 +29,6 @@ class Test_fs_persist_01:
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
                                   "", "", CONFIG.FSARGS)
 
-  def teardown_class(self):
-    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
-    shutil.rmtree(self.bspath,True) 
-
-  def test_persistence(self):
     # Create a file.
     self.fs.fs_mknod("/foo", 0666, 0)
 
@@ -50,3 +48,7 @@ class Test_fs_persist_01:
     # We should be able to stat the same file.
     st = self.fs.fs_getattr("/foo");
     assert S_ISREG(st[ST_MODE])
+
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs = None
+    self.fs = None

@@ -1,7 +1,3 @@
-What happens w/ unlinked open references? (open, unlink, close).
-
-Why is the DTOR stuff coming out on stderr in the unit test framework?
-
 Figure out the problem w/ matching exception types in python.  Search
 for BOGUS in the unit directory ...
 

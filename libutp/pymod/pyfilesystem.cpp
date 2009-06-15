@@ -654,26 +654,28 @@ FileSystemModule_mount(PyObject *self, PyObject *i_args)
 }
 
 static PyObject *
-FileSystemModule_logoff(PyObject *self, PyObject *i_args)
+FileSystemModule_loglevel(PyObject *self, PyObject *i_args)
 {
-    if (!PyArg_ParseTuple(i_args, ":logoff"))
+    int newlevel;
+    if (!PyArg_ParseTuple(i_args, "i:loglevel", &newlevel))
 		return NULL;
 
+    int oldlevel;
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        theRootLogCategory.level(-1, true);
+        oldlevel = theRootLogCategory.level();
+        theRootLogCategory.level(newlevel, true);
     }
     PYUTP_CATCH_ALL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return PyInt_FromLong(oldlevel);
 }
 
 static PyMethodDef FileSystemModule_methods[] = {
 	{"mkfs",			FileSystemModule_mkfs,			METH_VARARGS},
 	{"mount",			FileSystemModule_mount,			METH_VARARGS},
-	{"logoff",			FileSystemModule_logoff,		METH_VARARGS},
+	{"loglevel",		FileSystemModule_loglevel,		METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

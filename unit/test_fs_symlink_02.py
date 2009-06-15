@@ -20,6 +20,11 @@ class Test_fs_symlink_02:
   def setup_class(self):
     self.bspath = "fs_symlink_02.bs"
 
+  def teardown_class(self):
+    shutil.rmtree(self.bspath,True) 
+
+  def test_symlink(self):
+
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
@@ -28,13 +33,6 @@ class Test_fs_symlink_02:
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
                                   "", "", CONFIG.FSARGS)
-
-  def teardown_class(self):
-    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
-    shutil.rmtree(self.bspath,True) 
-
-  def test_symlink(self):
 
     # Create a directory.
     self.fs.fs_mkdir("/foo", 0555)
@@ -134,3 +132,7 @@ class Test_fs_symlink_02:
       assert False
     except OSError, ex:
       assert ex.errno == ENOENT
+
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs = None
+    self.fs = None

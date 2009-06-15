@@ -18,6 +18,11 @@ class Test_fs_bigfile_01:
   def setup_class(self):
     self.bspath = "fs_bigfile_01.bs"
 
+  def teardown_class(self):
+    shutil.rmtree(self.bspath,True) 
+
+  def test_can_write_bigfile(self):
+
     # Remove any prexisting blockstore.
     shutil.rmtree(self.bspath,True)  
 
@@ -26,13 +31,6 @@ class Test_fs_bigfile_01:
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
                                   "", "", CONFIG.FSARGS)
-
-  def teardown_class(self):
-    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
-    utp.FileSystem.logoff()
-    shutil.rmtree(self.bspath,True) 
-
-  def test_can_write_bigfile(self):
 
     # Create a new file.
     self.fs.fs_mknod("/bigfile", 0666, 0)
@@ -82,3 +80,7 @@ class Test_fs_bigfile_01:
     buf = self.fs.fs_read("/bigfile", 18000)
     assert str(buf)[0:8] == "00000000"
     assert str(buf)[18000-9:18000-1] == "00001999"
+
+    # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs = None
+    self.fs = None
