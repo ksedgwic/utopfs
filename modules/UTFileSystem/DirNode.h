@@ -41,16 +41,6 @@ public:
                                std::string const & i_entry)
         {}
 
-#if 0
-        // Called post-traversal order on directories for updating.
-        // Default implementation persists the directory node.
-        //
-        virtual void nt_update(Context & i_ctxt,
-                               DirNode & i_dn,
-                               std::string const & i_entry,
-                               BlockRef const & i_ref);
-#endif
-
         // Accesses the "return value" assigned by the leaf or parent
         // routine.
         //
@@ -90,11 +80,6 @@ public:
         NT_UPDATE		= 0x2	// Call the update method.
     };
 
-#if 0
-    // Persist this DirNode to blockstore and update digest.
-    virtual BlockRef bn_persist2(Context & i_ctxt);
-#endif
-
     // Flush any dirty pages to the blockstore and return digest.
     virtual BlockRef bn_flush(Context & i_ctxt);
 
@@ -104,18 +89,6 @@ public:
                                std::string const & i_entry,
                                std::string const & i_rmndr,
                                NodeTraverseFunc & i_trav);
-
-#if 0
-    // Update this entries reference in this directory and persist.
-    virtual void update(Context & i_ctxt,
-                        std::string const & i_entry,
-                        BlockRef const & i_ref);
-#endif
-
-    // Update this entries reference in this directory.
-    virtual void update2(Context & i_ctxt,
-                         std::string const & i_entry,
-                         FileNodeHandle const & i_fnh);
 
     // Returns the number of entries in the directory.
     virtual size_t numentries() const;
@@ -157,6 +130,10 @@ public:
                         utp::FileSystem::DirEntryFunc & o_entryfunc);
 
 protected:
+    virtual void update(Context & i_ctxt,
+                        std::string const & i_entry,
+                        FileNodeHandle const & i_fnh);
+
     virtual FileNodeHandle lookup(Context & i_ctxt,
                                   std::string const & i_entry);
 

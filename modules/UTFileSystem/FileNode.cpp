@@ -147,7 +147,7 @@ FileNode::~FileNode()
 }
 
 BlockRef
-FileNode::bn_persist2(Context & i_ctxt)
+FileNode::bn_persist(Context & i_ctxt)
 {
     uint8 buf[BlockNode::BLKSZ];
 
@@ -231,7 +231,7 @@ FileNode::bn_flush(Context & i_ctxt)
     if (m_dinobj && m_dinobj->bn_isdirty())
         m_dinref = m_dinobj->bn_flush(i_ctxt);
 
-    return bn_persist2(i_ctxt);
+    return bn_persist(i_ctxt);
 }
 
 bool
@@ -501,56 +501,6 @@ FileNode::rb_traverse2(Context & i_ctxt,
     return bn_isdirty();
 }
 
-#if 0
-void
-FileNode::rb_update(Context & i_ctxt, off_t i_base, BindingSeq const & i_bs)
-{
-    for (unsigned i = 0; i < i_bs.size(); ++i)
-    {
-        off_t off = i_bs[i].first;
-        if (off == 0)
-            continue; // Ignore, this is the inline section.
-
-        // Subtract the inline block size.
-        off -= sizeof(m_inl);
-
-        if (off < off_t(NDIRECT * BLKSZ))
-        {
-            m_dirref[off/BLKSZ] = i_bs[i].second;
-            continue;
-        }
-
-        off -= off_t(NDIRECT * BLKSZ);
-
-        if (off == 0)
-        {
-            m_sinref = i_bs[i].second;
-            continue;
-        }
-
-        off -= off_t(IndirectBlockNode::NUMREF * BlockNode::BLKSZ);
-
-        if (off == 0)
-        {
-            m_dinref = i_bs[i].second;
-            continue;
-        }
-
-        off -= off_t(IndirectBlockNode::NUMREF *
-                     IndirectBlockNode::NUMREF *
-                     BlockNode::BLKSZ);
-
-        // If we get here we need to implement more stuff ...
-        throwstream(InternalError, FILELINE
-                    << "FileNode::rb_update "
-                    << "for multi indirect blocks unimplemented");
-    }
-
-    // Update the modification time.
-    mtime(T64::now());
-}
-#endif
-
 size_t
 FileNode::rb_truncate(Context & i_ctxt,
                       off_t i_base,
@@ -640,7 +590,7 @@ FileNode::rb_truncate(Context & i_ctxt,
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);
-                m_dirref[ndx] = dbh->bn_persist2(i_ctxt);
+                m_dirref[ndx] = dbh->bn_persist(i_ctxt);
 
                 bn_isdirty(true);
             }

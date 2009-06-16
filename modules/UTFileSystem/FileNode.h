@@ -51,7 +51,7 @@ public:
 
     size_t bn_size() const { return sizeof(m_inl); }
 
-    virtual BlockRef bn_persist2(Context & i_ctxt);
+    virtual BlockRef bn_persist(Context & i_ctxt);
 
     virtual BlockRef bn_flush(Context & i_ctxt);
 
@@ -62,12 +62,6 @@ public:
                               off_t i_rngoff,
                               size_t i_rngsize,
                               BlockTraverseFunc & i_trav);
-
-#if 0
-    virtual void rb_update(Context & i_ctxt,
-                           off_t i_base,
-                           BindingSeq const & i_bs);
-#endif
 
     virtual size_t rb_truncate(Context & i_ctxt,
                                off_t i_base,

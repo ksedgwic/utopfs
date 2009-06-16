@@ -68,7 +68,7 @@ public:
     ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i_nh);
 
     // This would be a mistake.
-    virtual BlockRef bn_persist2(Context & i_ctxt);
+    virtual BlockRef bn_persist(Context & i_ctxt);
 };
 
 } // namespace UTFS

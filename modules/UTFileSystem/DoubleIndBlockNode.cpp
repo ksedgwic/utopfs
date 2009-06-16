@@ -59,7 +59,7 @@ DoubleIndBlockNode::bn_flush(Context & i_ctxt)
         }
     }
 
-    return bn_persist2(i_ctxt);
+    return bn_persist(i_ctxt);
 }
 
 bool
@@ -243,7 +243,7 @@ ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i
 
 
 BlockRef
-ZeroDoubleIndBlockNode::bn_persist2(Context & i_ctxt)
+ZeroDoubleIndBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero double indirect block makes me sad");

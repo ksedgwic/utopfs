@@ -41,7 +41,7 @@ public:
 
     virtual size_t bn_size() const { return sizeof(m_data); }
 
-    virtual BlockRef bn_persist2(Context & i_ctxt);
+    virtual BlockRef bn_persist(Context & i_ctxt);
 
     virtual BlockRef bn_flush(Context & i_ctxt);
 
@@ -60,7 +60,7 @@ public:
     ZeroDataBlockNode();
 
     // This would be a mistake.
-    virtual BlockRef bn_persist2(Context & i_ctxt);
+    virtual BlockRef bn_persist(Context & i_ctxt);
 };
 
 } // namespace UTFS

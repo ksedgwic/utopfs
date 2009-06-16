@@ -52,7 +52,7 @@ IndirectBlockNode::~IndirectBlockNode()
 }
 
 BlockRef
-IndirectBlockNode::bn_persist2(Context & i_ctxt)
+IndirectBlockNode::bn_persist(Context & i_ctxt)
 {
     // Copy the data into a buffer.
     uint8 buf[BlockNode::BLKSZ];
@@ -99,7 +99,7 @@ IndirectBlockNode::bn_flush(Context & i_ctxt)
         }
     }
 
-    return bn_persist2(i_ctxt);
+    return bn_persist(i_ctxt);
 }
 
 bool
@@ -257,7 +257,7 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);
-                dbh->bn_persist2(i_ctxt);
+                dbh->bn_persist(i_ctxt);
                 m_blkref[ndx] = dbh->bn_blkref();
 
                 bn_isdirty(true);
@@ -291,7 +291,7 @@ ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
 
 
 BlockRef
-ZeroIndirectBlockNode::bn_persist2(Context & i_ctxt)
+ZeroIndirectBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero indirect block makes me sad");
