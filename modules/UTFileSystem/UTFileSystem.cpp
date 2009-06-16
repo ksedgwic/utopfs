@@ -57,8 +57,8 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
     m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
 
     m_rdh = new RootDirNode();
-    m_rdh->persist(m_ctxt);
-    rootref(m_rdh->bn_blkref());
+    
+    rootref(m_rdh->bn_flush(m_ctxt));
 }
 
 void
@@ -106,6 +106,8 @@ UTFileSystem::fs_umount()
     LOG(lgr, 4, "fs_umount ");
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    rootref(m_rdh->bn_flush(m_ctxt));
 
     m_rdh = NULL;
     m_ctxt.m_bsh = NULL;
@@ -232,7 +234,7 @@ UTFileSystem::fs_mknod(string const & i_path,
         MknodTraverseFunc otf(i_mode, i_dev);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
 
         LOG(lgr, 6, "fs_mknod " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
@@ -275,7 +277,7 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
         MkdirTraverseFunc otf(i_mode);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
         LOG(lgr, 6, "fs_mkdir " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
     }
@@ -317,7 +319,7 @@ UTFileSystem::fs_unlink(string const & i_path)
         UnlinkTraverseFunc utf(false);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, utf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
         LOG(lgr, 6, "fs_unlink " << i_path << " -> " << utf.nt_retval());
         return utf.nt_retval();
     }
@@ -358,7 +360,7 @@ UTFileSystem::fs_rmdir(string const & i_path)
         RmdirTraverseFunc rtf;
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, rtf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
         LOG(lgr, 6, "fs_rmdir " << i_path << " -> " << rtf.nt_retval());
         return rtf.nt_retval();
     }
@@ -400,7 +402,7 @@ UTFileSystem::fs_symlink(string const & i_opath, string const & i_npath)
         SymlinkTraverseFunc stf(i_opath);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, stf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
         LOG(lgr, 6, "fs_symlink " << i_opath << ' ' << i_npath
             << " -> " << stf.nt_retval());
         return stf.nt_retval();
@@ -480,7 +482,7 @@ UTFileSystem::fs_rename(string const & i_opath, string const & i_npath)
                              ops.first, ops.second, utf);
 
         // Update the root reference.
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
 
         LOG(lgr, 6, "fs_rename " << i_opath << ' ' << i_npath
             << " -> " << utf.nt_retval());
@@ -518,7 +520,7 @@ UTFileSystem::fs_link(string const & i_opath, string const & i_npath)
                              nps.first, nps.second, ldtf);
 
         // Update the root reference.
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
 
         LOG(lgr, 6, "fs_link " << i_opath << ' ' << i_npath
             << " -> " << ldtf.nt_retval());
@@ -560,7 +562,7 @@ UTFileSystem::fs_chmod(string const & i_path, mode_t i_mode)
         ChmodTraverseFunc ctf(i_mode);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, ctf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
         LOG(lgr, 6, "fs_chmod " << i_path << " -> " << ctf.nt_retval());
         return ctf.nt_retval();
     }
@@ -600,7 +602,7 @@ UTFileSystem::fs_truncate(string const & i_path, off_t i_size)
         TruncateTraverseFunc ttf(i_size);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, ttf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
         LOG(lgr, 6, "fs_truncate " << i_path << " -> " << ttf.nt_retval());
         return ttf.nt_retval();
     }
@@ -867,7 +869,7 @@ UTFileSystem::fs_utime(string const & i_path,
         UtimeTraverseFunc otf(i_atime, i_mtime);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
-        rootref(m_rdh->bn_blkref());
+        rootref(m_rdh->bn_flush(m_ctxt));
         LOG(lgr, 6, "fs_utime " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
     }

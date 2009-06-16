@@ -17,6 +17,7 @@ using namespace google::protobuf::io;
 
 namespace UTFS {
 
+#if 0
 void
 DirNode::NodeTraverseFunc::nt_update(Context & i_ctxt,
                                      DirNode & i_dn,
@@ -25,6 +26,7 @@ DirNode::NodeTraverseFunc::nt_update(Context & i_ctxt,
 {
     i_dn.update(i_ctxt, i_entry, i_ref);
 }
+#endif
 
 pair<string, string>
 DirNode::pathsplit(string const & i_path)
@@ -80,6 +82,93 @@ DirNode::~DirNode()
     LOG(lgr, 4, "DTOR " << bn_blkref());
 }
 
+#if 0
+BlockRef
+DirNode::bn_persist2(Context & i_ctxt)
+{
+    LOG(lgr, 6, "bn_persist2");
+    if (lgr.is_enabled(6))
+    {
+        for (int i = 0; i < m_dir.entry_size(); ++i)
+        {
+            Directory::Entry const & ent = m_dir.entry(i);
+            LOG(lgr, 6, "[" << i << "]: "
+                << BlockRef(ent.blkref()) << " " << ent.name());
+        }
+    }
+
+    // Persist our directory map.
+    ACE_OS::memset(bn_data(), '\0', bn_size());
+    bool rv = m_dir.SerializeToArray(bn_data(), bn_size());
+    if (!rv)
+        throwstream(InternalError, FILELINE << "dir serialization error");
+
+    // Let the FileNode do all the hard work ...
+    return FileNode::bn_persist2(i_ctxt);
+}
+#endif
+
+BlockRef
+DirNode::bn_flush(Context & i_ctxt)
+{
+    // If we aren't dirty then we just return our current reference.
+    if (!bn_isdirty())
+        return bn_blkref();
+
+    // We only need to traverse the stuff in our cache.
+    for (EntryMap::iterator it = m_cache.begin(); it != m_cache.end(); ++it)
+    {
+        if (it->second->bn_isdirty())
+        {
+            BlockRef blkref = it->second->bn_flush(i_ctxt);
+
+            bool found = false;
+
+            // Does this entry exist already?
+            for (int i = 0; i < m_dir.entry_size(); ++i)
+            {
+                Directory::Entry * entp = m_dir.mutable_entry(i);
+                if (entp->name() == it->first)
+                {
+                    entp->set_blkref(blkref);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                Directory::Entry * entp = m_dir.add_entry();
+                entp->set_name(it->first);
+                entp->set_blkref(blkref);
+            }
+        }
+    }
+
+    if (lgr.is_enabled(6))
+    {
+        for (int i = 0; i < m_dir.entry_size(); ++i)
+        {
+            Directory::Entry const & ent = m_dir.entry(i);
+            LOG(lgr, 6, "[" << i << "]: "
+                << BlockRef(ent.blkref()) << " " << ent.name());
+        }
+    }
+
+    // Persist our directory map.
+    //
+    // BOGUS - We only utilize the inline data segment.  Need to do a
+    // block traversal here ...
+    //
+    ACE_OS::memset(bn_data(), '\0', bn_size());
+    bool rv = m_dir.SerializeToArray(bn_data(), bn_size());
+    if (!rv)
+        throwstream(InternalError, FILELINE << "dir serialization error");
+
+    // Let the FileNode do all the rest of the work ...
+    return FileNode::bn_flush(i_ctxt);
+}
+
 void
 DirNode::node_traverse(Context & i_ctxt,
                        unsigned int i_flags,
@@ -103,16 +192,7 @@ DirNode::node_traverse(Context & i_ctxt,
             {
                 // Need to redo the lookup because it might have changed.
                 fnh = lookup(i_ctxt, i_entry);
-                if (fnh)
-                {
-                    // Insert or update.
-                    i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
-                }
-                else
-                {
-                    // Erase.
-                    i_trav.nt_update(i_ctxt, *this, i_entry, BlockRef());
-                }
+                update2(i_ctxt, i_entry, fnh);
             }
         }
         else
@@ -131,7 +211,7 @@ DirNode::node_traverse(Context & i_ctxt,
             dnh->node_traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
+                update2(i_ctxt, i_entry, dnh);
         }
     }
     else
@@ -145,7 +225,7 @@ DirNode::node_traverse(Context & i_ctxt,
             i_trav.nt_leaf(i_ctxt, *fnh);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
+                update2(i_ctxt, i_entry, fnh);
         }
         else
         {
@@ -159,36 +239,25 @@ DirNode::node_traverse(Context & i_ctxt,
             dnh->node_traverse(i_ctxt, i_flags, ps.first, ps.second, i_trav);
 
             if (i_flags & NT_UPDATE)
-                i_trav.nt_update(i_ctxt, *this, i_entry, fnh->bn_blkref());
+                update2(i_ctxt, i_entry, dnh);
         }
     }
 
 }
 
 void
-DirNode::persist(Context & i_ctxt)
+DirNode::update2(Context & i_ctxt,
+                 string const & i_entry,
+                 FileNodeHandle const & i_fnh)
 {
-    LOG(lgr, 6, "persist");
-    if (lgr.is_enabled(6))
-    {
-        for (int i = 0; i < m_dir.entry_size(); ++i)
-        {
-            Directory::Entry const & ent = m_dir.entry(i);
-            LOG(lgr, 6, "[" << i << "]: "
-                << BlockRef(ent.blkref()) << " " << ent.name());
-        }
-    }
+    LOG(lgr, 6, "update " << i_entry);
 
-    // Persist our directory map.
-    ACE_OS::memset(bn_data(), '\0', bn_size());
-    bool rv = m_dir.SerializeToArray(bn_data(), bn_size());
-    if (!rv)
-        throwstream(InternalError, FILELINE << "dir serialization error");
+    mtime(T64::now());
 
-    // Let the FileNode do all the hard work ...
-    FileNode::bn_persist(i_ctxt);
+    bn_isdirty(true);
 }
 
+#if 0
 void
 DirNode::update(Context & i_ctxt,
                 string const & i_entry,
@@ -223,6 +292,7 @@ DirNode::update(Context & i_ctxt,
     entp->set_blkref(i_ref);
     persist(i_ctxt);
 }
+#endif
 
 size_t
 DirNode::numentries() const
@@ -243,16 +313,17 @@ DirNode::mknod(Context & i_ctxt,
     // Create a new file.
     fnh = new FileNode(i_mode);
 
-    // Persist it (sets the blkref).
-    fnh->bn_persist(i_ctxt);
-
+#if 0
     // Insert into our Directory collection.
     Directory::Entry * de = m_dir.add_entry();
     de->set_name(i_entry);
     de->set_blkref(fnh->bn_blkref());
+#endif
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, fnh));
+
+    bn_isdirty(true);
 
     return 0;
 }
@@ -270,6 +341,7 @@ DirNode::mkdir(Context & i_ctxt,
     // Create the new directory node.
     DirNodeHandle dnh = new DirNode(i_mode);
 
+#if 0
     // Persist it (sets the digest).
     dnh->persist(i_ctxt);
 
@@ -277,12 +349,15 @@ DirNode::mkdir(Context & i_ctxt,
     Directory::Entry * de = m_dir.add_entry();
     de->set_name(i_entry);
     de->set_blkref(dnh->bn_blkref());
+#endif
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, dnh));
 
     // Increment our link count.
     nlink(nlink() + 1);
+
+    bn_isdirty(true);
 
     return 0;
 }
@@ -344,16 +419,17 @@ DirNode::symlink(Context & i_ctxt,
     // Create the symbolic link.
     fnh = new SymlinkNode(i_opath);
 
-    // Persist it (set's the blkref).
-    fnh->bn_persist(i_ctxt);
-
+#if 0
     // Insert into our Directory collection.
     Directory::Entry * de = m_dir.add_entry();
     de->set_name(i_entry);
     de->set_blkref(fnh->bn_blkref());
+#endif
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, fnh));
+
+    bn_isdirty(true);
 
     return 0;
     
@@ -363,7 +439,7 @@ BlockRef
 DirNode::linksrc(Context & i_ctxt,
                  string const & i_entry)
 {
-    return find_blkref(i_entry);
+    return find_blkref(i_ctxt, i_entry);
 }
 
 int
@@ -388,7 +464,7 @@ DirNode::linkdst(Context & i_ctxt,
     de->set_name(i_entry);
     de->set_blkref(i_blkref);
 
-    // Should we insert in the cache here?
+    bn_isdirty(true);
 
     return 0;
 }
@@ -458,8 +534,16 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
 }
 
 BlockRef
-DirNode::find_blkref(string const & i_entry)
+DirNode::find_blkref(Context & i_ctxt, string const & i_entry)
 {
+    // If it is in the cache we need to flush it so we
+    // have a valid block reference.
+    EntryMap::const_iterator pos = m_cache.find(i_entry);
+    if (pos != m_cache.end())
+    {
+        return pos->second->bn_flush(i_ctxt);
+    }
+
     // Is it in the directories digest table?
     for (int i = 0; i < m_dir.entry_size(); ++i)
         if (m_dir.entry(i).name() == i_entry)
@@ -527,6 +611,9 @@ DirNode::remove(string const & i_entry)
 
     // Remove from the cache.
     m_cache.erase(i_entry);
+
+    // Now we're dirty.
+    bn_isdirty(true);
 }
 
 } // namespace UTFS

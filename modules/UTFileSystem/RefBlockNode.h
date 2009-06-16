@@ -31,8 +31,10 @@ namespace UTFS {
 class UTFS_EXP RefBlockNode : public BlockNode
 {
 public:
+#if 0
     // Sequence of index offsets and BlockRefs used for updates.
     typedef std::vector<std::pair<off_t, BlockRef> > BindingSeq;
+#endif
 
     // Block traversal functor base class.
     //
@@ -52,6 +54,7 @@ public:
                               off_t i_blkoff,
                               size_t i_filesz) = 0;
 
+#if 0
         // Called in post-traversal order on block indexes for with
         // list of updated block digests.  Default implementation
         // persists the block node ...
@@ -60,6 +63,7 @@ public:
                                RefBlockNode & i_bn,
                                off_t i_base,
                                BindingSeq const & i_bbs);
+#endif
 
         int bt_retval() const { return m_retval; }
 
@@ -81,26 +85,27 @@ public:
     };
 
     // Traverse range calling functor methods.
-    virtual bool rb_traverse(Context & i_ctxt,
-                             FileNode & i_fn,
-                             unsigned int i_flags,
-                             off_t i_base,			// offset of this block
-                             off_t i_rngoff,		// offset of range
-                             size_t i_rngsize,		// size of range
-                             BlockTraverseFunc & i_trav) = 0;
+    virtual bool rb_traverse2(Context & i_ctxt,
+                              FileNode & i_fn,
+                              unsigned int i_flags,
+                              off_t i_base,			// offset of this block
+                              off_t i_rngoff,		// offset of range
+                              size_t i_rngsize,		// size of range
+                              BlockTraverseFunc & i_trav) = 0;
 
+#if 0
     // Update references in this node and persist.
     virtual void rb_update(Context & i_ctxt,
                            off_t i_base,
                            BindingSeq const & i_bs) = 0;
+#endif
 
     // Traverse performing file truncation.  Returns blocks count.
     virtual size_t rb_truncate(Context & i_ctxt,
                                off_t i_base,
                                off_t i_size) = 0;
 
-private:
-
+protected:
 };
 
 } // namespace UTFS

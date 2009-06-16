@@ -50,7 +50,7 @@ DataBlockNode::~DataBlockNode()
 }
 
 BlockRef
-DataBlockNode::bn_persist(Context & i_ctxt)
+DataBlockNode::bn_persist2(Context & i_ctxt)
 {
     // Copy the data into a buffer.
     uint8 buf[sizeof(m_data)];
@@ -72,7 +72,15 @@ DataBlockNode::bn_persist(Context & i_ctxt)
     i_ctxt.m_bsh->bs_put_block(m_ref.data(), m_ref.size(),
                                buf, sizeof(buf));
 
+    bn_isdirty(false);
+
     return m_ref;
+}
+
+BlockRef
+DataBlockNode::bn_flush(Context & i_ctxt)
+{
+    return bn_persist2(i_ctxt);
 }
 
 ZeroDataBlockNode::ZeroDataBlockNode()
@@ -81,7 +89,7 @@ ZeroDataBlockNode::ZeroDataBlockNode()
 }
 
 BlockRef
-ZeroDataBlockNode::bn_persist(Context & i_ctxt)
+ZeroDataBlockNode::bn_persist2(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero data block makes me sad");

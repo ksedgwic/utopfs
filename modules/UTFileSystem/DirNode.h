@@ -41,6 +41,7 @@ public:
                                std::string const & i_entry)
         {}
 
+#if 0
         // Called post-traversal order on directories for updating.
         // Default implementation persists the directory node.
         //
@@ -48,6 +49,7 @@ public:
                                DirNode & i_dn,
                                std::string const & i_entry,
                                BlockRef const & i_ref);
+#endif
 
         // Accesses the "return value" assigned by the leaf or parent
         // routine.
@@ -88,6 +90,14 @@ public:
         NT_UPDATE		= 0x2	// Call the update method.
     };
 
+#if 0
+    // Persist this DirNode to blockstore and update digest.
+    virtual BlockRef bn_persist2(Context & i_ctxt);
+#endif
+
+    // Flush any dirty pages to the blockstore and return digest.
+    virtual BlockRef bn_flush(Context & i_ctxt);
+
     // Traverse a path calling functor methods as appropriate.
     virtual void node_traverse(Context & i_ctxt,
                                unsigned int i_flags,
@@ -95,13 +105,17 @@ public:
                                std::string const & i_rmndr,
                                NodeTraverseFunc & i_trav);
 
-    // Persist this DirNode to blockstore and update digest.
-    virtual void persist(Context & i_ctxt);
-
+#if 0
     // Update this entries reference in this directory and persist.
     virtual void update(Context & i_ctxt,
                         std::string const & i_entry,
                         BlockRef const & i_ref);
+#endif
+
+    // Update this entries reference in this directory.
+    virtual void update2(Context & i_ctxt,
+                         std::string const & i_entry,
+                         FileNodeHandle const & i_fnh);
 
     // Returns the number of entries in the directory.
     virtual size_t numentries() const;
@@ -146,7 +160,8 @@ protected:
     virtual FileNodeHandle lookup(Context & i_ctxt,
                                   std::string const & i_entry);
 
-    virtual BlockRef find_blkref(std::string const & i_entry);
+    virtual BlockRef find_blkref(Context & i_ctxt,
+                                 std::string const & i_entry);
 
     void deserialize();
 

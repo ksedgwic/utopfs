@@ -35,5 +35,5 @@ Node Inheritance Diagram
           |                 +- QuadIndBlockNode
           |
           +- DataBlockNode
-                  |
-                  +- ZeroDataBlockNode
+                   |
+                   +- ZeroDataBlockNode

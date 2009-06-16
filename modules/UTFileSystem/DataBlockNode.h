@@ -35,13 +35,15 @@ public:
 
     virtual ~DataBlockNode();
 
-    virtual BlockRef bn_persist(Context & i_ctxt);
-
     virtual utp::uint8 const * bn_data() const { return m_data; }
 
     virtual utp::uint8 * bn_data() { return m_data; }
 
     virtual size_t bn_size() const { return sizeof(m_data); }
+
+    virtual BlockRef bn_persist2(Context & i_ctxt);
+
+    virtual BlockRef bn_flush(Context & i_ctxt);
 
 private:
     utp::uint8				m_data[BLKSZ];
@@ -58,7 +60,7 @@ public:
     ZeroDataBlockNode();
 
     // This would be a mistake.
-    virtual BlockRef bn_persist(Context & i_ctxt);
+    virtual BlockRef bn_persist2(Context & i_ctxt);
 };
 
 } // namespace UTFS

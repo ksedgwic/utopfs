@@ -51,6 +51,10 @@ class Test_fs_rename_02:
     # Write some bytes into the file.
     self.fs.fs_write("/foo/bar", buffer("testdata"))
 
+    # Should see the bytes.
+    st = self.fs.fs_getattr("/foo/bar");
+    assert st.st_size == 8
+
     # Should be able to rename the file.
     self.fs.fs_rename("/foo/bar", "/foo/blat")
 

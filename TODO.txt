@@ -1,3 +1,9 @@
+Add some caching
+  Add rb_flush traversal.
+  Can we change all the rb_flush and bn_persist2 sig to BlockRef const &?
+  Remap all xxx2() methods in the UTFS back to xxx().
+  Purge all uneeded if0/endif blocks.
+
 Write multiple filesystems in common blockstore test.
 
 Write two FileSystem objects attached to same fsid test.

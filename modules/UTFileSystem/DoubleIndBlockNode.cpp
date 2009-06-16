@@ -40,17 +40,37 @@ DoubleIndBlockNode::~DoubleIndBlockNode()
     LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
-bool
-DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
-                               FileNode & i_fn,
-                               unsigned int i_flags,
-                               off_t i_base,
-                               off_t i_rngoff,
-                               size_t i_rngsize,
-                               BlockTraverseFunc & i_trav)
+BlockRef
+DoubleIndBlockNode::bn_flush(Context & i_ctxt)
 {
-    RefBlockNode::BindingSeq mods;
+    // If we aren't dirty then we just return our current reference.
+    if (!bn_isdirty())
+        return bn_blkref();
 
+    for (unsigned i = 0; i < NUMREF; ++i)
+    {
+        if (m_blkobj[i])
+        {
+            IndirectBlockNodeHandle nh =
+                dynamic_cast<IndirectBlockNode *>(&*m_blkobj[i]);
+
+            if (nh->bn_isdirty())
+                m_blkref[i] = nh->bn_flush(i_ctxt);
+        }
+    }
+
+    return bn_persist2(i_ctxt);
+}
+
+bool
+DoubleIndBlockNode::rb_traverse2(Context & i_ctxt,
+                                 FileNode & i_fn,
+                                 unsigned int i_flags,
+                                 off_t i_base,
+                                 off_t i_rngoff,
+                                 size_t i_rngsize,
+                                 BlockTraverseFunc & i_trav)
+{
     static off_t const refspan = NUMREF * BLKSZ;
 
     off_t startoff = max(i_rngoff, i_base);
@@ -109,27 +129,19 @@ DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
         }
 
         // Recursively traverse ...
-        if (nh->rb_traverse(i_ctxt, i_fn, i_flags, off,
-                            i_rngoff, i_rngsize, i_trav))
+        if (nh->rb_traverse2(i_ctxt, i_fn, i_flags, off,
+                             i_rngoff, i_rngsize, i_trav))
         {
-            nh->bn_persist(i_ctxt);
-            mods.push_back(make_pair(off, nh->bn_blkref()));
+            bn_isdirty(true);
         }
     }
 
  done:
-    // Were there any modified regions?
-    if (mods.empty())
-    {
-        return false;
-    }
-    else
-    {
-        i_trav.bt_update(i_ctxt, *this, i_base, mods);
-        return true;
-    }
+    // Return our dirty state.
+    return bn_isdirty();
 }
 
+#if 0
 void
 DoubleIndBlockNode::rb_update(Context & i_ctxt,
                              off_t i_base,
@@ -143,6 +155,7 @@ DoubleIndBlockNode::rb_update(Context & i_ctxt,
         m_blkref[ndx] = i_bs[i].second;
     }
 }
+#endif
 
 size_t
 DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
@@ -160,7 +173,7 @@ DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
         if (off < i_size)
         {
             // Yes, it's part of the live file.
-            if (m_blkref[ndx])
+            if (m_blkobj[ndx] || m_blkref[ndx])
             {
                 IndirectBlockNodeHandle nh;
             
@@ -186,6 +199,10 @@ DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
                 // Traverse the child.
                 size_t nb = nh->rb_truncate(i_ctxt, off, i_size);
 
+                // If it's dirtied so are we ...
+                if (nh->bn_isdirty())
+                    bn_isdirty(true);
+
                 // Did it have child blocks?  If not purge it ...
                 if (nb > 1)
                 {
@@ -196,6 +213,7 @@ DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
                 {
                     m_blkref[ndx].clear();
                     m_blkobj[ndx] = NULL;
+                    bn_isdirty(true);
                 }
             }
         }
@@ -205,6 +223,7 @@ DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
             // We're just removing the references.
             m_blkref[ndx].clear();
             m_blkobj[ndx] = NULL;
+            bn_isdirty(true);
         }
 
         off += refspan;
@@ -224,7 +243,7 @@ ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i
 
 
 BlockRef
-ZeroDoubleIndBlockNode::bn_persist(Context & i_ctxt)
+ZeroDoubleIndBlockNode::bn_persist2(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero double indirect block makes me sad");

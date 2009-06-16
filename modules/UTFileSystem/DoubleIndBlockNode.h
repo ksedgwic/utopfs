@@ -36,17 +36,21 @@ public:
 
     virtual ~DoubleIndBlockNode();
 
-    virtual bool rb_traverse(Context & i_ctxt,
-                             FileNode & i_fn,
-                             unsigned int i_flags,
-                             off_t i_base,
-                             off_t i_rngoff,
-                             size_t i_rngsize,
-                             BlockTraverseFunc & i_trav);
+    virtual BlockRef bn_flush(Context & i_ctxt);
 
+    virtual bool rb_traverse2(Context & i_ctxt,
+                              FileNode & i_fn,
+                              unsigned int i_flags,
+                              off_t i_base,
+                              off_t i_rngoff,
+                              size_t i_rngsize,
+                              BlockTraverseFunc & i_trav);
+
+#if 0
     virtual void rb_update(Context & i_ctxt,
                            off_t i_base,
                            BindingSeq const & i_bs);
+#endif
 
     virtual size_t rb_truncate(Context & i_ctxt,
                                off_t i_base,
@@ -64,7 +68,7 @@ public:
     ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i_nh);
 
     // This would be a mistake.
-    virtual BlockRef bn_persist(Context & i_ctxt);
+    virtual BlockRef bn_persist2(Context & i_ctxt);
 };
 
 } // namespace UTFS

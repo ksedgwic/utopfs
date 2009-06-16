@@ -38,11 +38,6 @@ public:
     // Destructor.
     virtual ~BlockNode();
 
-    // Persist the node to the blockstore and update the cached
-    // reference.
-    //
-    virtual BlockRef bn_persist(Context & i_ctxt) = 0;
-
     // Returns the cached reference of the node.  This value is not
     // computed until bn_persist() is called.
     //
@@ -59,10 +54,19 @@ public:
     virtual size_t bn_size() const = 0;
 
     /// Set the dirty state of this object.
-    virtual void isdirty(bool i_isdirty) { m_isdirty = i_isdirty; }
+    virtual void bn_isdirty(bool i_isdirty) { m_isdirty = i_isdirty; }
 
     /// Returns the dirty state of this object.
-    virtual bool isdirty() const { return m_isdirty; }
+    virtual bool bn_isdirty() const { return m_isdirty; }
+
+    // Persist the node to the blockstore and update the cached
+    // reference.
+    //
+    virtual BlockRef bn_persist2(Context & i_ctxt) = 0;
+
+    // Traverse the cached filesystem persisting dirty blocks.
+    //
+    virtual BlockRef bn_flush(Context & i_ctxt) = 0;
 
 protected:
     BlockRef			m_ref;

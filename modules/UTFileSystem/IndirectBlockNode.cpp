@@ -52,7 +52,7 @@ IndirectBlockNode::~IndirectBlockNode()
 }
 
 BlockRef
-IndirectBlockNode::bn_persist(Context & i_ctxt)
+IndirectBlockNode::bn_persist2(Context & i_ctxt)
 {
     // Copy the data into a buffer.
     uint8 buf[BlockNode::BLKSZ];
@@ -75,20 +75,42 @@ IndirectBlockNode::bn_persist(Context & i_ctxt)
     i_ctxt.m_bsh->bs_put_block(m_ref.data(), m_ref.size(),
                                buf, sizeof(buf));
 
+    bn_isdirty(false);
+
     return m_ref;
 }
 
-bool
-IndirectBlockNode::rb_traverse(Context & i_ctxt,
-                               FileNode & i_fn,
-                               unsigned int i_flags,
-                               off_t i_base,
-                               off_t i_rngoff,
-                               size_t i_rngsize,
-                               BlockTraverseFunc & i_trav)
+BlockRef
+IndirectBlockNode::bn_flush(Context & i_ctxt)
 {
-    RefBlockNode::BindingSeq mods;
+    // If we aren't dirty then we just return our current reference.
+    if (!bn_isdirty())
+        return bn_blkref();
 
+    for (unsigned i = 0; i < NUMREF; ++i)
+    {
+        if (m_blkobj[i])
+        {
+            DataBlockNodeHandle nh =
+                dynamic_cast<DataBlockNode *>(&*m_blkobj[i]);
+
+            if (nh->bn_isdirty())
+                m_blkref[i] = nh->bn_flush(i_ctxt);
+        }
+    }
+
+    return bn_persist2(i_ctxt);
+}
+
+bool
+IndirectBlockNode::rb_traverse2(Context & i_ctxt,
+                                FileNode & i_fn,
+                                unsigned int i_flags,
+                                off_t i_base,
+                                off_t i_rngoff,
+                                size_t i_rngsize,
+                                BlockTraverseFunc & i_trav)
+{
     static size_t refspan = BLKSZ;
 
     off_t startoff = max(i_rngoff, i_base);
@@ -146,31 +168,20 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
             }
         }
 
-        // Visit it, deal with possible updates.
-        if (i_trav.bt_visit(i_ctxt,
-                            nh->bn_data(),
-                            nh->bn_size(),
-                            off,
-                            i_fn.size()))
+        // Visit the node.
+        if (i_trav.bt_visit(i_ctxt, nh->bn_data(), nh->bn_size(),
+                            off, i_fn.size()))
         {
-            nh->bn_persist(i_ctxt);
-            mods.push_back(make_pair(off, nh->bn_blkref()));
+            bn_isdirty(true);
         }
     }
 
  done:
-    // Were there any modified regions?
-    if (mods.empty())
-    {
-        return false;
-    }
-    else
-    {
-        i_trav.bt_update(i_ctxt, *this, i_base, mods);
-        return true;
-    }
+    // Return our dirty state.
+    return bn_isdirty();
 }
 
+#if 0
 void
 IndirectBlockNode::rb_update(Context & i_ctxt,
                              off_t i_base,
@@ -184,6 +195,7 @@ IndirectBlockNode::rb_update(Context & i_ctxt,
         m_blkref[ndx] = i_bs[i].second;
     }
 }
+#endif
 
 size_t
 IndirectBlockNode::rb_truncate(Context & i_ctxt,
@@ -201,7 +213,7 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
             // Increment the block counter if there is a data
             // block.
             //
-            if (m_blkref[ndx])
+            if (m_blkobj[ndx] || m_blkref[ndx])
                 ++nblocks;
         }
 
@@ -245,8 +257,10 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);
-                dbh->bn_persist(i_ctxt);
+                dbh->bn_persist2(i_ctxt);
                 m_blkref[ndx] = dbh->bn_blkref();
+
+                bn_isdirty(true);
             }
         }
 
@@ -256,6 +270,8 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
             // We're just removing the references.
             m_blkref[ndx].clear();
             m_blkobj[ndx] = NULL;
+
+            bn_isdirty(true);
         }
 
         off += BLKSZ;
@@ -275,7 +291,7 @@ ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
 
 
 BlockRef
-ZeroIndirectBlockNode::bn_persist(Context & i_ctxt)
+ZeroIndirectBlockNode::bn_persist2(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero indirect block makes me sad");

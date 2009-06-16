@@ -21,6 +21,7 @@ namespace {
 
 namespace UTFS {
 
+#if 0
 void
 RefBlockNode::BlockTraverseFunc::bt_update(Context & i_ctxt,
                                            RefBlockNode & i_bn,
@@ -29,6 +30,7 @@ RefBlockNode::BlockTraverseFunc::bt_update(Context & i_ctxt,
 {
     i_bn.rb_update(i_ctxt, i_base, i_bbs);
 }
+#endif
 
 RefBlockNode::~RefBlockNode()
 {

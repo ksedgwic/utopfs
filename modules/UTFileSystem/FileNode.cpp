@@ -147,7 +147,7 @@ FileNode::~FileNode()
 }
 
 BlockRef
-FileNode::bn_persist(Context & i_ctxt)
+FileNode::bn_persist2(Context & i_ctxt)
 {
     uint8 buf[BlockNode::BLKSZ];
 
@@ -207,17 +207,41 @@ FileNode::bn_persist(Context & i_ctxt)
     i_ctxt.m_bsh->bs_put_block(m_ref.data(), m_ref.size(),
                                buf, sizeof(buf));
 
+    bn_isdirty(false);
+
     return m_ref;
 }
 
+BlockRef
+FileNode::bn_flush(Context & i_ctxt)
+{
+    // If we aren't dirty then we just return our current reference.
+    if (!bn_isdirty())
+        return bn_blkref();
+
+    for (unsigned i = 0; i < NDIRECT; ++i)
+    {
+        if (m_dirobj[i] && m_dirobj[i]->bn_isdirty())
+            m_dirref[i] = m_dirobj[i]->bn_flush(i_ctxt);
+    }
+
+    if (m_sinobj && m_sinobj->bn_isdirty())
+        m_sinref = m_sinobj->bn_flush(i_ctxt);
+
+    if (m_dinobj && m_dinobj->bn_isdirty())
+        m_dinref = m_dinobj->bn_flush(i_ctxt);
+
+    return bn_persist2(i_ctxt);
+}
+
 bool
-FileNode::rb_traverse(Context & i_ctxt,
-                      FileNode & i_fn,
-                      unsigned int i_flags,
-                      off_t i_base,
-                      off_t i_rngoff,
-                      size_t i_rngsize,
-                      BlockTraverseFunc & i_trav)
+FileNode::rb_traverse2(Context & i_ctxt,
+                       FileNode & i_fn,
+                       unsigned int i_flags,
+                       off_t i_base,
+                       off_t i_rngoff,
+                       size_t i_rngsize,
+                       BlockTraverseFunc & i_trav)
 {
     // Running offset and size.
     off_t off = 0;
@@ -230,10 +254,8 @@ FileNode::rb_traverse(Context & i_ctxt,
     // Our base needs to be 0 or else somebody is very confused.
     if (i_base != off)
         throwstream(InternalError, FILELINE
-                    << "FileNode::rb_traverse called with non-zero base: "
+                    << "FileNode::rb_traverse2 called with non-zero base: "
                     << i_base);
-
-    RefBlockNode::BindingSeq mods;
 
     // Does this region intersect the inline block?
     //
@@ -243,8 +265,12 @@ FileNode::rb_traverse(Context & i_ctxt,
     // use a placeholder.
     //
     if (i_rngoff < off_t(sizeof(m_inl)))
+    {
         if (i_trav.bt_visit(i_ctxt, m_inl, sizeof(m_inl), 0, size()))
-            mods.push_back(make_pair(off, BlockRef()));
+        {
+            bn_isdirty(true);
+        }
+    }
 
     off += sizeof(m_inl);
 
@@ -321,8 +347,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                                     off,
                                     size()))
                 {
-                    dbh->bn_persist(i_ctxt);
-                    mods.push_back(make_pair(off, dbh->bn_blkref()));
+                    bn_isdirty(true);
                 }
             }
 
@@ -383,11 +408,10 @@ FileNode::rb_traverse(Context & i_ctxt,
             }
         }
 
-        if (ibh->rb_traverse(i_ctxt, *this, i_flags, off,
-                             i_rngoff, i_rngsize, i_trav))
+        if (ibh->rb_traverse2(i_ctxt, *this, i_flags, off,
+                              i_rngoff, i_rngsize, i_trav))
         {
-            ibh->bn_persist(i_ctxt);
-            mods.push_back(make_pair(off, ibh->bn_blkref()));
+            bn_isdirty(true);
         }
     }
 
@@ -450,11 +474,10 @@ FileNode::rb_traverse(Context & i_ctxt,
             }
         }
 
-        if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
+        if (nh->rb_traverse2(i_ctxt, *this, i_flags, off,
                              i_rngoff, i_rngsize, i_trav))
         {
-            nh->bn_persist(i_ctxt);
-            mods.push_back(make_pair(off, nh->bn_blkref()));
+            bn_isdirty(true);
         }
     }
 
@@ -474,18 +497,11 @@ FileNode::rb_traverse(Context & i_ctxt,
                 << "more indirect block traversal implementation required");
 
  done:
-    // Were there any modified regions?
-    if (mods.empty())
-    {
-        return false;
-    }
-    else
-    {
-        i_trav.bt_update(i_ctxt, *this, i_base, mods);
-        return true;
-    }
+    // Return our dirty state.
+    return bn_isdirty();
 }
 
+#if 0
 void
 FileNode::rb_update(Context & i_ctxt, off_t i_base, BindingSeq const & i_bs)
 {
@@ -533,6 +549,7 @@ FileNode::rb_update(Context & i_ctxt, off_t i_base, BindingSeq const & i_bs)
     // Update the modification time.
     mtime(T64::now());
 }
+#endif
 
 size_t
 FileNode::rb_truncate(Context & i_ctxt,
@@ -563,6 +580,8 @@ FileNode::rb_truncate(Context & i_ctxt,
         // Zero the portion after the truncation.
         ACE_OS::memset(m_inl + i_size, '\0', sizeof(m_inl) - i_size);
         off += INLSZ;
+
+        bn_isdirty(true);
     }
 
     off += INLSZ;
@@ -577,7 +596,7 @@ FileNode::rb_truncate(Context & i_ctxt,
             // Increment the block counter if there is a data
             // block.
             //
-            if (m_dirref[ndx])
+            if (m_dirobj[ndx] || m_dirref[ndx])
                 ++nblocks;
         }
 
@@ -621,8 +640,9 @@ FileNode::rb_truncate(Context & i_ctxt,
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);
-                dbh->bn_persist(i_ctxt);
-                m_dirref[ndx] = dbh->bn_blkref();
+                m_dirref[ndx] = dbh->bn_persist2(i_ctxt);
+
+                bn_isdirty(true);
             }
         }
 
@@ -632,6 +652,8 @@ FileNode::rb_truncate(Context & i_ctxt,
             // We're just removing the references.
             m_dirref[ndx].clear();
             m_dirobj[ndx] = NULL;
+
+            bn_isdirty(true);
         }
 
         off += BLKSZ;
@@ -642,7 +664,7 @@ FileNode::rb_truncate(Context & i_ctxt,
     sz = IndirectBlockNode::NUMREF * BLKSZ;
 
     // Is there an indirect block?
-    if (m_sinref)
+    if (m_sinobj || m_sinref)
     {
         // Does it overlap the live portion of the file?
         if (off < i_size)
@@ -667,6 +689,9 @@ FileNode::rb_truncate(Context & i_ctxt,
             // Traverse the indirect block.
             size_t nb = nh->rb_truncate(i_ctxt, off, i_size);
 
+            if (nh->bn_isdirty())
+                bn_isdirty(true);
+
             // Did it have child blocks?  If not purge it ...
             if (nb > 1)
             {
@@ -677,6 +702,8 @@ FileNode::rb_truncate(Context & i_ctxt,
             {
                 m_sinref.clear();
                 m_sinobj = NULL;
+
+                bn_isdirty(true);
             }
         }
         else
@@ -684,6 +711,8 @@ FileNode::rb_truncate(Context & i_ctxt,
             // Nope, this is in the truncated portion of the file.
             m_sinref.clear();
             m_sinobj = NULL;
+
+            bn_isdirty(true);
         }
     }
 
@@ -730,7 +759,7 @@ FileNode::chmod(Context & i_ctxt, mode_t i_mode)
 
     // Doesn't look like chmod sets the modifiction time.
 
-    bn_persist(i_ctxt);
+    bn_isdirty(true);
 
     return 0;
 }
@@ -747,7 +776,7 @@ FileNode::truncate(Context & i_ctxt, off_t i_size)
 
     mtime(T64::now());
 
-    bn_persist(i_ctxt);
+    bn_isdirty(true);
 
     return 0;
 }
@@ -824,7 +853,7 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     try
     {
         ReadBTF rbtf(o_bufptr, i_size, i_off);
-        rb_traverse(i_ctxt, *this, RB_DEFAULT, 0, i_off, i_size, rbtf);
+        rb_traverse2(i_ctxt, *this, RB_DEFAULT, 0, i_off, i_size, rbtf);
         return rbtf.bt_retval();
     }
     catch (int const & i_errno)
@@ -902,14 +931,14 @@ FileNode::write(Context & i_ctxt,
     try
     {
         WriteBTF wbtf(i_data, i_size, i_off);
-        rb_traverse(i_ctxt, *this, RB_MODIFY, 0, i_off, i_size, wbtf);
+        if (rb_traverse2(i_ctxt, *this, RB_MODIFY, 0, i_off, i_size, wbtf))
+        {
+            // Did the node get bigger?
+            // If the file grew the size needs to be larger.
+            size(max(i_off + i_size, size()));
 
-        // Did the node get bigger?
-        // If the file grew the size needs to be larger.
-        size(max(i_off + i_size, size()));
-
-        // Save the new state to the blockstore.
-        bn_persist(i_ctxt);
+            bn_isdirty(true);
+        }
 
         return wbtf.bt_retval();
     }
