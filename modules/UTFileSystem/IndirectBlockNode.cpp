@@ -103,13 +103,13 @@ IndirectBlockNode::bn_flush(Context & i_ctxt)
 }
 
 bool
-IndirectBlockNode::rb_traverse2(Context & i_ctxt,
-                                FileNode & i_fn,
-                                unsigned int i_flags,
-                                off_t i_base,
-                                off_t i_rngoff,
-                                size_t i_rngsize,
-                                BlockTraverseFunc & i_trav)
+IndirectBlockNode::rb_traverse(Context & i_ctxt,
+                               FileNode & i_fn,
+                               unsigned int i_flags,
+                               off_t i_base,
+                               off_t i_rngoff,
+                               size_t i_rngsize,
+                               BlockTraverseFunc & i_trav)
 {
     static size_t refspan = BLKSZ;
 
@@ -180,22 +180,6 @@ IndirectBlockNode::rb_traverse2(Context & i_ctxt,
     // Return our dirty state.
     return bn_isdirty();
 }
-
-#if 0
-void
-IndirectBlockNode::rb_update(Context & i_ctxt,
-                             off_t i_base,
-                             RefBlockNode::BindingSeq const & i_bs)
-{
-    size_t refspan = BLKSZ;
-
-    for (unsigned i = 0; i < i_bs.size(); ++i)
-    {
-        size_t ndx = (i_bs[i].first - i_base) / refspan;
-        m_blkref[ndx] = i_bs[i].second;
-    }
-}
-#endif
 
 size_t
 IndirectBlockNode::rb_truncate(Context & i_ctxt,

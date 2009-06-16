@@ -63,13 +63,13 @@ DoubleIndBlockNode::bn_flush(Context & i_ctxt)
 }
 
 bool
-DoubleIndBlockNode::rb_traverse2(Context & i_ctxt,
-                                 FileNode & i_fn,
-                                 unsigned int i_flags,
-                                 off_t i_base,
-                                 off_t i_rngoff,
-                                 size_t i_rngsize,
-                                 BlockTraverseFunc & i_trav)
+DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
+                                FileNode & i_fn,
+                                unsigned int i_flags,
+                                off_t i_base,
+                                off_t i_rngoff,
+                                size_t i_rngsize,
+                                BlockTraverseFunc & i_trav)
 {
     static off_t const refspan = NUMREF * BLKSZ;
 
@@ -129,8 +129,8 @@ DoubleIndBlockNode::rb_traverse2(Context & i_ctxt,
         }
 
         // Recursively traverse ...
-        if (nh->rb_traverse2(i_ctxt, i_fn, i_flags, off,
-                             i_rngoff, i_rngsize, i_trav))
+        if (nh->rb_traverse(i_ctxt, i_fn, i_flags, off,
+                            i_rngoff, i_rngsize, i_trav))
         {
             bn_isdirty(true);
         }
@@ -140,22 +140,6 @@ DoubleIndBlockNode::rb_traverse2(Context & i_ctxt,
     // Return our dirty state.
     return bn_isdirty();
 }
-
-#if 0
-void
-DoubleIndBlockNode::rb_update(Context & i_ctxt,
-                             off_t i_base,
-                             RefBlockNode::BindingSeq const & i_bs)
-{
-    size_t refspan = NUMREF * BLKSZ;
-
-    for (unsigned i = 0; i < i_bs.size(); ++i)
-    {
-        size_t ndx = (i_bs[i].first - i_base) / refspan;
-        m_blkref[ndx] = i_bs[i].second;
-    }
-}
-#endif
 
 size_t
 DoubleIndBlockNode::rb_truncate(Context & i_ctxt,

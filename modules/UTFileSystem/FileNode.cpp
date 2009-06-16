@@ -235,13 +235,13 @@ FileNode::bn_flush(Context & i_ctxt)
 }
 
 bool
-FileNode::rb_traverse2(Context & i_ctxt,
-                       FileNode & i_fn,
-                       unsigned int i_flags,
-                       off_t i_base,
-                       off_t i_rngoff,
-                       size_t i_rngsize,
-                       BlockTraverseFunc & i_trav)
+FileNode::rb_traverse(Context & i_ctxt,
+                      FileNode & i_fn,
+                      unsigned int i_flags,
+                      off_t i_base,
+                      off_t i_rngoff,
+                      size_t i_rngsize,
+                      BlockTraverseFunc & i_trav)
 {
     // Running offset and size.
     off_t off = 0;
@@ -254,7 +254,7 @@ FileNode::rb_traverse2(Context & i_ctxt,
     // Our base needs to be 0 or else somebody is very confused.
     if (i_base != off)
         throwstream(InternalError, FILELINE
-                    << "FileNode::rb_traverse2 called with non-zero base: "
+                    << "FileNode::rb_traverse called with non-zero base: "
                     << i_base);
 
     // Does this region intersect the inline block?
@@ -408,7 +408,7 @@ FileNode::rb_traverse2(Context & i_ctxt,
             }
         }
 
-        if (ibh->rb_traverse2(i_ctxt, *this, i_flags, off,
+        if (ibh->rb_traverse(i_ctxt, *this, i_flags, off,
                               i_rngoff, i_rngsize, i_trav))
         {
             bn_isdirty(true);
@@ -474,7 +474,7 @@ FileNode::rb_traverse2(Context & i_ctxt,
             }
         }
 
-        if (nh->rb_traverse2(i_ctxt, *this, i_flags, off,
+        if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
                              i_rngoff, i_rngsize, i_trav))
         {
             bn_isdirty(true);
@@ -803,7 +803,7 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     try
     {
         ReadBTF rbtf(o_bufptr, i_size, i_off);
-        rb_traverse2(i_ctxt, *this, RB_DEFAULT, 0, i_off, i_size, rbtf);
+        rb_traverse(i_ctxt, *this, RB_DEFAULT, 0, i_off, i_size, rbtf);
         return rbtf.bt_retval();
     }
     catch (int const & i_errno)
@@ -881,7 +881,7 @@ FileNode::write(Context & i_ctxt,
     try
     {
         WriteBTF wbtf(i_data, i_size, i_off);
-        if (rb_traverse2(i_ctxt, *this, RB_MODIFY, 0, i_off, i_size, wbtf))
+        if (rb_traverse(i_ctxt, *this, RB_MODIFY, 0, i_off, i_size, wbtf))
         {
             // Did the node get bigger?
             // If the file grew the size needs to be larger.

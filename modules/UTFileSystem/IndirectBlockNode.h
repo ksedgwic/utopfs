@@ -49,19 +49,13 @@ public:
 
     virtual BlockRef const & bn_flush(Context & i_ctxt);
 
-    virtual bool rb_traverse2(Context & i_ctxt,
-                              FileNode & i_fn,
-                              unsigned int i_flags,
-                              off_t i_base,
-                              off_t i_rngoff,
-                              size_t i_rngsize,
-                              BlockTraverseFunc & i_trav);
-
-#if 0
-    virtual void rb_update(Context & i_ctxt,
-                           off_t i_base,
-                           BindingSeq const & i_bs);
-#endif
+    virtual bool rb_traverse(Context & i_ctxt,
+                             FileNode & i_fn,
+                             unsigned int i_flags,
+                             off_t i_base,
+                             off_t i_rngoff,
+                             size_t i_rngsize,
+                             BlockTraverseFunc & i_trav);
 
     virtual size_t rb_truncate(Context & i_ctxt,
                                off_t i_base,
