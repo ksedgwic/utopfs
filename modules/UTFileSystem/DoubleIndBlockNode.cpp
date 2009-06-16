@@ -40,7 +40,7 @@ DoubleIndBlockNode::~DoubleIndBlockNode()
     LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
-BlockRef
+BlockRef const &
 DoubleIndBlockNode::bn_flush(Context & i_ctxt)
 {
     // If we aren't dirty then we just return our current reference.
@@ -242,7 +242,7 @@ ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i
 }
 
 
-BlockRef
+BlockRef const &
 ZeroDoubleIndBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE

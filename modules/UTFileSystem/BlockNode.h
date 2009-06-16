@@ -62,11 +62,11 @@ public:
     // Persist the node to the blockstore and update the cached
     // reference.
     //
-    virtual BlockRef bn_persist(Context & i_ctxt) = 0;
+    virtual BlockRef const & bn_persist(Context & i_ctxt) = 0;
 
     // Traverse the cached filesystem persisting dirty blocks.
     //
-    virtual BlockRef bn_flush(Context & i_ctxt) = 0;
+    virtual BlockRef const & bn_flush(Context & i_ctxt) = 0;
 
 protected:
     BlockRef			m_ref;

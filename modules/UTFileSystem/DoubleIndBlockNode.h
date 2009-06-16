@@ -36,7 +36,7 @@ public:
 
     virtual ~DoubleIndBlockNode();
 
-    virtual BlockRef bn_flush(Context & i_ctxt);
+    virtual BlockRef const & bn_flush(Context & i_ctxt);
 
     virtual bool rb_traverse2(Context & i_ctxt,
                               FileNode & i_fn,
@@ -68,7 +68,7 @@ public:
     ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i_nh);
 
     // This would be a mistake.
-    virtual BlockRef bn_persist(Context & i_ctxt);
+    virtual BlockRef const & bn_persist(Context & i_ctxt);
 };
 
 } // namespace UTFS

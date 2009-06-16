@@ -51,9 +51,9 @@ public:
 
     size_t bn_size() const { return sizeof(m_inl); }
 
-    virtual BlockRef bn_persist(Context & i_ctxt);
+    virtual BlockRef const & bn_persist(Context & i_ctxt);
 
-    virtual BlockRef bn_flush(Context & i_ctxt);
+    virtual BlockRef const & bn_flush(Context & i_ctxt);
 
     virtual bool rb_traverse2(Context & i_ctxt,
                               FileNode & i_fn,

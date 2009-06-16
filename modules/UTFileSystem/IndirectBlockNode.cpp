@@ -51,7 +51,7 @@ IndirectBlockNode::~IndirectBlockNode()
     LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
-BlockRef
+BlockRef const &
 IndirectBlockNode::bn_persist(Context & i_ctxt)
 {
     // Copy the data into a buffer.
@@ -80,7 +80,7 @@ IndirectBlockNode::bn_persist(Context & i_ctxt)
     return m_ref;
 }
 
-BlockRef
+BlockRef const &
 IndirectBlockNode::bn_flush(Context & i_ctxt)
 {
     // If we aren't dirty then we just return our current reference.
@@ -290,7 +290,7 @@ ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
 }
 
 
-BlockRef
+BlockRef const &
 ZeroIndirectBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE

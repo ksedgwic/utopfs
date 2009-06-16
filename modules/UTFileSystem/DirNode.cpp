@@ -71,7 +71,7 @@ DirNode::~DirNode()
     LOG(lgr, 4, "DTOR " << bn_blkref());
 }
 
-BlockRef
+BlockRef const &
 DirNode::bn_flush(Context & i_ctxt)
 {
     // If we aren't dirty then we just return our current reference.
@@ -83,7 +83,7 @@ DirNode::bn_flush(Context & i_ctxt)
     {
         if (it->second->bn_isdirty())
         {
-            BlockRef blkref = it->second->bn_flush(i_ctxt);
+            BlockRef const & blkref = it->second->bn_flush(i_ctxt);
 
             bool found = false;
 

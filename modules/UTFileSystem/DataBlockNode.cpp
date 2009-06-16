@@ -49,7 +49,7 @@ DataBlockNode::~DataBlockNode()
     LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
-BlockRef
+BlockRef const &
 DataBlockNode::bn_persist(Context & i_ctxt)
 {
     // Copy the data into a buffer.
@@ -77,7 +77,7 @@ DataBlockNode::bn_persist(Context & i_ctxt)
     return m_ref;
 }
 
-BlockRef
+BlockRef const &
 DataBlockNode::bn_flush(Context & i_ctxt)
 {
     return bn_persist(i_ctxt);
@@ -88,7 +88,7 @@ ZeroDataBlockNode::ZeroDataBlockNode()
     LOG(lgr, 6, "CTOR " << "ZERO");
 }
 
-BlockRef
+BlockRef const &
 ZeroDataBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE

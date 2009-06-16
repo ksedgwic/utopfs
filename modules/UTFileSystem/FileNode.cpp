@@ -146,7 +146,7 @@ FileNode::~FileNode()
     LOG(lgr, 4, "DTOR " << bn_blkref());
 }
 
-BlockRef
+BlockRef const &
 FileNode::bn_persist(Context & i_ctxt)
 {
     uint8 buf[BlockNode::BLKSZ];
@@ -212,7 +212,7 @@ FileNode::bn_persist(Context & i_ctxt)
     return m_ref;
 }
 
-BlockRef
+BlockRef const &
 FileNode::bn_flush(Context & i_ctxt)
 {
     // If we aren't dirty then we just return our current reference.
