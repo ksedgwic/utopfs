@@ -21,7 +21,7 @@ LIBSRC =	\
 			utplog.cpp \
 			$(NULL)
 
-LIBSO =		libutp
+LIBSO =		libUTPFS-utp
 
 EXPMACRO =	UTP_EXP
 EXPHEADER =	utpexp.h

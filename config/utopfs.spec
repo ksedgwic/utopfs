@@ -68,7 +68,7 @@ mkdir -p $RPM_BUILD_ROOT
 # Install libraries.
 install -d $RPM_BUILD_ROOT%{_libdir}
 install \
-  libutp/src/%{OBJDIR}/libutp.so \
+  libutp/src/%{OBJDIR}/libUTPFS-utp.so \
 $RPM_BUILD_ROOT%{_libdir}
 
 # Install modules.
@@ -110,6 +110,8 @@ rm -rf $RPM_BUILD_ROOT
 %files -n fuse-utopfs
 %defattr(-,root,root,-)
 %doc
+
+%{_libdir}/libUTPFS-utp.so
 
 %{_libdir}/UTPFS-DFLG.so
 %{_libdir}/UTPFS-FSBS.so

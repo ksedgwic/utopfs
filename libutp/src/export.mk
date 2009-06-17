@@ -9,13 +9,13 @@ ENVLDLIBPATH +=	\
 
 ifeq ($(SYSNAME), Linux)
 LIBS +=		\
-			-L$(ROOTDIR)/libutp/src/$(OBJTAIL) -lutp \
+			-L$(ROOTDIR)/libutp/src/$(OBJTAIL) -lUTPFS-utp \
 			$(NULL)
 endif
 
 ifeq ($(SYSNAME), WIN32)
 LIBS +=		\
-			$(ROOTDIR)/libutp/src/$(OBJTAIL)/libutp.lib \
+			$(ROOTDIR)/libutp/src/$(OBJTAIL)/libUTPFS-utp.lib \
 			$(NULL)
 endif
 
