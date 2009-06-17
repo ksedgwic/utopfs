@@ -1,8 +1,7 @@
 RPM Packaging
 
-  Figure out the svc.conf w/ RPM packaging.
-
-  Add RPM build instructions to README.
+  RPM installed utopfs quits after "echo hello > foo"; guessing
+  that we are emitting something to stdout?  Investigate ...
 
 Write multiple filesystems in common blockstore test.
 
