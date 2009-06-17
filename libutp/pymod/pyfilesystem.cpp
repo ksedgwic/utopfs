@@ -697,7 +697,7 @@ init_FileSystem(void)
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	FileSystemErrorObject =
-        PyErr_NewException("FileSystem.error", NULL, NULL);
+        PyErr_NewException((char *) "FileSystem.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", FileSystemErrorObject);
 }
 

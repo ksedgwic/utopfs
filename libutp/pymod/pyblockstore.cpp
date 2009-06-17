@@ -330,7 +330,7 @@ init_BlockStore(void)
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	BlockStoreErrorObject =
-        PyErr_NewException("BlockStore.error", NULL, NULL);
+        PyErr_NewException((char *) "BlockStore.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", BlockStoreErrorObject);
 }
 

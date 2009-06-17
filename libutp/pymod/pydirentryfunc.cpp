@@ -174,7 +174,7 @@ init_PyDirEntryFunc(void)
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	PyDirEntryFuncErrorObject =
-        PyErr_NewException("PyDirEntryFunc.error", NULL, NULL);
+        PyErr_NewException((char *) "PyDirEntryFunc.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", PyDirEntryFuncErrorObject);
 }
 

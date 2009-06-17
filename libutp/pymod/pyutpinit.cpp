@@ -132,35 +132,35 @@ init_utp(void)
     d = PyModule_GetDict(m);
 
     ErrorObject =
-        PyErr_NewException("utp.Error", NULL, NULL);
+        PyErr_NewException((char *) "utp.Error", NULL, NULL);
     PyDict_SetItemString(d, "Error", ErrorObject);
 
     InternalErrorObject =
-        PyErr_NewException("utp.InternalError", ErrorObject, NULL);
+        PyErr_NewException((char *) "utp.InternalError", ErrorObject, NULL);
     PyDict_SetItemString(d, "InternalError", InternalErrorObject);
 
     OperationErrorObject =
-        PyErr_NewException("utp.OperationError", ErrorObject, NULL);
+        PyErr_NewException((char *) "utp.OperationError", ErrorObject, NULL);
     PyDict_SetItemString(d, "OperationError", OperationErrorObject);
 
     NotFoundErrorObject =
-        PyErr_NewException("utp.NotFoundError", ErrorObject, NULL);
+        PyErr_NewException((char *) "utp.NotFoundError", ErrorObject, NULL);
     PyDict_SetItemString(d, "NotFoundError", NotFoundErrorObject);
 
     NotUniqueErrorObject =
-        PyErr_NewException("utp.NotUniqueError", ErrorObject, NULL);
+        PyErr_NewException((char *) "utp.NotUniqueError", ErrorObject, NULL);
     PyDict_SetItemString(d, "NotUniqueError", NotFoundErrorObject);
 
     ValueErrorObject =
-        PyErr_NewException("utp.ValueError", ErrorObject, NULL);
+        PyErr_NewException((char *) "utp.ValueError", ErrorObject, NULL);
     PyDict_SetItemString(d, "ValueError", ValueErrorObject);
 
     ParseErrorObject =
-        PyErr_NewException("utp.ParseError", ErrorObject, NULL);
+        PyErr_NewException((char *) "utp.ParseError", ErrorObject, NULL);
     PyDict_SetItemString(d, "ParseError", ParseErrorObject);
 
     VerificationErrorObject =
-        PyErr_NewException("utp.VerificationError", ErrorObject, NULL);
+        PyErr_NewException((char *) "utp.VerificationError", ErrorObject, NULL);
     PyDict_SetItemString(d, "VerificationError", VerificationErrorObject);
 }
 

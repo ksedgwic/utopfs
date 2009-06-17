@@ -45,43 +45,43 @@ or st_flags, they are available as attributes only.\n\
 See os.stat for more information.");
 
 static PyStructSequence_Field stat_result_fields[] = {
-	{"st_mode",    "protection bits"},
-	{"st_ino",     "inode"},
-	{"st_dev",     "device"},
-	{"st_nlink",   "number of hard links"},
-	{"st_uid",     "user ID of owner"},
-	{"st_gid",     "group ID of owner"},
-	{"st_size",    "total size, in bytes"},
+	{(char *) "st_mode",    (char *) "protection bits"},
+	{(char *) "st_ino",     (char *) "inode"},
+	{(char *) "st_dev",     (char *) "device"},
+	{(char *) "st_nlink",   (char *) "number of hard links"},
+	{(char *) "st_uid",     (char *) "user ID of owner"},
+	{(char *) "st_gid",     (char *) "group ID of owner"},
+	{(char *) "st_size",    (char *) "total size, in bytes"},
 	/* The NULL is replaced with PyStructSequence_UnnamedField later. */
-	{NULL,   "integer time of last access"},
-	{NULL,   "integer time of last modification"},
-	{NULL,   "integer time of last change"},
-	{"st_atime",   "time of last access"},
-	{"st_mtime",   "time of last modification"},
-	{"st_ctime",   "time of last change"},
+	{(char *) NULL,   (char *) "integer time of last access"},
+	{(char *) NULL,   (char *) "integer time of last modification"},
+	{(char *) NULL,   (char *) "integer time of last change"},
+	{(char *) "st_atime",   (char *) "time of last access"},
+	{(char *) "st_mtime",   (char *) "time of last modification"},
+	{(char *) "st_ctime",   (char *) "time of last change"},
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-	{"st_blksize", "blocksize for filesystem I/O"},
+	{(char *) "st_blksize", (char *) "blocksize for filesystem I/O"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-	{"st_blocks",  "number of blocks allocated"},
+	{(char *) "st_blocks",  (char *) "number of blocks allocated"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
-	{"st_rdev",    "device type (if inode device)"},
+	{(char *) "st_rdev",    (char *) "device type (if inode device)"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
-	{"st_flags",   "user defined flags for file"},
+	{(char *) "st_flags",   (char *) "user defined flags for file"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
-	{"st_gen",    "generation number"},
+	{(char *) "st_gen",    (char *) "generation number"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
-	{"st_birthtime",   "time of creation"},
+	{(char *) "st_birthtime",   (char *) "time of creation"},
 #endif
 	{0}
 };
 
 static PyStructSequence_Desc stat_result_desc = {
-	"stat_result", /* name */
+	(char *) "stat_result", /* name */
 	stat_result__doc__, /* doc */
 	stat_result_fields,
 	10
@@ -241,7 +241,7 @@ __declspec( dllexport )
 void
 init_stat(void)
 {
-    stat_result_desc.name = "utp" ".stat_result";
+    stat_result_desc.name = (char *) "utp" ".stat_result";
     stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
