@@ -1,6 +1,4 @@
-Add some caching
-  rb_traverse2
-  bt_update
+Figure out the svc.conf w/ RPM packaging.
 
 Write multiple filesystems in common blockstore test.
 
@@ -15,8 +13,6 @@ Large directories >60 items not implemented.
 
 The "access" call implementation is trivially permissive.  Fix this or
 get rid of it ...
-
-RPM packaging.
 
 Figure out the uid an gid, are they in the file_info_t?
 
