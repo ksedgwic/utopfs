@@ -406,6 +406,58 @@ static int utopfs_opt_proc(void * data,
 	}
 }
 
+#define LCLCONF "./utopfs.conf"
+#define SYSCONF "/etc/sysconfig/utopfs/utopfs.conf"
+void
+init_modules(string const & argv0)
+{
+    ACE_stat statbuf;
+
+    // Build a synthetic command line.
+    vector<string> args;
+    args.push_back(argv0);
+
+	// Enable ACE debugging
+    // args.push_back("-d");
+
+    // Is there a UTOPFS_SVCCONF env variable?
+    char * svcconfenv = ACE_OS::getenv("UTOPFS_SVCCONF");
+    if (svcconfenv && *svcconfenv)
+    {
+        args.push_back("-f");
+        args.push_back(svcconfenv);
+    }
+
+    // Is there a local utopfs.conf file?
+    else if (ACE_OS::stat(LCLCONF, &statbuf) == 0)
+    {
+        args.push_back("-f");
+        args.push_back(LCLCONF);
+    }
+
+    // Is there a system utopfs.conf file?
+    else if (ACE_OS::stat(SYSCONF, &statbuf) == 0)
+    {
+        args.push_back("-f");
+        args.push_back(SYSCONF);
+    }
+
+    // Convert to int, char**
+    char ** argv = (char **) malloc(sizeof(char *) * (args.size() + 1));
+    for (unsigned i = 0; i < args.size(); ++i)
+        argv[i] = strdup(args[i].c_str());
+    argv[args.size()] = NULL; // sentinal
+
+    // Initialize the modules.
+    int rv = ACE_Service_Config::open(args.size(), argv);
+    if (rv == -1)
+        throwstream(OperationError,
+                    "service config failed: " << ACE_OS::strerror(errno));
+    else if (rv > 0)
+        throwstream(OperationError,
+                    rv << " errors while parsing service config");
+}
+
 int
 main(int argc, char ** argv)
 {
@@ -434,7 +486,7 @@ main(int argc, char ** argv)
     utopfs_oper.access		= utopfs_access;
     utopfs_oper.utimens		= utopfs_utimens;
 
-    ACE_Service_Config::open(argv[0]);
+    init_modules(argv[0]);
 
     // Perform the mount.
     try

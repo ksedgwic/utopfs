@@ -1,4 +1,8 @@
-Figure out the svc.conf w/ RPM packaging.
+RPM Packaging
+
+  Figure out the svc.conf w/ RPM packaging.
+
+  Add RPM build instructions to README.
 
 Write multiple filesystems in common blockstore test.
 

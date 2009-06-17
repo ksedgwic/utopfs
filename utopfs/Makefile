@@ -15,7 +15,7 @@ SCRIPTS =	\
 			$(NULL)
 
 CFG =		\
-			svc.conf \
+			utopfs.conf \
 			$(NULL)
 
 include $(ROOTDIR)/config/depend.mk

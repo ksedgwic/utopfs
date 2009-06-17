@@ -66,13 +66,13 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT
 
 # Install libraries.
-install -d $RPM_BUILD_ROOT%{_libdir}
+mkdir -p $RPM_BUILD_ROOT%{_libdir}
 install \
   libutp/src/%{OBJDIR}/libUTPFS-utp.so \
 $RPM_BUILD_ROOT%{_libdir}
 
 # Install modules.
-install -d $RPM_BUILD_ROOT%{_libdir}
+mkdir -p $RPM_BUILD_ROOT%{_libdir}
 install \
   modules/DefaultLogger/%{OBJDIR}/UTPFS-DFLG.so \
   modules/FSBlockStore/%{OBJDIR}/UTPFS-FSBS.so \
@@ -80,6 +80,7 @@ install \
 $RPM_BUILD_ROOT%{_libdir}
 
 # Make symbolic links with "lib" prefix.
+mkdir -p $RPM_BUILD_ROOT%{_libdir}
 pushd $RPM_BUILD_ROOT%{_libdir}
   ln -sf UTPFS-DFLG.so libUTPFS-DFLG.so
   ln -sf UTPFS-FSBS.so libUTPFS-FSBS.so
@@ -87,10 +88,16 @@ pushd $RPM_BUILD_ROOT%{_libdir}
 popd
 
 # Install binaries.
-install -d $RPM_BUILD_ROOT%{_bindir}
+mkdir -p $RPM_BUILD_ROOT%{_bindir}
 install \
   utopfs/%{OBJDIR}/utopfs \
 $RPM_BUILD_ROOT%{_bindir}
+
+# Install configuration
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/utopfs
+install \
+  utopfs/Linux.INSTCFG/utopfs.conf \
+$RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/utopfs
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -122,6 +129,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libUTPFS-UTFS.so
 
 %{_bindir}/utopfs
+
+%dir %{_sysconfdir}/sysconfig/utopfs
+%config(noreplace) %{_sysconfdir}/sysconfig/utopfs/utopfs.conf
 
 %changelog
 * Tue Jun 16 2009 Ken Sedgwick <ksedgwic@lap3.bonsai.com> - 
