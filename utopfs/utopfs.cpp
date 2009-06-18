@@ -370,7 +370,7 @@ static int utopfs_opt_proc(void * data,
 	switch (key)
     {
     case KEY_LOGLEVEL:
-        utopfs.loglevel = atoi(arg);
+        utopfs.loglevel = atoi(&arg[2]);
         return 0;
 
     case KEY_MKFS:
@@ -378,11 +378,11 @@ static int utopfs_opt_proc(void * data,
         return 0;
 
     case KEY_FSID:
-        utopfs.fsid = arg;
+        utopfs.fsid = &arg[2];
         return 0;
 
     case KEY_PASSPHRASE:
-        utopfs.passphrase = arg;
+        utopfs.passphrase = &arg[2];
         return 0;
 
 	case FUSE_OPT_KEY_OPT:

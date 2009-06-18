@@ -1,7 +1,4 @@
-RPM Packaging
-
-  RPM installed utopfs quits after "echo hello > foo"; guessing
-  that we are emitting something to stdout?  Investigate ...
+Figure out why -L logging arg doesn't work.
 
 Write multiple filesystems in common blockstore test.
 
@@ -31,11 +28,3 @@ Check object lifetimes of the python direntry callback objects.
 
 Notes
 ----------------------------------------------------------------
-
-#2  0x0000000000402a15 in fatal (
-    msg=0x1168598 "InternalError: FSBlockStore.cpp:154 FSBlockStore::bs_put_bloc
-k: open failed on BLOCKS/F4P2TY2PGKXU4656LVW7EUKHVFRMAOJKS4W2UIEY6X522R7OGEEA===
-=: No such file or directory\n  utp::Exception::Exception(st"...)
-    at utopfs.cpp:33
-
-Relative paths are busted in background.
