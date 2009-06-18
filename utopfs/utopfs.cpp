@@ -39,6 +39,7 @@ static int fatal(char const * msg)
 struct utopfs
 {
     struct fuse_args utop_args;
+    string argv0;
     int loglevel;
     string path;
     string fsid;
@@ -64,6 +65,106 @@ struct MyDirEntryFunc : public utp::FileSystem::DirEntryFunc
         return m_filler(m_buf, i_name.c_str(), i_stbuf, i_off) != 0;
     }
 };
+
+#define LCLCONF "./utopfs.conf"
+#define SYSCONF "/etc/sysconfig/utopfs/utopfs.conf"
+static void
+init_modules(string const & argv0)
+{
+    ACE_stat statbuf;
+
+    // Build a synthetic command line.
+    vector<string> args;
+    args.push_back(argv0);
+
+	// Enable ACE debugging
+    // args.push_back("-d");
+
+    // Is there a UTOPFS_SVCCONF env variable?
+    char * svcconfenv = ACE_OS::getenv("UTOPFS_SVCCONF");
+    if (svcconfenv && *svcconfenv)
+    {
+        args.push_back("-f");
+        args.push_back(svcconfenv);
+    }
+
+    // Is there a local utopfs.conf file?
+    else if (ACE_OS::stat(LCLCONF, &statbuf) == 0)
+    {
+        args.push_back("-f");
+        args.push_back(LCLCONF);
+    }
+
+    // Is there a system utopfs.conf file?
+    else if (ACE_OS::stat(SYSCONF, &statbuf) == 0)
+    {
+        args.push_back("-f");
+        args.push_back(SYSCONF);
+    }
+
+    // Convert to int, char**
+    char ** argv = (char **) malloc(sizeof(char *) * (args.size() + 1));
+    for (unsigned i = 0; i < args.size(); ++i)
+        argv[i] = strdup(args[i].c_str());
+    argv[args.size()] = NULL; // sentinal
+
+    // Initialize the modules.
+    int rv = ACE_Service_Config::open(args.size(), argv);
+    if (rv == -1)
+        throwstream(OperationError,
+                    "service config failed: " << ACE_OS::strerror(errno));
+    else if (rv > 0)
+        throwstream(OperationError,
+                    rv << " errors while parsing service config");
+}
+
+static void *
+utopfs_init(struct fuse_conn_info * i_conn)
+{
+    /// Modules (including logging) load and start here.
+    init_modules(utopfs.argv0);
+
+    /// If the logging was specified, set it.
+    if (utopfs.loglevel != -1)
+        theRootLogCategory.logger_level(utopfs.loglevel);
+
+    // Perform the mount.
+    try
+    {
+        if (utopfs.do_mkfs)
+        {
+            StringSeq bsargs;
+            bsargs.push_back(utopfs.path);
+            BlockStoreHandle bsh = BlockStoreFactory::create("FSBS", bsargs);
+
+            StringSeq fsargs;
+            utopfs.fsh = FileSystemFactory::mkfs("UTFS",
+                                                 bsh,
+                                                 utopfs.fsid,
+                                                 utopfs.passphrase,
+                                                 fsargs);
+        }
+        else
+        {
+            StringSeq bsargs;
+            bsargs.push_back(utopfs.path);
+            BlockStoreHandle bsh = BlockStoreFactory::open("FSBS", bsargs);
+
+            StringSeq fsargs;
+            utopfs.fsh = FileSystemFactory::mount("UTFS",
+                                                  bsh,
+                                                  utopfs.fsid,
+                                                  utopfs.passphrase,
+                                                  fsargs);
+        }
+    }
+    catch (utp::Exception const & ex)
+    {
+        fatal(ex.what());
+    }
+
+    return NULL;
+}
 
 static int
 utopfs_getattr(char const * i_path,
@@ -415,62 +516,11 @@ static int utopfs_opt_proc(void * data,
 	}
 }
 
-#define LCLCONF "./utopfs.conf"
-#define SYSCONF "/etc/sysconfig/utopfs/utopfs.conf"
-void
-init_modules(string const & argv0)
-{
-    ACE_stat statbuf;
-
-    // Build a synthetic command line.
-    vector<string> args;
-    args.push_back(argv0);
-
-	// Enable ACE debugging
-    // args.push_back("-d");
-
-    // Is there a UTOPFS_SVCCONF env variable?
-    char * svcconfenv = ACE_OS::getenv("UTOPFS_SVCCONF");
-    if (svcconfenv && *svcconfenv)
-    {
-        args.push_back("-f");
-        args.push_back(svcconfenv);
-    }
-
-    // Is there a local utopfs.conf file?
-    else if (ACE_OS::stat(LCLCONF, &statbuf) == 0)
-    {
-        args.push_back("-f");
-        args.push_back(LCLCONF);
-    }
-
-    // Is there a system utopfs.conf file?
-    else if (ACE_OS::stat(SYSCONF, &statbuf) == 0)
-    {
-        args.push_back("-f");
-        args.push_back(SYSCONF);
-    }
-
-    // Convert to int, char**
-    char ** argv = (char **) malloc(sizeof(char *) * (args.size() + 1));
-    for (unsigned i = 0; i < args.size(); ++i)
-        argv[i] = strdup(args[i].c_str());
-    argv[args.size()] = NULL; // sentinal
-
-    // Initialize the modules.
-    int rv = ACE_Service_Config::open(args.size(), argv);
-    if (rv == -1)
-        throwstream(OperationError,
-                    "service config failed: " << ACE_OS::strerror(errno));
-    else if (rv > 0)
-        throwstream(OperationError,
-                    rv << " errors while parsing service config");
-}
-
 int
 main(int argc, char ** argv)
 {
     // Setup defaults
+    utopfs.argv0 = argv[0];
     utopfs.loglevel = -1;
     utopfs.do_mkfs = false;
 
@@ -489,6 +539,7 @@ main(int argc, char ** argv)
         utopfs.path = cwd + '/' + utopfs.path;
     }
 
+    utopfs_oper.init		= utopfs_init;
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.readlink	= utopfs_readlink;
     utopfs_oper.mknod		= utopfs_mknod;
@@ -506,48 +557,6 @@ main(int argc, char ** argv)
     utopfs_oper.readdir		= utopfs_readdir;
     utopfs_oper.access		= utopfs_access;
     utopfs_oper.utimens		= utopfs_utimens;
-
-    /// Modules (including logging) load and start here.
-    init_modules(argv[0]);
-
-    /// If the logging was specified, set it.
-    if (utopfs.loglevel != -1)
-        theRootLogCategory.logger_level(utopfs.loglevel);
-
-    // Perform the mount.
-    try
-    {
-        if (utopfs.do_mkfs)
-        {
-            StringSeq bsargs;
-            bsargs.push_back(utopfs.path);
-            BlockStoreHandle bsh = BlockStoreFactory::create("FSBS", bsargs);
-
-            StringSeq fsargs;
-            utopfs.fsh = FileSystemFactory::mkfs("UTFS",
-                                                 bsh,
-                                                 utopfs.fsid,
-                                                 utopfs.passphrase,
-                                                 fsargs);
-        }
-        else
-        {
-            StringSeq bsargs;
-            bsargs.push_back(utopfs.path);
-            BlockStoreHandle bsh = BlockStoreFactory::open("FSBS", bsargs);
-
-            StringSeq fsargs;
-            utopfs.fsh = FileSystemFactory::mount("UTFS",
-                                                  bsh,
-                                                  utopfs.fsid,
-                                                  utopfs.passphrase,
-                                                  fsargs);
-        }
-    }
-    catch (utp::Exception const & ex)
-    {
-        return fatal(ex.what());
-    }
 
     return fuse_main(args.argc, args.argv, &utopfs_oper, NULL);
 }

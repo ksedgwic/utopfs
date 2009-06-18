@@ -1,4 +1,5 @@
-Figure out why -L logging arg doesn't work.
+Figure out what fuse's lowlevel interface is good for and whether we
+should switch to it.
 
 Write multiple filesystems in common blockstore test.
 
