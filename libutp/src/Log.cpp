@@ -17,6 +17,7 @@
 #include <ace/Atomic_Op.h>
 
 #include "Log.h"
+#include "LoggerBase.h"
 
 using namespace std;
 using namespace utp;
@@ -235,6 +236,26 @@ LogCategory::logger_rem(Logger * logger, bool recursive)
     // remove from our own list
     m_loggers.erase(remove(m_loggers.begin(), m_loggers.end(), logger),
                     m_loggers.end());
+}
+
+void
+LogCategory::logger_level(int i_level, bool i_recursive)
+{
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_logcat_mutex);
+
+    for (unsigned i = 0; i < m_loggers.size(); ++i)
+    {
+        LoggerBase * lbp = dynamic_cast<LoggerBase *>(m_loggers[i]);
+        if (lbp)
+            lbp->level(i_level);
+    }
+
+    if (i_recursive)
+    {
+        LogCategorySeq::iterator pos;
+        for (pos = m_subcat.begin(); pos != m_subcat.end(); pos++)
+            (*pos)->logger_level(i_level, i_recursive);
+    }
 }
 
 LogCategory *

@@ -17,10 +17,11 @@
 #include <fuse.h>
 #include <fuse/fuse_opt.h>
 
-#include "Except.h"
-#include "FileSystem.h"
-#include "FileSystemFactory.h"
 #include "BlockStoreFactory.h"
+#include "Except.h"
+#include "FileSystemFactory.h"
+#include "FileSystem.h"
+#include "Log.h"
 
 using namespace std;
 using namespace utp;
@@ -38,6 +39,7 @@ static int fatal(char const * msg)
 struct utopfs
 {
     struct fuse_args utop_args;
+    int loglevel;
     string path;
     string fsid;
     string passphrase;
@@ -310,6 +312,7 @@ static const char *utop_opts[] = {
 };
 
 enum {
+    KEY_LOGLEVEL,
     KEY_MKFS,
     KEY_FSID,
     KEY_PASSPHRASE,
@@ -322,6 +325,7 @@ enum {
 #define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
 
 static struct fuse_opt utopfs_opts[] = {
+	FUSE_OPT_KEY("-L",             KEY_LOGLEVEL),
 	FUSE_OPT_KEY("-M",             KEY_MKFS),
 	FUSE_OPT_KEY("-F ",            KEY_FSID),
 	FUSE_OPT_KEY("-P ",            KEY_PASSPHRASE),
@@ -365,6 +369,10 @@ static int utopfs_opt_proc(void * data,
 
 	switch (key)
     {
+    case KEY_LOGLEVEL:
+        utopfs.loglevel = atoi(arg);
+        return 0;
+
     case KEY_MKFS:
         utopfs.do_mkfs = true;
         return 0;
@@ -462,6 +470,8 @@ init_modules(string const & argv0)
 int
 main(int argc, char ** argv)
 {
+    // Setup defaults
+    utopfs.loglevel = -1;
     utopfs.do_mkfs = false;
 
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
@@ -497,7 +507,12 @@ main(int argc, char ** argv)
     utopfs_oper.access		= utopfs_access;
     utopfs_oper.utimens		= utopfs_utimens;
 
+    /// Modules (including logging) load and start here.
     init_modules(argv[0]);
+
+    /// If the logging was specified, set it.
+    if (utopfs.loglevel != -1)
+        theRootLogCategory.logger_level(utopfs.loglevel);
 
     // Perform the mount.
     try

@@ -43,6 +43,7 @@ public:
     virtual void debug_str(int level, LogFieldSeq const & valseq) = 0;
 };
 
+/// The root of the category tree.
 extern class LogCategory UTP_EXP theRootLogCategory;
 
 /// A sequence of Category objects.
@@ -85,6 +86,9 @@ public:
     /// @param logger the logger being removed.
     /// @param recursive should we remove this logger from subcategories?
     void logger_rem(Logger * logger, bool recursive = true);
+
+    /// Sets the level of the loggers attached to this category.
+    void logger_level(int level, bool recursive = true);
 
     /// Returns the parent category of this category.
     LogCategory * parent() const;
