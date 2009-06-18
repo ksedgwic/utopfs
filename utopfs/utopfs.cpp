@@ -325,7 +325,7 @@ enum {
 #define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
 
 static struct fuse_opt utopfs_opts[] = {
-	FUSE_OPT_KEY("-L",             KEY_LOGLEVEL),
+	FUSE_OPT_KEY("-L ",            KEY_LOGLEVEL),
 	FUSE_OPT_KEY("-M",             KEY_MKFS),
 	FUSE_OPT_KEY("-F ",            KEY_FSID),
 	FUSE_OPT_KEY("-P ",            KEY_PASSPHRASE),
