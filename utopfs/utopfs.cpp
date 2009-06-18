@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <string>
@@ -467,6 +468,16 @@ main(int argc, char ** argv)
 
 	if (fuse_opt_parse(&args, &utopfs, utopfs_opts, utopfs_opt_proc) == -1)
         fatal("option parsing failed");
+
+    // When we are daemonized our path is changed to '/'.  If the
+    // blockstore path is relative convert it to absolute ...
+    //
+    if (utopfs.path[0] != '/')
+    {
+        char cwdbuf[MAXPATHLEN];
+        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+        utopfs.path = cwd + '/' + utopfs.path;
+    }
 
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.readlink	= utopfs_readlink;
