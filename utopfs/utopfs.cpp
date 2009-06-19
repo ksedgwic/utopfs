@@ -41,6 +41,7 @@ struct utopfs
     struct fuse_args utop_args;
     string argv0;
     int loglevel;
+    string logpath;
     string path;
     string fsid;
     string passphrase;
@@ -121,12 +122,14 @@ init_modules(string const & argv0)
 static void *
 utopfs_init(struct fuse_conn_info * i_conn)
 {
+    // Set the log path and log level via env variables.
+    ostringstream ostrm;
+    ostrm << utopfs.loglevel;
+    ACE_OS::setenv("UTOPFS_LOG_LOGLEVEL", ostrm.str().c_str(), 1);
+    ACE_OS::setenv("UTOPFS_LOG_LOGPATH", utopfs.logpath.c_str(), 1);
+
     /// Modules (including logging) load and start here.
     init_modules(utopfs.argv0);
-
-    /// If the logging was specified, set it.
-    if (utopfs.loglevel != -1)
-        theRootLogCategory.logger_level(utopfs.loglevel);
 
     // Perform the mount.
     try
@@ -414,6 +417,7 @@ static const char *utop_opts[] = {
 
 enum {
     KEY_LOGLEVEL,
+    KEY_LOGPATH,
     KEY_MKFS,
     KEY_FSID,
     KEY_PASSPHRASE,
@@ -426,7 +430,8 @@ enum {
 #define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
 
 static struct fuse_opt utopfs_opts[] = {
-	FUSE_OPT_KEY("-L ",            KEY_LOGLEVEL),
+	FUSE_OPT_KEY("-l ",            KEY_LOGLEVEL),
+	FUSE_OPT_KEY("-L ",            KEY_LOGPATH),
 	FUSE_OPT_KEY("-M",             KEY_MKFS),
 	FUSE_OPT_KEY("-F ",            KEY_FSID),
 	FUSE_OPT_KEY("-P ",            KEY_PASSPHRASE),
@@ -468,10 +473,17 @@ static int utopfs_opt_proc(void * data,
 {
 	(void) data;
 
+    // NOTE - the value in 'arg' includes the option with any
+    // intervening space removed, ie: "-Lutopfs.log".
+
 	switch (key)
     {
     case KEY_LOGLEVEL:
         utopfs.loglevel = atoi(&arg[2]);
+        return 0;
+
+    case KEY_LOGPATH:
+        utopfs.logpath = &arg[2];
         return 0;
 
     case KEY_MKFS:
@@ -521,6 +533,7 @@ main(int argc, char ** argv)
 {
     // Setup defaults
     utopfs.argv0 = argv[0];
+    utopfs.logpath = "utopfs.log";
     utopfs.loglevel = -1;
     utopfs.do_mkfs = false;
 
@@ -537,6 +550,14 @@ main(int argc, char ** argv)
         char cwdbuf[MAXPATHLEN];
         string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
         utopfs.path = cwd + '/' + utopfs.path;
+    }
+
+    // Convert the log path to absolute.
+    if (utopfs.logpath[0] != '/')
+    {
+        char cwdbuf[MAXPATHLEN];
+        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+        utopfs.logpath = cwd + '/' + utopfs.logpath;
     }
 
     utopfs_oper.init		= utopfs_init;

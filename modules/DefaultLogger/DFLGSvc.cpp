@@ -71,6 +71,16 @@ DFLGSvc::init(int argc, char * argv[])
         }
     }
 
+    // Have any of the logging parameters been overridden by
+    // environment variables?
+    //
+    char * filelevelenv = ACE_OS::getenv("UTOPFS_LOG_FILELEVEL");
+    if (filelevelenv && *filelevelenv)
+        filelevel = atoi(filelevelenv);
+    char * filepathenv = ACE_OS::getenv("UTOPFS_LOG_FILEPATH");
+    if (filepathenv && *filepathenv)
+        filepath = filepathenv;
+    
 #if 0
     PMapHandle ns = Config::getInstance()->getNS("");
 
