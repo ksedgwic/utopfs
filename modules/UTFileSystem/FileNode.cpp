@@ -671,6 +671,54 @@ FileNode::rb_truncate(Context & i_ctxt,
     return nblocks;
 }
 
+size_t
+FileNode::rb_refresh(Context & i_ctxt)
+{
+    size_t nblocks = 0;
+
+    BlockStore::KeySeq keys;
+
+    // Refresh our own reference.
+    keys.push_back(bn_blkref());
+    ++nblocks;
+
+    for (unsigned i = 0; i < NDIRECT; ++i)
+    {
+        if (m_dirref[i])
+        {
+            keys.push_back(m_dirref[i]);
+            ++nblocks;
+        }
+    }
+
+    if (m_sinref)
+    {
+        keys.push_back(m_sinref);
+        ++nblocks;
+
+        IndirectBlockNodeHandle nh =
+            m_sinobj ? m_sinobj : new IndirectBlockNode(i_ctxt, m_sinref);
+        nblocks += nh->rb_refresh(i_ctxt);
+    }
+
+    if (m_dinref)
+    {
+        keys.push_back(m_dinref);
+        ++nblocks;
+
+        DoubleIndBlockNodeHandle nh =
+            m_dinobj ? m_dinobj : new DoubleIndBlockNode(i_ctxt, m_dinref);
+        nblocks += nh->rb_refresh(i_ctxt);
+    }
+
+    BlockStore::KeySeq missing;
+    i_ctxt.m_bsh->bs_refresh_blocks(keys, missing);
+    if (!missing.empty())
+        throwstream(InternalError, FILELINE << "missing blocks encountered");
+
+    return nblocks;
+}
+
 int
 FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 {

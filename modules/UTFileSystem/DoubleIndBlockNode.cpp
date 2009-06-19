@@ -216,6 +216,37 @@ DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
     return nblocks;
 }
 
+size_t
+DoubleIndBlockNode::rb_refresh(Context & i_ctxt)
+{
+    size_t nblocks = 0;
+
+    BlockStore::KeySeq keys;
+
+    for (unsigned i = 0; i < NUMREF; ++i)
+    {
+        if (m_blkref[i])
+        {
+            keys.push_back(m_blkref[i]);
+            ++nblocks;
+
+            IndirectBlockNodeHandle nh =
+                m_blkobj[i]
+                ? dynamic_cast<IndirectBlockNode *>(&*m_blkobj[i])
+                : new IndirectBlockNode(i_ctxt, m_blkref[i]);
+
+            nblocks += nh->rb_refresh(i_ctxt);
+        }
+    }
+
+    BlockStore::KeySeq missing;
+    i_ctxt.m_bsh->bs_refresh_blocks(keys, missing);
+    if (!missing.empty())
+        throwstream(InternalError, FILELINE << "missing blocks encountered");
+
+    return nblocks;
+}
+
 ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i_nh)
 {
     LOG(lgr, 6, "CTOR " << "ZERO");

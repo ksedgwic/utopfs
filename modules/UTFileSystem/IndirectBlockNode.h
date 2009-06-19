@@ -61,6 +61,8 @@ public:
                                off_t i_base,
                                off_t i_size);
 
+    virtual size_t rb_refresh(Context & i_ctxt);
+                            
 protected:
     // Block References
     BlockRef				m_blkref[NUMREF];

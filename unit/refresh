@@ -1,0 +1,29 @@
+#!/bin/env python
+
+from os import *
+import sys
+import shutil
+
+import utp
+import utp.BlockStore
+import utp.FileSystem
+import CONFIG
+
+try:
+    bspath = sys.argv[1]
+    fsid = sys.argv[2]
+    passwd = sys.argv[3]
+
+    bsargs = (bspath,) + CONFIG.BSARGS
+    bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
+    fs = utp.FileSystem.mount(CONFIG.FSTYPE, bs, "", "", CONFIG.FSARGS)
+
+    nb = fs.fs_refresh()
+    print "%d blocks refreshed" % (nb)
+
+except utp.Error, ex:
+    print ex[0]['what']
+
+except:
+    print "Unexpected error:", sys.exc_info()[0]
+    raise

@@ -41,6 +41,13 @@ public:
         return std::string((char const *) m_ref, sizeof(m_ref));
     }
 
+    /// Cast operator to a OctetSeq.
+    ///
+    operator utp::OctetSeq() const
+    {
+        return utp::OctetSeq(m_ref, m_ref + 32);
+    }
+
     /// Nil predicate.
     bool operator!() const;
 

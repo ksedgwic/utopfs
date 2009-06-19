@@ -857,7 +857,7 @@ int
 UTFileSystem::fs_utime(string const & i_path,
                        T64 const & i_atime,
                        T64 const & i_mtime)
-        throw (InternalError)
+    throw (InternalError)
 {
     LOG(lgr, 6, "fs_utime " << i_path << ' ' << i_atime << ' ' << i_mtime);
 
@@ -879,6 +879,24 @@ UTFileSystem::fs_utime(string const & i_path,
             << ": " << ACE_OS::strerror(i_errno));
         return -i_errno;
     }
+}
+
+size_t
+UTFileSystem::fs_refresh()
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_refresh");
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    // Make sure all cached nodes are up-to-date in blockstore.
+    rootref(m_rdh->bn_flush(m_ctxt));
+
+    size_t nb = m_rdh->rb_refresh(m_ctxt);
+
+    LOG(lgr, 6, "fs_refresh -> " << nb);
+
+    return nb;
 }
 
 void

@@ -264,6 +264,30 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
     return nblocks;
 }
 
+size_t
+IndirectBlockNode::rb_refresh(Context & i_ctxt)
+{
+    size_t nblocks = 0;
+
+    BlockStore::KeySeq keys;
+
+    for (unsigned i = 0; i < NUMREF; ++i)
+    {
+        if (m_blkref[i])
+        {
+            keys.push_back(m_blkref[i]);
+            ++nblocks;
+        }
+    }
+
+    BlockStore::KeySeq missing;
+    i_ctxt.m_bsh->bs_refresh_blocks(keys, missing);
+    if (!missing.empty())
+        throwstream(InternalError, FILELINE << "missing blocks encountered");
+
+    return nblocks;
+}
+
 ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
 {
     LOG(lgr, 6, "CTOR " << "ZERO");

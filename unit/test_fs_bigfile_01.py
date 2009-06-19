@@ -59,6 +59,10 @@ class Test_fs_bigfile_01:
     assert str(buf)[0:8] == "00000000"
     assert str(buf)[18000-9:18000-1] == "00001999"
 
+    # Refresh the blocks associated w/ the filesystem
+    nb = self.fs.fs_refresh();
+    assert nb == 4
+    
     # Now we unmount the filesystem.
     self.fs.fs_umount()
 
@@ -81,6 +85,10 @@ class Test_fs_bigfile_01:
     assert str(buf)[0:8] == "00000000"
     assert str(buf)[18000-9:18000-1] == "00001999"
 
+    # Refresh the blocks associated w/ the filesystem
+    nb = self.fs.fs_refresh();
+    assert nb == 4
+    
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
     self.bs = None
     self.fs = None

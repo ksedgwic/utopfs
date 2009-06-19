@@ -306,6 +306,14 @@ public:
                          utp::T64 const & i_mtime)
         throw (utp::InternalError) = 0;
 
+    /// Recursively refresh the filesystem in the blockstore.
+    ///
+    /// @return Returns the number of blocks refreshed.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual size_t fs_refresh()
+        throw (utp::InternalError) = 0;
 };
 
 } // end namespace utp

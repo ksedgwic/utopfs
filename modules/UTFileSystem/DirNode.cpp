@@ -132,6 +132,40 @@ DirNode::bn_flush(Context & i_ctxt)
     return FileNode::bn_flush(i_ctxt);
 }
 
+size_t
+DirNode::rb_refresh(Context & i_ctxt)
+{
+    size_t nblocks = 0;
+
+    for (int i = 0; i < m_dir.entry_size(); ++i)
+    {
+        Directory::Entry const & ent = m_dir.entry(i);
+
+        // Do we have a cached object?
+        EntryMap::iterator pos = m_cache.find(ent.name());
+        if (pos != m_cache.end())
+        {
+            nblocks += pos->second->rb_refresh(i_ctxt);
+        }
+        else
+        {
+            FileNodeHandle nh = new FileNode(i_ctxt, ent.blkref());
+
+            // Is it really a directory?  Upgrade object ...
+            if (S_ISDIR(nh->mode()))
+                nh = new DirNode(*nh);
+
+            // Is it really a symlink?  Upgrade object ...
+            else if (S_ISLNK(nh->mode()))
+                nh = new SymlinkNode(*nh);
+
+            nblocks += nh->rb_refresh(i_ctxt);
+        }
+    }
+
+    return nblocks + FileNode::rb_refresh(i_ctxt);
+}
+                            
 void
 DirNode::node_traverse(Context & i_ctxt,
                        unsigned int i_flags,

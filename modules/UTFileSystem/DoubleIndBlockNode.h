@@ -49,6 +49,9 @@ public:
     virtual size_t rb_truncate(Context & i_ctxt,
                                off_t i_base,
                                off_t i_size);
+
+    virtual size_t rb_refresh(Context & i_ctxt);
+                            
 };
 
 // The ZeroDoubleIndBlockNode is a singleton which is used for

@@ -35,6 +35,7 @@ SCRIPTS =	\
 			$(PYTESTS) \
 			test1 \
 			test2 \
+			refresh \
 			$(NULL)
 
 CFG =		\

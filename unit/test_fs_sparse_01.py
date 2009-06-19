@@ -123,6 +123,10 @@ class Test_fs_sparse_01:
     nblocks = st.st_blocks
     assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512
 
+    # Refresh the blocks associated w/ the filesystem
+    nb = self.fs.fs_refresh();
+    assert nb == 13
+    
     # ---------------- remount ----------------
 
     # Now we unmount the filesystem.
@@ -162,6 +166,10 @@ class Test_fs_sparse_01:
     nblocks = st.st_blocks
     assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512
 
+    # Refresh the blocks associated w/ the filesystem
+    nb = self.fs.fs_refresh();
+    assert nb == 13
+    
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
     self.bs = None
     self.fs = None

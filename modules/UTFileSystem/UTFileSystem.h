@@ -123,6 +123,9 @@ public:
                          utp::T64 const & i_mtime)
         throw (utp::InternalError);
 
+    virtual size_t fs_refresh()
+        throw (utp::InternalError);
+
 protected:
     void rootref(BlockRef const & i_blkref);
 

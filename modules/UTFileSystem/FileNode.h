@@ -67,6 +67,8 @@ public:
                                off_t i_base,
                                off_t i_size);
 
+    virtual size_t rb_refresh(Context & i_ctxt);
+                            
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
 
