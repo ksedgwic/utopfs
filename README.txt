@@ -1,4 +1,4 @@
-Installing from RPM
+Installing and Running from RPM
 ----------------------------------------------------------------
 
 Install the software
@@ -22,8 +22,26 @@ Mount an existing utopfs:
 
     utopfs -F "myfsid" -P "mypassphrase" BLOCKS mnt
 
+Turn up logging:
 
-Some Prerequisites
+    utopfs -l 9 -F "myfsid" -P "mypassphrase" BLOCKS mnt
+
+
+Building RPM packages from tarball
+----------------------------------------------------------------
+
+Setup your RPM build environment:
+
+<http://www.bonsai.com/wiki/howtos/rpm/setup/>
+
+Kick off the build:
+
+    rpmbuild -tb utopfs-0.2.tar.gz
+
+Harvest RPM from ~/rpm/RPMS ...
+
+
+Development Prerequisites
 ----------------------------------------------------------------
 
     # Ruby
@@ -45,23 +63,24 @@ Building
     make
 
 
-Running
+Running Unit Tests
 ----------------------------------------------------------------
 
-Create file system in "BLOCKS" and mount it on "mnt":
+    make test
+
+
+Running in Development Tree
+----------------------------------------------------------------
+
+Create a new filesystem:
 
     cd utopfs/Linux.WORKCFG
-    rm -rf BLOCKS
-    mkdir mnt
-    . ./env.sh
-    ../Linux.DBGOBJ/utopfs -f -M -F "myfs" -P "" BLOCKS mnt
+    ./runmkfs
 
-Mount existing file system in "BLOCKS":
+Mount existing filesystem:
 
     cd utopfs/Linux.WORKCFG
-    mkdir mnt
-    . ./env.sh
-    ../Linux.DBGOBJ/utopfs -f -F "myfs" -P "" BLOCKS mnt
+    ./runmount
 
 
 Debugging
@@ -73,4 +92,3 @@ Run a unit test under the debugger:
     . ./env.sh
     gdb python
     (gdb) r /usr/bin/py.test --nocapture test_fs_sparse_01.py
-
