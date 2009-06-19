@@ -125,8 +125,8 @@ utopfs_init(struct fuse_conn_info * i_conn)
     // Set the log path and log level via env variables.
     ostringstream ostrm;
     ostrm << utopfs.loglevel;
-    ACE_OS::setenv("UTOPFS_LOG_LOGLEVEL", ostrm.str().c_str(), 1);
-    ACE_OS::setenv("UTOPFS_LOG_LOGPATH", utopfs.logpath.c_str(), 1);
+    ACE_OS::setenv("UTOPFS_LOG_FILELEVEL", ostrm.str().c_str(), 1);
+    ACE_OS::setenv("UTOPFS_LOG_FILEPATH", utopfs.logpath.c_str(), 1);
 
     /// Modules (including logging) load and start here.
     init_modules(utopfs.argv0);
