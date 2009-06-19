@@ -99,10 +99,6 @@ install \
   utopfs/Linux.INSTCFG/utopfs.conf \
 $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/utopfs
 
-# Touch the log file
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log
-touch $RPM_BUILD_ROOT%{_localstatedir}/log/utopfs.log
-
 %clean
 rm -rf $RPM_BUILD_ROOT
 
