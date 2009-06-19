@@ -5,18 +5,23 @@
 /// Abstract BlockStore Interface.
 
 #include <string>
+#include <vector>
 
 #include "utpexp.h"
 #include "utpfwd.h"
 
 #include "Except.h"
 #include "RC.h"
+#include "Types.h"
 
 namespace utp {
 
 class UTP_EXP BlockStore : public virtual RCObj
 {
 public:
+    /// List of keys.
+    typedef std::vector<OctetSeq> KeySeq;
+
     /// Destructor
     ///
     virtual ~BlockStore();
@@ -101,6 +106,20 @@ public:
                               size_t i_keysize)
         throw(InternalError,
               NotFoundError) = 0;
+
+    /// Refresh a list of blocks, return list of any missing.
+    ///
+    /// Refreshing a block updates it's access timestamp, moving it to
+    /// the front of the LRU queue.
+    ///
+    /// @param[in] i_keys List of keys for blocks to refresh.
+    /// @param[out] o_missing Keys which were not present.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void bs_refresh_blocks(KeySeq const & i_keys,
+                                   KeySeq & o_missing)
+        throw(InternalError) = 0;
 };
 
 } // end namespace utp

@@ -25,7 +25,7 @@ FSBlockStore::~FSBlockStore()
 }
 
 void
-FSBlockStore::bs_create(std::string const & i_path)
+FSBlockStore::bs_create(string const & i_path)
     throw(NotUniqueError,
           InternalError,
           ValueError)
@@ -46,7 +46,7 @@ FSBlockStore::bs_create(std::string const & i_path)
 }
 
 void
-FSBlockStore::bs_open(std::string const & i_path)
+FSBlockStore::bs_open(string const & i_path)
     throw(InternalError,
           NotFoundError)
 {
@@ -93,10 +93,10 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     LOG(lgr, 6, "bs_get_block");
 
     // convert key to filesystem-safe name
-    //std::string s_filename = new std::string(
+    //string s_filename = new string(
     
-    //std::string s_filename = m_path + "/testblock";
-    std::string s_filename = get_full_path(i_keydata,i_keysize);
+    //string s_filename = m_path + "/testblock";
+    string s_filename = get_full_path(i_keydata,i_keysize);
     
     struct stat statbuff;
     
@@ -146,7 +146,7 @@ FSBlockStore::bs_put_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_put_block");
 
-    std::string s_filename = get_full_path(i_keydata,i_keysize);    
+    string s_filename = get_full_path(i_keydata,i_keysize);    
     
     int fd = open(s_filename.c_str(),O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
     if (fd == -1) {
@@ -171,16 +171,45 @@ FSBlockStore::bs_del_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_del_block");
     
-    std::string s_filename = get_full_path(i_keydata,i_keysize);
+    string s_filename = get_full_path(i_keydata,i_keysize);
 
     unlink(s_filename.c_str());
 }
 
-std::string 
+void
+FSBlockStore::bs_refresh_blocks(KeySeq const & i_keys,
+                                KeySeq & o_missing)
+    throw(InternalError)
+{
+    o_missing.clear();
+
+    for (unsigned i = 0; i < i_keys.size(); ++i)
+    {
+        string s_filename = get_full_path(&i_keys[i][0], i_keys[i].size());
+
+        // If the block doesn't exist add it to the missing list.
+        ACE_stat sb;
+        int rv = ACE_OS::stat(s_filename.c_str(), &sb);
+        if (rv != 0 || !S_ISREG(sb.st_mode))
+        {
+            o_missing.push_back(i_keys[i]);
+            continue;
+        }
+
+        // Touch the block.
+        rv = utimes(s_filename.c_str(), NULL);
+        if (rv != 0)
+            throwstream(InternalError, FILELINE
+                        << "trouble touching \"" << s_filename
+                        << "\": " << ACE_OS::strerror(errno));
+    }
+}
+
+string 
 FSBlockStore::get_full_path(void const * i_keydata,
                                 size_t i_keysize) 
 {
-    std::string s_filename;
+    string s_filename;
     Base32::encode((uint8 const *)i_keydata,i_keysize,s_filename);
     return m_path + "/" + s_filename;
 }                                

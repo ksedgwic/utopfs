@@ -56,6 +56,10 @@ public:
         throw(utp::InternalError,
               utp::NotFoundError);
 
+    virtual void bs_refresh_blocks(KeySeq const & i_keys,
+                                   KeySeq & o_missing)
+        throw(utp::InternalError);
+
 private:
     
     std::string m_path;

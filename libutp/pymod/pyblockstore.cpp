@@ -152,6 +152,59 @@ BlockStore_bs_del_block(BlockStoreObject *self, PyObject *args)
     PYUTP_CATCH_ALL;
 }
 
+static PyObject *
+BlockStore_bs_refresh_blocks(BlockStoreObject *self, PyObject *args)
+{
+    PyObject * keysobj;
+    if (!PyArg_ParseTuple(args, "O:bs_refresh_blocks", &keysobj))
+        return NULL;
+
+    // Translate the python sequence arguent into a KeySeq.
+    BlockStore::KeySeq keys;
+    if (!PySequence_Check(keysobj))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "bs_refresh_blocks arg must be sequence");
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < PySequence_Size(keysobj); ++i)
+    {
+        PyObject * ko = PySequence_GetItem(keysobj, i);
+        void const * keyptr;
+        Py_ssize_t keylen;
+        if (PyObject_AsReadBuffer(ko, &keyptr, &keylen))
+            return NULL;
+
+        uint8 const * kb = (uint8 *) keyptr;
+        uint8 const * ke = kb + keylen;
+        keys.push_back(OctetSeq(kb, ke));
+    }
+
+    BlockStore::KeySeq missing;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_refresh_blocks(keys, missing);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Translate the returned missing KeySeq into a python list.
+    PyObject * missobj = PyList_New(missing.size());
+    for (unsigned i = 0; i < missing.size(); ++i)
+    {
+        PyObject * mobj = PyBuffer_New(missing[i].size());
+        void * outptr;
+        Py_ssize_t outlen;
+        if (PyObject_AsWriteBuffer(mobj, &outptr, &outlen))
+            return NULL;
+        memcpy(outptr, &missing[i][0], outlen);
+        PyList_SetItem(missobj, i, mobj);
+    }
+
+    return missobj;
+}
+
 static PyMethodDef BlockStore_methods[] = {
     {"bs_create",		(PyCFunction)BlockStore_bs_create,		METH_VARARGS},
     {"bs_open",			(PyCFunction)BlockStore_bs_open,		METH_VARARGS},
@@ -159,6 +212,7 @@ static PyMethodDef BlockStore_methods[] = {
     {"bs_get_block",	(PyCFunction)BlockStore_bs_get_block,	METH_VARARGS},
     {"bs_put_block",	(PyCFunction)BlockStore_bs_put_block,	METH_VARARGS},
     {"bs_del_block",	(PyCFunction)BlockStore_bs_del_block,	METH_VARARGS},
+    {"bs_refresh_blocks",	(PyCFunction)BlockStore_bs_refresh_blocks,	METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 

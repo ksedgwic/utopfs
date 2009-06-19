@@ -7,7 +7,7 @@ import utp.BlockStore
 
 import CONFIG
 
-class TestBlockStore:
+class Test_bs_basic_01:
 
   def setup_class(self):
     self.bspath = "bs_basic_01"
