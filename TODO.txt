@@ -1,3 +1,5 @@
+Directories should show some size in an "ls -l".
+
 Figure out what fuse's lowlevel interface is good for and whether we
 should switch to it.
 

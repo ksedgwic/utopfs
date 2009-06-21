@@ -114,7 +114,8 @@ do_refresh()
         // Shorten the path by one directory.
         string::size_type pos = path.find_last_of('/');
         if (pos == string::npos)
-            fatal("control file not found");
+            fatal("control file not found; "
+                  "are we in a mounted utopfs filesystem?");
         path = path.substr(0, pos);
     }
 
