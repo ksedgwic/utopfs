@@ -4,6 +4,7 @@
 
 #include "SpecialDirNode.h"
 #include "SpecialFileNode.h"
+#include "SpecialSockNode.h"
 
 using namespace std;
 using namespace utp;
@@ -35,14 +36,22 @@ SpecialDirNode::node_traverse(Context & i_ctxt,
                               string const & i_rmndr,
                               NodeTraverseFunc & i_trav)
 {
-    // Check for special files.
+    // Is this the version file?
     if (i_entry == "version" && i_rmndr.empty())
     {
         i_trav.nt_parent(i_ctxt, *this, i_entry);
         i_trav.nt_leaf(i_ctxt, *m_version);
+    }
 
-        // SPECIAL CASE: We don't update digests ...
-        // i_trav.nt_update(*this, i_entry, m_version->digest());
+    // Is this the control socket?
+    else if (i_entry == "control" && i_rmndr.empty())
+    {
+        i_trav.nt_parent(i_ctxt, *this, i_entry);
+
+        if (!m_control)
+            throw ENOENT;
+
+        i_trav.nt_leaf(i_ctxt, *m_control);
     }
 
     else
@@ -61,17 +70,31 @@ SpecialDirNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
 }
 
 int
+SpecialDirNode::mknod(Context & i_ctxt,
+               string const & i_entry,
+               mode_t i_mode,
+               dev_t i_dev)
+{
+    if (i_entry != "control")
+        return ENOENT;
+        
+    m_control = new SpecialSockNode;
+
+    return 0;
+}
+
+int
 SpecialDirNode::open(Context & i_ctxt,
                      std::string const & i_entry,
                      int i_flags)
 {
-    if (i_entry != "version")
-        return ENOENT;
+    if (i_entry == "version")
+        return ((i_flags & 3) == O_RDONLY) ? 0 : EACCES;
 
-    if ((i_flags & 3) != O_RDONLY)
-        return EACCES;
+    else if (i_entry == "control")
+        return 0;
 
-    return 0;
+    return ENOENT;
 }
 
 int
@@ -82,6 +105,8 @@ SpecialDirNode::readdir(Context & i_ctxt,
     o_entryfunc.def_entry(".", NULL, 0);
     o_entryfunc.def_entry("..", NULL, 0);
     o_entryfunc.def_entry("version", NULL, 0);
+    if (m_control)
+        o_entryfunc.def_entry("control", NULL, 0);
     return 0;
 }
 

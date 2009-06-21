@@ -10,7 +10,10 @@
 #include <iostream>
 #include <string>
 
+#include <ace/Reactor.h>
 #include <ace/Service_Config.h>
+#include <ace/Task.h>
+#include <ace/TP_Reactor.h>
 
 #define FUSE_USE_VERSION 26
 
@@ -18,13 +21,66 @@
 #include <fuse/fuse_opt.h>
 
 #include "BlockStoreFactory.h"
+#include "Controller.h"
 #include "Except.h"
 #include "FileSystemFactory.h"
 #include "FileSystem.h"
 #include "Log.h"
 
+#include "fuselog.h"
+
 using namespace std;
 using namespace utp;
+
+class ThreadPool : public ACE_Task_Base
+{
+public:
+    ThreadPool(ACE_Reactor * i_reactor, int i_numthreads)
+        : m_reactor(i_reactor)
+    {
+        LOG(lgr, 4, "ThreadPool CTOR");
+
+        if (activate(THR_NEW_LWP | THR_JOINABLE, i_numthreads) != 0)
+            abort();
+    }
+    
+    ~ThreadPool()
+    {
+        LOG(lgr, 4, "ThreadPool DTOR");
+        wait();
+    }
+
+    virtual int svc(void)
+    {
+        LOG(lgr, 4, "ThreadPool starting");
+
+        // Run the Reactor event loop.  Catch exceptions and report but keep
+        // the threads running ...
+        //
+        while (true)
+        {
+            try
+            {
+                m_reactor->run_reactor_event_loop();
+            }
+
+            catch (exception const & ex)
+            {
+                cerr << "caught std::exception: " << ex.what() << endl;
+            }
+            catch (...)
+            {
+                cerr << "caught UNKNOWN EXCEPTION" << endl;
+            }
+        }
+
+        LOG(lgr, 4, "ThreadPool finished");
+        return 0;
+    }
+
+private:
+    ACE_Reactor *		m_reactor;
+};
 
 extern "C" {
 
@@ -46,7 +102,10 @@ struct utopfs
     string fsid;
     string passphrase;
     bool do_mkfs;
+    string mntpath;
     FileSystemHandle fsh;
+    Controller * control;
+    ThreadPool * thrpool;
 };
 
 static struct utopfs utopfs;
@@ -128,8 +187,14 @@ utopfs_init(struct fuse_conn_info * i_conn)
     ACE_OS::setenv("UTOPFS_LOG_FILELEVEL", ostrm.str().c_str(), 1);
     ACE_OS::setenv("UTOPFS_LOG_FILEPATH", utopfs.logpath.c_str(), 1);
 
-    /// Modules (including logging) load and start here.
+    // Modules (including logging) load and start here.
     init_modules(utopfs.argv0);
+
+    // Instantiate the reactor explicitly.
+    ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor), 1);
+
+    // Start the thread pool.
+    utopfs.thrpool = new ThreadPool(ACE_Reactor::instance(), 1);
 
     // Perform the mount.
     try
@@ -160,6 +225,11 @@ utopfs_init(struct fuse_conn_info * i_conn)
                                                   utopfs.passphrase,
                                                   fsargs);
         }
+
+        // Start the controller.
+        string sockpath = utopfs.mntpath + "/.utopfs/control";
+        utopfs.control = new Controller(sockpath);
+        utopfs.control->init();
     }
     catch (utp::Exception const & ex)
     {
@@ -542,6 +612,8 @@ main(int argc, char ** argv)
 	if (fuse_opt_parse(&args, &utopfs, utopfs_opts, utopfs_opt_proc) == -1)
         fatal("option parsing failed");
 
+    utopfs.mntpath = args.argv[args.argc-1];
+
     // When we are daemonized our path is changed to '/'.  If the
     // blockstore path is relative convert it to absolute ...
     //
@@ -558,6 +630,14 @@ main(int argc, char ** argv)
         char cwdbuf[MAXPATHLEN];
         string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
         utopfs.logpath = cwd + '/' + utopfs.logpath;
+    }
+
+    // Convert the mount path to absolute.
+    if (utopfs.mntpath[0] != '/')
+    {
+        char cwdbuf[MAXPATHLEN];
+        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+        utopfs.mntpath = cwd + '/' + utopfs.mntpath;
     }
 
     utopfs_oper.init		= utopfs_init;

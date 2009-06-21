@@ -34,6 +34,11 @@ public:
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
 
+    virtual int mknod(Context & i_ctxt,
+                      std::string const & i_entry,
+                      mode_t i_mode,
+                      dev_t i_dev);
+
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,
                      int i_flags);
@@ -44,6 +49,7 @@ public:
 
 private:
     FileNodeHandle		m_version;
+    FileNodeHandle		m_control;
 };
 
 } // namespace UTFS
