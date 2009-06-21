@@ -130,6 +130,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libUTPFS-UTFS.so
 
 %{_bindir}/utopfs
+%{_bindir}/utp
 
 %dir %{_sysconfdir}/sysconfig/utopfs
 %config(noreplace) %{_sysconfdir}/sysconfig/utopfs/utopfs.conf
