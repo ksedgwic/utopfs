@@ -6,6 +6,7 @@ SUBDIRS =	\
 			libutp \
 			utopfs \
 			modules \
+			utpcmd \
 			unit \
 			spec \
 			$(NULL)
