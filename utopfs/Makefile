@@ -5,7 +5,8 @@ include $(ROOTDIR)/config/define.mk
 PRGSRC += 	\
 			utopfs.cpp \
 			fuselog.cpp \
-			Controller.cpp \
+			ControlAcceptor.cpp \
+			ControlService.cpp \
 			$(NULL)
 
 PRGEXE = 	utopfs

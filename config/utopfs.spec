@@ -91,6 +91,7 @@ popd
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 install \
   utopfs/%{OBJDIR}/utopfs \
+  utpcmd/%{OBJDIR}/utp \
 $RPM_BUILD_ROOT%{_bindir}
 
 # Install configuration

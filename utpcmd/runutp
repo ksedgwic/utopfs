@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Sets up LD_LIBRARY_PATH to devel tree components.
+. BINPATHU(env.sh)
+
+# Valgrind command and options.
+VGCMD="valgrind \
+	--tool=memcheck \
+	 --num-callers=20 \
+	 --log-file=vg.log \
+	 --leak-check=full \
+	 --show-reachable=yes \
+	 --gen-suppressions=all"
+
+# Cachegrind command and options
+CGCMD="valgrind \
+	--tool=callgrind \
+	--dump-instr=yes \
+	--trace-jump=yes \
+	--simulate-cache=yes \
+	--instr-atstart=no"
+
+# Uncomment to use valgrind
+# USEVG=${VGCMD}
+# USEVG=${CGCMD}
+
+# Run the utp cmd.
+${USEVG} BINPATHU(utp)
