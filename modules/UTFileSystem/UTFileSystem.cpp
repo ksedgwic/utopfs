@@ -915,6 +915,18 @@ UTFileSystem::fs_refresh()
 }
 
 void
+UTFileSystem::fs_sync()
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_sync");
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    if (m_rdh->bn_isdirty())
+        rootref(m_rdh->bn_flush(m_ctxt));
+}
+
+void
 UTFileSystem::rootref(BlockRef const & i_blkref)
 {
     LOG(lgr, 6, "rootref set " << i_blkref);

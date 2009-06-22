@@ -15,7 +15,8 @@ using namespace utp;
 
 Controller::Controller(FileSystemHandle const & i_fsh,
                                  string const & i_controlpath)
-    : m_fsh(i_fsh)
+    : m_opened(false)
+    , m_fsh(i_fsh)
     , m_controlpath(i_controlpath)
     , m_reactor(ACE_Reactor::instance())
 {
@@ -75,8 +76,13 @@ Controller::handle_timeout(ACE_Time_Value const & current_time,
 {
     LOG(lgr, 4, "handle_timeout");
 
-    // Later we'll do more stuff, for now we only open ...
-    open();
+    // The first time through we open our control socket.  Subsequent
+    // calls perform periodic duties.
+
+    if (!m_opened)
+        open();
+    else
+        periodic();
 
     return 0;
 }
@@ -92,7 +98,10 @@ Controller::init()
     // Surely there is a better way?  Can we trap some other FUSE
     // event and init then?
     //
-    m_reactor->schedule_timer(this, NULL, ACE_Time_Value(2, 0));
+    m_reactor->schedule_timer(this,
+                              NULL,
+                              ACE_Time_Value(2, 0),
+                              ACE_Time_Value(10, 0));
 }
 
 void
@@ -123,6 +132,15 @@ Controller::open()
     if (symlink(pathstrm.str().c_str(), m_controlpath.c_str()))
         throwstream(InternalError, FILELINE
                     << "symlink failed: " << ACE_OS::strerror(errno));
+
+    m_opened = true;
+}
+
+void
+Controller::periodic()
+{
+    // Synchronize the filesystem to the blockstore.
+    m_fsh->fs_sync();
 }
 
 // Local Variables:

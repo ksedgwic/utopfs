@@ -126,6 +126,9 @@ public:
     virtual size_t fs_refresh()
         throw (utp::InternalError);
 
+    virtual void fs_sync()
+        throw (utp::InternalError);
+
 protected:
     void rootref(BlockRef const & i_blkref);
 

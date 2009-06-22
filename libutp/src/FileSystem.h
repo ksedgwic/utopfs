@@ -314,6 +314,13 @@ public:
     ///
     virtual size_t fs_refresh()
         throw (utp::InternalError) = 0;
+
+    /// Flush cached filesystem data to the blockstore.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void fs_sync()
+        throw (utp::InternalError) = 0;
 };
 
 } // end namespace utp

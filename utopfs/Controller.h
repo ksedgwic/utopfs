@@ -34,7 +34,10 @@ public:
 
     void open();
 
+    void periodic();
+
 private:
+    bool					m_opened;
     utp::FileSystemHandle	m_fsh;
     std::string				m_controlpath;
     ACE_Reactor *			m_reactor;
