@@ -100,3 +100,5 @@ Ultra Primitive Garbage Collection
     touch BLOCKS/MARK
     ./refresh BLOCKS "" ""
     find BLOCKS/ -type f \! -newer BLOCKS/MARK -exec rm {} \;
+
+

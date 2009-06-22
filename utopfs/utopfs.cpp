@@ -239,6 +239,16 @@ utopfs_init(struct fuse_conn_info * i_conn)
     return NULL;
 }
 
+static void
+utopfs_destroy(void * ptr)
+{
+    // Flush the filesystem to the blockstore.
+    utopfs.fsh->fs_sync();
+
+    // Cleanup the control interface.
+    utopfs.control->term();
+}
+
 static int
 utopfs_getattr(char const * i_path,
                struct stat * stbuf)
@@ -641,6 +651,7 @@ main(int argc, char ** argv)
     }
 
     utopfs_oper.init		= utopfs_init;
+    utopfs_oper.destroy		= utopfs_destroy;
     utopfs_oper.getattr		= utopfs_getattr;
     utopfs_oper.readlink	= utopfs_readlink;
     utopfs_oper.mknod		= utopfs_mknod;

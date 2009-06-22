@@ -21,6 +21,10 @@ Controller::Controller(FileSystemHandle const & i_fsh,
     , m_reactor(ACE_Reactor::instance())
 {
     LOG(lgr, 4, "CTOR");
+
+    ostringstream pathstrm;
+    pathstrm << "/var/tmp/utopfs_control." << getpid();
+    m_sockpath = pathstrm.str();
 }
 
 Controller::~Controller()
@@ -59,11 +63,7 @@ Controller::handle_close(ACE_HANDLE i_handle, ACE_Reactor_Mask i_mask)
 
     if (m_acceptor.get_handle() != ACE_INVALID_HANDLE)
     {
-        ACE_Reactor_Mask msk =
-            ACE_Event_Handler::ACCEPT_MASK |
-            ACE_Event_Handler::DONT_CALL;
-
-        m_reactor->remove_handler(this, msk);
+        m_reactor->remove_handler(this, ACCEPT_MASK | DONT_CALL);
         m_acceptor.close();
     }
 
@@ -109,10 +109,7 @@ Controller::open()
 {
     LOG(lgr, 4, "open");
 
-    ostringstream pathstrm;
-    pathstrm << "/var/tmp/utopfs_control." << getpid();
-
-    ACE_UNIX_Addr server_addr(pathstrm.str().c_str());
+    ACE_UNIX_Addr server_addr(m_sockpath.c_str());
     
     if (m_acceptor.open(server_addr) == -1)
         throwstream(InternalError, FILELINE
@@ -124,16 +121,25 @@ Controller::open()
                     << "get local addr of control socket failed: "
                     << ACE_OS::strerror(errno));
 
-    m_reactor->register_handler(this, ACE_Event_Handler::ACCEPT_MASK);
+    m_reactor->register_handler(this, ACCEPT_MASK);
     
-    LOG(lgr, 4, "control socket " << pathstrm.str() << " open");
+    LOG(lgr, 4, "control socket " << m_sockpath << " open");
 
     // Create symbolic link in the .utopfs directory.
-    if (symlink(pathstrm.str().c_str(), m_controlpath.c_str()))
+    if (symlink(m_sockpath.c_str(), m_controlpath.c_str()))
         throwstream(InternalError, FILELINE
                     << "symlink failed: " << ACE_OS::strerror(errno));
 
     m_opened = true;
+}
+
+void
+Controller::term()
+{
+    m_reactor->cancel_timer(this, DONT_CALL);
+
+    // Remove the control socket.
+    unlink(m_sockpath.c_str());
 }
 
 void

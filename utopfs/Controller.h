@@ -32,12 +32,15 @@ public:
 
     void init();
 
+    void term();
+
     void open();
 
     void periodic();
 
 private:
     bool					m_opened;
+    std::string				m_sockpath;
     utp::FileSystemHandle	m_fsh;
     std::string				m_controlpath;
     ACE_Reactor *			m_reactor;

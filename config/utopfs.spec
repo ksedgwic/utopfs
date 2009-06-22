@@ -135,6 +135,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/sysconfig/utopfs
 %config(noreplace) %{_sysconfdir}/sysconfig/utopfs/utopfs.conf
 
+%doc README.txt
+
 %changelog
 * Tue Jun 16 2009 Ken Sedgwick <ksedgwic@lap3.bonsai.com> - 
 - Initial build.
