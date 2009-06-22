@@ -144,6 +144,8 @@ protected:
 
     void deserialize();
 
+    void update(std::string const & i_entry, BlockRef const & i_blkref);
+
     void remove(std::string const & i_entry);
 
 private:

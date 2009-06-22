@@ -84,27 +84,7 @@ DirNode::bn_flush(Context & i_ctxt)
         if (it->second->bn_isdirty())
         {
             BlockRef const & blkref = it->second->bn_flush(i_ctxt);
-
-            bool found = false;
-
-            // Does this entry exist already?
-            for (int i = 0; i < m_dir.entry_size(); ++i)
-            {
-                Directory::Entry * entp = m_dir.mutable_entry(i);
-                if (entp->name() == it->first)
-                {
-                    entp->set_blkref(blkref);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                Directory::Entry * entp = m_dir.add_entry();
-                entp->set_name(it->first);
-                entp->set_blkref(blkref);
-            }
+            update(it->first, blkref);
         }
     }
 
@@ -264,6 +244,9 @@ DirNode::mknod(Context & i_ctxt,
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, fnh));
 
+    // Insert a placeholder in the directory.
+    update(i_entry, BlockRef());
+
     bn_isdirty(true);
 
     return 0;
@@ -284,6 +267,9 @@ DirNode::mkdir(Context & i_ctxt,
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, dnh));
+
+    // Insert a placeholder in the directory.
+    update(i_entry, BlockRef());
 
     // Increment our link count.
     nlink(nlink() + 1);
@@ -352,6 +338,9 @@ DirNode::symlink(Context & i_ctxt,
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, fnh));
+
+    // Insert a placeholder in the directory.
+    update(i_entry, BlockRef());
 
     bn_isdirty(true);
 
@@ -511,6 +500,32 @@ DirNode::deserialize()
             LOG(lgr, 6, "[" << i << "]: "
                 << BlockRef(ent.blkref()) << " " << ent.name());
         }
+    }
+}
+
+void
+DirNode::update(string const & i_entry, BlockRef const & i_blkref)
+{
+    LOG(lgr, 6, "update " << i_entry << ' ' << i_blkref);
+
+    bool found = false;
+
+    for (int i = 0; i < m_dir.entry_size(); ++i)
+    {
+        Directory::Entry * entp = m_dir.mutable_entry(i);
+        if (entp->name() == i_entry)
+        {
+            entp->set_blkref(i_blkref);
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        Directory::Entry * entp = m_dir.add_entry();
+        entp->set_name(i_entry);
+        entp->set_blkref(i_blkref);
     }
 }
 
