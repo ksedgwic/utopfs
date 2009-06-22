@@ -4,7 +4,7 @@
 
 #include "SpecialDirNode.h"
 #include "SpecialFileNode.h"
-#include "SpecialSockNode.h"
+#include "SymlinkNode.h"
 
 using namespace std;
 using namespace utp;
@@ -70,15 +70,14 @@ SpecialDirNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
 }
 
 int
-SpecialDirNode::mknod(Context & i_ctxt,
-               string const & i_entry,
-               mode_t i_mode,
-               dev_t i_dev)
+SpecialDirNode::symlink(Context & i_ctxt,
+                        string const & i_entry,
+                        string const & i_opath)
 {
     if (i_entry != "control")
         return ENOENT;
         
-    m_control = new SpecialSockNode;
+    m_control = new SymlinkNode(i_opath);
 
     return 0;
 }

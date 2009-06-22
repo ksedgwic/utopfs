@@ -21,7 +21,7 @@
 #include <fuse/fuse_opt.h>
 
 #include "BlockStoreFactory.h"
-#include "ControlAcceptor.h"
+#include "Controller.h"
 #include "Except.h"
 #include "FileSystemFactory.h"
 #include "FileSystem.h"
@@ -104,7 +104,7 @@ struct utopfs
     bool do_mkfs;
     string mntpath;
     FileSystemHandle fsh;
-    ControlAcceptor * control;
+    Controller * control;
     ThreadPool * thrpool;
 };
 
@@ -227,8 +227,8 @@ utopfs_init(struct fuse_conn_info * i_conn)
         }
 
         // Start the controller.
-        string sockpath = utopfs.mntpath + "/.utopfs/control";
-        utopfs.control = new ControlAcceptor(utopfs.fsh, sockpath);
+        string controlpath = utopfs.mntpath + "/.utopfs/control";
+        utopfs.control = new Controller(utopfs.fsh, controlpath);
         utopfs.control->init();
     }
     catch (utp::Exception const & ex)

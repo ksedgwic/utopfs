@@ -1,10 +1,10 @@
-#ifndef ControlAcceptor_h__
-#define ControlAcceptor_h__
+#ifndef Controller_h__
+#define Controller_h__
 
-/// @file ControlAcceptor.h
-/// Utopia FileSystem ControlAcceptor Object.
+/// @file Controller.h
+/// Utopia FileSystem Controller Object.
 ///
-/// ControlAcceptor for Utopfs FileSystem.
+/// Controller for Utopfs FileSystem.
 
 #include <string>
 
@@ -13,13 +13,13 @@
 
 #include "utpfwd.h"
 
-class ControlAcceptor : public ACE_Event_Handler
+class Controller : public ACE_Event_Handler
 {
 public:
-    ControlAcceptor(utp::FileSystemHandle const & i_fsh,
-                    std::string const & i_sockpath);
+    Controller(utp::FileSystemHandle const & i_fsh,
+                    std::string const & i_controlpath);
 
-    virtual ~ControlAcceptor();
+    virtual ~Controller();
 
     virtual ACE_HANDLE get_handle() const { return m_acceptor.get_handle(); }
 
@@ -36,7 +36,7 @@ public:
 
 private:
     utp::FileSystemHandle	m_fsh;
-    std::string				m_sockpath;
+    std::string				m_controlpath;
     ACE_Reactor *			m_reactor;
     ACE_LSOCK_Acceptor		m_acceptor;
     
@@ -49,4 +49,4 @@ private:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // UTFS_ControlAcceptor_h__
+#endif // UTFS_Controller_h__

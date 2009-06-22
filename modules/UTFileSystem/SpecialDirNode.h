@@ -34,10 +34,9 @@ public:
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);
 
-    virtual int mknod(Context & i_ctxt,
-                      std::string const & i_entry,
-                      mode_t i_mode,
-                      dev_t i_dev);
+    virtual int symlink(Context & i_ctxt,
+                        std::string const & i_entry,
+                        std::string const & i_opath);
 
     virtual int open(Context & i_ctxt,
                      std::string const & i_entry,

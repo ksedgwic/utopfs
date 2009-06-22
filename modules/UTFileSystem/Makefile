@@ -19,7 +19,6 @@ LIBSRC += 	\
 			RootDirNode.cpp \
 			SpecialDirNode.cpp \
 			SpecialFileNode.cpp \
-			SpecialSockNode.cpp \
 			SymlinkNode.cpp \
 			UTFileSystem.cpp \
 			utfslog.cpp \

@@ -7,28 +7,28 @@
 
 #include "fuselog.h"
 
-#include "ControlAcceptor.h"
+#include "Controller.h"
 #include "ControlService.h"
 
 using namespace std;
 using namespace utp;
 
-ControlAcceptor::ControlAcceptor(FileSystemHandle const & i_fsh,
-                                 string const & i_sockpath)
+Controller::Controller(FileSystemHandle const & i_fsh,
+                                 string const & i_controlpath)
     : m_fsh(i_fsh)
-    , m_sockpath(i_sockpath)
+    , m_controlpath(i_controlpath)
     , m_reactor(ACE_Reactor::instance())
 {
     LOG(lgr, 4, "CTOR");
 }
 
-ControlAcceptor::~ControlAcceptor()
+Controller::~Controller()
 {
     LOG(lgr, 4, "DTOR");
 }
 
 int
-ControlAcceptor::handle_input(ACE_HANDLE i_fd)
+Controller::handle_input(ACE_HANDLE i_fd)
 {
     LOG(lgr, 4, "handle_input");
 
@@ -52,7 +52,7 @@ ControlAcceptor::handle_input(ACE_HANDLE i_fd)
 }
 
 int
-ControlAcceptor::handle_close(ACE_HANDLE i_handle, ACE_Reactor_Mask i_mask)
+Controller::handle_close(ACE_HANDLE i_handle, ACE_Reactor_Mask i_mask)
 {
     LOG(lgr, 4, "handle_close");
 
@@ -70,7 +70,7 @@ ControlAcceptor::handle_close(ACE_HANDLE i_handle, ACE_Reactor_Mask i_mask)
 }
 
 int
-ControlAcceptor::handle_timeout(ACE_Time_Value const & current_time,
+Controller::handle_timeout(ACE_Time_Value const & current_time,
                            void const * act)
 {
     LOG(lgr, 4, "handle_timeout");
@@ -82,7 +82,7 @@ ControlAcceptor::handle_timeout(ACE_Time_Value const & current_time,
 }
 
 void
-ControlAcceptor::init()
+Controller::init()
 {
     LOG(lgr, 4, "init");
 
@@ -96,11 +96,14 @@ ControlAcceptor::init()
 }
 
 void
-ControlAcceptor::open()
+Controller::open()
 {
     LOG(lgr, 4, "open");
 
-    ACE_UNIX_Addr server_addr(m_sockpath.c_str());
+    ostringstream pathstrm;
+    pathstrm << "/var/tmp/utopfs_control." << getpid();
+
+    ACE_UNIX_Addr server_addr(pathstrm.str().c_str());
     
     if (m_acceptor.open(server_addr) == -1)
         throwstream(InternalError, FILELINE
@@ -114,7 +117,12 @@ ControlAcceptor::open()
 
     m_reactor->register_handler(this, ACE_Event_Handler::ACCEPT_MASK);
     
-    LOG(lgr, 4, "control socket open");
+    LOG(lgr, 4, "control socket " << pathstrm.str() << " open");
+
+    // Create symbolic link in the .utopfs directory.
+    if (symlink(pathstrm.str().c_str(), m_controlpath.c_str()))
+        throwstream(InternalError, FILELINE
+                    << "symlink failed: " << ACE_OS::strerror(errno));
 }
 
 // Local Variables:
