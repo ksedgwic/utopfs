@@ -61,7 +61,9 @@ public:
         pathsplit(std::string const & i_path);
 
     // Default Constructor.
-    DirNode(mode_t i_mode);
+    DirNode(mode_t i_mode,
+            std::string const & i_uname,
+            std::string const & i_gname);
 
     // "Upgrade Constructor" from FileNode.
     DirNode(FileNode const & i_fn);
@@ -98,11 +100,15 @@ public:
     virtual int mknod(Context & i_ctxt,
                       std::string const & i_entry,
                       mode_t i_mode,
-                      dev_t i_dev);
+                      dev_t i_dev,
+                      std::string const & i_uname,
+                      std::string const & i_gname);
 
     virtual int mkdir(Context & i_ctxt,
                       std::string const & i_entry,
-                      mode_t i_mode);
+                      mode_t i_mode,
+                      std::string const & i_uname,
+                      std::string const & i_gname);
 
     virtual int unlink(Context & i_ctxt,
                        std::string const & i_entry,

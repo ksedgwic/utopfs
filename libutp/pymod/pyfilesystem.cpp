@@ -86,13 +86,16 @@ FileSystem_fs_mknod(FileSystemObject *self, PyObject *args)
     char * path;
     int mode;
     int dev;
-    if (!PyArg_ParseTuple(args, "sii:fs_mknod", &path, &mode, &dev))
+    char * uname;
+    char * gname;
+    if (!PyArg_ParseTuple(args, "siiss:fs_mknod",
+                          &path, &mode, &dev, &uname, &gname))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        errno = - self->m_fsh->fs_mknod(path, mode, dev);
+        errno = - self->m_fsh->fs_mknod(path, mode, dev, uname, gname);
     }
     PYUTP_CATCH_ALL;
 
@@ -109,13 +112,15 @@ FileSystem_fs_mkdir(FileSystemObject *self, PyObject *args)
 {
     char * path;
     int mode;
-    if (!PyArg_ParseTuple(args, "si:fs_mkdir", &path, &mode))
+    char * uname;
+    char * gname;
+    if (!PyArg_ParseTuple(args, "siss:fs_mkdir", &path, &mode, &uname, &gname))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        errno = - self->m_fsh->fs_mkdir(path, mode);
+        errno = - self->m_fsh->fs_mkdir(path, mode, uname, gname);
     }
     PYUTP_CATCH_ALL;
 
@@ -589,14 +594,17 @@ static PyObject *
 FileSystemModule_mkfs(PyObject *self, PyObject *i_args)
 {
     char * name;
+    PyObject * bsobj;
     char * fsid;
     char * pass;
-    PyObject * bsobj;
+    char * uname;
+    char * gname;
     PyObject * tup;
-    if (!PyArg_ParseTuple(i_args, "sO!ssO!:mkfs",
+    if (!PyArg_ParseTuple(i_args, "sO!ssssO!:mkfs",
                           &name,
                           &BlockStore_Type, &bsobj,
                           &fsid, &pass,
+                          &uname, &gname,
                           &PyTuple_Type, &tup))
 		return NULL;
 
@@ -623,6 +631,8 @@ FileSystemModule_mkfs(PyObject *self, PyObject *i_args)
                                                           bsop->m_bsh,
                                                           fsid,
                                                           pass,
+                                                          uname,
+                                                          gname,
                                                           args));
     }
     PYUTP_CATCH_ALL;

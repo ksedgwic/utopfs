@@ -27,14 +27,14 @@ class Test_fs_chmod_01:
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
-    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
-                                  "", "", CONFIG.FSARGS)
+    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
+                                  CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
     # Open up our umask for this experiment
     umask(0000)
 
     # Create a file
-    self.fs.fs_mknod("/bar", 0666, 0)
+    self.fs.fs_mknod("/bar", 0666, 0, CONFIG.UNAME, CONFIG.GNAME)
 
     # Now we should be able to stat the file.
     st = self.fs.fs_getattr("/bar");
@@ -48,7 +48,7 @@ class Test_fs_chmod_01:
     assert st[ST_MODE] & 0777 == 0640
 
     # Create a directory
-    self.fs.fs_mkdir("/foo", 0555)
+    self.fs.fs_mkdir("/foo", 0555, CONFIG.UNAME, CONFIG.GNAME)
 
     # Now we chmod the directory.
     self.fs.fs_chmod("/foo", 0510)

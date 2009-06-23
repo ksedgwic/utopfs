@@ -36,6 +36,8 @@ public:
     /// @param[in] i_bsh BlockStore to hold filesystem data.
     /// @param[in] i_fsid FileSystem identifier.
     /// @param[in] i_passphrase FileSystem passphrase.
+    /// @param[in] i_uname User name.
+    /// @param[in] i_gname Group name.
     /// @param[in] i_args FileSystem specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
@@ -44,6 +46,8 @@ public:
     virtual void fs_mkfs(BlockStoreHandle const & i_bsh,
                          std::string const & i_fsid,
                          std::string const & i_passphrase,
+                         std::string const & i_uname,
+                         std::string const & i_gname,
                          utp::StringSeq const & i_args)
         throw (utp::InternalError,
                utp::ValueError) = 0;
@@ -107,6 +111,9 @@ public:
     ///
     /// @param[in] i_path Path to the file.
     /// @param[in] i_mode Permissions to use.
+    /// @param[in] i_dev Some number.
+    /// @param[in] i_uname User name.
+    /// @param[in] i_gname Group name.
     ///
     /// @return Returns 0 on success or errno value otherwise.
     ///
@@ -114,20 +121,26 @@ public:
     ///
     virtual int fs_mknod(std::string const & i_path,
                          mode_t i_mode,
-                         dev_t i_dev)
+                         dev_t i_dev,
+                         std::string const & i_uname,
+                         std::string const & i_gname)
         throw (utp::InternalError) = 0;
 
     /// Create a directory.
     ///
     /// @param[in] i_path Path to the directory.
     /// @param[in] i_mode File access flags.
+    /// @param[in] i_uname User name.
+    /// @param[in] i_gname Group name.
     ///
     /// @return Returns 0 on success or errno value otherwise.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     ///
     virtual int fs_mkdir(std::string const & i_path,
-                         mode_t i_mode)
+                         mode_t i_mode,
+                         std::string const & i_uname,
+                         std::string const & i_gname)
         throw (utp::InternalError) = 0;
 
     /// Remove a file.

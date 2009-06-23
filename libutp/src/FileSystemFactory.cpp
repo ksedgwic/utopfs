@@ -35,6 +35,8 @@ FileSystemFactory::mkfs(string const & i_name,
                         BlockStoreHandle const & i_bsh,
                         string const & i_fsid,
                         string const & i_pass,
+                        string const & i_uname,
+                        string const & i_gname,
                         StringSeq const & i_args)
 {
     LOG(lgr, 4, "mkfs " << i_name);
@@ -44,7 +46,8 @@ FileSystemFactory::mkfs(string const & i_name,
         throwstream(ValueError,
                     "filesystem factory for \"" << i_name << "\" not found");
 
-    return pos->second->fsf_mkfs(i_bsh, i_fsid, i_pass, i_args);
+    return pos->second->fsf_mkfs(i_bsh, i_fsid, i_pass,
+                                 i_uname, i_gname, i_args);
 }
                           
 FileSystemHandle

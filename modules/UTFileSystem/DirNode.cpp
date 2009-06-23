@@ -34,8 +34,10 @@ DirNode::pathsplit(string const & i_path)
         return make_pair(i_path.substr(1, pos - 1), i_path.substr(pos));
 }
 
-DirNode::DirNode(mode_t i_mode)
-    : FileNode(i_mode)
+DirNode::DirNode(mode_t i_mode,
+                 string const & i_uname,
+                 string const & i_gname)
+    : FileNode(i_mode, i_uname, i_gname)
 {
     LOG(lgr, 4, "CTOR");
 
@@ -232,14 +234,16 @@ int
 DirNode::mknod(Context & i_ctxt,
                string const & i_entry,
                mode_t i_mode,
-               dev_t i_dev)
+               dev_t i_dev,
+               string const & i_uname,
+               string const & i_gname)
 {
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
     if (fnh)
         throw EEXIST;
 
     // Create a new file.
-    fnh = new FileNode(i_mode);
+    fnh = new FileNode(i_mode, i_uname, i_gname);
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, fnh));
@@ -255,7 +259,9 @@ DirNode::mknod(Context & i_ctxt,
 int
 DirNode::mkdir(Context & i_ctxt,
                string const & i_entry,
-               mode_t i_mode)
+               mode_t i_mode,
+               string const & i_uname,
+               string const & i_gname)
 {
     // The entry better not already exist.
     FileNodeHandle fnh = lookup(i_ctxt, i_entry);
@@ -263,7 +269,7 @@ DirNode::mkdir(Context & i_ctxt,
         throw EEXIST;
 
     // Create the new directory node.
-    DirNodeHandle dnh = new DirNode(i_mode);
+    DirNodeHandle dnh = new DirNode(i_mode, i_uname, i_gname);
 
     // Insert into the cache.
     m_cache.insert(make_pair(i_entry, dnh));

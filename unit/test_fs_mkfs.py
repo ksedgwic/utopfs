@@ -21,7 +21,8 @@ class Test_fs_mkfs:
 
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
-    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "", CONFIG.FSARGS)
+    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
+                                  CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
   def teardown_class(self):
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
@@ -52,7 +53,7 @@ class Test_fs_mkfs:
 
   def test_can_create_file(self):
     # We should be able to create a file.
-    self.fs.fs_mknod("/foo", 0666, 0)
+    self.fs.fs_mknod("/foo", 0666, 0, CONFIG.UNAME, CONFIG.GNAME)
 
     # Now we should be able to stat the file.
     print self.fs.fs_getattr("/foo");

@@ -34,6 +34,8 @@ public:
     virtual void fs_mkfs(utp::BlockStoreHandle const & i_bsh,
                          std::string const & i_fsid,
                          std::string const & i_passphrase,
+                         std::string const & i_uname,
+                         std::string const & i_gname,
                          utp::StringSeq const & i_args)
         throw (utp::InternalError,
                utp::ValueError);
@@ -60,11 +62,15 @@ public:
 
     virtual int fs_mknod(std::string const & i_path,
                          mode_t i_mode,
-                         dev_t i_dev)
+                         dev_t i_dev,
+                         std::string const & i_uname,
+                         std::string const & i_gname)
         throw (utp::InternalError);
 
     virtual int fs_mkdir(std::string const & i_path,
-                         mode_t i_mode)
+                         mode_t i_mode,
+                         std::string const & i_uname,
+                         std::string const & i_gname)
         throw (utp::InternalError);
 
     virtual int fs_unlink(std::string const & i_path)

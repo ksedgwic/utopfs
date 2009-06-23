@@ -28,6 +28,8 @@ public:
                                  BlockStoreHandle const & i_bsh,
                                  std::string const & i_fsid,
                                  std::string const & i_pass,
+                                 std::string const & i_uname,
+                                 std::string const & i_gname,
                                  StringSeq const & i_args);
 
     // Called at runtime to open existing blockstore.
@@ -42,6 +44,8 @@ public:
     virtual FileSystemHandle fsf_mkfs(BlockStoreHandle const & i_bsh,
                                       std::string const & i_fsid,
                                       std::string const & i_pass,
+                                      std::string const & i_uname,
+                                      std::string const & i_gname,
                                       StringSeq const & i_args) = 0;
 
     virtual FileSystemHandle fsf_mount(BlockStoreHandle const & i_bsh,

@@ -10,7 +10,7 @@ using namespace utp;
 namespace UTFS {
 
 SpecialFileNode::SpecialFileNode(string const & i_data)
-    : FileNode(0444)
+    : FileNode(0444, "root", "root")
     , m_data(i_data)
 {
     LOG(lgr, 4, "CTOR");

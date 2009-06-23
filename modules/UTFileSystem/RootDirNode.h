@@ -18,7 +18,7 @@ namespace UTFS {
 class UTFS_EXP RootDirNode : public DirNode
 {
 public:
-    RootDirNode();
+    RootDirNode(std::string const & i_uname, std::string const & i_gname);
 
     RootDirNode(Context & i_ctxt, BlockRef const & i_ref);
 

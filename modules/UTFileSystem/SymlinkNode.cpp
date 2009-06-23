@@ -10,7 +10,7 @@ using namespace utp;
 namespace UTFS {
 
 SymlinkNode::SymlinkNode(string const & i_path)
-    : FileNode(0777)
+    : FileNode(0777, "root", "root")
 {
     LOG(lgr, 4, "CTOR");
 

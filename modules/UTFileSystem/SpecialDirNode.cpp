@@ -18,7 +18,7 @@ namespace {
 namespace UTFS {
 
 SpecialDirNode::SpecialDirNode()
-    : DirNode(0555)
+    : DirNode(0555, "root", "root")
     , m_version(new SpecialFileNode(utopfs_ver_str))
 {
     LOG(lgr, 4, "CTOR");

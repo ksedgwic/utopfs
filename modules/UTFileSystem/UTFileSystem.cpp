@@ -34,6 +34,8 @@ void
 UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
                       string const & i_fsid,
                       string const & i_passphrase,
+                      string const & i_uname,
+                      string const & i_gname,
                       StringSeq const & i_args)
     throw (InternalError,
            ValueError)
@@ -56,7 +58,7 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
     m_ctxt.m_zsinobj = new ZeroIndirectBlockNode(m_ctxt.m_zdatobj);
     m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
 
-    m_rdh = new RootDirNode();
+    m_rdh = new RootDirNode(i_uname, i_gname);
     
     rootref(m_rdh->bn_flush(m_ctxt));
 }
@@ -203,25 +205,32 @@ UTFileSystem::fs_readlink(string const & i_path,
 class MknodTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:
-    MknodTraverseFunc(mode_t i_mode, dev_t i_dev)
-        : m_mode(i_mode), m_dev(i_dev) {}
+    MknodTraverseFunc(mode_t i_mode,
+                      dev_t i_dev,
+                      string const & i_uname,
+                      string const & i_gname)
+        : m_mode(i_mode), m_dev(i_dev), m_uname(i_uname), m_gname(i_gname) {}
 
     virtual void nt_parent(Context & i_ctxt,
                            DirNode & i_dn,
                            string const & i_entry)
     {
-        nt_retval(i_dn.mknod(i_ctxt, i_entry, m_mode, m_dev));
+        nt_retval(i_dn.mknod(i_ctxt, i_entry, m_mode, m_dev, m_uname, m_gname));
     }
 
 private:
     mode_t		m_mode;
     dev_t		m_dev;
+    string		m_uname;
+    string		m_gname;
 };
 
 int
 UTFileSystem::fs_mknod(string const & i_path,
                        mode_t i_mode,
-                       dev_t i_dev)
+                       dev_t i_dev,
+                       string const & i_uname,
+                       string const & i_gname)
         throw (InternalError)
 {
     LOG(lgr, 6, "fs_mknod " << i_path);
@@ -231,7 +240,7 @@ UTFileSystem::fs_mknod(string const & i_path,
     try
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
-        MknodTraverseFunc otf(i_mode, i_dev);
+        MknodTraverseFunc otf(i_mode, i_dev, i_uname, i_gname);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
 
@@ -251,21 +260,29 @@ UTFileSystem::fs_mknod(string const & i_path,
 class MkdirTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:
-    MkdirTraverseFunc(mode_t i_mode) : m_mode(i_mode) {}
+    MkdirTraverseFunc(mode_t i_mode,
+                      string const & i_uname,
+                      string const & i_gname)
+        : m_mode(i_mode), m_uname(i_uname), m_gname(i_gname) {}
 
     virtual void nt_parent(Context & i_ctxt,
                            DirNode & i_dn,
                            string const & i_entry)
     {
-        nt_retval(i_dn.mkdir(i_ctxt, i_entry, m_mode));
+        nt_retval(i_dn.mkdir(i_ctxt, i_entry, m_mode, m_uname, m_gname));
     }
 
 private:
     mode_t		m_mode;
+    string		m_uname;
+    string		m_gname;
 };
 
 int
-UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
+UTFileSystem::fs_mkdir(string const & i_path,
+                       mode_t i_mode,
+                       string const & i_uname,
+                       string const & i_gname)
     throw (InternalError)
 {
     LOG(lgr, 6, "fs_mkdir " << i_path);
@@ -275,7 +292,7 @@ UTFileSystem::fs_mkdir(string const & i_path, mode_t i_mode)
     try
     {
         pair<string, string> ps = DirNode::pathsplit(i_path);
-        MkdirTraverseFunc otf(i_mode);
+        MkdirTraverseFunc otf(i_mode, i_uname, i_gname);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT | DirNode::NT_UPDATE,
                              ps.first, ps.second, otf);
 

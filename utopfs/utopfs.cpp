@@ -1,10 +1,11 @@
-// This is a silly comment
-
 #include <errno.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <iostream>
@@ -31,6 +32,38 @@
 
 using namespace std;
 using namespace utp;
+
+namespace {
+
+string mapuid(uid_t uid)
+{
+    struct passwd pw;
+    struct passwd * pwp;
+    char buf[1024];
+    int rv = getpwuid_r(uid, &pw, buf, sizeof(buf), &pwp);
+    if (rv)
+        throwstream(InternalError, FILELINE
+                    << "getpwuid_r failed: " << strerror(rv));
+    if (!pwp)
+        throwstream(InternalError, FILELINE << "no password entry found");
+
+    return pwp->pw_name;
+}
+
+string mapgid(gid_t gid)
+{
+    struct group gr;
+    struct group * grp;
+    char buf[1024];
+    int rv = getgrgid_r(gid, &gr, buf, sizeof(buf), &grp);
+    if (rv)
+        throwstream(InternalError, FILELINE
+                    << "getgrgid_r failed: " << strerror(rv));
+    if (!grp)
+        throwstream(InternalError, FILELINE << "no group entry found");
+
+    return grp->gr_name;
+}
 
 class ThreadPool : public ACE_Task_Base
 {
@@ -81,6 +114,8 @@ public:
 private:
     ACE_Reactor *		m_reactor;
 };
+
+} // end namespace
 
 extern "C" {
 
@@ -181,6 +216,8 @@ init_modules(string const & argv0)
 static void *
 utopfs_init(struct fuse_conn_info * i_conn)
 {
+    struct fuse_context * fctxtp = fuse_get_context();
+
     // Set the log path and log level via env variables.
     ostringstream ostrm;
     ostrm << utopfs.loglevel;
@@ -210,6 +247,8 @@ utopfs_init(struct fuse_conn_info * i_conn)
                                                  bsh,
                                                  utopfs.fsid,
                                                  utopfs.passphrase,
+                                                 mapuid(fctxtp->uid),
+                                                 mapgid(fctxtp->gid),
                                                  fsargs);
         }
         else
@@ -283,7 +322,13 @@ utopfs_mknod(char const * i_path, mode_t i_mode, dev_t i_dev)
 {
     try
     {
-        return utopfs.fsh->fs_mknod(i_path, i_mode, i_dev);
+        struct fuse_context * fctxtp = fuse_get_context();
+
+        return utopfs.fsh->fs_mknod(i_path,
+                                    i_mode,
+                                    i_dev,
+                                    mapuid(fctxtp->uid),
+                                    mapgid(fctxtp->gid));
     }
     catch (utp::Exception const & ex)
     {
@@ -296,7 +341,12 @@ utopfs_mkdir(char const * i_path, mode_t i_mode)
 {
     try
     {
-        return utopfs.fsh->fs_mkdir(i_path, i_mode);
+        struct fuse_context * fctxtp = fuse_get_context();
+
+        return utopfs.fsh->fs_mkdir(i_path,
+                                    i_mode,
+                                    mapuid(fctxtp->uid),
+                                    mapgid(fctxtp->gid));
     }
     catch (utp::Exception const & ex)
     {

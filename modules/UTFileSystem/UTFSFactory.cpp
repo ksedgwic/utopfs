@@ -56,10 +56,12 @@ FileSystemHandle
 UTFSFactory::fsf_mkfs(BlockStoreHandle const & i_bsh,
                       string const & i_fsid,
                       string const & i_pass,
+                      string const & i_uname,
+                      string const & i_gname,
                       StringSeq const & i_args)
 {
     FileSystemHandle fsh = new UTFS::UTFileSystem();
-    fsh->fs_mkfs(i_bsh, i_fsid, i_pass, i_args);
+    fsh->fs_mkfs(i_bsh, i_fsid, i_pass, i_uname, i_gname, i_args);
     return fsh;
 }
 

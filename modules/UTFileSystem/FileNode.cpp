@@ -1,6 +1,6 @@
-#include <grp.h>
-#include <pwd.h>
 #include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include <cassert>
 
@@ -27,41 +27,37 @@ using namespace google::protobuf::io;
 
 namespace {
 
-string myuname()
-{
-    struct passwd pw;
-    struct passwd * pwp;
-    char buf[1024];
-    int rv = getpwuid_r(getuid(), &pw, buf, sizeof(buf), &pwp);
-    if (rv)
-        throwstream(InternalError, FILELINE
-                    << "getpwuid_r failed: " << strerror(rv));
-    if (!pwp)
-        throwstream(InternalError, FILELINE << "no password entry found");
+// FIXME - Can these results be cached?
 
-    return pwp->pw_name;
+uid_t mapuname(string const & i_uname)
+{
+    struct passwd pwbuf;
+    struct passwd * pwp;
+    char strbuf[8192];
+
+    getpwnam_r(i_uname.c_str(), &pwbuf, strbuf, sizeof(strbuf), &pwp);
+
+    return pwp ? pwp->pw_uid : 0;
 }
 
-string mygname()
+uid_t mapgname(string const & i_gname)
 {
-    struct group gr;
-    struct group * grp;
-    char buf[1024];
-    int rv = getgrgid_r(getgid(), &gr, buf, sizeof(buf), &grp);
-    if (rv)
-        throwstream(InternalError, FILELINE
-                    << "getgrgid_r failed: " << strerror(rv));
-    if (!grp)
-        throwstream(InternalError, FILELINE << "no group entry found");
+    struct group gbuf;
+    struct group * gp;
+    char strbuf[8192];
 
-    return grp->gr_name;
+    getgrnam_r(i_gname.c_str(), &gbuf, strbuf, sizeof(strbuf), &gp);
+
+    return gp ? gp->gr_gid : 0;
 }
 
 } // end namespace
 
 namespace UTFS {
 
-FileNode::FileNode(mode_t i_mode)
+FileNode::FileNode(mode_t i_mode,
+                   string const & i_uname,
+                   string const & i_gname)
 {
     LOG(lgr, 4, "CTOR");
 
@@ -69,8 +65,8 @@ FileNode::FileNode(mode_t i_mode)
 
     m_inode.set_mode(i_mode | S_IFREG);
     m_inode.set_nlink(1);
-    m_inode.set_uname(myuname());
-    m_inode.set_gname(mygname());
+    m_inode.set_uname(i_uname);
+    m_inode.set_gname(i_gname);
     m_inode.set_size(0);
     m_inode.set_atime(now.usec());
     m_inode.set_mtime(now.usec());
@@ -724,9 +720,11 @@ FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 {
     ACE_OS::memset(o_statbuf, '\0', sizeof(*o_statbuf));
 
+    
+
     o_statbuf->st_mode = m_inode.mode();
-    o_statbuf->st_uid = 0;    // FIXME - uid missing!
-    o_statbuf->st_gid = 0;    // FIXME - gid missing!
+    o_statbuf->st_uid = mapuname(m_inode.uname());
+    o_statbuf->st_gid = mapgname(m_inode.gname());
     o_statbuf->st_nlink = m_inode.nlink();
     o_statbuf->st_size = m_inode.size();
     o_statbuf->st_atime = m_inode.atime() / 1000000;

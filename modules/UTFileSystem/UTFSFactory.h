@@ -40,6 +40,8 @@ public:
     virtual utp::FileSystemHandle fsf_mkfs(utp::BlockStoreHandle const & i_bsh,
                                            std::string const & i_fsid,
                                            std::string const & i_pass,
+                                           std::string const & i_uname,
+                                           std::string const & i_gname,
                                            utp::StringSeq const & i_args);
 
     virtual utp::FileSystemHandle fsf_mount(utp::BlockStoreHandle const & i_bsh,

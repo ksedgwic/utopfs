@@ -13,8 +13,8 @@ using namespace utp;
 
 namespace UTFS {
 
-RootDirNode::RootDirNode()
-    : DirNode(0777)
+RootDirNode::RootDirNode(string const & i_uname, string const & i_gname)
+    : DirNode(0777, i_uname, i_gname)
 {
     LOG(lgr, 4, "CTOR");
 

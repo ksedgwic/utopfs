@@ -37,7 +37,9 @@ public:
     static off_t const NDIRECT = 20;
 
     // Default constructor.
-    FileNode(mode_t i_mode);
+    FileNode(mode_t i_mode,
+             std::string const & i_uname,
+             std::string const & i_gname);
 
     // Constructor from blockstore persisted data.
     FileNode(Context & i_ctxt, BlockRef const & i_ref);

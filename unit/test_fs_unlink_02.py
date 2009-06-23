@@ -30,11 +30,11 @@ class Test_fs_unlink_02:
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
-    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
-                                  "", "", CONFIG.FSARGS)
+    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
+                                  CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
     # Create a file
-    self.fs.fs_mknod("/bar", 0666, 0)
+    self.fs.fs_mknod("/bar", 0666, 0, CONFIG.UNAME, CONFIG.GNAME)
 
     # Now we should be able to stat the file.
     st = self.fs.fs_getattr("/bar");

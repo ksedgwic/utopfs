@@ -27,11 +27,11 @@ class Test_fs_fsid_01:
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
-    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs,
-                                  "first", "", CONFIG.FSARGS)
+    self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "first", "",
+                                  CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
     # Make a file.
-    self.fs.fs_mknod("/first", 0666, 0)
+    self.fs.fs_mknod("/first", 0666, 0, CONFIG.UNAME, CONFIG.GNAME)
 
     # Unmount the filesystem.
     self.fs.fs_umount()
