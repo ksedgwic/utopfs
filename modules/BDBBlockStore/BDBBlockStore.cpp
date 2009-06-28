@@ -38,11 +38,18 @@ BDBBlockStore::bs_create(string const & i_path)
 	struct stat statbuff;    
     if (stat(i_path.c_str(),&statbuff) == 0) {
          throwstream(NotUniqueError, FILELINE
-                << "Cannot create file block store at '" << i_path << "'. File or directory already exists.");   
+                << "Cannot create bdb block store at '" << i_path << "'. File or directory already exists.");   
     }
 		
 	try {	
-		db->open(NULL,i_path.c_str(),NULL, DB_BTREE,DB_CREATE,0);		
+		int result = db->open(NULL,i_path.c_str(),NULL, DB_BTREE,DB_CREATE,0);		
+		if (result != 0) {
+			throwstream(InternalError, FILELINE
+                << "Cannot create bdb block store at '" << i_path
+                << ": error: " << result << db_strerror(result));		 
+        }
+		 
+		 
 	} catch (DbException e) {
 		throwstream(InternalError, FILELINE
                 << "Cannot create bdb block store at '" << i_path
@@ -56,17 +63,23 @@ BDBBlockStore::bs_open(string const & i_path)
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 4, "bs_open " << i_path);
+    LOG(lgr, 4, "bs_open " << i_path);	
 
     struct stat statbuff;    
     if (stat(i_path.c_str(), &statbuff) != 0) {
         throwstream(NotFoundError, FILELINE
-                << "Cannot open file block store at '" << i_path << "'. Directory does not exist.");    
+                << "Cannot open bdb block store at '" << i_path << "'. Directory does not exist.");    
     }  
 
 
 	try {	
-		db->open(NULL,i_path.c_str(),NULL, DB_BTREE,0,0);		
+		int result = db->open(NULL,i_path.c_str(),NULL, DB_BTREE,0,0);		
+		if (result != 0) {
+			throwstream(InternalError, FILELINE
+                << "Cannot open  bdb block store at '" << i_path
+                << ": error: " << result << db_strerror(result));		 
+        }
+        
 	} catch (DbException e) {	
 		throwstream(InternalError, FILELINE
                 << "Cannot open bdb block store at '" << i_path
@@ -98,17 +111,16 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
     LOG(lgr, 6, "bs_get_block");
         
     Dbt key((void *)i_keydata,i_keysize);
-    Dbt data;
-    
+    Dbt data;    
     data.set_data(o_outbuff);
     data.set_ulen(i_outsize);
     data.set_flags(DB_DBT_USERMEM);
     
     
-    int ret = db->get(NULL,&key,&data,0);
-    if (ret != 0) {
+    int result = db->get(NULL,&key,&data,0);
+    if (result != 0) {
         throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_get_block: " << strerror(errno));
+                << "BDBBlockStore::bs_get_block: " << result << db_strerror(result));
     }
     
     return data.get_size();    

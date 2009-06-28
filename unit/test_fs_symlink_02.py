@@ -1,7 +1,6 @@
 import sys
 import random
 import py
-import shutil
 
 from os import *
 from stat import *
@@ -18,15 +17,15 @@ import utp.FileSystem
 class Test_fs_symlink_02:
 
   def setup_class(self):
-    self.bspath = "fs_symlink_02.bs"
+    self.bspath = "bs_symlink_02.bs"
 
   def teardown_class(self):
-    shutil.rmtree(self.bspath,True) 
+    CONFIG.remove_bs(self.bspath) 
 
   def test_symlink(self):
 
     # Remove any prexisting blockstore.
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
@@ -65,7 +64,8 @@ class Test_fs_symlink_02:
 
     # Now we unmount the filesystem.
     self.fs.fs_umount()
-
+    self.bs.bs_close()
+	
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)

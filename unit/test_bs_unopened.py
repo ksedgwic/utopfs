@@ -31,6 +31,23 @@ class TestUnopenedBlockStore:
     bs.bs_close()
 
     CONFIG.remove_bs(self.bspath)  
+    
+  def test_should_be_able_to_create_close_and_open_a_block_store(self):
+    CONFIG.remove_bs(self.bspath)
+    bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
+       
+    k = buffer("persistentkey%(random.randrange(999999999))")
+    v = buffer("persistentvalue")      
+    bs.bs_put_block(k, v)    
+    bs.bs_close()
+    
+    bs1 = utp.BlockStore.open(CONFIG.BSTYPE, (self.bspath,))
+    b = bs1.bs_get_block(k)
+    bs1.bs_close()
+    CONFIG.remove_bs(self.bspath)
+    
+    assert b == v
+  
   
   def test_create_on_prexisting_should_throw_error(self):
     CONFIG.remove_bs(self.bspath)  
