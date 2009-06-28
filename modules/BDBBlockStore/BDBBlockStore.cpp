@@ -23,7 +23,6 @@ BDBBlockStore::BDBBlockStore()
 
 BDBBlockStore::~BDBBlockStore()
 {
-	db->close(0);
     // Don't try and log here ... in static object destructor context
     // (way after main has returned ...)
 }
@@ -81,6 +80,9 @@ BDBBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, "bs_close");    
+    if (db) {
+		db->close(0);
+	}
 }
 
 size_t
@@ -94,51 +96,22 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
           
 {
     LOG(lgr, 6, "bs_get_block");
-    throwstream(InternalError, FILELINE << "Feature not implemented"); 
-
-
-    // convert key to filesystem-safe name
-    //string s_filename = new string(
-    
-    //string s_filename = m_path + "/testblock";
-    string s_filename = get_full_path(i_keydata,i_keysize);
-    
-    struct stat statbuff;
-    
-    int rv = stat(s_filename.c_str(), &statbuff);
-    if (rv == -1)
-    {
-        if (errno == ENOENT)
-            throwstream(NotFoundError,
-                        Base32::encode(i_keydata, i_keysize) << ": not found");
-        else
-            throwstream(InternalError, FILELINE
-                        << "BDBBlockStore::bs_get_block: "
-                        << Base32::encode(i_keydata, i_keysize)
-                        << ": error: " << ACE_OS::strerror(errno));
-    }
-    
-    if (statbuff.st_size > off_t(i_outsize)) {
-        throwstream(InternalError, FILELINE
-                << "Passed buffer not big enough to hold block");
-    }
-    
-    int fd = open(s_filename.c_str(), O_RDONLY, S_IRUSR);
-    int bytes_read = read(fd,o_outbuff,statbuff.st_size);
-    close(fd);
-
-    if (bytes_read == -1) {
-        throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_get_block: read failed: " << strerror(errno));
-    }
-
         
-    if (bytes_read != statbuff.st_size) {
+    Dbt key((void *)i_keydata,i_keysize);
+    Dbt data;
+    
+    data.set_data(o_outbuff);
+    data.set_ulen(i_outsize);
+    data.set_flags(DB_DBT_USERMEM);
+    
+    
+    int ret = db->get(NULL,&key,&data,0);
+    if (ret != 0) {
         throwstream(InternalError, FILELINE
-                << "BDBBlockStore::expected to get " << statbuff.st_size << " bytes, but got " << bytes_read << " bytes");
+                << "BDBBlockStore::bs_get_block: " << strerror(errno));
     }
     
-    return bytes_read;
+    return data.get_size();    
 }
 
 void
@@ -150,23 +123,17 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
           ValueError)
 {
     LOG(lgr, 6, "bs_put_block");
-    throwstream(InternalError, FILELINE << "Feature not implemented"); 
-
-    string s_filename = get_full_path(i_keydata,i_keysize);    
     
-    int fd = open(s_filename.c_str(),O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
-    if (fd == -1) {
-        throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_put_block: open failed on " << s_filename << ": " << strerror(errno));
-    }
+    Dbt key((void *)i_keydata,i_keysize);
+    Dbt data((void *)i_blkdata,i_blksize);
     
-    int bytes_written = write(fd,i_blkdata,i_blksize);    
-    close(fd);
-        
-    if (bytes_written == -1) {
-        throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_put_block write error...");
-    }
+    int results = db->put(NULL,&key,&data,DB_NOOVERWRITE);
+    if (results == DB_KEYEXIST) {
+    	//fail silently
+    } else if (results != 0) {
+    	throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
+    }   
 }
 
 void
@@ -176,11 +143,13 @@ BDBBlockStore::bs_del_block(void const * i_keydata,
           NotFoundError)
 {
     LOG(lgr, 6, "bs_del_block");
-    throwstream(InternalError, FILELINE << "Feature not implemented"); 
     
-    string s_filename = get_full_path(i_keydata,i_keysize);
-
-    unlink(s_filename.c_str());
+    Dbt key((void *)i_keydata,i_keysize);
+    int results = db->del(NULL,&key,0);    
+    if (results != 0) {
+    	throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_del_block returned error " << results << db_strerror(results));
+    }   
 }
 
 void

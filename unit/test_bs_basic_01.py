@@ -1,7 +1,6 @@
 import sys
 import random
 import py
-import shutil
 import utp
 import utp.BlockStore
 
@@ -11,18 +10,20 @@ class Test_bs_basic_01:
 
   def setup_class(self):
     self.bspath = "bs_basic_01"
-    shutil.rmtree(self.bspath,True)
+    CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
     
   def teardown_class(self):
     self.bs.bs_close()
-    shutil.rmtree(self.bspath,True)
+    CONFIG.remove_bs(self.bspath)
+
 
   def test_put_and_get_block(self):    
         
     k = buffer("thekey%(random.randrange(999999999))")
     v = buffer("thevalue%(random.randrange(999999999))")
-
+    
+	
     # Put a block of data.
     self.bs.bs_put_block(k, v)
     
@@ -51,3 +52,16 @@ class Test_bs_basic_01:
     # Replace Exception w/ NotFoundError.
     #
     py.test.raises(Exception, self.bs.bs_get_block,k)
+    
+  def test_second_put_with_existing_key_should_not_be_stored(self):
+    k = buffer("test_second_put_with_existing_key_should_not_be_stored")
+    v1 = buffer("value1")
+    v2 = buffer("value2")
+
+    self.bs.bs_put_block(k, v1)
+    self.bs.bs_put_block(k, v2)    
+    v = self.bs.bs_get_block(k)
+    
+    assert v == v1   
+  
+  	

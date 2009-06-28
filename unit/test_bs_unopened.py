@@ -1,5 +1,4 @@
 import sys
-import shutil
 import random
 import py
 import os
