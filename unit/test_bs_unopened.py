@@ -12,7 +12,7 @@ class TestUnopenedBlockStore:
 
   def setup_class(self):
     self.bspath = "fs_unopened.bs"
-    shutil.rmtree(self.bspath,True)
+    CONFIG.remove_bs(self.bspath)
 
   def teardown_class(self):
     pass
@@ -26,15 +26,15 @@ class TestUnopenedBlockStore:
                    utp.BlockStore.open, CONFIG.BSTYPE, ("NOEXIST",))
     
   def test_create(self):    
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 
     bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
     bs.bs_close()
 
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
   
   def test_create_on_prexisting_should_throw_error(self):
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 
     bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
 
@@ -45,5 +45,5 @@ class TestUnopenedBlockStore:
                    utp.BlockStore.create, CONFIG.BSTYPE, (self.bspath,))
     bs.bs_close()
 
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 

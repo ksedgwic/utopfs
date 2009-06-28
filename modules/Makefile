@@ -3,6 +3,7 @@ ROOTDIR = ..
 include $(ROOTDIR)/config/define.mk
 
 SUBDIRS =	\
+			BDBBlockStore \
 			DefaultLogger \
 			FSBlockStore \
 			UTFileSystem \
