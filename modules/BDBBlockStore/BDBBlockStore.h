@@ -59,6 +59,8 @@ public:
                                    KeySeq & o_missing)
         throw(utp::InternalError);
 
+	virtual void bs_sync()
+		throw(utp::InternalError);
 	
 	Db *db;
     

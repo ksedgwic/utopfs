@@ -120,6 +120,16 @@ public:
     virtual void bs_refresh_blocks(KeySeq const & i_keys,
                                    KeySeq & o_missing)
         throw(InternalError) = 0;
+        
+    /// Ensures blocks are persisted.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void bs_sync()
+        throw(InternalError) = 0;
+        
+        
+    
 };
 
 } // end namespace utp

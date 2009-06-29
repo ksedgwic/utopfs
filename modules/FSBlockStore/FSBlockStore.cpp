@@ -205,6 +205,14 @@ FSBlockStore::bs_refresh_blocks(KeySeq const & i_keys,
     }
 }
 
+void
+FSBlockStore::bs_sync()
+    throw(InternalError)
+{
+	//always synced to disk
+}
+
+
 string 
 FSBlockStore::get_full_path(void const * i_keydata,
                                 size_t i_keysize) 

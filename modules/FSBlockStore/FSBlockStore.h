@@ -59,6 +59,9 @@ public:
     virtual void bs_refresh_blocks(KeySeq const & i_keys,
                                    KeySeq & o_missing)
         throw(utp::InternalError);
+        
+    virtual void bs_sync()
+		throw(utp::InternalError);
 
 private:
     

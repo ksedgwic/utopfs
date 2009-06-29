@@ -197,6 +197,13 @@ BDBBlockStore::bs_refresh_blocks(KeySeq const & i_keys,
     }
 }
 
+void
+BDBBlockStore::bs_sync()
+    throw(InternalError)
+{
+	db->sync(0);
+}
+
 string 
 BDBBlockStore::get_full_path(void const * i_keydata,
                                 size_t i_keysize) 
