@@ -30,6 +30,7 @@ DEFS +=		-DUTP_IMPL
 include $(ROOTDIR)/config/depend.mk
 
 # External Dependencies
+include $(ROOTDIR)/config/extdep/ACE.mk
 include $(ROOTDIR)/config/extdep/openssl.mk
 
 # Local Variables:

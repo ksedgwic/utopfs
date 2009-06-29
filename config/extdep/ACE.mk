@@ -1,6 +1,21 @@
 ifndef ACE_mk__
        ACE_mk__ = 1
 
+ifeq ($(SYSNAME),Darwin)
+ACEROOT =		/usr/local/ACE_wrappers
+
+INCS +=			-I$(ACEROOT)
+LIBS +=			-L$(ACEROOT)/lib
+ENVLDLIBPATH +=	$(ACEROOT)/lib
+
+# List the libraries after the optional -L above ...
+LIBS +=			\
+				-lACEXML_Parser \
+				-lACEXML \
+				-lACE \
+				$(NULL)
+endif
+
 ifeq ($(SYSNAME),Linux)
 
 # Prefer RPM installed ACE in the system places (/usr/include/ace, etc).

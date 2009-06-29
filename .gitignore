@@ -2,5 +2,8 @@ GENSRC/
 Linux.DBGOBJ/
 Linux.INSTCFG/
 Linux.WORKCFG/
+Darwin.DBGOBJ/
+Darwin.INSTCFG/
+Darwin.WORKCFG/
 *.pyc
 /ID
