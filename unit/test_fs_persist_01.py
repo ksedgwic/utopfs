@@ -17,7 +17,8 @@ class Test_fs_persist_01:
     self.bspath = "fs_persist_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    3
+    #CONFIG.remove_bs(self.bspath) 
 
   def test_persistence(self):
     # Remove any prexisting blockstore.
@@ -36,8 +37,12 @@ class Test_fs_persist_01:
     st = self.fs.fs_getattr("/foo");
     assert S_ISREG(st[ST_MODE])
     
+    
+    #assert 3 == 4    
+
     # Now we unmount the filesystem.
     self.fs.fs_umount()
+    self.bs.bs_close()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

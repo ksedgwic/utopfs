@@ -19,7 +19,8 @@ class Test_fs_bigfile_01:
     self.bspath = "fs_bigfile_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    #CONFIG.remove_bs(self.bspath) 
+    asfd = 122
 
   def test_can_write_bigfile(self):
 
@@ -65,6 +66,7 @@ class Test_fs_bigfile_01:
     
     # Now we unmount the filesystem.
     self.fs.fs_umount()
+    self.bs.bs_close()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

@@ -68,7 +68,7 @@ BDBBlockStore::bs_open(string const & i_path)
     struct stat statbuff;    
     if (stat(i_path.c_str(), &statbuff) != 0) {
         throwstream(NotFoundError, FILELINE
-                << "Cannot open bdb block store at '" << i_path << "'. Directory does not exist.");    
+                << "Cannot open bdb block store at '" << i_path << "'. File does not exist.");    
     }  
 
 
@@ -94,6 +94,7 @@ BDBBlockStore::bs_close()
 {
     LOG(lgr, 4, "bs_close");    
     if (db) {
+    	db->sync(0);
 		db->close(0);
 	}
 }
@@ -139,13 +140,15 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
     Dbt key((void *)i_keydata,i_keysize);
     Dbt data((void *)i_blkdata,i_blksize);
     
+    //delete key if it exists--necessary for root-node persistence
+    if (db->exists(NULL,&key,0) == 0) {
+    	db->del(NULL,&key,0); 
+    }    
     int results = db->put(NULL,&key,&data,DB_NOOVERWRITE);
-    if (results == DB_KEYEXIST) {
-    	//fail silently
-    } else if (results != 0) {
+    if (results != 0) {
     	throwstream(InternalError, FILELINE
                 << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
-    }   
+    }      
 }
 
 void

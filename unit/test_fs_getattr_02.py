@@ -33,9 +33,12 @@ class Test_fs_getattr_01:
     # Make a file.
     self.fs.fs_mknod("/foo/bar", 0666, 0, CONFIG.UNAME, CONFIG.GNAME)
 
+    
+	
     # Now we unmount the filesystem.
     self.fs.fs_umount()
-
+    self.bs.bs_close()
+    
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
