@@ -5,7 +5,8 @@
 
 #if defined(LINUX)
 // Python and sys/features clash over this.
-# undef  _POSIX_C_SOURCE
+# undef _POSIX_C_SOURCE
+# undef _XOPEN_SOURCE
 #endif
 
 #include <Python.h>             // CONFLICT: include this after ACE includes

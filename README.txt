@@ -49,12 +49,17 @@ Development Prerequisites
     sudo gem install rspec
 
     # py.test
-    sudo yum install -y python-py
-    sudo yum install -y python-setuptools
+    sudo yum install -y python-py python-setuptools
 
     # Google Protobuf
     sudo yum install -y protobuf protobuf-devel \
                         protobuf-compiler protobuf-debuginfo
+
+    # Fuse
+    sudo yum install -y fuse-devel
+
+    # OpenSSL
+    sudo yum install -y openssl-devel
 
 
 Building
