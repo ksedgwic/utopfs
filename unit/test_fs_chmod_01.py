@@ -1,7 +1,7 @@
 import sys
 import random
 import py
-import shutil
+
 
 from os import *
 from stat import *
@@ -17,10 +17,10 @@ class Test_fs_chmod_01:
     self.bspath = "fs_chmod_01.bs"
 
     # Remove any prexisting blockstore.
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 
   def teardown_class(self):
-    shutil.rmtree(self.bspath,True) 
+    CONFIG.remove_bs(self.bspath) 
 
   def test_chmod(self):
 

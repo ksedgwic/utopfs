@@ -1,7 +1,7 @@
 import sys
 import random
 import py
-import shutil
+
 
 from os import *
 from stat import *
@@ -20,10 +20,10 @@ class Test_fs_unlink_02:
     self.bspath = "fs_unlink_02.bs"
 
     # Remove any prexisting blockstore.
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 
   def teardown_class(self):
-    shutil.rmtree(self.bspath,True) 
+    CONFIG.remove_bs(self.bspath) 
 
   def test_unlink(self):
 

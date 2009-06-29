@@ -1,7 +1,7 @@
 import sys
 import random
 import py
-import shutil
+
 
 from os import *
 from stat import *
@@ -20,12 +20,12 @@ class Test_fs_symlink_01:
     self.bspath = "fs_symlink_01.bs"
 
   def teardown_class(self):
-    shutil.rmtree(self.bspath,True) 
+    CONFIG.remove_bs(self.bspath) 
 
   def test_symlink(self):
 
     # Remove any prexisting blockstore.
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS

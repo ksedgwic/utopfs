@@ -2,7 +2,7 @@
 
 from os import *
 import sys
-import shutil
+
 
 import utp
 import utp.BlockStore

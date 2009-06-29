@@ -1,7 +1,7 @@
 import sys
 import random
 import py
-import shutil
+
 
 from os import *
 from stat import *
@@ -17,7 +17,7 @@ class Test_fs_mkfs:
     self.bspath = "fs_mkfs.bs"
 
     # Remove any prexisting blockstore.
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
@@ -31,7 +31,7 @@ class Test_fs_mkfs:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    shutil.rmtree(self.bspath,True) 
+    CONFIG.remove_bs(self.bspath) 
 
   def test_hasno_foodir(self):
     # The filesystem should not have a "foo" directory.

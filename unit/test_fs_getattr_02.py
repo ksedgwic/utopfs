@@ -50,7 +50,7 @@ class Test_fs_getattr_01:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    shutil.rmtree(self.bspath,True) 
+    CONFIG.remove_bs(self.bspath) 
 
   def test_can_getattr_root(self):
     # We should be able to stat "/"
