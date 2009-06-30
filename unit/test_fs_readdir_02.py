@@ -1,7 +1,7 @@
 import sys
 import random
 import py
-import shutil
+
 
 from os import *
 from stat import *
@@ -41,7 +41,7 @@ class Test_fs_readdir_01:
     self.bspath = "fs_readdir_01.bs"
 
     # Remove any prexisting blockstore.
-    shutil.rmtree(self.bspath,True)  
+    CONFIG.remove_bs(self.bspath)  
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
@@ -70,7 +70,7 @@ class Test_fs_readdir_01:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    shutil.rmtree(self.bspath,True) 
+    CONFIG.remove_bs(self.bspath) 
 
   def test_can_readdir_root(self):
     # We should be able to list "/"

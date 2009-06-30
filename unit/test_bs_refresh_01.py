@@ -1,7 +1,7 @@
 import sys
 import random
 import py
-import shutil
+
 import utp
 import utp.BlockStore
 
@@ -11,12 +11,12 @@ class Test_bs_refresh_01:
 
   def setup_class(self):
     self.bspath = "bs_refresh_01"
-    shutil.rmtree(self.bspath,True)
+    CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, (self.bspath,))
     
   def teardown_class(self):
     self.bs.bs_close()
-    shutil.rmtree(self.bspath,True)
+    CONFIG.remove_bs(self.bspath)
 
   def test_refresh_blocks(self):
 
