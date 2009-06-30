@@ -3,7 +3,7 @@ Installing and Running from RPM
 
 Install the software
 
-    sudo rpm -Uv fuse-utopfs-0.2-1.fc10.x86_64.rpm
+    sudo rpm -Uv fuse-utopfs-0.2-1.fc11.x86_64.rpm
 
 Make a mount point:
 
@@ -12,7 +12,7 @@ Make a mount point:
 
 Create and mount a utopfs:
 
-    utopfs -M -F "myfsid" -P "mypassphrase" BLOCKS mnt
+    utopfs -M -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
 
 Unmount it:
 
@@ -20,11 +20,11 @@ Unmount it:
 
 Mount an existing utopfs:
 
-    utopfs -F "myfsid" -P "mypassphrase" BLOCKS mnt
+    utopfs -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
 
 Turn up logging:
 
-    utopfs -l 9 -F "myfsid" -P "mypassphrase" BLOCKS mnt
+    utopfs -l 9 -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
 
 
 Building RPM packages from tarball
@@ -101,6 +101,8 @@ Run a unit test under the debugger:
 
 Ultra Primitive Garbage Collection
 ----------------------------------------------------------------
+
+This no longer works from the BDBBS ... oh well ...
 
     touch BLOCKS/MARK
     ./refresh BLOCKS "" ""

@@ -1,4 +1,4 @@
-Fix rpmbuild.
+Fix "utp refresh", seems to hang ...
 
 Rename "utp refresh" to "utp compact".
 
