@@ -1,7 +1,9 @@
 GENSRC/
+Linux.OPTOBJ/
 Linux.DBGOBJ/
 Linux.INSTCFG/
 Linux.WORKCFG/
+Darwin.OPTOBJ/
 Darwin.DBGOBJ/
 Darwin.INSTCFG/
 Darwin.WORKCFG/
