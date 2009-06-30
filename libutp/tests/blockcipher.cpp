@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 
+#include <ace/OS_NS_stdio.h>
+
 #include "Base32.h"
 #include "Random.h"
 #include "BlockCipher.h"
@@ -21,7 +23,7 @@ main(int argc, char ** argv)
 
     char buffer[8192];
     memset(buffer, '\0', sizeof(buffer));
-    snprintf(buffer, sizeof(buffer), "This is a secret message");
+    ACE_OS::snprintf(buffer, sizeof(buffer), "This is a secret message");
 
     cipher.encrypt(iv, buffer, sizeof(buffer));
 
