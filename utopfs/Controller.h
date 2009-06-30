@@ -16,8 +16,9 @@
 class Controller : public ACE_Event_Handler
 {
 public:
-    Controller(utp::FileSystemHandle const & i_fsh,
-                    std::string const & i_controlpath);
+    Controller(utp::BlockStoreHandle const & i_bsh,
+               utp::FileSystemHandle const & i_fsh,
+               std::string const & i_controlpath);
 
     virtual ~Controller();
 
@@ -41,6 +42,7 @@ public:
 private:
     bool					m_opened;
     std::string				m_sockpath;
+    utp::BlockStoreHandle	m_bsh;
     utp::FileSystemHandle	m_fsh;
     std::string				m_controlpath;
     ACE_Reactor *			m_reactor;

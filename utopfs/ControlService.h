@@ -18,7 +18,11 @@ typedef ACE_Svc_Handler<ACE_LSOCK_STREAM, ACE_NULL_SYNCH> ACE_LSOCK_Service;
 class ControlService : public ACE_LSOCK_Service
 {
 public:
-    ControlService(utp::FileSystemHandle const & i_fsh) : m_fsh(i_fsh) {}
+    ControlService(utp::BlockStoreHandle const & i_bsh,
+                   utp::FileSystemHandle const & i_fsh)
+        : m_bsh(i_bsh)
+        , m_fsh(i_fsh)
+    {}
 
     virtual int handle_input(ACE_HANDLE i_fd = ACE_INVALID_HANDLE);
 
@@ -29,6 +33,7 @@ public:
     int open(void * = 0);
 
 private:
+    utp::BlockStoreHandle		m_bsh;
     utp::FileSystemHandle		m_fsh;
 };
 

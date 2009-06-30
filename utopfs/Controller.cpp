@@ -3,6 +3,7 @@
 #include <ace/Reactor.h>
 
 #include "Except.h"
+#include "BlockStore.h"
 #include "FileSystem.h"
 
 #include "fuselog.h"
@@ -13,9 +14,11 @@
 using namespace std;
 using namespace utp;
 
-Controller::Controller(FileSystemHandle const & i_fsh,
-                                 string const & i_controlpath)
+Controller::Controller(BlockStoreHandle const & i_bsh,
+                       FileSystemHandle const & i_fsh,
+                       string const & i_controlpath)
     : m_opened(false)
+    , m_bsh(i_bsh)
     , m_fsh(i_fsh)
     , m_controlpath(i_controlpath)
     , m_reactor(ACE_Reactor::instance())
@@ -37,7 +40,7 @@ Controller::handle_input(ACE_HANDLE i_fd)
 {
     LOG(lgr, 4, "handle_input");
 
-    auto_ptr<ControlService> cntrlsvc(new ControlService(m_fsh));
+    auto_ptr<ControlService> cntrlsvc(new ControlService(m_bsh, m_fsh));
 
     if (m_acceptor.accept(cntrlsvc->peer()) == -1)
     {
@@ -147,6 +150,9 @@ Controller::periodic()
 {
     // Synchronize the filesystem to the blockstore.
     m_fsh->fs_sync();
+
+    // Persist the blockstore.
+    m_bsh->bs_sync();
 }
 
 // Local Variables:

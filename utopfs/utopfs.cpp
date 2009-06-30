@@ -138,6 +138,7 @@ struct utopfs
     string passphrase;
     bool do_mkfs;
     string mntpath;
+    BlockStoreHandle bsh;
     FileSystemHandle fsh;
     Controller * control;
     ThreadPool * thrpool;
@@ -240,11 +241,11 @@ utopfs_init(struct fuse_conn_info * i_conn)
         {
             StringSeq bsargs;
             bsargs.push_back(utopfs.path);
-            BlockStoreHandle bsh = BlockStoreFactory::create("FSBS", bsargs);
+            utopfs.bsh = BlockStoreFactory::create("BDBBS", bsargs);
 
             StringSeq fsargs;
             utopfs.fsh = FileSystemFactory::mkfs("UTFS",
-                                                 bsh,
+                                                 utopfs.bsh,
                                                  utopfs.fsid,
                                                  utopfs.passphrase,
                                                  mapuid(fctxtp->uid),
@@ -255,11 +256,11 @@ utopfs_init(struct fuse_conn_info * i_conn)
         {
             StringSeq bsargs;
             bsargs.push_back(utopfs.path);
-            BlockStoreHandle bsh = BlockStoreFactory::open("FSBS", bsargs);
+            utopfs.bsh = BlockStoreFactory::open("BDBBS", bsargs);
 
             StringSeq fsargs;
             utopfs.fsh = FileSystemFactory::mount("UTFS",
-                                                  bsh,
+                                                  utopfs.bsh,
                                                   utopfs.fsid,
                                                   utopfs.passphrase,
                                                   fsargs);
@@ -267,7 +268,7 @@ utopfs_init(struct fuse_conn_info * i_conn)
 
         // Start the controller.
         string controlpath = utopfs.mntpath + "/.utopfs/control";
-        utopfs.control = new Controller(utopfs.fsh, controlpath);
+        utopfs.control = new Controller(utopfs.bsh, utopfs.fsh, controlpath);
         utopfs.control->init();
     }
     catch (utp::Exception const & ex)

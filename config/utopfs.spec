@@ -76,6 +76,7 @@ mkdir -p $RPM_BUILD_ROOT%{_libdir}
 install \
   modules/DefaultLogger/%{OBJDIR}/UTPFS-DFLG.so \
   modules/FSBlockStore/%{OBJDIR}/UTPFS-FSBS.so \
+  modules/BDBBlockStore/%{OBJDIR}/UTPFS-BDBBS.so \
   modules/UTFileSystem/%{OBJDIR}/UTPFS-UTFS.so \
 $RPM_BUILD_ROOT%{_libdir}
 
@@ -84,6 +85,7 @@ mkdir -p $RPM_BUILD_ROOT%{_libdir}
 pushd $RPM_BUILD_ROOT%{_libdir}
   ln -sf UTPFS-DFLG.so libUTPFS-DFLG.so
   ln -sf UTPFS-FSBS.so libUTPFS-FSBS.so
+  ln -sf UTPFS-BDBBS.so libUTPFS-BDBBS.so
   ln -sf UTPFS-UTFS.so libUTPFS-UTFS.so
 popd
 
@@ -123,10 +125,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %{_libdir}/UTPFS-DFLG.so
 %{_libdir}/UTPFS-FSBS.so
+%{_libdir}/UTPFS-BDBBS.so
 %{_libdir}/UTPFS-UTFS.so
 
 %{_libdir}/libUTPFS-DFLG.so
 %{_libdir}/libUTPFS-FSBS.so
+%{_libdir}/libUTPFS-BDBBS.so
 %{_libdir}/libUTPFS-UTFS.so
 
 %{_bindir}/utopfs

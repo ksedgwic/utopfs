@@ -1,3 +1,9 @@
+Rename "utp refresh" to "utp compact".
+
+Add a "utp sync" separate from the "utp compact".
+
+Add a BlockStore::bs_sync interface.
+
 Directories should show some size in an "ls -l".
 
 Figure out what fuse's lowlevel interface is good for and whether we

@@ -3,6 +3,7 @@
 #include <ace/Reactor.h>
 
 #include "Except.h"
+#include "BlockStore.h"
 #include "FileSystem.h"
 
 #include "fuselog.h"
