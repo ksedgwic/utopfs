@@ -131,6 +131,8 @@ class Test_fs_sparse_01:
 
     # Now we unmount the filesystem.
     self.fs.fs_umount()
+    self.bs.bs_close()
+
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS

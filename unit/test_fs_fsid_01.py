@@ -35,6 +35,7 @@ class Test_fs_fsid_01:
 
     # Unmount the filesystem.
     self.fs.fs_umount()
+    self.bs.bs_close()
 
     # Now mount it again.
     bsargs = (self.bspath,) + CONFIG.BSARGS
