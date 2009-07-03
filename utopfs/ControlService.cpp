@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 
 #include <ace/Reactor.h>
 
@@ -15,36 +16,57 @@ using namespace utp;
 int
 ControlService::handle_input(ACE_HANDLE i_fd)
 {
-    LOG(lgr, 4, "handle_input");
-
-    char buffer[8192];
-
-    ssize_t rv = peer().recv(buffer, sizeof(buffer));
-    if (rv <= 0)
+    try
     {
-        LOG(lgr, 4, "connection closed");
+        LOG(lgr, 4, "handle_input");
+
+        char buffer[8192];
+
+        ssize_t rv = peer().recv(buffer, sizeof(buffer));
+        if (rv <= 0)
+        {
+            LOG(lgr, 4, "connection closed");
+            return -1;
+        }
+
+        ostringstream retstrm;
+        string cmdstr(buffer, rv);
+        if (cmdstr == "refresh")
+        {
+            size_t nblocks = m_fsh->fs_refresh();
+            retstrm << "refreshed " << nblocks << " blocks";
+        
+        }
+        else
+        {
+            retstrm << "unrecognized control command: \"" << cmdstr << "\"";
+            LOG(lgr, 2, retstrm.str());
+        }
+
+        string const & retstr = retstrm.str();
+        rv = peer().send(retstr.data(), retstr.size());
+
+        // All done.
         return -1;
     }
-
-    ostringstream retstrm;
-    string cmdstr(buffer, rv);
-    if (cmdstr == "refresh")
+    catch (exception const & ex)
     {
-        size_t nblocks = m_fsh->fs_refresh();
-        retstrm << "refreshed " << nblocks << " blocks";
-        
+        ostringstream errstrm;
+        errstrm << FILELINE << "std::exception: " << ex.what();
+        LOG(lgr, 1, errstrm.str());
+        string const & errstr = errstrm.str();
+        peer().send(errstr.data(), errstr.size());
+        return -1;
     }
-    else
+    catch (...)
     {
-        retstrm << "unrecognized control command: \"" << cmdstr << "\"";
-        LOG(lgr, 2, retstrm.str());
+        ostringstream errstrm;
+        errstrm << FILELINE << "UNKNOWN EXCEPTION";
+        LOG(lgr, 1, errstrm.str());
+        string const & errstr = errstrm.str();
+        peer().send(errstr.data(), errstr.size());
+        return -1;
     }
-
-    string const & retstr = retstrm.str();
-    rv = peer().send(retstr.data(), retstr.size());
-
-    // All done.
-    return -1;
 }
 
 int
