@@ -1,14 +1,13 @@
+Give better (immediate, synchronous) error when -M flag used and
+blockstore already exists.
+
 Add "size" API to blockstore.
 
 Add "df" fuse interfaces.
 
-Fix "utp refresh", seems to hang ...
-
 Rename "utp refresh" to "utp compact".
 
 Add a "utp sync" separate from the "utp compact".
-
-Add a BlockStore::bs_sync interface.
 
 Directories should show some size in an "ls -l".
 

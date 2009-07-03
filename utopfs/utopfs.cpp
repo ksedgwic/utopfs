@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <cassert>
 
 #include <ace/Reactor.h>
 #include <ace/Service_Config.h>
@@ -131,6 +132,8 @@ struct utopfs
 {
     struct fuse_args utop_args;
     string argv0;
+    bool foreground;
+    string lclconf;
     int loglevel;
     string logpath;
     string path;
@@ -185,10 +188,10 @@ init_modules(string const & argv0)
     }
 
     // Is there a local utopfs.conf file?
-    else if (ACE_OS::stat(LCLCONF, &statbuf) == 0)
+    else if (ACE_OS::stat(utopfs.lclconf.c_str(), &statbuf) == 0)
     {
         args.push_back("-f");
-        args.push_back(LCLCONF);
+        args.push_back(utopfs.lclconf);
     }
 
     // Is there a system utopfs.conf file?
@@ -217,6 +220,9 @@ init_modules(string const & argv0)
 static void *
 utopfs_init(struct fuse_conn_info * i_conn)
 {
+    // NOTE - We wish we could do a lot of this stuff in the mainline
+    // but much of it needs to be done after we daemonize ...
+
     struct fuse_context * fctxtp = fuse_get_context();
 
     // Set the log path and log level via env variables.
@@ -225,6 +231,18 @@ utopfs_init(struct fuse_conn_info * i_conn)
     ACE_OS::setenv("UTOPFS_LOG_FILELEVEL", ostrm.str().c_str(), 1);
     ACE_OS::setenv("UTOPFS_LOG_FILEPATH", utopfs.logpath.c_str(), 1);
 
+    if (!utopfs.foreground)
+    {
+        // Open stdin from /dev/null, stdout and stderr on the logfile.
+        FILE * fp;
+        fp = freopen("/dev/null", "rb", stdin);
+        assert(fp && fileno(fp) == 0);
+        fp = freopen(utopfs.logpath.c_str(), "ab", stdout);
+        assert(fp && fileno(fp) == 1);
+        fp = freopen(utopfs.logpath.c_str(), "ab", stderr);
+        assert(fp && fileno(fp) == 2);
+    }
+    
     // Modules (including logging) load and start here.
     init_modules(utopfs.argv0);
 
@@ -647,9 +665,12 @@ static int utopfs_opt_proc(void * data,
         }
         return 1;
 
+	case KEY_FOREGROUND:
+        utopfs.foreground = true;
+        return 1;
+
 	case KEY_HELP:
 	case KEY_VERSION:
-	case KEY_FOREGROUND:
 	case KEY_CONFIGFILE:
 		return 1;
 
@@ -664,6 +685,8 @@ main(int argc, char ** argv)
 {
     // Setup defaults
     utopfs.argv0 = argv[0];
+    utopfs.foreground = false;
+    utopfs.lclconf = LCLCONF;
     utopfs.logpath = "utopfs.log";
     utopfs.loglevel = -1;
     utopfs.do_mkfs = false;
@@ -683,6 +706,14 @@ main(int argc, char ** argv)
         char cwdbuf[MAXPATHLEN];
         string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
         utopfs.path = cwd + '/' + utopfs.path;
+    }
+
+    // Convert LCLCONF path to absolute.
+    if (utopfs.lclconf[0] != '/')
+    {
+        char cwdbuf[MAXPATHLEN];
+        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+        utopfs.lclconf = cwd + '/' + utopfs.lclconf;
     }
 
     // Convert the log path to absolute.
