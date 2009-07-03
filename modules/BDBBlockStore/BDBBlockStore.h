@@ -35,6 +35,9 @@ public:
     virtual void bs_close()
         throw(utp::InternalError);
 
+    virtual void bs_stat(Stat & o_stat)
+        throw(utp::InternalError);
+
     virtual size_t bs_get_block(void const * i_keydata,
                                 size_t i_keysize,
                                 void * o_outbuff,

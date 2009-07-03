@@ -56,6 +56,19 @@ public:
     virtual void bs_close()
         throw(InternalError) = 0;
 
+    struct Stat
+    {
+        size_t	bss_size;	//< Total data size in bytes.
+        size_t	bss_free;	//< Uncommitted size in bytes.
+    };
+
+    /// Return block store statistics.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void bs_stat(Stat & o_stat)
+        throw(InternalError) = 0;
+
     /// Get a block.
     ///
     /// @param[in] i_keydata Pointer to the key data.

@@ -99,6 +99,14 @@ BDBBlockStore::bs_close()
 	}
 }
 
+void
+BDBBlockStore::bs_stat(Stat & o_stat)
+    throw(InternalError)
+{
+    throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_stat unimplemented");
+}
+
 size_t
 BDBBlockStore::bs_get_block(void const * i_keydata,
                            size_t i_keysize,

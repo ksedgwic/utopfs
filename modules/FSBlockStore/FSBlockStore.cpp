@@ -80,6 +80,14 @@ FSBlockStore::bs_close()
 //                << "FSBlockStore::bs_close unimplemented");
 }
 
+void
+FSBlockStore::bs_stat(Stat & o_stat)
+    throw(InternalError)
+{
+    throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_stat unimplemented");
+}
+
 size_t
 FSBlockStore::bs_get_block(void const * i_keydata,
                            size_t i_keysize,
