@@ -8,18 +8,27 @@ UNAME = pwd.getpwuid(os.geteuid()).pw_name
 GNAME = grp.getgrgid(os.getegid()).gr_name
 
 # Which BlockStore module should we use?
-BSTYPE = "BDBBS"
+
+# # BDBBlockStore
+# #
+# BSTYPE = "BDBBS"
+# BSSIZE = 1 * 1024 * 1024 * 1024
+# BSARGS = ()
+# 
+# def remove_bs(path):
+#   try:
+#     os.unlink(path)
+#   except:
+#     pass
+
+# FSBlockStore
+#
+BSTYPE = "FSBS"
 BSSIZE = 1 * 1024 * 1024 * 1024
 BSARGS = ()
 
 def remove_bs(path):
-  try:
-    os.unlink(path)
-  except:
-  	pass 
-
-#def remove_bs(path):
-#  shutil.rmtree(self.bspath,True)
+  shutil.rmtree(path, True)
 
 
 # Which FileSystem module should we use?

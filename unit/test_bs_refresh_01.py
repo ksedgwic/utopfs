@@ -30,7 +30,7 @@ class Test_bs_refresh_01:
 
     # refresh 2 of them
     keys = (buffer('key1'), buffer('key3'))
-    missing = self.bs.bs_refresh_blocks(keys)
+    missing = self.bs.bs_refresh_blocks(0, keys)
     assert `len'(missing) == 0
 
   def test_refresh_missing(self):
@@ -43,6 +43,6 @@ class Test_bs_refresh_01:
 
     # refresh 1 of them and one that isn't there
     keys = (buffer('key2'), buffer('key4'))
-    missing = self.bs.bs_refresh_blocks(keys)
+    missing = self.bs.bs_refresh_blocks(0, keys)
     assert `len'(missing) == 1
     assert missing[0] == buffer('key4')
