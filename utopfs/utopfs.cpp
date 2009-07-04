@@ -134,6 +134,7 @@ struct utopfs
     string argv0;
     bool foreground;
     string lclconf;
+    string bsid;
     int loglevel;
     string logpath;
     string path;
@@ -259,7 +260,7 @@ utopfs_init(struct fuse_conn_info * i_conn)
         {
             StringSeq bsargs;
             bsargs.push_back(utopfs.path);
-            utopfs.bsh = BlockStoreFactory::create("BDBBS",
+            utopfs.bsh = BlockStoreFactory::create(utopfs.bsid,
                                                    utopfs.size,
                                                    bsargs);
 
@@ -276,7 +277,7 @@ utopfs_init(struct fuse_conn_info * i_conn)
         {
             StringSeq bsargs;
             bsargs.push_back(utopfs.path);
-            utopfs.bsh = BlockStoreFactory::open("BDBBS", bsargs);
+            utopfs.bsh = BlockStoreFactory::open(utopfs.bsid, bsargs);
 
             StringSeq fsargs;
             utopfs.fsh = FileSystemFactory::mount("UTFS",
@@ -567,6 +568,7 @@ static const char *utop_opts[] = {
 };
 
 enum {
+    KEY_BSID,
     KEY_LOGLEVEL,
     KEY_LOGPATH,
     KEY_MKFS,
@@ -581,6 +583,7 @@ enum {
 #define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
 
 static struct fuse_opt utopfs_opts[] = {
+	FUSE_OPT_KEY("-B ",            KEY_BSID),
 	FUSE_OPT_KEY("-l ",            KEY_LOGLEVEL),
 	FUSE_OPT_KEY("-L ",            KEY_LOGPATH),
 	FUSE_OPT_KEY("-M ",            KEY_MKFS),
@@ -629,6 +632,10 @@ static int utopfs_opt_proc(void * data,
 
 	switch (key)
     {
+    case KEY_BSID:
+        utopfs.bsid = &arg[2];
+        return 0;
+
     case KEY_LOGLEVEL:
         utopfs.loglevel = atoi(&arg[2]);
         return 0;
@@ -689,6 +696,7 @@ main(int argc, char ** argv)
     utopfs.argv0 = argv[0];
     utopfs.foreground = false;
     utopfs.lclconf = LCLCONF;
+    utopfs.bsid = "FSBS";
     utopfs.logpath = "utopfs.log";
     utopfs.loglevel = -1;
     utopfs.size = 0;
