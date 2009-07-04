@@ -12,7 +12,7 @@ Make a mount point:
 
 Create and mount a utopfs:
 
-    utopfs -M 1000000000 -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
+    utopfs -M 1000000000 -F "myfsid" -P "mypassphrase" BLOCKS mnt
 
 Unmount it:
 
@@ -20,11 +20,11 @@ Unmount it:
 
 Mount an existing utopfs:
 
-    utopfs -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
+    utopfs -F "myfsid" -P "mypassphrase" BLOCKS mnt
 
 Turn up logging:
 
-    utopfs -l 9 -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
+    utopfs -l 9 -F "myfsid" -P "mypassphrase" BLOCKS mnt
 
 
 Building RPM packages from tarball
@@ -97,6 +97,20 @@ Run a unit test under the debugger:
     . ./env.sh
     gdb python
     (gdb) r /usr/bin/py.test --nocapture test_fs_sparse_01.py
+
+
+Choosing BlockStore Implementations
+----------------------------------------------------------------
+
+The development tree currently defaults to the FSBlockStore.
+
+The unit tests can be switched to an alternative blockstore by
+editting the appropriate section of the unit/CONFIG.py file.
+
+An alternative blockstore can be specified to the utopfs daemon using
+the "-B" flag.  Example using the BDBBlockStore:
+
+    utopfs -B BDBBS -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
 
 
 Ultra Primitive Garbage Collection
