@@ -176,8 +176,18 @@ BDBBlockStore::bs_del_block(void const * i_keydata,
 }
 
 void
-BDBBlockStore::bs_refresh_blocks(KeySeq const & i_keys,
-                                KeySeq & o_missing)
+BDBBlockStore::bs_refresh_start(uint64 i_rid)
+    throw(InternalError,
+          NotUniqueError)
+{
+    throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_refresh_start unimplemented");
+}
+
+void
+BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
+                                 KeySeq const & i_keys,
+                                 KeySeq & o_missing)
     throw(InternalError)
 {
     throwstream(InternalError, FILELINE << "Feature not implemented"); 
@@ -203,6 +213,15 @@ BDBBlockStore::bs_refresh_blocks(KeySeq const & i_keys,
                         << "trouble touching \"" << s_filename
                         << "\": " << ACE_OS::strerror(errno));
     }
+}
+
+void
+BDBBlockStore::bs_refresh_finish(uint64 i_rid)
+    throw(InternalError,
+          NotFoundError)
+{
+    throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_refresh_finish unimplemented");
 }
 
 void

@@ -121,20 +121,44 @@ public:
         throw(InternalError,
               NotFoundError) = 0;
 
+    /// Start a refresh cycle.
+    ///
+    /// @param[in] i_rid A unique refresh cycle identifier.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotUniqueError The specified id is already in use.
+    ///
+    virtual void bs_refresh_start(utp::uint64 i_rid)
+        throw(InternalError,
+              NotUniqueError) = 0;
+
     /// Refresh a list of blocks, return list of any missing.
     ///
     /// Refreshing a block updates it's access timestamp, moving it to
     /// the front of the LRU queue.
     ///
+    /// @param[in] i_rid The unique refresh cycle id.
     /// @param[in] i_keys List of keys for blocks to refresh.
     /// @param[out] o_missing Keys which were not present.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     ///
-    virtual void bs_refresh_blocks(KeySeq const & i_keys,
+    virtual void bs_refresh_blocks(utp::uint64 i_rid,
+                                   KeySeq const & i_keys,
                                    KeySeq & o_missing)
         throw(InternalError) = 0;
         
+    /// Finish a refresh cycle.
+    ///
+    /// @param[in] i_rid The unique refresh cycle identifier.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError The specified id was not found.
+    ///
+    virtual void bs_refresh_finish(utp::uint64 i_rid)
+        throw(InternalError,
+              NotFoundError) = 0;
+
     /// Ensures blocks are persisted.
     ///
     /// @throw InternalError An non-recoverable error occurred.

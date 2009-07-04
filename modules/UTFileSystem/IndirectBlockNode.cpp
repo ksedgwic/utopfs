@@ -281,7 +281,8 @@ IndirectBlockNode::rb_refresh(Context & i_ctxt)
     }
 
     BlockStore::KeySeq missing;
-    i_ctxt.m_bsh->bs_refresh_blocks(keys, missing);
+    // FIXME - The first arg val of 0 need to be a refresh ID.
+    i_ctxt.m_bsh->bs_refresh_blocks(0, keys, missing);
     if (!missing.empty())
         throwstream(InternalError, FILELINE << "missing blocks encountered");
 

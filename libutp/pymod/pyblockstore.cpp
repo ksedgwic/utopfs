@@ -157,7 +157,8 @@ static PyObject *
 BlockStore_bs_refresh_blocks(BlockStoreObject *self, PyObject *args)
 {
     PyObject * keysobj;
-    if (!PyArg_ParseTuple(args, "O:bs_refresh_blocks", &keysobj))
+    uint64 rid;
+    if (!PyArg_ParseTuple(args, "KO:bs_refresh_blocks", &rid, &keysobj))
         return NULL;
 
     // Translate the python sequence arguent into a KeySeq.
@@ -186,7 +187,7 @@ BlockStore_bs_refresh_blocks(BlockStoreObject *self, PyObject *args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_refresh_blocks(keys, missing);
+        self->m_bsh->bs_refresh_blocks(rid, keys, missing);
     }
     PYUTP_CATCH_ALL;
 

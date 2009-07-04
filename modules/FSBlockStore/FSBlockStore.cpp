@@ -185,7 +185,17 @@ FSBlockStore::bs_del_block(void const * i_keydata,
 }
 
 void
-FSBlockStore::bs_refresh_blocks(KeySeq const & i_keys,
+FSBlockStore::bs_refresh_start(uint64 i_rid)
+    throw(InternalError,
+          NotUniqueError)
+{
+    throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_refresh_start unimplemented");
+}
+
+void
+FSBlockStore::bs_refresh_blocks(uint64 i_rid,
+                                KeySeq const & i_keys,
                                 KeySeq & o_missing)
     throw(InternalError)
 {
@@ -211,6 +221,15 @@ FSBlockStore::bs_refresh_blocks(KeySeq const & i_keys,
                         << "trouble touching \"" << s_filename
                         << "\": " << ACE_OS::strerror(errno));
     }
+}
+
+void
+FSBlockStore::bs_refresh_finish(uint64 i_rid)
+    throw(InternalError,
+          NotFoundError)
+{
+    throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_refresh_finish unimplemented");
 }
 
 void
