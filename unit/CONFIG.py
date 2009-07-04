@@ -9,6 +9,7 @@ GNAME = grp.getgrgid(os.getegid()).gr_name
 
 # Which BlockStore module should we use?
 BSTYPE = "BDBBS"
+BSSIZE = 1 * 1024 * 1024 * 1024
 BSARGS = ()
 
 def remove_bs(path):

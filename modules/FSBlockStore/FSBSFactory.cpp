@@ -52,10 +52,10 @@ FSBSFactory::resume()
 }
 
 BlockStoreHandle
-FSBSFactory::bsf_create(StringSeq const & i_args)
+FSBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
 {
     BlockStoreHandle bsh = new FSBS::FSBlockStore();
-    bsh->bs_create(i_args[0]);
+    bsh->bs_create(i_size, i_args[0]);
     return bsh;
 }
 

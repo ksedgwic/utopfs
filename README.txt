@@ -12,7 +12,7 @@ Make a mount point:
 
 Create and mount a utopfs:
 
-    utopfs -M -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
+    utopfs -M 1000000000 -F "myfsid" -P "mypassphrase" BLOCKS.db mnt
 
 Unmount it:
 

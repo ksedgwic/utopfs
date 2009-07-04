@@ -139,7 +139,7 @@ struct utopfs
     string path;
     string fsid;
     string passphrase;
-    bool do_mkfs;
+    size_t size;
     string mntpath;
     BlockStoreHandle bsh;
     FileSystemHandle fsh;
@@ -255,11 +255,13 @@ utopfs_init(struct fuse_conn_info * i_conn)
     // Perform the mount.
     try
     {
-        if (utopfs.do_mkfs)
+        if (utopfs.size)
         {
             StringSeq bsargs;
             bsargs.push_back(utopfs.path);
-            utopfs.bsh = BlockStoreFactory::create("BDBBS", bsargs);
+            utopfs.bsh = BlockStoreFactory::create("BDBBS",
+                                                   utopfs.size,
+                                                   bsargs);
 
             StringSeq fsargs;
             utopfs.fsh = FileSystemFactory::mkfs("UTFS",
@@ -581,7 +583,7 @@ enum {
 static struct fuse_opt utopfs_opts[] = {
 	FUSE_OPT_KEY("-l ",            KEY_LOGLEVEL),
 	FUSE_OPT_KEY("-L ",            KEY_LOGPATH),
-	FUSE_OPT_KEY("-M",             KEY_MKFS),
+	FUSE_OPT_KEY("-M ",            KEY_MKFS),
 	FUSE_OPT_KEY("-F ",            KEY_FSID),
 	FUSE_OPT_KEY("-P ",            KEY_PASSPHRASE),
 	FUSE_OPT_KEY("-V",             KEY_VERSION),
@@ -636,7 +638,7 @@ static int utopfs_opt_proc(void * data,
         return 0;
 
     case KEY_MKFS:
-        utopfs.do_mkfs = true;
+        utopfs.size = atoi(&arg[2]);
         return 0;
 
     case KEY_FSID:
@@ -689,7 +691,7 @@ main(int argc, char ** argv)
     utopfs.lclconf = LCLCONF;
     utopfs.logpath = "utopfs.log";
     utopfs.loglevel = -1;
-    utopfs.do_mkfs = false;
+    utopfs.size = 0;
 
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 

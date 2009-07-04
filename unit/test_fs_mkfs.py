@@ -20,7 +20,7 @@ class Test_fs_mkfs:
     CONFIG.remove_bs(self.bspath)  
 
     bsargs = (self.bspath,) + CONFIG.BSARGS
-    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 

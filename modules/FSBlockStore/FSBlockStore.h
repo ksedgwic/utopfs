@@ -24,7 +24,8 @@ public:
 
     // BlockStore methods.
 
-    virtual void bs_create(std::string const & i_path)
+    virtual void bs_create(size_t i_size,
+                           std::string const & i_path)
         throw(utp::NotUniqueError,
               utp::InternalError,
               utp::ValueError);

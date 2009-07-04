@@ -31,4 +31,4 @@ mkdir mnt 2> /dev/null
 rm -rf BLOCKS
 
 # Run the utopfs in the foreground.
-${USEVG} BINPATHU(utopfs) -M -f -F "" -P "" BLOCKS mnt
+${USEVG} BINPATHU(utopfs) -M 1000000000 -f -F "" -P "" BLOCKS mnt

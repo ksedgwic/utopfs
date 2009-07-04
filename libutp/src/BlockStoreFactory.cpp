@@ -31,16 +31,18 @@ BlockStoreFactory::register_factory(string const & i_name,
 }
 
 BlockStoreHandle
-BlockStoreFactory::create(string const & i_name, StringSeq const & i_args)
+BlockStoreFactory::create(string const & i_name,
+                          size_t i_size,
+                          StringSeq const & i_args)
 {
-    LOG(lgr, 4, "create " << i_name);
+    LOG(lgr, 4, "create " << i_name << ' ' << i_size);
 
     BlockStoreFactoryMap::iterator pos = g_bsfm.find(i_name);
     if (pos == g_bsfm.end())
         throwstream(ValueError,
                     "blockstore factory for \"" << i_name << "\" not found");
 
-    return pos->second->bsf_create(i_args);
+    return pos->second->bsf_create(i_size, i_args);
 }
                           
 BlockStoreHandle

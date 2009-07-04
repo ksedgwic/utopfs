@@ -25,12 +25,12 @@ FSBlockStore::~FSBlockStore()
 }
 
 void
-FSBlockStore::bs_create(string const & i_path)
+FSBlockStore::bs_create(size_t i_size, string const & i_path)
     throw(NotUniqueError,
           InternalError,
           ValueError)
 {
-    LOG(lgr, 4, "bs_create " << i_path);
+    LOG(lgr, 4, "bs_create " << i_size << ' ' << i_path);
 
     struct stat statbuff;    
     if (stat(i_path.c_str(),&statbuff) == 0) {

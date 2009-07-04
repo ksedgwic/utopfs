@@ -19,13 +19,14 @@ static PyObject *
 BlockStore_bs_create(BlockStoreObject *self, PyObject *args)
 {
     char * path;
-    if (!PyArg_ParseTuple(args, "s:bs_create", &path))
+    unsigned long size;
+    if (!PyArg_ParseTuple(args, "sk:bs_create", &size, &path))
         return NULL;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_create(path);
+        self->m_bsh->bs_create(size, path);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -304,8 +305,10 @@ static PyObject *
 BlockStoreModule_create(PyObject *self, PyObject *i_args)
 {
     char * name;
+    unsigned long size;
     PyObject * tup;
-    if (!PyArg_ParseTuple(i_args, "sO!:create", &name, &PyTuple_Type, &tup))
+    if (!PyArg_ParseTuple(i_args, "skO!:create",
+                          &name, &size, &PyTuple_Type, &tup))
 		return NULL;
 
     StringSeq args;
@@ -325,7 +328,7 @@ BlockStoreModule_create(PyObject *self, PyObject *i_args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        return mkBlockStoreObject(BlockStoreFactory::create(name, args));
+        return mkBlockStoreObject(BlockStoreFactory::create(name, size, args));
     }
     PYUTP_CATCH_ALL;
 }

@@ -18,21 +18,32 @@ namespace utp {
 class UTP_EXP BlockStoreFactory
 {
 public:
-    // Called by module init to register factory object.
+    /// Called by module init to register factory object.
     static void register_factory(std::string const & i_name,
                                  BlockStoreFactory * i_bsfp);
 
-    // Called at runtime to create new blockstore.
+    /// Called at runtime to create new blockstore.
+    ///
+    /// @param[in] i_name Factory module name.
+    /// @param[in] i_size Total size of the block store data in bytes.
+    /// @param[in] i_args Implementation specific arguments.
+    ///
     static BlockStoreHandle create(std::string const & i_name,
+                                   size_t i_size,
                                    StringSeq const & i_args);
 
-    // Called at runtime to open existing blockstore.
+    /// Called at runtime to open existing blockstore.
+    ///
+    /// @param[in] i_name Factory module name.
+    /// @param[in] i_args Implementation specific arguments.
+    ///
     static BlockStoreHandle open(std::string const & i_name,
                                  StringSeq const & i_args);
 
     virtual ~BlockStoreFactory();
 
-    virtual BlockStoreHandle bsf_create(StringSeq const & i_args) = 0;
+    virtual BlockStoreHandle bsf_create(size_t i_size,
+                                        StringSeq const & i_args) = 0;
 
     virtual BlockStoreHandle bsf_open(StringSeq const & i_args) = 0;
 };

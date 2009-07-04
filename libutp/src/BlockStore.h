@@ -28,12 +28,13 @@ public:
 
     /// Create a block store.
     ///
+    /// @param[in] i_size Size of the block store data in bytes.
     /// @param[in] i_path Path to the block store.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError One of the arguments is out of range.
     ///
-    virtual void bs_create(std::string const & i_path)
+    virtual void bs_create(size_t i_size, std::string const & i_path)
         throw(NotUniqueError,
               InternalError,
               ValueError) = 0;

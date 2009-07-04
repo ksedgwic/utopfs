@@ -52,10 +52,10 @@ BDBBSFactory::resume()
 }
 
 BlockStoreHandle
-BDBBSFactory::bsf_create(StringSeq const & i_args)
+BDBBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
 {
     BlockStoreHandle bsh = new BDBBS::BDBBlockStore();
-    bsh->bs_create(i_args[0]);
+    bsh->bs_create(i_size, i_args[0]);
     return bsh;
 }
 

@@ -24,7 +24,7 @@ class Test_fs_truncate_01:
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
-    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bsargs)
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
