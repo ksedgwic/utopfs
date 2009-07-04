@@ -31,10 +31,10 @@ ControlService::handle_input(ACE_HANDLE i_fd)
 
         ostringstream retstrm;
         string cmdstr(buffer, rv);
-        if (cmdstr == "refresh")
+        if (cmdstr == "compact")
         {
             size_t nblocks = m_fsh->fs_refresh();
-            retstrm << "refreshed " << nblocks << " blocks";
+            retstrm << "compacted into " << nblocks << " blocks";
         
         }
         else

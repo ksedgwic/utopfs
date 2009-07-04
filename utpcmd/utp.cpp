@@ -11,7 +11,7 @@ using namespace std;
 enum commands
 {
     CMD_NONE,
-    CMD_REFRESH
+    CMD_COMPACT
 };
 
 string g_argv0;
@@ -32,7 +32,7 @@ usage()
           << "  options:" << endl
           << "    --help          display usage and exit" << endl
           << "  command:" << endl
-          << "    refresh         refresh filesystem into blockstore" << endl
+          << "    compact         compact filesystem" << endl
         ;
     return ostrm.str();
 }
@@ -75,8 +75,8 @@ parse_args(int & argc, char ** & argv)
             {
                 string cmd = getopt.opt_arg();
 
-                if (cmd == "refresh")
-                    g_cmd = CMD_REFRESH;
+                if (cmd == "compact")
+                    g_cmd = CMD_COMPACT;
                 else
                     fatal("unrecognized command: \"" << cmd << "\""
                           << endl << usage());
@@ -87,7 +87,7 @@ parse_args(int & argc, char ** & argv)
 }
 
 void
-do_refresh()
+do_compact()
 {
     // Find the control socket.
     char buf[MAXPATHLEN];
@@ -127,7 +127,7 @@ do_refresh()
     if (con.connect (cli_stream, remote_addr) == -1)
         fatal("connect failed: " << ACE_OS::strerror(errno));
 
-    string cmdbuf("refresh");
+    string cmdbuf("compact");
     if (cli_stream.send_n(cmdbuf.data(), cmdbuf.size()) == -1)
         fatal("send_n failed: " << ACE_OS::strerror(errno));
 
@@ -157,8 +157,8 @@ main(int argc, char ** argv)
 
     switch (g_cmd)
     {
-    case CMD_REFRESH:
-        do_refresh();
+    case CMD_COMPACT:
+        do_compact();
         break;
 
     case CMD_NONE:
