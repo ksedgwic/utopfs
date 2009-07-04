@@ -668,7 +668,7 @@ FileNode::rb_truncate(Context & i_ctxt,
 }
 
 size_t
-FileNode::rb_refresh(Context & i_ctxt)
+FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 {
     size_t nblocks = 0;
 
@@ -694,7 +694,7 @@ FileNode::rb_refresh(Context & i_ctxt)
 
         IndirectBlockNodeHandle nh =
             m_sinobj ? m_sinobj : new IndirectBlockNode(i_ctxt, m_sinref);
-        nblocks += nh->rb_refresh(i_ctxt);
+        nblocks += nh->rb_refresh(i_ctxt, i_rid);
     }
 
     if (m_dinref)
@@ -704,12 +704,11 @@ FileNode::rb_refresh(Context & i_ctxt)
 
         DoubleIndBlockNodeHandle nh =
             m_dinobj ? m_dinobj : new DoubleIndBlockNode(i_ctxt, m_dinref);
-        nblocks += nh->rb_refresh(i_ctxt);
+        nblocks += nh->rb_refresh(i_ctxt, i_rid);
     }
 
     BlockStore::KeySeq missing;
-    // FIXME - The first arg val of 0 needs to be a refresh id.
-    i_ctxt.m_bsh->bs_refresh_blocks(0, keys, missing);
+    i_ctxt.m_bsh->bs_refresh_blocks(i_rid, keys, missing);
     if (!missing.empty())
         throwstream(InternalError, FILELINE << "missing blocks encountered");
 

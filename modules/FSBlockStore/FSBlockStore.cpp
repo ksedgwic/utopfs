@@ -35,7 +35,8 @@ FSBlockStore::bs_create(size_t i_size, string const & i_path)
     struct stat statbuff;    
     if (stat(i_path.c_str(),&statbuff) == 0) {
          throwstream(NotUniqueError, FILELINE
-                << "Cannot create file block store at '" << i_path << "'. File or directory already exists.");   
+                << "Cannot create file block store at '" << i_path
+                     << "'. File or directory already exists.");   
     }
 
     m_path = i_path;
@@ -56,12 +57,14 @@ FSBlockStore::bs_open(string const & i_path)
     
     if (stat(i_path.c_str(), &statbuff) != 0) {
         throwstream(NotFoundError, FILELINE
-                << "Cannot open file block store at '" << i_path << "'. Directory does not exist.");    
+                << "Cannot open file block store at '" << i_path
+                    << "'. Directory does not exist.");    
     }  
     
     if (! S_ISDIR(statbuff.st_mode)) {
         throwstream(NotFoundError, FILELINE
-                << "Cannot open file block store at '" << i_path << "'. Path is not a directory.");
+                << "Cannot open file block store at '" << i_path
+                    << "'. Path is not a directory.");
     }
 
     // Need to generate an error if any needed state (in the
@@ -104,7 +107,7 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     //string s_filename = new string(
     
     //string s_filename = m_path + "/testblock";
-    string s_filename = get_full_path(i_keydata,i_keysize);
+    string s_filename = blockpath(i_keydata,i_keysize);
     
     struct stat statbuff;
     
@@ -132,13 +135,15 @@ FSBlockStore::bs_get_block(void const * i_keydata,
 
     if (bytes_read == -1) {
         throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block: read failed: " << strerror(errno));
+                << "FSBlockStore::bs_get_block: read failed: "
+                    << strerror(errno));
     }
 
         
     if (bytes_read != statbuff.st_size) {
         throwstream(InternalError, FILELINE
-                << "FSBlockStore::expected to get " << statbuff.st_size << " bytes, but got " << bytes_read << " bytes");
+                << "FSBlockStore::expected to get " << statbuff.st_size
+                    << " bytes, but got " << bytes_read << " bytes");
     }
     
     return bytes_read;
@@ -154,12 +159,14 @@ FSBlockStore::bs_put_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_put_block");
 
-    string s_filename = get_full_path(i_keydata,i_keysize);    
+    string s_filename = blockpath(i_keydata,i_keysize);    
     
-    int fd = open(s_filename.c_str(),O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
+    int fd = open(s_filename.c_str(),
+                  O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
     if (fd == -1) {
         throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_put_block: open failed on " << s_filename << ": " << strerror(errno));
+                << "FSBlockStore::bs_put_block: open failed on "
+                    << s_filename << ": " << strerror(errno));
     }
     
     int bytes_written = write(fd,i_blkdata,i_blksize);    
@@ -179,7 +186,7 @@ FSBlockStore::bs_del_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_del_block");
     
-    string s_filename = get_full_path(i_keydata,i_keysize);
+    string s_filename = blockpath(i_keydata,i_keysize);
 
     unlink(s_filename.c_str());
 }
@@ -189,25 +196,46 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
     throw(InternalError,
           NotUniqueError)
 {
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_refresh_start unimplemented");
+    string rpath = ridpath(i_rid);
+
+    // Does the refresh ID already exist?
+    ACE_stat sb;
+    int rv = ACE_OS::stat(rpath.c_str(), &sb);
+    if (rv != -1 && errno != ENOENT)
+        throwstream(NotUniqueError,
+                    "refresh id " << i_rid << " already exists");
+
+    // Create the refresh id mark.
+    if (mknod(rpath.c_str(), S_IFREG, 0) != 0)
+        throwstream(InternalError,
+                    "mknod " << rpath << " failed: "
+                    << ACE_OS::strerror(errno));
 }
 
 void
 FSBlockStore::bs_refresh_blocks(uint64 i_rid,
                                 KeySeq const & i_keys,
                                 KeySeq & o_missing)
-    throw(InternalError)
+    throw(InternalError,
+          NotFoundError)
 {
     o_missing.clear();
 
+    string rpath = ridpath(i_rid);
+
+    // Does the refresh ID exist?
+    ACE_stat sb;
+    int rv = ACE_OS::stat(rpath.c_str(), &sb);
+    if (rv != 0 || !S_ISREG(sb.st_mode))
+        throwstream(NotFoundError,
+                    "refresh id " << i_rid << " not found");
+
     for (unsigned i = 0; i < i_keys.size(); ++i)
     {
-        string s_filename = get_full_path(&i_keys[i][0], i_keys[i].size());
+        string s_filename = blockpath(&i_keys[i][0], i_keys[i].size());
 
         // If the block doesn't exist add it to the missing list.
-        ACE_stat sb;
-        int rv = ACE_OS::stat(s_filename.c_str(), &sb);
+        rv = ACE_OS::stat(s_filename.c_str(), &sb);
         if (rv != 0 || !S_ISREG(sb.st_mode))
         {
             o_missing.push_back(i_keys[i]);
@@ -228,8 +256,20 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,
           NotFoundError)
 {
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_refresh_finish unimplemented");
+    string rpath = ridpath(i_rid);
+
+    // Does the refresh ID exist?
+    ACE_stat sb;
+    int rv = ACE_OS::stat(rpath.c_str(), &sb);
+    if (rv != 0 || !S_ISREG(sb.st_mode))
+        throwstream(NotFoundError,
+                    "refresh id " << i_rid << " not found");
+
+    // Rename the refresh tag to the mark name.
+    if (rename(rpath.c_str(), markpath().c_str()) != 0)
+        throwstream(InternalError,
+                    "rename " << rpath << ' ' << markpath() << " failed:"
+                    << ACE_OS::strerror(errno));
 }
 
 void
@@ -241,12 +281,25 @@ FSBlockStore::bs_sync()
 
 
 string 
-FSBlockStore::get_full_path(void const * i_keydata,
-                                size_t i_keysize) 
+FSBlockStore::blockpath(void const * i_keydata, size_t i_keysize) const
 {
     string s_filename;
     Base32::encode((uint8 const *)i_keydata,i_keysize,s_filename);
     return m_path + "/" + s_filename;
+}                                
+
+string 
+FSBlockStore::ridpath(uint64 i_rid) const
+{
+    ostringstream pathstrm;
+    pathstrm << m_path << '/' << "RID:" << i_rid;
+    return pathstrm.str();
+}                                
+
+string 
+FSBlockStore::markpath() const
+{
+    return m_path + '/' + "MARK";
 }                                
 
 } // namespace FSBS

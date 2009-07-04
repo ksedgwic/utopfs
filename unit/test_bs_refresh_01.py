@@ -20,17 +20,38 @@ class Test_bs_refresh_01:
     self.bs.bs_close()
     CONFIG.remove_bs(self.bspath)
 
+  def test_refresh_nostart(self):
+    # Need a start
+    keys = (buffer('key1'), buffer('key3'))
+    # BOGUS - The following exception should be utp.NotFoundError
+    py.test.raises(Exception,
+                   "self.bs.bs_refresh_blocks(777, keys)")
+
+    # Same
+    # BOGUS - The following exception should be utp.NotFoundError
+    py.test.raises(Exception,
+                   "self.bs.bs_refresh_finish(777)")
+
+  def test_refresh_dupstart(self):
+    self.bs.bs_refresh_start(778)
+    # BOGUS - The following exception should be utp.NotUniqueError
+    py.test.raises(Exception,
+                   "self.bs.bs_refresh_start(778)")
+
   def test_refresh_blocks(self):
 
     # store 3 blocks
     for keystr in ('key1', 'key2', 'key3'):
       k = buffer(keystr)
-      v = buffer("thevalue%(random.randrange(999999999))")
+      v = buffer("this phrase is data")
       self.bs.bs_put_block(k, v)
 
     # refresh 2 of them
     keys = (buffer('key1'), buffer('key3'))
-    missing = self.bs.bs_refresh_blocks(0, keys)
+    self.bs.bs_refresh_start(42)
+    missing = self.bs.bs_refresh_blocks(42, keys)
+    self.bs.bs_refresh_finish(42)
+
     assert `len'(missing) == 0
 
   def test_refresh_missing(self):
@@ -38,11 +59,13 @@ class Test_bs_refresh_01:
     # store 3 blocks
     for keystr in ('key1', 'key2', 'key3'):
       k = buffer(keystr)
-      v = buffer("thevalue%(random.randrange(999999999))")
+      v = buffer("this phrase is also data")
       self.bs.bs_put_block(k, v)
 
     # refresh 1 of them and one that isn't there
     keys = (buffer('key2'), buffer('key4'))
-    missing = self.bs.bs_refresh_blocks(0, keys)
+    self.bs.bs_refresh_start(714)
+    missing = self.bs.bs_refresh_blocks(714, keys)
+    self.bs.bs_refresh_finish(714)
     assert `len'(missing) == 1
     assert missing[0] == buffer('key4')

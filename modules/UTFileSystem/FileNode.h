@@ -69,7 +69,7 @@ public:
                                off_t i_base,
                                off_t i_size);
 
-    virtual size_t rb_refresh(Context & i_ctxt);
+    virtual size_t rb_refresh(Context & i_ctxt, utp::uint64 i_rid);
                             
     virtual int getattr(Context & i_ctxt,
                         struct stat * o_statbuf);

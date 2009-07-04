@@ -67,7 +67,8 @@ public:
     virtual void bs_refresh_blocks(utp::uint64 i_rid,
                                    KeySeq const & i_keys,
                                    KeySeq & o_missing)
-        throw(utp::InternalError);
+        throw(utp::InternalError,
+              utp::NotFoundError);
 
     virtual void bs_refresh_finish(utp::uint64 i_rid)
         throw(utp::InternalError,
@@ -76,13 +77,16 @@ public:
     virtual void bs_sync()
 		throw(utp::InternalError);
 
+protected:
+    std::string blockpath(void const * i_keydata, size_t i_keysize) const;
+
+    std::string ridpath(utp::uint64 i_rid) const;
+
+    std::string markpath() const;
+
 private:
-    
     std::string m_path;
     
-    std::string get_full_path(void const * i_keydata,
-                                size_t i_keysize);
-
 };
 
 } // namespace FSBS

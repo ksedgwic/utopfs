@@ -188,7 +188,8 @@ void
 BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
                                  KeySeq const & i_keys,
                                  KeySeq & o_missing)
-    throw(InternalError)
+    throw(InternalError,
+          NotFoundError)
 {
     throwstream(InternalError, FILELINE << "Feature not implemented"); 
     o_missing.clear();

@@ -88,7 +88,7 @@ public:
                                off_t i_size) = 0;
 
     // Traverse refreshing all blocks, returns block count.
-    virtual size_t rb_refresh(Context & i_ctxt) = 0;
+    virtual size_t rb_refresh(Context & i_ctxt, utp::uint64 i_rid) = 0;
 
 protected:
 };

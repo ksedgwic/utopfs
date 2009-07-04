@@ -65,7 +65,8 @@ public:
     virtual void bs_refresh_blocks(utp::uint64 i_rid,
                                    KeySeq const & i_keys,
                                    KeySeq & o_missing)
-        throw(utp::InternalError);
+        throw(utp::InternalError,
+              utp::NotFoundError);
 
     virtual void bs_refresh_finish(utp::uint64 i_rid)
         throw(utp::InternalError,

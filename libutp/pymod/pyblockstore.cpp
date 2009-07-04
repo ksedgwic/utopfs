@@ -154,6 +154,23 @@ BlockStore_bs_del_block(BlockStoreObject *self, PyObject *args)
 }
 
 static PyObject *
+BlockStore_bs_refresh_start(BlockStoreObject *self, PyObject *args)
+{
+    uint64 rid;
+    if (!PyArg_ParseTuple(args, "K:bs_refresh_start", &rid))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_refresh_start(rid);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
 BlockStore_bs_refresh_blocks(BlockStoreObject *self, PyObject *args)
 {
     PyObject * keysobj;
@@ -207,6 +224,23 @@ BlockStore_bs_refresh_blocks(BlockStoreObject *self, PyObject *args)
     return missobj;
 }
 
+static PyObject *
+BlockStore_bs_refresh_finish(BlockStoreObject *self, PyObject *args)
+{
+    uint64 rid;
+    if (!PyArg_ParseTuple(args, "K:bs_refresh_finish", &rid))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_refresh_finish(rid);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
 static PyMethodDef BlockStore_methods[] = {
     {"bs_create",		(PyCFunction)BlockStore_bs_create,		METH_VARARGS},
     {"bs_open",			(PyCFunction)BlockStore_bs_open,		METH_VARARGS},
@@ -214,7 +248,9 @@ static PyMethodDef BlockStore_methods[] = {
     {"bs_get_block",	(PyCFunction)BlockStore_bs_get_block,	METH_VARARGS},
     {"bs_put_block",	(PyCFunction)BlockStore_bs_put_block,	METH_VARARGS},
     {"bs_del_block",	(PyCFunction)BlockStore_bs_del_block,	METH_VARARGS},
+    {"bs_refresh_start",(PyCFunction)BlockStore_bs_refresh_start, METH_VARARGS},
     {"bs_refresh_blocks",	(PyCFunction)BlockStore_bs_refresh_blocks,	METH_VARARGS},
+    {"bs_refresh_finish",	(PyCFunction)BlockStore_bs_refresh_finish,	METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 

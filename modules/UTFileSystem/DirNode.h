@@ -85,7 +85,7 @@ public:
     // Flush any dirty pages to the blockstore and return digest.
     virtual BlockRef const & bn_flush(Context & i_ctxt);
 
-    virtual size_t rb_refresh(Context & i_ctxt);
+    virtual size_t rb_refresh(Context & i_ctxt, utp::uint64 i_rid);
                             
     // Traverse a path calling functor methods as appropriate.
     virtual void node_traverse(Context & i_ctxt,

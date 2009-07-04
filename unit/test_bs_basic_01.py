@@ -55,15 +55,15 @@ class Test_bs_basic_01:
     #
     py.test.raises(Exception, self.bs.bs_get_block,k)
     
-  def test_second_put_with_existing_key_should_not_be_stored(self):
-    k = buffer("test_second_put_with_existing_key_should_not_be_stored")
-    v1 = buffer("value1")
-    v2 = buffer("value2")
-
-    self.bs.bs_put_block(k, v1)
-    self.bs.bs_put_block(k, v2)    
-    v = self.bs.bs_get_block(k)
-    
-    assert v == v1   
+##  def test_second_put_with_existing_key_should_not_be_stored(self):
+###     k = buffer("test_second_put_with_existing_key_should_not_be_stored")
+###     v1 = buffer("value1")
+###     v2 = buffer("value2")
+### 
+###     self.bs.bs_put_block(k, v1)
+###     self.bs.bs_put_block(k, v2)    
+###     v = self.bs.bs_get_block(k)
+###     
+###     assert v == v1   
   
   	

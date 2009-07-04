@@ -6,6 +6,7 @@
 #include "Base32.h"
 #include "BlockStoreFactory.h"
 #include "Log.h"
+#include "Random.h"
 
 #include "utfslog.h"
 
@@ -923,8 +924,15 @@ UTFileSystem::fs_refresh()
 
     // Make sure all cached nodes are up-to-date in blockstore.
     rootref(m_rdh->bn_flush(m_ctxt));
+    
+    // Generate a random refresh id.
+    uint64 rid;
+    Random::fill(&rid, sizeof(rid));
 
-    size_t nb = m_rdh->rb_refresh(m_ctxt);
+    // Perform the refresh cycle.
+    m_ctxt.m_bsh->bs_refresh_start(rid);
+    size_t nb = m_rdh->rb_refresh(m_ctxt, rid);
+    m_ctxt.m_bsh->bs_refresh_finish(rid);
 
     LOG(lgr, 6, "fs_refresh -> " << nb);
 

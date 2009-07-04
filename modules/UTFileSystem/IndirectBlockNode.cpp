@@ -265,7 +265,7 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
 }
 
 size_t
-IndirectBlockNode::rb_refresh(Context & i_ctxt)
+IndirectBlockNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 {
     size_t nblocks = 0;
 
@@ -281,8 +281,7 @@ IndirectBlockNode::rb_refresh(Context & i_ctxt)
     }
 
     BlockStore::KeySeq missing;
-    // FIXME - The first arg val of 0 need to be a refresh ID.
-    i_ctxt.m_bsh->bs_refresh_blocks(0, keys, missing);
+    i_ctxt.m_bsh->bs_refresh_blocks(i_rid, keys, missing);
     if (!missing.empty())
         throwstream(InternalError, FILELINE << "missing blocks encountered");
 

@@ -217,7 +217,7 @@ DoubleIndBlockNode::rb_truncate(Context & i_ctxt,
 }
 
 size_t
-DoubleIndBlockNode::rb_refresh(Context & i_ctxt)
+DoubleIndBlockNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 {
     size_t nblocks = 0;
 
@@ -235,13 +235,12 @@ DoubleIndBlockNode::rb_refresh(Context & i_ctxt)
                 ? dynamic_cast<IndirectBlockNode *>(&*m_blkobj[i])
                 : new IndirectBlockNode(i_ctxt, m_blkref[i]);
 
-            nblocks += nh->rb_refresh(i_ctxt);
+            nblocks += nh->rb_refresh(i_ctxt, i_rid);
         }
     }
 
     BlockStore::KeySeq missing;
-    // FIXME - The first arg val of 0 needs to be a refresh id.
-    i_ctxt.m_bsh->bs_refresh_blocks(0, keys, missing);
+    i_ctxt.m_bsh->bs_refresh_blocks(i_rid, keys, missing);
     if (!missing.empty())
         throwstream(InternalError, FILELINE << "missing blocks encountered");
 

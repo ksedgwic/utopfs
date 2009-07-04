@@ -115,7 +115,7 @@ DirNode::bn_flush(Context & i_ctxt)
 }
 
 size_t
-DirNode::rb_refresh(Context & i_ctxt)
+DirNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 {
     size_t nblocks = 0;
 
@@ -127,7 +127,7 @@ DirNode::rb_refresh(Context & i_ctxt)
         EntryMap::iterator pos = m_cache.find(ent.name());
         if (pos != m_cache.end())
         {
-            nblocks += pos->second->rb_refresh(i_ctxt);
+            nblocks += pos->second->rb_refresh(i_ctxt, i_rid);
         }
         else
         {
@@ -141,11 +141,11 @@ DirNode::rb_refresh(Context & i_ctxt)
             else if (S_ISLNK(nh->mode()))
                 nh = new SymlinkNode(*nh);
 
-            nblocks += nh->rb_refresh(i_ctxt);
+            nblocks += nh->rb_refresh(i_ctxt, i_rid);
         }
     }
 
-    return nblocks + FileNode::rb_refresh(i_ctxt);
+    return nblocks + FileNode::rb_refresh(i_ctxt, i_rid);
 }
                             
 void
