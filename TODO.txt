@@ -1,13 +1,3 @@
-FSBlockStore Semantics
-
-* All blocks get touched when they are refreshed.
-
-* Entry LRU updated.
-
-* EntrySet updated.
-
-* Free size gets adjusted.
-
 Add error returns from bs_put when size limit reached.
 
 Handle and test bs_put size exceptions from filesystem.
