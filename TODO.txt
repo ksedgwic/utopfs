@@ -1,6 +1,10 @@
-Handle and test bs_put size exceptions from filesystem.
-
 Add "df" fuse interfaces.
+
+  Fix failing test.
+
+  Confirm that df and friends are happy now ...
+
+Handle and test bs_put size exceptions from filesystem.
 
 Add a "utp sync" separate from the "utp compact".
 
