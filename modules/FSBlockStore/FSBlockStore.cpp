@@ -30,7 +30,8 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
 
 FSBlockStore::FSBlockStore()
     : m_size(0)
-    , m_free(0)
+    , m_committed(0)
+    , m_uncommitted(0)
 {
     LOG(lgr, 4, "CTOR");
 }
@@ -59,7 +60,8 @@ FSBlockStore::bs_create(size_t i_size, string const & i_path)
     }
 
     m_size = i_size;
-    m_free = i_size;
+    m_uncommitted = 0;
+    m_committed = 0;
 
     // Make the parent directory.
     m_rootpath = i_path;
@@ -145,6 +147,7 @@ FSBlockStore::bs_open(string const & i_path)
     // Unroll the ordered set into the LRU list from recent to oldest.
     //
     off_t committed = 0;
+    off_t uncommitted = 0;
     bool mark_seen = false;
     for (EntryTimeSet::reverse_iterator rit = ets.rbegin();
          rit != ets.rend();
@@ -159,18 +162,27 @@ FSBlockStore::bs_open(string const & i_path)
         eh->m_listpos--;
 
         // Keep track of the committed size.
-        if (!mark_seen)
+        if (mark_seen)
+        {
+            uncommitted += eh->m_size;
+        }
+        else
         {
             // Is this the mark?
             if (eh->m_name == markname())
+            {
+                m_mark = eh;
                 mark_seen = true;
+            }
             else
+            {
                 committed += eh->m_size;
+            }
         }
     }
 
-    // Set the free size to the total size less committed blocks.
-    m_free = m_size - committed;
+    m_committed = committed;
+    m_uncommitted = uncommitted;
 }
 
 void
@@ -189,7 +201,7 @@ FSBlockStore::bs_stat(Stat & o_stat)
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     o_stat.bss_size = m_size;
-    o_stat.bss_free = m_free;
+    o_stat.bss_free = m_size - m_committed;
 }
 
 size_t
@@ -255,7 +267,8 @@ FSBlockStore::bs_put_block(void const * i_keydata,
                            void const * i_blkdata,
                            size_t i_blksize)
     throw(InternalError,
-          ValueError)
+          ValueError,
+          OperationError)
 {
     LOG(lgr, 6, "bs_put_block");
 
@@ -268,10 +281,35 @@ FSBlockStore::bs_put_block(void const * i_keydata,
     // straight ...
     //
     off_t prevsize = 0;
+    bool wascommitted = true;
     ACE_stat sb;
     int rv = ACE_OS::stat(blkpath.c_str(), &sb);
     if (rv == 0)
+    {
         prevsize = sb.st_size;
+
+        // Is this block older then the MARK?
+        if (m_mark && m_mark->m_tstamp > sb.st_mtime)
+            wascommitted = false;
+    }
+
+    off_t prevcommited = 0;
+    if (wascommitted)
+        prevcommited = prevsize;
+
+    // How much space will be available for this block?
+    off_t avail = m_size - m_committed + prevcommited;
+
+    if (off_t(i_blksize) > avail)
+        throwstream(OperationError,
+                    "insufficent space: "
+                    << avail << " bytes avail, needed " << i_blksize);
+
+    // Do we need to remove uncommitted blocks to make room for this
+    // block?
+    while (m_committed + off_t(i_blksize) +
+           m_uncommitted - prevcommited > m_size)
+        purge_uncommitted();
 
     int fd = open(blkpath.c_str(),
                   O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
@@ -298,8 +336,14 @@ FSBlockStore::bs_put_block(void const * i_keydata,
     time_t mtime = sb.st_mtime;
     off_t size = sb.st_size;
 
-    // Adjust the free size.
-    m_free -= (size - prevsize);
+    // First remove the prior block from the stats.
+    if (wascommitted)
+        m_committed -= prevsize;
+    else
+        m_uncommitted -= prevsize;
+
+    // Add the new block to the stats.
+    m_committed += size;
 
     // Update the entries.
     touch_entry(entry, mtime, size);
@@ -389,6 +433,8 @@ FSBlockStore::bs_refresh_blocks(uint64 i_rid,
     {
         string entry = entryname(&i_keys[i][0], i_keys[i].size());
         string blkpath = blockpath(entry);
+
+        LOG(lgr, 6, "bs_refresh_blocks [" << i << "] " << entry);
 
         // If the block doesn't exist add it to the missing list.
         rv = ACE_OS::stat(blkpath.c_str(), &sb);
@@ -489,20 +535,34 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
         // current tstamp.
         //
         m_entries.insert(reh);
+
+        m_mark = reh;
     }
 
     // Add up all the committed memory.
     off_t committed = 0;
+    off_t uncommitted = 0;
+    bool saw_mark = false;
     for (EntryList::const_iterator it = m_lru.begin(); it != m_lru.end(); ++it)
     {
         EntryHandle const & eh = *it;
-        if (eh->m_name == markname())
-            break;
+
+        if (saw_mark)
+        {
+            uncommitted += eh->m_size;
+        }
+        else if (eh->m_name == markname())
+        {
+            saw_mark = true;
+        }
         else
+        {
             committed += eh->m_size;
+        }
     }
 
-    m_free = m_size - committed;
+    m_committed = committed;
+    m_uncommitted = uncommitted;
 }
 
 void
@@ -563,6 +623,45 @@ FSBlockStore::touch_entry(std::string const & i_entry,
     // Reinsert at the recent end of the LRU list.
     m_lru.push_front(eh);
     eh->m_listpos = m_lru.begin();
+}
+
+void
+FSBlockStore::purge_uncommitted()
+{
+    // IMPORTANT - This routine presumes you already hold the mutex.
+
+    // Better have a list to work with.
+    if (m_lru.empty())
+        throwstream(InternalError, FILELINE
+                    << "Shouldn't find LRU list empty here");
+
+    // Need a MARK too.
+    if (!m_mark)
+        throwstream(InternalError, FILELINE
+                    << "MARK needs to be set to purge uncommitted");
+
+    // Find the oldest entry on the LRU list.
+    EntryHandle eh = m_lru.back();
+
+    // It needs to be older then the MARK.
+    if (eh->m_tstamp >= m_mark->m_tstamp)
+        throwstream(InternalError, FILELINE
+                    << "LRU block on list is more recent then MARK");
+
+    LOG(lgr, 6, "purge uncommitted: " << eh->m_name);
+
+    // Remove from LRU list.
+    m_lru.pop_back();
+
+    // Remove from storage.
+    string blkpath = blockpath(eh->m_name);
+    if (unlink(blkpath.c_str()) != 0)
+        throwstream(InternalError, FILELINE
+                    << "unlink " << blkpath << " failed: "
+                    << ACE_OS::strerror(errno));
+
+    // Update the accounting.
+    m_uncommitted -= eh->m_size;
 }
 
 } // namespace FSBS

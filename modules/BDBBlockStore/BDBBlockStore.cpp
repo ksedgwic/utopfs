@@ -141,7 +141,8 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
                            void const * i_blkdata,
                            size_t i_blksize)
     throw(InternalError,
-          ValueError)
+          ValueError,
+          OperationError)
 {
     LOG(lgr, 6, "bs_put_block");
     
