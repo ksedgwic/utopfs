@@ -5,15 +5,51 @@
 /// FileSystem BlockStore Instance.
 
 #include <string>
+#include <set>
+#include <list>
+
+#include <ace/Thread_Mutex.h>
 
 #include "utpfwd.h"
 
 #include "BlockStore.h"
+#include "RC.h"
 
 #include "fsbsexp.h"
 
 
 namespace FSBS {
+
+class Entry;
+typedef utp::RCPtr<Entry> EntryHandle;
+typedef std::list<EntryHandle> EntryList;
+
+class FSBS_EXP Entry : public utp::RCObj
+{
+public:
+    Entry(std::string const & i_name, time_t i_tstamp, off_t i_size)
+        : m_name(i_name) , m_tstamp(i_tstamp) , m_size(i_size) {}
+
+    std::string				m_name;
+    time_t					m_tstamp;
+    off_t					m_size;
+    EntryList::iterator		m_listpos;
+};
+typedef utp::RCPtr<Entry> EntryHandle;
+
+// Comparison functor by name.
+struct lessByName {
+    bool operator()(EntryHandle const & i_a, EntryHandle const & i_b) {
+        return i_a->m_name < i_b->m_name;
+    }
+};
+
+// Comparison functor by tstamp.
+struct lessByTstamp {
+    bool operator()(EntryHandle const & i_a, EntryHandle const & i_b) {
+        return i_a->m_tstamp < i_b->m_tstamp;
+    }
+};
 
 class FSBS_EXP FSBlockStore : public utp::BlockStore
 {
@@ -78,15 +114,31 @@ public:
 		throw(utp::InternalError);
 
 protected:
-    std::string blockpath(void const * i_keydata, size_t i_keysize) const;
+    std::string entryname(void const * i_keydata, size_t i_keysize) const;
 
-    std::string ridpath(utp::uint64 i_rid) const;
+    std::string ridname(utp::uint64 i_rid) const;
 
-    std::string markpath() const;
+    std::string markname() const { return "MARK"; }
+
+    std::string blockpath(std::string const & i_entry) const;
+
+    void touch_entry(std::string const & i_entry,
+                     time_t i_tstamp,
+                     off_t i_size);
 
 private:
-    std::string m_path;
-    
+    typedef std::set<EntryHandle, lessByName> EntrySet;
+    typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
+
+    off_t				m_size;
+    off_t				m_free;
+    std::string			m_rootpath;
+    std::string			m_blockspath;
+
+    ACE_Thread_Mutex	m_fsbsmutex;
+
+    EntrySet			m_entries;
+    EntryList			m_lru;		// front=newest, back=oldest
 };
 
 } // namespace FSBS

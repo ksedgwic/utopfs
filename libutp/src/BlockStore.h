@@ -59,8 +59,8 @@ public:
 
     struct Stat
     {
-        size_t	bss_size;	//< Total data size in bytes.
-        size_t	bss_free;	//< Uncommitted size in bytes.
+        off_t	bss_size;	//< Total data size in bytes.
+        off_t	bss_free;	//< Uncommitted size in bytes.
     };
 
     /// Return block store statistics.

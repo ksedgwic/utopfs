@@ -1,5 +1,8 @@
+#include <fstream>
 #include <sstream>
 #include <string>
+
+#include <ace/Dirent.h>
 
 #include "Log.h"
 
@@ -13,7 +16,21 @@ using namespace utp;
 
 namespace FSBS {
 
+bool
+lessByKey(EntryHandle const & i_a, EntryHandle const & i_b)
+{
+    return i_a->m_name < i_b->m_name;
+}
+
+bool
+lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
+{
+    return i_a->m_tstamp < i_b->m_tstamp;
+}
+
 FSBlockStore::FSBlockStore()
+    : m_size(0)
+    , m_free(0)
 {
     LOG(lgr, 4, "CTOR");
 }
@@ -32,6 +49,8 @@ FSBlockStore::bs_create(size_t i_size, string const & i_path)
 {
     LOG(lgr, 4, "bs_create " << i_size << ' ' << i_path);
 
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
     struct stat statbuff;    
     if (stat(i_path.c_str(),&statbuff) == 0) {
          throwstream(NotUniqueError, FILELINE
@@ -39,11 +58,28 @@ FSBlockStore::bs_create(size_t i_size, string const & i_path)
                      << "'. File or directory already exists.");   
     }
 
-    m_path = i_path;
-    mkdir(m_path.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    
-    
-    //check for errors; exception?
+    m_size = i_size;
+    m_free = i_size;
+
+    // Make the parent directory.
+    m_rootpath = i_path;
+    if (mkdir(m_rootpath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
+        throwstream(InternalError, FILELINE
+                    << "mkdir " << m_rootpath << "failed: "
+                    << ACE_OS::strerror(errno));
+
+    // Make the BLOCKS subdir.
+    m_blockspath = m_rootpath + "/BLOCKS";
+    if (mkdir(m_blockspath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
+        throwstream(InternalError, FILELINE
+                    << "mkdir " << m_blockspath << "failed: "
+                    << ACE_OS::strerror(errno));
+
+    // Store the size in the root.
+    string szpath = m_rootpath + "/SIZE";
+    ofstream szstrm(szpath.c_str());
+    szstrm << m_size << endl;
+    szstrm.close();
 }
 
 void
@@ -53,24 +89,88 @@ FSBlockStore::bs_open(string const & i_path)
 {
     LOG(lgr, 4, "bs_open " << i_path);
 
-    struct stat statbuff;
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+    ACE_stat sb;
     
-    if (stat(i_path.c_str(), &statbuff) != 0) {
+    if (ACE_OS::stat(i_path.c_str(), &sb) != 0)
         throwstream(NotFoundError, FILELINE
                 << "Cannot open file block store at '" << i_path
                     << "'. Directory does not exist.");    
-    }  
     
-    if (! S_ISDIR(statbuff.st_mode)) {
+    if (! S_ISDIR(sb.st_mode))
         throwstream(NotFoundError, FILELINE
                 << "Cannot open file block store at '" << i_path
                     << "'. Path is not a directory.");
+
+    m_rootpath = i_path;
+    m_blockspath = m_rootpath + "/BLOCKS";
+
+    // Figure out the size.
+    string szpath = m_rootpath + "/SIZE";
+    ifstream szstrm(szpath.c_str());
+    szstrm >> m_size;
+    szstrm.close();
+
+    // Read all of the existing blocks.
+    EntryTimeSet ets;
+    ACE_Dirent dir;
+    if (dir.open(m_blockspath.c_str()) == -1)
+        throwstream(InternalError, FILELINE
+                    << "dir open " << i_path << " failed: "
+                    << ACE_OS::strerror(errno));
+    for (ACE_DIRENT * dep = dir.read(); dep; dep = dir.read())
+    {
+        string entry = dep->d_name;
+
+        // Skip '.' and '..'.
+        if (entry == "." || entry == "..")
+            continue;
+
+        // Figure out the timestamp.
+        string blkpath = m_blockspath + '/' + entry;
+        if (ACE_OS::stat(blkpath.c_str(), &sb) != 0)
+            throwstream(InternalError, FILELINE
+                        << "trouble w/ stat of " << blkpath << ": "
+                        << ACE_OS::strerror(errno));
+        time_t mtime = sb.st_mtime;
+        size_t size = sb.st_size;
+
+        // Insert into the entries and time-sorted entries sets.
+        EntryHandle eh = new Entry(entry, mtime, size);
+        m_entries.insert(eh);
+        ets.insert(eh);
     }
 
-    // Need to generate an error if any needed state (in the
-    // directory) is not happy ...
+    // Unroll the ordered set into the LRU list from recent to oldest.
+    //
+    off_t committed = 0;
+    bool mark_seen = false;
+    for (EntryTimeSet::reverse_iterator rit = ets.rbegin();
+         rit != ets.rend();
+         ++rit)
+    {
+        EntryHandle const & eh = *rit;
 
-    m_path = i_path;
+        m_lru.push_back(eh);
+
+        // Give each entry an iterator to itself ... 
+        eh->m_listpos = m_lru.end();
+        eh->m_listpos--;
+
+        // Keep track of the committed size.
+        if (!mark_seen)
+        {
+            // Is this the mark?
+            if (eh->m_name == markname())
+                mark_seen = true;
+            else
+                committed += eh->m_size;
+        }
+    }
+
+    // Set the free size to the total size less committed blocks.
+    m_free = m_size - committed;
 }
 
 void
@@ -78,17 +178,18 @@ FSBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, "bs_close");
-
-//    throwstream(InternalError, FILELINE
-//                << "FSBlockStore::bs_close unimplemented");
 }
 
 void
 FSBlockStore::bs_stat(Stat & o_stat)
     throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_stat unimplemented");
+    LOG(lgr, 6, "bs_stat");
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+    o_stat.bss_size = m_size;
+    o_stat.bss_free = m_free;
 }
 
 size_t
@@ -103,15 +204,14 @@ FSBlockStore::bs_get_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_get_block");
 
-    // convert key to filesystem-safe name
-    //string s_filename = new string(
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+    string entry = entryname(i_keydata, i_keysize);
+    string blkpath = blockpath(entry);
+
+    ACE_stat statbuff;
     
-    //string s_filename = m_path + "/testblock";
-    string s_filename = blockpath(i_keydata,i_keysize);
-    
-    struct stat statbuff;
-    
-    int rv = stat(s_filename.c_str(), &statbuff);
+    int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
     if (rv == -1)
     {
         if (errno == ENOENT)
@@ -129,7 +229,7 @@ FSBlockStore::bs_get_block(void const * i_keydata,
                 << "Passed buffer not big enough to hold block");
     }
     
-    int fd = open(s_filename.c_str(), O_RDONLY, S_IRUSR);
+    int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
     int bytes_read = read(fd,o_outbuff,statbuff.st_size);
     close(fd);
 
@@ -145,7 +245,7 @@ FSBlockStore::bs_get_block(void const * i_keydata,
                 << "FSBlockStore::expected to get " << statbuff.st_size
                     << " bytes, but got " << bytes_read << " bytes");
     }
-    
+
     return bytes_read;
 }
 
@@ -159,23 +259,50 @@ FSBlockStore::bs_put_block(void const * i_keydata,
 {
     LOG(lgr, 6, "bs_put_block");
 
-    string s_filename = blockpath(i_keydata,i_keysize);    
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+    string entry = entryname(i_keydata, i_keysize);
+    string blkpath = blockpath(entry);
     
-    int fd = open(s_filename.c_str(),
+    // Need to stat the block first so we can keep the size accounting
+    // straight ...
+    //
+    off_t prevsize = 0;
+    ACE_stat sb;
+    int rv = ACE_OS::stat(blkpath.c_str(), &sb);
+    if (rv == 0)
+        prevsize = sb.st_size;
+
+    int fd = open(blkpath.c_str(),
                   O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
-    if (fd == -1) {
+    if (fd == -1)
         throwstream(InternalError, FILELINE
                 << "FSBlockStore::bs_put_block: open failed on "
-                    << s_filename << ": " << strerror(errno));
-    }
+                    << blkpath << ": " << strerror(errno));
     
-    int bytes_written = write(fd,i_blkdata,i_blksize);    
+    int bytes_written = write(fd, i_blkdata, i_blksize);
+    int write_errno = errno;
     close(fd);
-        
-    if (bytes_written == -1) {
+    if (bytes_written == -1)
         throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_put_block write error...");
-    }
+                    << "write of " << blkpath << " failed: "
+                    << ACE_OS::strerror(write_errno));
+
+    // Stat the file we just wrote so we can use the exact tstamp
+    // and size the filesystem sees.
+    rv = ACE_OS::stat(blkpath.c_str(), &sb);
+    if (rv == -1)
+        throwstream(InternalError, FILELINE
+                    << "stat " << blkpath << " failed: "
+                    << ACE_OS::strerror(errno));
+    time_t mtime = sb.st_mtime;
+    off_t size = sb.st_size;
+
+    // Adjust the free size.
+    m_free -= (size - prevsize);
+
+    // Update the entries.
+    touch_entry(entry, mtime, size);
 }
 
 void
@@ -184,11 +311,16 @@ FSBlockStore::bs_del_block(void const * i_keydata,
     throw(InternalError,
           NotFoundError)
 {
+    throwstream(InternalError, FILELINE
+                << "FSBlockStore::bs_del_block unsupported");
+
     LOG(lgr, 6, "bs_del_block");
     
-    string s_filename = blockpath(i_keydata,i_keysize);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    unlink(s_filename.c_str());
+    string entry = entryname(i_keydata, i_keysize);
+    string blkpath = blockpath(entry);
+    unlink(blkpath.c_str());
 }
 
 void
@@ -196,7 +328,12 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
     throw(InternalError,
           NotUniqueError)
 {
-    string rpath = ridpath(i_rid);
+    string rname = ridname(i_rid);
+    string rpath = blockpath(rname);
+ 
+    LOG(lgr, 6, "bs_refresh_start " << rname);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     // Does the refresh ID already exist?
     ACE_stat sb;
@@ -210,6 +347,19 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
         throwstream(InternalError,
                     "mknod " << rpath << " failed: "
                     << ACE_OS::strerror(errno));
+
+    // Stat the file we just wrote so we can use the exact tstamp
+    // and size the filesystem sees.
+    rv = ACE_OS::stat(rpath.c_str(), &sb);
+    if (rv == -1)
+        throwstream(InternalError, FILELINE
+                    << "stat " << rpath << " failed: "
+                    << ACE_OS::strerror(errno));
+    time_t mtime = sb.st_mtime;
+    off_t size = sb.st_size;
+
+    // Create the refresh_id entry.
+    touch_entry(rname, mtime, size);
 }
 
 void
@@ -221,7 +371,12 @@ FSBlockStore::bs_refresh_blocks(uint64 i_rid,
 {
     o_missing.clear();
 
-    string rpath = ridpath(i_rid);
+    string rname = ridname(i_rid);
+    string rpath = blockpath(rname);
+
+    LOG(lgr, 6, "bs_refresh_blocks " << rname);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     // Does the refresh ID exist?
     ACE_stat sb;
@@ -232,10 +387,11 @@ FSBlockStore::bs_refresh_blocks(uint64 i_rid,
 
     for (unsigned i = 0; i < i_keys.size(); ++i)
     {
-        string s_filename = blockpath(&i_keys[i][0], i_keys[i].size());
+        string entry = entryname(&i_keys[i][0], i_keys[i].size());
+        string blkpath = blockpath(entry);
 
         // If the block doesn't exist add it to the missing list.
-        rv = ACE_OS::stat(s_filename.c_str(), &sb);
+        rv = ACE_OS::stat(blkpath.c_str(), &sb);
         if (rv != 0 || !S_ISREG(sb.st_mode))
         {
             o_missing.push_back(i_keys[i]);
@@ -243,11 +399,24 @@ FSBlockStore::bs_refresh_blocks(uint64 i_rid,
         }
 
         // Touch the block.
-        rv = utimes(s_filename.c_str(), NULL);
+        rv = utimes(blkpath.c_str(), NULL);
         if (rv != 0)
             throwstream(InternalError, FILELINE
-                        << "trouble touching \"" << s_filename
+                        << "trouble touching \"" << blkpath
                         << "\": " << ACE_OS::strerror(errno));
+
+        // Stat the file we just wrote so we can use the exact tstamp
+        // and size the filesystem sees.
+        rv = ACE_OS::stat(blkpath.c_str(), &sb);
+        if (rv == -1)
+            throwstream(InternalError, FILELINE
+                        << "stat " << blkpath << " failed: "
+                        << ACE_OS::strerror(errno));
+        time_t mtime = sb.st_mtime;
+        off_t size = sb.st_size;
+
+        // Update the entries.
+        touch_entry(entry, mtime, size);
     }
 }
 
@@ -256,7 +425,12 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,
           NotFoundError)
 {
-    string rpath = ridpath(i_rid);
+    string rname = ridname(i_rid);
+    string rpath = blockpath(rname);
+
+    LOG(lgr, 6, "bs_refresh_finish " << rname);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     // Does the refresh ID exist?
     ACE_stat sb;
@@ -266,10 +440,69 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
                     "refresh id " << i_rid << " not found");
 
     // Rename the refresh tag to the mark name.
-    if (rename(rpath.c_str(), markpath().c_str()) != 0)
+    string mname = markname();
+    string mpath = blockpath(mname);
+    if (rename(rpath.c_str(), mpath.c_str()) != 0)
         throwstream(InternalError,
-                    "rename " << rpath << ' ' << markpath() << " failed:"
+                    "rename " << rpath << ' ' << mpath << " failed:"
                     << ACE_OS::strerror(errno));
+
+    // Remove the MARK entry.
+    EntryHandle meh = new Entry(mname, 0, 0);
+    EntrySet::const_iterator pos = m_entries.find(meh);
+    if (pos == m_entries.end())
+    {
+        // Not in the entry table yet, no action needed ...
+    }
+    else
+    {
+        // Found it.
+        meh = *pos;
+
+        // Erase it from the entries set.
+        m_entries.erase(pos);
+
+        // Remove from current location in LRU list.
+        m_lru.erase(meh->m_listpos);
+    }
+
+    // Find the Refresh token.
+    EntryHandle reh = new Entry(rname, 0, 0);
+    pos = m_entries.find(reh);
+    if (pos == m_entries.end())
+    {
+        // Not in the entry table yet, very bad!
+        throwstream(InternalError, FILELINE << "Missing RID entry " << rname);
+    }
+    else
+    {
+        // Found it.
+        reh = *pos;
+
+        // Erase it from the entries set.
+        m_entries.erase(pos);
+
+        // Change it's name to the MARK.
+        reh->m_name = markname();
+
+        // Reinsert, leave in current spot in the LRU list with it's
+        // current tstamp.
+        //
+        m_entries.insert(reh);
+    }
+
+    // Add up all the committed memory.
+    off_t committed = 0;
+    for (EntryList::const_iterator it = m_lru.begin(); it != m_lru.end(); ++it)
+    {
+        EntryHandle const & eh = *it;
+        if (eh->m_name == markname())
+            break;
+        else
+            committed += eh->m_size;
+    }
+
+    m_free = m_size - committed;
 }
 
 void
@@ -281,26 +514,56 @@ FSBlockStore::bs_sync()
 
 
 string 
-FSBlockStore::blockpath(void const * i_keydata, size_t i_keysize) const
+FSBlockStore::entryname(void const * i_keydata, size_t i_keysize) const
 {
-    string s_filename;
-    Base32::encode((uint8 const *)i_keydata,i_keysize,s_filename);
-    return m_path + "/" + s_filename;
+    return Base32::encode(i_keydata, i_keysize);
+}
+
+string 
+FSBlockStore::ridname(uint64 i_rid) const
+{
+    ostringstream ostrm;
+    ostrm << "RID:" << i_rid;
+    return ostrm.str();
 }                                
 
 string 
-FSBlockStore::ridpath(uint64 i_rid) const
+FSBlockStore::blockpath(string const & i_entry) const
 {
-    ostringstream pathstrm;
-    pathstrm << m_path << '/' << "RID:" << i_rid;
-    return pathstrm.str();
+    return m_blockspath + '/' + i_entry;
 }                                
 
-string 
-FSBlockStore::markpath() const
+void
+FSBlockStore::touch_entry(std::string const & i_entry,
+                          time_t i_mtime,
+                          off_t i_size)
 {
-    return m_path + '/' + "MARK";
-}                                
+    // IMPORTANT - This routine presumes you already hold the mutex.
+
+    // Do we already have this entry in the table?
+    EntryHandle eh = new Entry(i_entry, i_mtime, i_size);
+    EntrySet::const_iterator pos = m_entries.find(eh);
+    if (pos == m_entries.end())
+    {
+        // Not in the entry table yet, insert ...
+        m_entries.insert(eh);
+    }
+    else
+    {
+        // Already in the entries table, use the existing entry.
+        eh = *pos;
+
+        // Remove from current location in LRU list.
+        m_lru.erase(eh->m_listpos);
+
+        // Update tstamp.
+        eh->m_tstamp = i_mtime;
+    }
+
+    // Reinsert at the recent end of the LRU list.
+    m_lru.push_front(eh);
+    eh->m_listpos = m_lru.begin();
+}
 
 } // namespace FSBS
 

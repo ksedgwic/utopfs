@@ -6,6 +6,7 @@
 
 #include "pyutpinit.h"
 #include "pyblockstore.h"
+#include "pybsstat.h"
 
 using namespace utp;
 
@@ -64,6 +65,24 @@ BlockStore_bs_close(BlockStoreObject *self, PyObject *args)
         return Py_None;
     }
     PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+BlockStore_bs_stat(BlockStoreObject *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ":bs_stat"))
+        return NULL;
+
+    BlockStore::Stat bsstat;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_stat(bsstat);
+    }
+    PYUTP_CATCH_ALL;
+
+    return pybsstat_fromstructbsstat(&bsstat);
 }
 
 static PyObject *
@@ -245,6 +264,7 @@ static PyMethodDef BlockStore_methods[] = {
     {"bs_create",		(PyCFunction)BlockStore_bs_create,		METH_VARARGS},
     {"bs_open",			(PyCFunction)BlockStore_bs_open,		METH_VARARGS},
     {"bs_close",		(PyCFunction)BlockStore_bs_close,		METH_VARARGS},
+    {"bs_stat",			(PyCFunction)BlockStore_bs_stat,		METH_VARARGS},
     {"bs_get_block",	(PyCFunction)BlockStore_bs_get_block,	METH_VARARGS},
     {"bs_put_block",	(PyCFunction)BlockStore_bs_put_block,	METH_VARARGS},
     {"bs_del_block",	(PyCFunction)BlockStore_bs_del_block,	METH_VARARGS},

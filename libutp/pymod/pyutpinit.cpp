@@ -6,6 +6,7 @@
 #include "statemap.h"
 
 #include "pyblockstore.h"
+#include "pybsstat.h"
 #include "pydirentryfunc.h"
 #include "pyfilesystem.h"
 #include "pystat.h"
@@ -121,6 +122,7 @@ init_utp(void)
 
     // initialize sub-types
     init_stat();
+    init_bsstat();
     init_BlockStore();
     init_FileSystem();
     init_PyDirEntryFunc();
