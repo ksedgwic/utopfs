@@ -110,19 +110,6 @@ public:
               ValueError,
               OperationError) = 0;
 
-    /// Delete a block.
-    ///
-    /// @param[in] i_keydata Pointer to the key data.
-    /// @param[in] i_keysize Size of the key data.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError The specified key was not found.
-    ///
-    virtual void bs_del_block(void const * i_keydata,
-                              size_t i_keysize)
-        throw(InternalError,
-              NotFoundError) = 0;
-
     /// Start a refresh cycle.
     ///
     /// @param[in] i_rid A unique refresh cycle identifier.

@@ -41,29 +41,3 @@ class Test_bs_basic_01:
     # Replace Exception w/ NotFoundError.
     #
     py.test.raises(Exception, "self.bs.bs_get_block(k)")
-  
-    
-  def test_delete_block(self):
-    k = buffer("thekey%(random.randrange(999999999))")
-    v = buffer("thevalue%(random.randrange(999999999))")
-
-    self.bs.bs_put_block(k, v)   
-    self.bs.bs_del_block(k)
-    
-    # BOGUS - We're having trouble matching exceptions.
-    # Replace Exception w/ NotFoundError.
-    #
-    py.test.raises(Exception, self.bs.bs_get_block,k)
-    
-##  def test_second_put_with_existing_key_should_not_be_stored(self):
-###     k = buffer("test_second_put_with_existing_key_should_not_be_stored")
-###     v1 = buffer("value1")
-###     v2 = buffer("value2")
-### 
-###     self.bs.bs_put_block(k, v1)
-###     self.bs.bs_put_block(k, v2)    
-###     v = self.bs.bs_get_block(k)
-###     
-###     assert v == v1   
-  
-  	

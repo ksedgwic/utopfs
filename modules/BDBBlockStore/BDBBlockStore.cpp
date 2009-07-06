@@ -161,22 +161,6 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
 }
 
 void
-BDBBlockStore::bs_del_block(void const * i_keydata,
-                           size_t i_keysize)
-    throw(InternalError,
-          NotFoundError)
-{
-    LOG(lgr, 6, "bs_del_block");
-    
-    Dbt key((void *)i_keydata,i_keysize);
-    int results = db->del(NULL,&key,0);    
-    if (results != 0) {
-    	throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_del_block returned error " << results << db_strerror(results));
-    }   
-}
-
-void
 BDBBlockStore::bs_refresh_start(uint64 i_rid)
     throw(InternalError,
           NotUniqueError)

@@ -1,5 +1,3 @@
-Add error returns from bs_put when size limit reached.
-
 Handle and test bs_put size exceptions from filesystem.
 
 Add "df" fuse interfaces.

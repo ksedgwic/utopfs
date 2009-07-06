@@ -350,24 +350,6 @@ FSBlockStore::bs_put_block(void const * i_keydata,
 }
 
 void
-FSBlockStore::bs_del_block(void const * i_keydata,
-                           size_t i_keysize)
-    throw(InternalError,
-          NotFoundError)
-{
-    throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_del_block unsupported");
-
-    LOG(lgr, 6, "bs_del_block");
-    
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    string entry = entryname(i_keydata, i_keysize);
-    string blkpath = blockpath(entry);
-    unlink(blkpath.c_str());
-}
-
-void
 FSBlockStore::bs_refresh_start(uint64 i_rid)
     throw(InternalError,
           NotUniqueError)
