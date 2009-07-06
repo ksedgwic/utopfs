@@ -4,6 +4,8 @@
 /// @file FileSystem.h
 /// Abstract FileSystem Interface.
 
+#include <sys/statvfs.h>
+
 #include <string>
 
 #include "utpexp.h"
@@ -275,6 +277,17 @@ public:
                          void const * i_data,
                          size_t i_size,
                          off_t i_off)
+        throw (utp::InternalError) = 0;
+
+    /// Get filesystem statistics.
+    ///
+    /// @param[out] o_stvbuf Pointer to output structure.
+    ///
+    /// @return On success zero is returned or errno value otherwise.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual int fs_statfs(struct ::statvfs * o_stvbuf)
         throw (utp::InternalError) = 0;
 
     /// Read directory

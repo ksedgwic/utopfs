@@ -502,11 +502,25 @@ utopfs_write(char const * i_path,
              char const * buf,
              size_t size,
              off_t offset,
-             struct fuse_file_info *fi)
+             struct fuse_file_info * fi)
 {
     try
     {
         return utopfs.fsh->fs_write(i_path, buf, size, offset);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
+utopfs_statfs(char const * i_path,
+              struct statvfs * statptr)
+{
+    try
+    {
+        return utopfs.fsh->fs_statfs(statptr);
     }
     catch (utp::Exception const & ex)
     {
@@ -758,6 +772,7 @@ main(int argc, char ** argv)
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;
     utopfs_oper.write		= utopfs_write;
+    utopfs_oper.statfs		= utopfs_statfs;
     utopfs_oper.readdir		= utopfs_readdir;
     utopfs_oper.access		= utopfs_access;
     utopfs_oper.utimens		= utopfs_utimens;

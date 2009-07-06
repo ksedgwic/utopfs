@@ -8,6 +8,7 @@ LIBSRC =	\
 			pydirentryfunc.cpp \
 			pyfilesystem.cpp \
 			pystat.cpp \
+			pystatvfs.cpp \
 			pyutpinit.cpp \
 			statemap.cpp \
 			$(NULL)
