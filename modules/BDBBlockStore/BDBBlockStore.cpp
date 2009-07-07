@@ -47,15 +47,13 @@ BDBBlockStore::bs_create(size_t i_size, string const & i_path)
         throwstream(InternalError, FILELINE
                     << "mkdir " << m_rootpath << "failed: "
                     << ACE_OS::strerror(errno));
-
-
-    //Open the bdb environment for transactions
-    dbe = new DbEnv(0);
-	dbe->open(m_rootpath.c_str(),DB_CREATE | DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG,0);
-    db = new Db(dbe,0);
 	
 	std::string db_path = "main";
 	try {	
+		//Open the bdb environment for transactions
+		dbe = new DbEnv(0);
+		dbe->open(m_rootpath.c_str(),DB_CREATE | DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG,0);
+		db = new Db(dbe,0);
 		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_CREATE | DB_AUTO_COMMIT,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
@@ -115,6 +113,8 @@ BDBBlockStore::bs_close()
     if (db) {
     	db->sync(0);
 		db->close(0);
+	}
+	if (dbe) {
 		dbe->close(0);
 	}
 }
