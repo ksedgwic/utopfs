@@ -11,6 +11,7 @@
 #include "bdbbsexp.h"
 
 class Db;
+class DbEnv;
 
 namespace BDBBS {
 
@@ -22,7 +23,6 @@ public:
     virtual ~BDBBlockStore();
 
     // BlockStore methods.
-
     virtual void bs_create(size_t i_size, std::string const & i_path)
         throw(utp::NotUniqueError,
               utp::InternalError,
@@ -75,12 +75,17 @@ public:
 	virtual void bs_sync()
 		throw(utp::InternalError);
 	
-	Db *db;
     
-    std::string m_path;
+protected:
+
+	DbEnv *dbe;
+	Db *db;
+
+    std::string m_rootpath;
     
     std::string get_full_path(void const * i_keydata,
                                 size_t i_keysize);
+
 
 };
 

@@ -18,7 +18,6 @@ namespace BDBBS {
 BDBBlockStore::BDBBlockStore()
 {	
     LOG(lgr, 4, "CTOR");
-    db = new Db(NULL,0);
 }
 
 BDBBlockStore::~BDBBlockStore()
@@ -35,24 +34,39 @@ BDBBlockStore::bs_create(size_t i_size, string const & i_path)
 {
     LOG(lgr, 4, "bs_create " << i_size << ' ' << i_path);
 
+	m_rootpath = i_path;
+
 	struct stat statbuff;    
-    if (stat(i_path.c_str(),&statbuff) == 0) {
+    if (stat(m_rootpath.c_str(),&statbuff) == 0) {
          throwstream(NotUniqueError, FILELINE
-                << "Cannot create bdb block store at '" << i_path << "'. File or directory already exists.");   
+                << "Cannot create bdb block store at '" << m_rootpath << "'. File or directory already exists.");   
     }
-		
+	
+    // Make the parent directory.
+    if (mkdir(m_rootpath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
+        throwstream(InternalError, FILELINE
+                    << "mkdir " << m_rootpath << "failed: "
+                    << ACE_OS::strerror(errno));
+
+
+    //Open the bdb environment for transactions
+    dbe = new DbEnv(0);
+	dbe->open(m_rootpath.c_str(),DB_CREATE | DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG,0);
+    db = new Db(dbe,0);
+	
+	std::string db_path = "main";
 	try {	
-		int result = db->open(NULL,i_path.c_str(),NULL, DB_BTREE,DB_CREATE,0);		
+		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_CREATE | DB_AUTO_COMMIT,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
-                << "Cannot create bdb block store at '" << i_path
+                << "Cannot create bdb block		 store at '" << db_path
                 << ": error: " << result << db_strerror(result));		 
         }
 		 
 		 
 	} catch (DbException e) {
 		throwstream(InternalError, FILELINE
-                << "Cannot create bdb block store at '" << i_path
+                << "Cannot create bdb block store at '" << db_path
                 << ": error: " << ACE_OS::strerror(errno)); 
 	}
 	 
@@ -71,9 +85,14 @@ BDBBlockStore::bs_open(string const & i_path)
                 << "Cannot open bdb block store at '" << i_path << "'. File does not exist.");    
     }  
 
-
+	m_rootpath = i_path;
+	std::string db_path = "main";
 	try {	
-		int result = db->open(NULL,i_path.c_str(),NULL, DB_BTREE,0,0);		
+		dbe = new DbEnv(0);
+		dbe->open(m_rootpath.c_str(),DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG,0);
+		db = new Db(dbe,0);
+
+		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
                 << "Cannot open  bdb block store at '" << i_path
@@ -96,6 +115,7 @@ BDBBlockStore::bs_close()
     if (db) {
     	db->sync(0);
 		db->close(0);
+		dbe->close(0);
 	}
 }
 
@@ -238,7 +258,7 @@ BDBBlockStore::get_full_path(void const * i_keydata,
 {
     string s_filename;
     Base32::encode((uint8 const *)i_keydata,i_keysize,s_filename);
-    return m_path + "/" + s_filename;
+    return m_rootpath + "/" + s_filename;
 }                                
 
 } // namespace BDBBS
