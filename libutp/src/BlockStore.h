@@ -100,26 +100,15 @@ public:
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError One of the arguments is out of range.
+    /// @throw OperationError Out of space to store block.
     ///
     virtual void bs_put_block(void const * i_keydata,
                               size_t i_keysize,
                               void const * i_blkdata,
                               size_t i_blksize)
         throw(InternalError,
-              ValueError) = 0;
-
-    /// Delete a block.
-    ///
-    /// @param[in] i_keydata Pointer to the key data.
-    /// @param[in] i_keysize Size of the key data.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError The specified key was not found.
-    ///
-    virtual void bs_del_block(void const * i_keydata,
-                              size_t i_keysize)
-        throw(InternalError,
-              NotFoundError) = 0;
+              ValueError,
+              OperationError) = 0;
 
     /// Start a refresh cycle.
     ///

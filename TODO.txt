@@ -1,8 +1,10 @@
-Add error returns from bs_put when size limit reached.
+Add "df" fuse interfaces.
+
+  Fix failing test.
+
+  Confirm that df and friends are happy now ...
 
 Handle and test bs_put size exceptions from filesystem.
-
-Add "df" fuse interfaces.
 
 Add a "utp sync" separate from the "utp compact".
 

@@ -7,6 +7,8 @@ PYTESTS =	\
 			test_bs_basic_01.py \
 			test_bs_refresh_01.py \
 			test_bs_size_01.py \
+			test_bs_size_02.py \
+			test_bs_size_03.py \
 			test_fs_mkfs.py \
 			test_fs_persist_01.py \
 			test_fs_persist_02.py \
@@ -30,6 +32,7 @@ PYTESTS =	\
 			test_fs_rename_01.py \
 			test_fs_rename_02.py \
 			test_fs_link_01.py \
+			test_fs_statfs_01.py \
 			$(NULL)
 
 SCRIPTS =	\

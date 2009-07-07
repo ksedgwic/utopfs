@@ -89,12 +89,8 @@ public:
                               void const * i_blkdata,
                               size_t i_blksize)
         throw(utp::InternalError,
-              utp::ValueError);
-
-    virtual void bs_del_block(void const * i_keydata,
-                              size_t i_keysize)
-        throw(utp::InternalError,
-              utp::NotFoundError);
+              utp::ValueError,
+              utp::OperationError);
 
     virtual void bs_refresh_start(utp::uint64 i_rid)
         throw(utp::InternalError,
@@ -126,12 +122,15 @@ protected:
                      time_t i_tstamp,
                      off_t i_size);
 
+    void purge_uncommitted();
+
 private:
     typedef std::set<EntryHandle, lessByName> EntrySet;
     typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
 
-    off_t				m_size;
-    off_t				m_free;
+    off_t				m_size;			// Total Size in Bytes
+    off_t				m_committed;	// Committed Bytes (must be saved)
+    off_t				m_uncommitted;	// Uncommitted Bytes (reclaimable)
     std::string			m_rootpath;
     std::string			m_blockspath;
 
@@ -139,6 +138,8 @@ private:
 
     EntrySet			m_entries;
     EntryList			m_lru;		// front=newest, back=oldest
+
+    EntryHandle			m_mark;
 };
 
 } // namespace FSBS

@@ -1,3 +1,5 @@
+#include <sys/statvfs.h>
+
 #include <memory>
 #include <vector>
 
@@ -8,6 +10,7 @@
 #include "pydirentryfunc.h"
 #include "pyfilesystem.h"
 #include "pystat.h"
+#include "pystatvfs.h"
 #include "pyutpinit.h"
 
 using namespace std;
@@ -385,6 +388,27 @@ FileSystem_fs_write(FileSystemObject *self, PyObject *args)
     return PyInt_FromLong(retval);
 }
 
+static PyObject *
+FileSystem_fs_statfs(FileSystemObject *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ":fs_statfs"))
+        return NULL;
+
+
+    struct statvfs stvbuf;
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_statfs(&stvbuf);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    return pystatvfs_fromstructstatvfs(&stvbuf);
+}
 
 static PyObject *
 FileSystem_fs_readdir(FileSystemObject *self, PyObject *args)
@@ -499,6 +523,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},
     {"fs_write",		(PyCFunction)FileSystem_fs_write,		METH_VARARGS},
+    {"fs_statfs",		(PyCFunction)FileSystem_fs_statfs,		METH_VARARGS},
     {"fs_readdir",		(PyCFunction)FileSystem_fs_readdir,		METH_VARARGS},
     {"fs_access",		(PyCFunction)FileSystem_fs_access,		METH_VARARGS},
     {"fs_utime",		(PyCFunction)FileSystem_fs_utime,		METH_VARARGS},

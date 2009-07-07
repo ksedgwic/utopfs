@@ -115,6 +115,9 @@ public:
                          off_t i_off)
         throw (utp::InternalError);
 
+    virtual int fs_statfs(struct ::statvfs * o_stvbuf)
+        throw (utp::InternalError);
+
     virtual int fs_readdir(std::string const & i_path,
                            off_t i_offset,
                            DirEntryFunc & o_entryfunc)

@@ -827,6 +827,35 @@ UTFileSystem::fs_readdir(string const & i_path,
     }
 }
 
+int
+UTFileSystem::fs_statfs(struct statvfs * o_stvbuf)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_statvfs");
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+
+    try
+    {
+        BlockStore::Stat bsstat;
+        m_ctxt.m_bsh->bs_stat(bsstat);
+
+        ACE_OS::memset(o_stvbuf, '\0', sizeof(*o_stvbuf));
+
+        o_stvbuf->f_bsize = 4096;
+        o_stvbuf->f_blocks = bsstat.bss_size / 4096;
+        o_stvbuf->f_bfree = bsstat.bss_free / 4096;
+        o_stvbuf->f_bavail = bsstat.bss_free / 4096;
+
+        return 0;
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_statfs: " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
 class AccessTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:

@@ -150,29 +150,6 @@ BlockStore_bs_put_block(BlockStoreObject *self, PyObject *args)
 }
 
 static PyObject *
-BlockStore_bs_del_block(BlockStoreObject *self, PyObject *args)
-{
-    PyObject * keyobj;
-    if (!PyArg_ParseTuple(args, "O!:bs_del_block",
-                          &PyBuffer_Type, &keyobj))
-        return NULL;
-
-    void const * keyptr;
-    Py_ssize_t keylen;
-    if (PyObject_AsReadBuffer(keyobj, &keyptr, &keylen))
-        return NULL;
-
-    PYUTP_TRY
-    {
-        PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_del_block(keyptr, keylen);
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PYUTP_CATCH_ALL;
-}
-
-static PyObject *
 BlockStore_bs_refresh_start(BlockStoreObject *self, PyObject *args)
 {
     uint64 rid;
@@ -267,7 +244,6 @@ static PyMethodDef BlockStore_methods[] = {
     {"bs_stat",			(PyCFunction)BlockStore_bs_stat,		METH_VARARGS},
     {"bs_get_block",	(PyCFunction)BlockStore_bs_get_block,	METH_VARARGS},
     {"bs_put_block",	(PyCFunction)BlockStore_bs_put_block,	METH_VARARGS},
-    {"bs_del_block",	(PyCFunction)BlockStore_bs_del_block,	METH_VARARGS},
     {"bs_refresh_start",(PyCFunction)BlockStore_bs_refresh_start, METH_VARARGS},
     {"bs_refresh_blocks",	(PyCFunction)BlockStore_bs_refresh_blocks,	METH_VARARGS},
     {"bs_refresh_finish",	(PyCFunction)BlockStore_bs_refresh_finish,	METH_VARARGS},

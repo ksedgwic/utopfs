@@ -51,12 +51,8 @@ public:
                               void const * i_blkdata,
                               size_t i_blksize)
         throw(utp::InternalError,
-              utp::ValueError);
-
-    virtual void bs_del_block(void const * i_keydata,
-                              size_t i_keysize)
-        throw(utp::InternalError,
-              utp::NotFoundError);
+              utp::ValueError,
+              utp::OperationError);
 
     virtual void bs_refresh_start(utp::uint64 i_rid)
         throw(utp::InternalError,

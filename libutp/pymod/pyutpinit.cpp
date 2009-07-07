@@ -10,6 +10,7 @@
 #include "pydirentryfunc.h"
 #include "pyfilesystem.h"
 #include "pystat.h"
+#include "pystatvfs.h"
 
 namespace utp {
 
@@ -122,6 +123,7 @@ init_utp(void)
 
     // initialize sub-types
     init_stat();
+    init_statvfs();
     init_bsstat();
     init_BlockStore();
     init_FileSystem();
