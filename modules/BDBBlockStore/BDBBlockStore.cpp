@@ -18,6 +18,7 @@ namespace BDBBS {
 BDBBlockStore::BDBBlockStore()
 {	
     LOG(lgr, 4, "CTOR");
+	m_db_opened = false;
 }
 
 BDBBlockStore::~BDBBlockStore()
@@ -48,25 +49,7 @@ BDBBlockStore::bs_create(size_t i_size, string const & i_path)
                     << "mkdir " << m_rootpath << "failed: "
                     << ACE_OS::strerror(errno));
 	
-	std::string db_path = "main";
-	try {	
-		//Open the bdb environment for transactions
-		dbe = new DbEnv(0);
-		dbe->open(m_rootpath.c_str(),DB_CREATE | DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG,0);
-		db = new Db(dbe,0);
-		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_CREATE | DB_AUTO_COMMIT,0);		
-		if (result != 0) {
-			throwstream(InternalError, FILELINE
-                << "Cannot create bdb block		 store at '" << db_path
-                << ": error: " << result << db_strerror(result));		 
-        }
-		 
-		 
-	} catch (DbException e) {
-		throwstream(InternalError, FILELINE
-                << "Cannot create bdb block store at '" << db_path
-                << ": error: " << ACE_OS::strerror(errno)); 
-	}
+	open_dbs(DB_CREATE);
 	 
 }
 
@@ -85,23 +68,8 @@ BDBBlockStore::bs_open(string const & i_path)
 
 	m_rootpath = i_path;
 	std::string db_path = "main";
-	try {	
-		dbe = new DbEnv(0);
-		dbe->open(m_rootpath.c_str(),DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG,0);
-		db = new Db(dbe,0);
-
-		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT,0);		
-		if (result != 0) {
-			throwstream(InternalError, FILELINE
-                << "Cannot open  bdb block store at '" << i_path
-                << ": error: " << result << db_strerror(result));		 
-        }
-        
-	} catch (DbException e) {	
-		throwstream(InternalError, FILELINE
-                << "Cannot open bdb block store at '" << i_path
-                << ": error: " << ACE_OS::strerror(errno)); 
-	}
+	
+	open_dbs(0);
 
 }
 
@@ -110,13 +78,30 @@ BDBBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, "bs_close");    
-    if (db) {
-    	db->sync(0);
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+        	<< "BDBBlockStore::bs_close cannot close since block store not open.");
+	}
+	
+	try {
+		db->sync(0);
 		db->close(0);
+
+		db_refresh_ids->sync(0);
+		db_refresh_ids->close(0);
+
+		db_refresh_entries->sync(0);
+		db_refresh_entries->close(0);
+
+		dbe->close(0);	
+	} catch (DbException e) {
+		throwstream(InternalError, FILELINE
+        	<< "BDBBlockStore::bs_close cannot close; error "
+			<< ACE_OS::strerror(errno));
 	}
-	if (dbe) {
-		dbe->close(0);
-	}
+
+	
+	m_db_opened = false;
 }
 
 void
@@ -234,7 +219,14 @@ void
 BDBBlockStore::bs_sync()
     throw(InternalError)
 {
+	if (! m_db_opened) {
+    	throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_sync cannot sync an a database that is not opened");
+	}
+
 	db->sync(0);
+	db_refresh_ids->sync(0);
+	db_refresh_entries->sync(0);
 }
 
 string 
@@ -244,8 +236,59 @@ BDBBlockStore::get_full_path(void const * i_keydata,
     string s_filename;
     Base32::encode((uint8 const *)i_keydata,i_keysize,s_filename);
     return m_rootpath + "/" + s_filename;
-}                                
+}       
 
+
+void 
+BDBBlockStore::open_dbs(u_int32_t create_flag = 0) 
+	throw(InternalError)
+{
+	//Open the bdb environment for transactions
+	u_int32_t flags = DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG | create_flag;
+
+ 
+	std::string db_path;
+
+	try {
+		dbe = new DbEnv(0);
+		dbe->open(m_rootpath.c_str(),flags ,0);
+		db = new Db(dbe,0);
+		db_refresh_ids = new Db(dbe,0);
+		db_refresh_entries = new Db(dbe,0);
+		
+		db_path = "main.db";
+		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT | create_flag,0);		
+		if (result != 0) {
+			throwstream(InternalError, FILELINE
+                << "Cannot open  bdb block store at '" << m_rootpath << "/" << db_path
+                << ": error: " << result << db_strerror(result));		 
+        }
+		
+		//open other dbs too
+		db_path = "refresh.db";
+		result = db_refresh_ids->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT | create_flag,0);		
+		if (result != 0) {
+			throwstream(InternalError, FILELINE
+                << "Cannot open  bdb block store at '" << m_rootpath << "/" << db_path
+                << ": error: " << result << db_strerror(result));		 
+        }
+
+		//open other dbs too
+		db_path = "refresh_entries.db";
+		result = db_refresh_entries->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT | create_flag,0);		
+		if (result != 0) {
+			throwstream(InternalError, FILELINE
+                << "Cannot open  bdb block store at '" << m_rootpath << "/" << db_path
+                << ": error: " << result << db_strerror(result));		 
+        }
+        
+	} catch (DbException e) {	
+		throwstream(InternalError, FILELINE
+                << "Cannot open bdb block store at '" << m_rootpath << "/" << db_path
+                << ": error: " << ACE_OS::strerror(errno)); 
+	}   
+	m_db_opened = true;                     
+}
 } // namespace BDBBS
 
 // Local Variables:
