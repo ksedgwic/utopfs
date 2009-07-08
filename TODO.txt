@@ -1,8 +1,5 @@
-Add "df" fuse interfaces.
-
-  Fix failing test.
-
-  Confirm that df and friends are happy now ...
+Figure out the problem w/ matching exception types in python.  Search
+for BOGUS in the unit directory ...
 
 Handle and test bs_put size exceptions from filesystem.
 
@@ -20,9 +17,6 @@ Write multiple filesystems in common blockstore test.
 Write two FileSystem objects attached to same fsid test.
 
 Add "snap together" protocol modules concept to wiki.
-
-Figure out the problem w/ matching exception types in python.  Search
-for BOGUS in the unit directory ...
 
 Large directories >60 items not implemented.
 

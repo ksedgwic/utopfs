@@ -30,57 +30,33 @@ PyError_FromException(std::exception const & ex)
     PyObject * dict = PyDict_New();
     PyDict_SetItemString(dict, "what", PyString_FromString(ex.what()));
 
-    // If this is a utp::Exception fill in the details.
+    Exception const * exp = dynamic_cast<Exception const *>(&ex);
+    if (exp)
     {
-        Exception const * exp = dynamic_cast<Exception const *>(&ex);
-        if (exp)
-            PyDict_SetItemString(dict, "details",
-                                 PyString_FromString(exp->details()));
-    }
+        PyDict_SetItemString(dict, "details",
+                             PyString_FromString(exp->details()));
 
-    // Match derived exceptions ...
-
-    {
-        InternalError const * exp = dynamic_cast<InternalError const *>(&ex);
-        if (exp)
+        switch (exp->type())
+        {
+        case Exception::T_BASE:
+            return PyErr_SetObject(ErrorObject, dict);
+        case Exception::T_INTERNAL:
             return PyErr_SetObject(InternalErrorObject, dict);
-    }
-        
-    {
-        OperationError const * exp = dynamic_cast<OperationError const *>(&ex);
-        if (exp)
+        case Exception::T_OPERATION:
             return PyErr_SetObject(OperationErrorObject, dict);
-    }
-        
-    {
-        NotFoundError const * exp = dynamic_cast<NotFoundError const *>(&ex);
-        if (exp)
+        case Exception::T_NOTFOUND:
             return PyErr_SetObject(NotFoundErrorObject, dict);
-    }
-
-    {
-        NotUniqueError const * exp = dynamic_cast<NotUniqueError const *>(&ex);
-        if (exp)
+        case Exception::T_NOTUNIQUE:
             return PyErr_SetObject(NotUniqueErrorObject, dict);
-    }
-        
-    {
-        ValueError const * exp = dynamic_cast<ValueError const *>(&ex);
-        if (exp)
+        case Exception::T_VALUE:
             return PyErr_SetObject(ValueErrorObject, dict);
-    }
-        
-    {
-        ParseError const * exp = dynamic_cast<ParseError const *>(&ex);
-        if (exp)
+        case Exception::T_PARSE:
             return PyErr_SetObject(ParseErrorObject, dict);
-    }
-        
-    {
-        VerificationError const * exp =
-            dynamic_cast<VerificationError const *>(&ex);
-        if (exp)
+        case Exception::T_VERIFICATION:
             return PyErr_SetObject(VerificationErrorObject, dict);
+        default:
+            return PyErr_SetObject(ErrorObject, dict);
+        }
     }
         
     // We weren't able to find one of our specific exceptions, map
@@ -153,7 +129,7 @@ init_utp(void)
 
     NotUniqueErrorObject =
         PyErr_NewException((char *) "utp.NotUniqueError", ErrorObject, NULL);
-    PyDict_SetItemString(d, "NotUniqueError", NotFoundErrorObject);
+    PyDict_SetItemString(d, "NotUniqueError", NotUniqueErrorObject);
 
     ValueErrorObject =
         PyErr_NewException((char *) "utp.ValueError", ErrorObject, NULL);

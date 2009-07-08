@@ -23,20 +23,17 @@ class Test_bs_refresh_01:
   def test_refresh_nostart(self):
     # Need a start
     keys = (buffer('key1'), buffer('key3'))
-    # BOGUS - The following exception should be utp.NotFoundError
-    py.test.raises(Exception,
-                   "self.bs.bs_refresh_blocks(777, keys)")
+    py.test.raises(utp.NotFoundError,
+                   self.bs.bs_refresh_blocks, 777, keys)
 
     # Same
-    # BOGUS - The following exception should be utp.NotFoundError
-    py.test.raises(Exception,
-                   "self.bs.bs_refresh_finish(777)")
+    py.test.raises(utp.NotFoundError,
+                   self.bs.bs_refresh_finish, 777)
 
   def test_refresh_dupstart(self):
     self.bs.bs_refresh_start(778)
-    # BOGUS - The following exception should be utp.NotUniqueError
-    py.test.raises(Exception,
-                   "self.bs.bs_refresh_start(778)")
+    py.test.raises(utp.NotUniqueError,
+                   self.bs.bs_refresh_start, 778)
 
   def test_refresh_blocks(self):
 

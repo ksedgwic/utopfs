@@ -94,10 +94,7 @@ class Test_bs_size_03:
     # But a different key should cause OperationError
     k = buffer("k13")
     v = buffer("0123456789")
-    # BOGUS - We're having trouble matching exceptions.
-    # Replace Exception w/ NotFoundError.
-    #
-    py.test.raises(Exception, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.OperationError, self.bs.bs_put_block, k, v)
 
     # Close the blockstore.
     self.bs.bs_close()
