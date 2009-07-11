@@ -66,7 +66,7 @@ public:
             std::string const & i_gname);
 
     // "Upgrade Constructor" from FileNode.
-    DirNode(FileNode const & i_fn);
+    DirNode(Context & i_ctxt, FileNode const & i_fn);
 
     // Constructor from blockstore persisted data.
     DirNode(Context & i_ctxt, BlockRef const & i_ref);
@@ -148,7 +148,7 @@ protected:
     virtual BlockRef find_blkref(Context & i_ctxt,
                                  std::string const & i_entry);
 
-    void deserialize();
+    void deserialize(Context & i_ctxt);
 
     void update(std::string const & i_entry, BlockRef const & i_blkref);
 
