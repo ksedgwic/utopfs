@@ -625,8 +625,8 @@ FSBlockStore::purge_uncommitted()
     // Find the oldest entry on the LRU list.
     EntryHandle eh = m_lru.back();
 
-    // It needs to be older then the MARK.
-    if (eh->m_tstamp >= m_mark->m_tstamp)
+    // It needs to be older then the MARK (we have to grant equal here).
+    if (eh->m_tstamp > m_mark->m_tstamp)
         throwstream(InternalError, FILELINE
                     << "LRU block on list is more recent then MARK");
 

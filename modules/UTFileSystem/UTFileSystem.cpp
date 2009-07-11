@@ -952,24 +952,17 @@ UTFileSystem::fs_refresh()
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-#if 1
+    // Try and sync first.  If we are out of space we'll
+    // have to try and sync again afterwards.
     try
     {
-        // Make sure all cached nodes are up-to-date in blockstore.
-        rootref(m_rdh->bn_flush(m_ctxt));
+        if (m_rdh->bn_isdirty())
+            rootref(m_rdh->bn_flush(m_ctxt));
     }
     catch (NoSpaceError const & ex)
     {
         LOG(lgr, 1, "NoSpaceError encountered: " << ex.what());
     }
-#else
-    // IMPORTANT - We're struggling here.  If we force the
-    // refresh then we can't use compact to create space.  This
-    // seems *really* important.
-    //
-    // // Make sure all cached nodes are up-to-date in blockstore.
-    // rootref(m_rdh->bn_flush(m_ctxt));
-#endif
     
     // Generate a random refresh id.
     uint64 rid;
@@ -981,6 +974,10 @@ UTFileSystem::fs_refresh()
     m_ctxt.m_bsh->bs_refresh_finish(rid);
 
     LOG(lgr, 6, "fs_refresh -> " << nb);
+
+    // If we failed to sync earlier try again here..
+    if (m_rdh->bn_isdirty())
+        rootref(m_rdh->bn_flush(m_ctxt));
 
     return nb;
 }

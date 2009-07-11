@@ -710,7 +710,10 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
     BlockStore::KeySeq missing;
     i_ctxt.m_bsh->bs_refresh_blocks(i_rid, keys, missing);
     if (!missing.empty())
-        throwstream(InternalError, FILELINE << "missing blocks encountered");
+    {
+        LOG(lgr, 1, "FileNode::rb_refresh: " << i_rid
+            << " missing " << missing.size() << " blocks");
+    }
 
     return nblocks;
 }
