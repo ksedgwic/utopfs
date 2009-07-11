@@ -27,13 +27,39 @@ DirNode::pathsplit(string const & i_path)
         throwstream(InternalError, FILELINE
                     << "path \"" << i_path << "\" doesn't begin with '/'");
 
-    // Return the path component up to the next '/'.
+    // Find the path component up to the next '/'.
     string::size_type pos = i_path.find('/', 1);
 
+    // Are we at the end of the path?
     if (pos == string::npos)
+    {
+        // Yes, the "remainder" is empty.
         return make_pair(i_path.substr(1, pos), "");
+    }
     else
-        return make_pair(i_path.substr(1, pos - 1), i_path.substr(pos));
+    {
+        // Nope, there is more.
+
+        // Find the start of the next path component.
+        //
+        // We need to treat multiple consecutive slashes like
+        // a single slash.
+        //
+        string::size_type pos2 = i_path.find_first_not_of('/', pos);
+
+        // Are we at the end of the path now?
+        if (pos2 == string::npos)
+        {
+            // Yes, the "remainder" is empty.
+            return make_pair(i_path.substr(1, pos), "");
+        }
+        else
+        {
+            // Return the adjusted remainder.
+            return make_pair(i_path.substr(1, pos - 1),
+                             i_path.substr(pos2 - 1));
+        }
+    }
 }
 
 DirNode::DirNode(mode_t i_mode,
