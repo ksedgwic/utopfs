@@ -26,6 +26,7 @@ public:
         T_VALUE,
         T_PARSE,
         T_VERIFICATION,
+        T_NOSPACE,
     };
 
     virtual const char * what() const throw();
@@ -112,6 +113,15 @@ public:
         : Exception("VerificationError", i_details) {}
 
     virtual Type type() const { return T_VERIFICATION; }
+};
+
+class UTP_EXC_EXP NoSpaceError : public Exception
+{
+public:
+    NoSpaceError(std::string const & i_details)
+        : Exception("NoSpaceError", i_details) {}
+
+    virtual Type type() const { return T_NOSPACE; }
 };
 
 // The throwstream macro assembles the string argument to the

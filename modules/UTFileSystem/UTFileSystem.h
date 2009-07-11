@@ -49,7 +49,8 @@ public:
                utp::NotFoundError);
 
     virtual void fs_umount()
-        throw (utp::InternalError);
+        throw (utp::InternalError,
+               utp::NoSpaceError);
 
     virtual int fs_getattr(std::string const & i_path,
                            struct stat * o_statbuf)
@@ -136,7 +137,8 @@ public:
         throw (utp::InternalError);
 
     virtual void fs_sync()
-        throw (utp::InternalError);
+        throw (utp::InternalError,
+               utp::NoSpaceError);
 
 protected:
     void rootref(BlockRef const & i_blkref);

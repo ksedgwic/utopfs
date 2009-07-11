@@ -100,7 +100,7 @@ public:
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError One of the arguments is out of range.
-    /// @throw OperationError Out of space to store block.
+    /// @throw NoSpaceError Out of space to store block.
     ///
     virtual void bs_put_block(void const * i_keydata,
                               size_t i_keysize,
@@ -108,7 +108,7 @@ public:
                               size_t i_blksize)
         throw(InternalError,
               ValueError,
-              OperationError) = 0;
+              NoSpaceError) = 0;
 
     /// Start a refresh cycle.
     ///

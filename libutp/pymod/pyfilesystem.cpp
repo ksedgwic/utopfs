@@ -507,6 +507,23 @@ FileSystem_fs_refresh(FileSystemObject *self, PyObject *args)
     return PyInt_FromLong(nblocks);
 }
 
+static PyObject *
+FileSystem_fs_sync(FileSystemObject *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ":fs_sync"))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_fsh->fs_sync();
+    }
+    PYUTP_CATCH_ALL;
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyMethodDef FileSystem_methods[] = {
     {"fs_umount",		(PyCFunction)FileSystem_fs_umount,		METH_VARARGS},
     {"fs_getattr",		(PyCFunction)FileSystem_fs_getattr,		METH_VARARGS},
@@ -528,6 +545,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_access",		(PyCFunction)FileSystem_fs_access,		METH_VARARGS},
     {"fs_utime",		(PyCFunction)FileSystem_fs_utime,		METH_VARARGS},
     {"fs_refresh",		(PyCFunction)FileSystem_fs_refresh,		METH_VARARGS},
+    {"fs_sync",			(PyCFunction)FileSystem_fs_sync,		METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 

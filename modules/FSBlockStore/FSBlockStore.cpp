@@ -268,7 +268,7 @@ FSBlockStore::bs_put_block(void const * i_keydata,
                            size_t i_blksize)
     throw(InternalError,
           ValueError,
-          OperationError)
+          NoSpaceError)
 {
     LOG(lgr, 6, "bs_put_block");
 
@@ -301,7 +301,7 @@ FSBlockStore::bs_put_block(void const * i_keydata,
     off_t avail = m_size - m_committed + prevcommited;
 
     if (off_t(i_blksize) > avail)
-        throwstream(OperationError,
+        throwstream(NoSpaceError,
                     "insufficent space: "
                     << avail << " bytes avail, needed " << i_blksize);
 

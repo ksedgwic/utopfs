@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 
 #include <ace/Reactor.h>
 
@@ -148,11 +149,18 @@ Controller::term()
 void
 Controller::periodic()
 {
-    // Synchronize the filesystem to the blockstore.
-    m_fsh->fs_sync();
+    try
+    {
+        // Synchronize the filesystem to the blockstore.
+        m_fsh->fs_sync();
 
-    // Persist the blockstore.
-    m_bsh->bs_sync();
+        // Persist the blockstore.
+        m_bsh->bs_sync();
+    }
+    catch (std::exception const & ex)
+    {
+        LOG(lgr, 1, "exception in periodic: " << ex.what());
+    }
 }
 
 // Local Variables:

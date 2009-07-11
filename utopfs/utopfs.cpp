@@ -303,11 +303,18 @@ utopfs_init(struct fuse_conn_info * i_conn)
 static void
 utopfs_destroy(void * ptr)
 {
-    // Flush the filesystem to the blockstore.
-    utopfs.fsh->fs_sync();
+    try
+    {
+        // Flush the filesystem to the blockstore.
+        utopfs.fsh->fs_sync();
 
-    // Cleanup the control interface.
-    utopfs.control->term();
+        // Cleanup the control interface.
+        utopfs.control->term();
+    }
+    catch (std::exception const & ex)
+    {
+        LOG(lgr, 1, "exception in utopfs_destroy: " << ex.what());
+    }
 }
 
 static int

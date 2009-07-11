@@ -162,7 +162,7 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
                            size_t i_blksize)
     throw(InternalError,
           ValueError,
-          OperationError)
+          NoSpaceError)
 {
     LOG(lgr, 6, "bs_put_block");
     

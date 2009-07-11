@@ -54,10 +54,10 @@ class Test_bs_size_02:
     assert bss.bss_size == smallsz
     assert bss.bss_free == smallsz - (10 * 10)
 
-    # Next put should cause an OperationError
+    # Next put should cause an NoSpaceError
     k = buffer("k11")
     v = buffer("0123456789")
-    py.test.raises(utp.OperationError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -73,10 +73,10 @@ class Test_bs_size_02:
     assert bss.bss_size == smallsz
     assert bss.bss_free == smallsz - (10 * 10)
 
-    # Next put should cause an OperationError
+    # Next put should cause an NoSpaceError
     k = buffer("k11")
     v = buffer("0123456789")
-    py.test.raises(utp.OperationError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -112,10 +112,10 @@ class Test_bs_size_02:
     assert bss.bss_size == smallsz
     assert bss.bss_free == smallsz - (10 * 10)
 
-    # Next put should cause an OperationError
+    # Next put should cause an NoSpaceError
     k = buffer("k11")
     v = buffer("0123456789")
-    py.test.raises(utp.OperationError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
 
     # Refresh all but first two blocks.
     time.sleep(1)
@@ -160,10 +160,10 @@ class Test_bs_size_02:
     v = buffer("0123456789")
     self.bs.bs_put_block(k, v)
 
-    # But a different key should cause OperationError
+    # But a different key should cause NoSpaceError
     k = buffer("k13")
     v = buffer("0123456789")
-    py.test.raises(utp.OperationError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
 
     # Close the blockstore.
     self.bs.bs_close()

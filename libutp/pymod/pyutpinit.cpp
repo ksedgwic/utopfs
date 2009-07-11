@@ -23,6 +23,7 @@ PyObject * NotUniqueErrorObject;
 PyObject * ValueErrorObject;
 PyObject * ParseErrorObject;
 PyObject * VerificationErrorObject;
+PyObject * NoSpaceErrorObject;
 
 void
 PyError_FromException(std::exception const & ex)
@@ -54,6 +55,8 @@ PyError_FromException(std::exception const & ex)
             return PyErr_SetObject(ParseErrorObject, dict);
         case Exception::T_VERIFICATION:
             return PyErr_SetObject(VerificationErrorObject, dict);
+        case Exception::T_NOSPACE:
+            return PyErr_SetObject(NoSpaceErrorObject, dict);
         default:
             return PyErr_SetObject(ErrorObject, dict);
         }
@@ -142,6 +145,10 @@ init_utp(void)
     VerificationErrorObject =
         PyErr_NewException((char *) "utp.VerificationError", ErrorObject, NULL);
     PyDict_SetItemString(d, "VerificationError", VerificationErrorObject);
+
+    NoSpaceErrorObject =
+        PyErr_NewException((char *) "utp.NoSpaceError", ErrorObject, NULL);
+    PyDict_SetItemString(d, "NoSpaceError", NoSpaceErrorObject);
 }
 
 } // end extern "C"
