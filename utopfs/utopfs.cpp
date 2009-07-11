@@ -140,7 +140,7 @@ struct utopfs
     string path;
     string fsid;
     string passphrase;
-    size_t size;
+    uint64_t size;
     string mntpath;
     BlockStoreHandle bsh;
     FileSystemHandle fsh;
@@ -666,7 +666,7 @@ static int utopfs_opt_proc(void * data,
         return 0;
 
     case KEY_MKFS:
-        utopfs.size = atoi(&arg[2]);
+        utopfs.size = atoll(&arg[2]);
         return 0;
 
     case KEY_FSID:

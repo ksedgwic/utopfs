@@ -1,9 +1,8 @@
 Write a test to make sure it is OK to "truncate" a file to a larger
 size then it already is.
 
-Directories should show some size in an "ls -l".
-
-Add a "utp sync" separate from the "utp compact".
+Experiment w/ overflowing a utopfs when fuse mounted.  Does it all
+work OK?
 
 # ----------------
 
