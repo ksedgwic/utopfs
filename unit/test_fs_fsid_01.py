@@ -41,11 +41,7 @@ class Test_fs_fsid_01:
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
 
-    # BOGUS - We're having trouble matching exceptions.
-    # Replace Exception w/ NotFoundError
-    #
-    # Mount the filesystem w/ the wrong fsid.
-    py.test.raises(Exception,
+    py.test.raises(utp.NotFoundError,
                    utp.FileSystem.mount, CONFIG.FSTYPE, self.bs,
                    "second", "", CONFIG.FSARGS)
 

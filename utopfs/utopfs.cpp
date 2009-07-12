@@ -140,7 +140,7 @@ struct utopfs
     string path;
     string fsid;
     string passphrase;
-    size_t size;
+    uint64_t size;
     string mntpath;
     BlockStoreHandle bsh;
     FileSystemHandle fsh;
@@ -303,11 +303,18 @@ utopfs_init(struct fuse_conn_info * i_conn)
 static void
 utopfs_destroy(void * ptr)
 {
-    // Flush the filesystem to the blockstore.
-    utopfs.fsh->fs_sync();
+    try
+    {
+        // Flush the filesystem to the blockstore.
+        utopfs.fsh->fs_sync();
 
-    // Cleanup the control interface.
-    utopfs.control->term();
+        // Cleanup the control interface.
+        utopfs.control->term();
+    }
+    catch (std::exception const & ex)
+    {
+        LOG(lgr, 1, "exception in utopfs_destroy: " << ex.what());
+    }
 }
 
 static int
@@ -659,7 +666,7 @@ static int utopfs_opt_proc(void * data,
         return 0;
 
     case KEY_MKFS:
-        utopfs.size = atoi(&arg[2]);
+        utopfs.size = atoll(&arg[2]);
         return 0;
 
     case KEY_FSID:

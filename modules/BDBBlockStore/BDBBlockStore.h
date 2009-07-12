@@ -52,7 +52,7 @@ public:
                               size_t i_blksize)
         throw(utp::InternalError,
               utp::ValueError,
-              utp::OperationError);
+              utp::NoSpaceError);
 
     virtual void bs_refresh_start(utp::uint64 i_rid)
         throw(utp::InternalError,

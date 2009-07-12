@@ -268,7 +268,7 @@ FSBlockStore::bs_put_block(void const * i_keydata,
                            size_t i_blksize)
     throw(InternalError,
           ValueError,
-          OperationError)
+          NoSpaceError)
 {
     LOG(lgr, 6, "bs_put_block");
 
@@ -301,7 +301,7 @@ FSBlockStore::bs_put_block(void const * i_keydata,
     off_t avail = m_size - m_committed + prevcommited;
 
     if (off_t(i_blksize) > avail)
-        throwstream(OperationError,
+        throwstream(NoSpaceError,
                     "insufficent space: "
                     << avail << " bytes avail, needed " << i_blksize);
 
@@ -364,14 +364,14 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
     // Does the refresh ID already exist?
     ACE_stat sb;
     int rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv != -1 && errno != ENOENT)
+    if (rv != -1)
         throwstream(NotUniqueError,
                     "refresh id " << i_rid << " already exists");
 
     // Create the refresh id mark.
     if (mknod(rpath.c_str(), S_IFREG, 0) != 0)
-        throwstream(InternalError,
-                    "mknod " << rpath << " failed: "
+        throwstream(InternalError, FILELINE
+                    << "mknod " << rpath << " failed: "
                     << ACE_OS::strerror(errno));
 
     // Stat the file we just wrote so we can use the exact tstamp
@@ -625,8 +625,8 @@ FSBlockStore::purge_uncommitted()
     // Find the oldest entry on the LRU list.
     EntryHandle eh = m_lru.back();
 
-    // It needs to be older then the MARK.
-    if (eh->m_tstamp >= m_mark->m_tstamp)
+    // It needs to be older then the MARK (we have to grant equal here).
+    if (eh->m_tstamp > m_mark->m_tstamp)
         throwstream(InternalError, FILELINE
                     << "LRU block on list is more recent then MARK");
 

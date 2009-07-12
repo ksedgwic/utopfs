@@ -77,9 +77,11 @@ public:
     /// After unmounting, you may create or mount again.
     ///
     /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NoSpaceError There is not enough space.
     ///
     virtual void fs_umount()
-        throw (utp::InternalError) = 0;
+        throw (utp::InternalError,
+               utp::NoSpaceError) = 0;
 
     /// Get file attributes
     ///
@@ -344,9 +346,11 @@ public:
     /// Flush cached filesystem data to the blockstore.
     ///
     /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NoSpaceError There is not enough space.
     ///
     virtual void fs_sync()
-        throw (utp::InternalError) = 0;
+        throw (utp::InternalError,
+               utp::NoSpaceError) = 0;
 };
 
 } // end namespace utp

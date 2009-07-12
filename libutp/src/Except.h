@@ -16,11 +16,26 @@ namespace utp {
 class UTP_EXC_EXP Exception : public std::exception
 {
 public:
+    enum Type
+    {
+        T_BASE,
+        T_INTERNAL,
+        T_OPERATION,
+        T_NOTFOUND,
+        T_NOTUNIQUE,
+        T_VALUE,
+        T_PARSE,
+        T_VERIFICATION,
+        T_NOSPACE,
+    };
+
     virtual const char * what() const throw();
 
     virtual ~Exception() throw() {}
 
     virtual const char * details() const throw() { return m_details.c_str(); }
+
+    virtual Type type() const { return T_BASE; }
 
 protected:
     Exception(std::string const & i_base,
@@ -37,53 +52,76 @@ protected:
 #endif
 };
 
-class InternalError : public Exception
+class UTP_EXC_EXP InternalError : public Exception
 {
 public:
     InternalError(std::string const & i_details)
         : Exception("InternalError", i_details) {}
+
+    virtual Type type() const { return T_INTERNAL; }
 };
 
-class OperationError : public Exception
+class UTP_EXC_EXP OperationError : public Exception
 {
 public:
     OperationError(std::string const & i_details)
         : Exception("OperationError", i_details) {}
+
+    virtual Type type() const { return T_OPERATION; }
 };
 
-class NotFoundError : public Exception
+class UTP_EXC_EXP NotFoundError : public Exception
 {
 public:
     NotFoundError(std::string const & i_details)
         : Exception("NotFoundError", i_details) {}
+
+    virtual Type type() const { return T_NOTFOUND; }
 };
 
-class NotUniqueError : public Exception
+class UTP_EXC_EXP NotUniqueError : public Exception
 {
 public:
     NotUniqueError(std::string const & i_details)
         : Exception("NotUniqueError", i_details) {}
+
+    virtual Type type() const { return T_NOTUNIQUE; }
 };
 
-class ValueError : public Exception
+class UTP_EXC_EXP ValueError : public Exception
 {
 public:
     ValueError(std::string const & i_details)
         : Exception("ValueError", i_details) {}
+
+    virtual Type type() const { return T_VALUE; }
 };
 
-class ParseError : public Exception
+class UTP_EXC_EXP ParseError : public Exception
 {
 public:
     ParseError(std::string const & i_details)
         : Exception("ParseError", i_details) {}
+
+    virtual Type type() const { return T_PARSE; }
 };
 
-class VerificationError : public Exception
+class UTP_EXC_EXP VerificationError : public Exception
 {
 public:
     VerificationError(std::string const & i_details)
         : Exception("VerificationError", i_details) {}
+
+    virtual Type type() const { return T_VERIFICATION; }
+};
+
+class UTP_EXC_EXP NoSpaceError : public Exception
+{
+public:
+    NoSpaceError(std::string const & i_details)
+        : Exception("NoSpaceError", i_details) {}
+
+    virtual Type type() const { return T_NOSPACE; }
 };
 
 // The throwstream macro assembles the string argument to the

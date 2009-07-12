@@ -36,8 +36,4 @@ class Test_bs_basic_01:
    
   def test_get_block_that_does_not_exist(self):
     k = buffer("badkey%(random.randrange(999999999))")
-
-    # BOGUS - We're having trouble matching exceptions.
-    # Replace Exception w/ NotFoundError.
-    #
-    py.test.raises(Exception, "self.bs.bs_get_block(k)")
+    py.test.raises(utp.NotFoundError, self.bs.bs_get_block, k)

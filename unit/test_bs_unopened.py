@@ -17,11 +17,7 @@ class TestUnopenedBlockStore:
     pass
     
   def test_open_on_nonexistent(self):
-
-    # BOGUS - We're having trouble matching exceptions.
-    # Replace Exception w/ NotFoundError.
-    #
-    py.test.raises(Exception,
+    py.test.raises(utp.NotFoundError,
                    utp.BlockStore.open, CONFIG.BSTYPE, ("NOEXIST",))
     
   def test_create(self):    
@@ -60,14 +56,12 @@ class TestUnopenedBlockStore:
                                CONFIG.BSSIZE,
                                (self.bspath,))
 
-    # BOGUS - We're having trouble matching exceptions.
-    # Replace Exception w/ NotUniqueError
-    #
-    py.test.raises(Exception,
+    py.test.raises(utp.NotUniqueError,
                    utp.BlockStore.create,
                    CONFIG.BSTYPE,
                    CONFIG.BSSIZE,
                    (self.bspath,))
+
     bs.bs_close()
 
     CONFIG.remove_bs(self.bspath)  

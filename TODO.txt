@@ -1,16 +1,15 @@
-Add "df" fuse interfaces.
+Write a test to make sure it is OK to "truncate" a file to a larger
+size then it already is.
 
-  Fix failing test.
-
-  Confirm that df and friends are happy now ...
-
-Handle and test bs_put size exceptions from filesystem.
-
-Add a "utp sync" separate from the "utp compact".
+Experiment w/ overflowing a utopfs when fuse mounted.  Does it all
+work OK?
 
 # ----------------
 
-Directories should show some size in an "ls -l".
+Need to make everything work on a 32 bit machine.
+
+Memory footprint issues; what happens when we run on a machine with
+very little memory?
 
 Figure out what fuse's lowlevel interface is good for and whether we
 should switch to it.
@@ -20,11 +19,6 @@ Write multiple filesystems in common blockstore test.
 Write two FileSystem objects attached to same fsid test.
 
 Add "snap together" protocol modules concept to wiki.
-
-Figure out the problem w/ matching exception types in python.  Search
-for BOGUS in the unit directory ...
-
-Large directories >60 items not implemented.
 
 The "access" call implementation is trivially permissive.  Fix this or
 get rid of it ...

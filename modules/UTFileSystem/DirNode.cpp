@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
@@ -25,13 +27,39 @@ DirNode::pathsplit(string const & i_path)
         throwstream(InternalError, FILELINE
                     << "path \"" << i_path << "\" doesn't begin with '/'");
 
-    // Return the path component up to the next '/'.
+    // Find the path component up to the next '/'.
     string::size_type pos = i_path.find('/', 1);
 
+    // Are we at the end of the path?
     if (pos == string::npos)
+    {
+        // Yes, the "remainder" is empty.
         return make_pair(i_path.substr(1, pos), "");
+    }
     else
-        return make_pair(i_path.substr(1, pos - 1), i_path.substr(pos));
+    {
+        // Nope, there is more.
+
+        // Find the start of the next path component.
+        //
+        // We need to treat multiple consecutive slashes like
+        // a single slash.
+        //
+        string::size_type pos2 = i_path.find_first_not_of('/', pos);
+
+        // Are we at the end of the path now?
+        if (pos2 == string::npos)
+        {
+            // Yes, the "remainder" is empty.
+            return make_pair(i_path.substr(1, pos), "");
+        }
+        else
+        {
+            // Return the adjusted remainder.
+            return make_pair(i_path.substr(1, pos - 1),
+                             i_path.substr(pos2 - 1));
+        }
+    }
 }
 
 DirNode::DirNode(mode_t i_mode,
@@ -52,12 +80,12 @@ DirNode::DirNode(mode_t i_mode,
     nlink(2);
 }
 
-DirNode::DirNode(FileNode const & i_fn)
+DirNode::DirNode(Context & i_ctxt, FileNode const & i_fn)
     : FileNode(i_fn)
 {
     LOG(lgr, 4, "CTOR " << bn_blkref());
 
-    deserialize();
+    deserialize(i_ctxt);
 }
 
 DirNode::DirNode(Context & i_ctxt, BlockRef const & i_ref)
@@ -65,7 +93,7 @@ DirNode::DirNode(Context & i_ctxt, BlockRef const & i_ref)
 {
     LOG(lgr, 4, "CTOR " << i_ref);
 
-    deserialize();
+    deserialize(i_ctxt);
 }
 
 DirNode::~DirNode()
@@ -100,15 +128,27 @@ DirNode::bn_flush(Context & i_ctxt)
         }
     }
 
-    // Persist our directory map.
-    //
-    // BOGUS - We only utilize the inline data segment.  Need to do a
-    // block traversal here ...
-    //
-    ACE_OS::memset(bn_data(), '\0', bn_size());
-    bool rv = m_dir.SerializeToArray(bn_data(), bn_size());
-    if (!rv)
+    // Note the old size first.
+    size_t oldsz = size();
+
+    // Serialize the data to a stream.
+    ostringstream ostrm;
+    bool ok = m_dir.SerializeToOstream(&ostrm);
+    if (!ok)
         throwstream(InternalError, FILELINE << "dir serialization error");
+
+    size_t newsz = ostrm.str().size();
+
+    // Write the stream to the underlying file.
+    int rv = FileNode::write(i_ctxt, ostrm.str().data(), newsz, 0);
+    if (rv < 0)
+        throwstream(InternalError, FILELINE
+                    << "Trouble writing directory data: "
+                    << ACE_OS::strerror(-rv));
+
+    // Truncate the file size to the directory size.
+    if (newsz < oldsz)
+        FileNode::truncate(i_ctxt, ostrm.str().size());
 
     // Let the FileNode do all the rest of the work ...
     return FileNode::bn_flush(i_ctxt);
@@ -135,7 +175,7 @@ DirNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 
             // Is it really a directory?  Upgrade object ...
             if (S_ISDIR(nh->mode()))
-                nh = new DirNode(*nh);
+                nh = new DirNode(i_ctxt, *nh);
 
             // Is it really a symlink?  Upgrade object ...
             else if (S_ISLNK(nh->mode()))
@@ -449,7 +489,7 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
 
                 // Is it really a directory?  Upgrade object ...
                 if (S_ISDIR(nh->mode()))
-                    nh = new DirNode(*nh);
+                    nh = new DirNode(i_ctxt, *nh);
 
                 // Is it really a symlink?  Upgrade object ...
                 else if (S_ISLNK(nh->mode()))
@@ -485,18 +525,25 @@ DirNode::find_blkref(Context & i_ctxt, string const & i_entry)
 }
 
 void
-DirNode::deserialize()
+DirNode::deserialize(Context & i_ctxt)
 {
-    // NOTE - We use protobuf components individually here
-    // because ParseFromArray insists that the entire input
-    // stream be consumed.
-    //
-    ArrayInputStream input(bn_data(), bn_size());
-    CodedInputStream decoder(&input);
-    if (!m_dir.ParseFromCodedStream(&decoder))
+    // Allocate a buffer for the directory entries.
+    string buf(size(), '\0');
+
+    // Copy the data into the buffer.
+    int rv = FileNode::read(i_ctxt, &buf[0], buf.size(), 0);
+    if (rv < 0)
+        throwstream(InternalError, FILELINE
+                    << "Trouble reading directory data: "
+                    << ACE_OS::strerror(-rv));
+
+    // Parse the directory object.
+    int ok = m_dir.ParseFromString(buf);
+    if (!ok)
         throwstream(InternalError, FILELINE
                     << "dir deserialization failed");
 
+    // Log our entries if logging is verbose.
     LOG(lgr, 6, "deserialize");
     if (lgr.is_enabled(6))
     {

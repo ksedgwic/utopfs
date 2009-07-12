@@ -104,7 +104,8 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 
 void
 UTFileSystem::fs_umount()
-    throw (InternalError)
+    throw (InternalError,
+           NoSpaceError)
 {
     LOG(lgr, 4, "fs_umount ");
 
@@ -951,8 +952,17 @@ UTFileSystem::fs_refresh()
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    // Make sure all cached nodes are up-to-date in blockstore.
-    rootref(m_rdh->bn_flush(m_ctxt));
+    // Try and sync first.  If we are out of space we'll
+    // have to try and sync again afterwards.
+    try
+    {
+        if (m_rdh->bn_isdirty())
+            rootref(m_rdh->bn_flush(m_ctxt));
+    }
+    catch (NoSpaceError const & ex)
+    {
+        LOG(lgr, 1, "NoSpaceError encountered: " << ex.what());
+    }
     
     // Generate a random refresh id.
     uint64 rid;
@@ -965,12 +975,17 @@ UTFileSystem::fs_refresh()
 
     LOG(lgr, 6, "fs_refresh -> " << nb);
 
+    // If we failed to sync earlier try again here..
+    if (m_rdh->bn_isdirty())
+        rootref(m_rdh->bn_flush(m_ctxt));
+
     return nb;
 }
 
 void
 UTFileSystem::fs_sync()
-    throw (InternalError)
+    throw (InternalError,
+           NoSpaceError)
 {
     LOG(lgr, 6, "fs_sync");
 

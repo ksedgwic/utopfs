@@ -91,13 +91,10 @@ class Test_bs_size_03:
     assert bss.bss_size == smallsz
     assert bss.bss_free == smallsz - (10 * 10)
 
-    # But a different key should cause OperationError
+    # But a different key should cause NoSpaceError
     k = buffer("k13")
     v = buffer("0123456789")
-    # BOGUS - We're having trouble matching exceptions.
-    # Replace Exception w/ NotFoundError.
-    #
-    py.test.raises(Exception, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
 
     # Close the blockstore.
     self.bs.bs_close()

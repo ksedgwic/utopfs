@@ -33,6 +33,9 @@ PYTESTS =	\
 			test_fs_rename_02.py \
 			test_fs_link_01.py \
 			test_fs_statfs_01.py \
+			test_fs_nospace_01.py \
+			test_fs_bigdir_01.py \
+			test_fs_doubleslash_01.py \
 			$(NULL)
 
 SCRIPTS =	\

@@ -36,8 +36,8 @@ class Test_fs_statfs_01:
     stvfs = self.fs.fs_statfs()
     assert stvfs.f_bsize == BLKSZ
     assert stvfs.f_blocks == CONFIG.BSSIZE / BLKSZ
-    assert stvfs.f_bfree == CONFIG.BSSIZE / BLKSZ
-    assert stvfs.f_avail == CONFIG.BSSIZE / BLKSZ
+    assert stvfs.f_bfree == (CONFIG.BSSIZE / BLKSZ) - 3
+    assert stvfs.f_bavail == (CONFIG.BSSIZE / BLKSZ) - 3
 
     # Now we unmount the filesystem.
     self.fs.fs_umount()
@@ -52,8 +52,8 @@ class Test_fs_statfs_01:
     stvfs = self.fs.fs_statfs()
     assert stvfs.f_bsize == BLKSZ
     assert stvfs.f_blocks == CONFIG.BSSIZE / BLKSZ
-    assert stvfs.f_bfree == (CONFIG.BSSIZE / BLKSZ) - 2
-    assert stvfs.f_avail == (CONFIG.BSSIZE / BLKSZ) - 2
+    assert stvfs.f_bfree == (CONFIG.BSSIZE / BLKSZ) - 3
+    assert stvfs.f_bavail == (CONFIG.BSSIZE / BLKSZ) - 3
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
     self.bs = None
