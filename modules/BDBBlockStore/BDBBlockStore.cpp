@@ -98,7 +98,7 @@ BDBBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, "bs_close");    
-	if (! m_db_opened) {		
+	if (m_db_opened) {		
 		try {
 			m_db->close(0);
 			delete(m_db);
