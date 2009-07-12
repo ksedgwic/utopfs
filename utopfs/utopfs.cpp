@@ -732,6 +732,7 @@ main(int argc, char ** argv)
     utopfs.logpath = "utopfs.log";
     utopfs.loglevel = -1;
     utopfs.size = 0;
+    utopfs.syncsecs = 10.0;
 
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 

@@ -85,7 +85,7 @@ DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
         off_t off = i_base + (ndx * refspan);
 
         // If we are beyond the traversal region we're done.
-        if (off > i_rngoff + off_t(i_rngsize))
+        if (off >= i_rngoff + off_t(i_rngsize))
             goto done;
 
         // Find the block object to use.

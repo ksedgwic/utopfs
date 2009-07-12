@@ -291,7 +291,7 @@ FileNode::rb_traverse(Context & i_ctxt,
         for (unsigned i = 0; i < NDIRECT; ++i)
         {
             // If we are beyond the traversal region we're done.
-            if (off > i_rngoff + off_t(i_rngsize))
+            if (off >= i_rngoff + off_t(i_rngsize))
                 goto done;
 
             // Does the range intersect this block?
@@ -343,6 +343,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                                     off,
                                     size()))
                 {
+                    dbh->bn_isdirty(true);
                     bn_isdirty(true);
                 }
             }
@@ -586,6 +587,8 @@ FileNode::rb_truncate(Context & i_ctxt,
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);
+
+                // Seems we could just set the dirty flag instead?
                 m_dirref[ndx] = dbh->bn_persist(i_ctxt);
 
                 bn_isdirty(true);

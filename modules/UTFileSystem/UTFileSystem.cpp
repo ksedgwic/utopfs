@@ -766,7 +766,6 @@ UTFileSystem::fs_write(string const & i_path,
         WriteTraverseFunc wtf(i_data, i_size, i_off);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, wtf);
-        rootref(m_rdh->bn_blkref());
         LOG(lgr, 6, "fs_write " << i_path << " -> " << wtf.nt_retval());
         return wtf.nt_retval();
     }
