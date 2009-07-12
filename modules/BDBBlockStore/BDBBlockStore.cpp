@@ -3,6 +3,8 @@
 
 #include <db_cxx.h>
 
+#include "Scoped.h"
+
 #include "Log.h"
 
 #include "BDBBlockStore.h"
@@ -14,6 +16,24 @@ using namespace std;
 using namespace utp;
 
 namespace BDBBS {
+
+//for the scoped db objects
+void dbe_delete(DbEnv * dbp) {
+	delete dbp;
+}
+
+void db_delete(Db * dbp) {
+	delete dbp;
+}
+
+void dbe_close(DbEnv * dbp) {
+	dbp->close(0);
+	delete dbp;
+}
+void db_close(Db * dbp) {
+	dbp->close(0);
+	delete dbp;
+}
 
 BDBBlockStore::BDBBlockStore()
 {	
@@ -78,29 +98,21 @@ BDBBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, "bs_close");    
-	if (! m_db_opened) {
-		throwstream(InternalError, FILELINE
-        	<< "BDBBlockStore::bs_close cannot close since block store not open.");
-	}
-	
-	try {
-		db->sync(0);
-		db->close(0);
-
-		db_refresh_ids->sync(0);
-		db_refresh_ids->close(0);
-
-		db_refresh_entries->sync(0);
-		db_refresh_entries->close(0);
-
-		dbe->close(0);	
-	} catch (DbException e) {
-		throwstream(InternalError, FILELINE
-        	<< "BDBBlockStore::bs_close cannot close; error "
-			<< ACE_OS::strerror(errno));
-	}
-
-	
+	if (! m_db_opened) {		
+		try {
+			m_db->close(0);
+			delete(m_db);
+			m_db_refresh_ids->close(0);
+			delete(m_db_refresh_ids);
+			m_db_refresh_entries->close(0);
+			delete(m_db_refresh_entries);
+			m_dbe->close(0);	
+			delete(m_dbe);
+		} catch (DbException e) {
+			LOG(lgr, 1, FILELINE << "BDBBlockStore error on close" 
+								 << ": error: " << ACE_OS::strerror(errno));
+		}
+	}	
 	m_db_opened = false;
 }
 
@@ -123,6 +135,10 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
           
 {
     LOG(lgr, 6, "bs_get_block");
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}
         
     Dbt key((void *)i_keydata,i_keysize);
     Dbt data;    
@@ -130,12 +146,14 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
     data.set_ulen(i_outsize);
     data.set_flags(DB_DBT_USERMEM);
     
-    
-    int result = db->get(NULL,&key,&data,0);
-    if (result != 0) {
-        throwstream(InternalError, FILELINE
+	
+    int result = m_db->get(NULL,&key,&data,0);
+    if (result == DB_NOTFOUND) {
+        throwstream(NotFoundError, FILELINE);
+    } else if (result != 0) {
+        throwstream(NotFoundError, FILELINE
                 << "BDBBlockStore::bs_get_block: " << result << db_strerror(result));
-    }
+	}	
     
     return data.get_size();    
 }
@@ -150,15 +168,19 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
           NoSpaceError)
 {
     LOG(lgr, 6, "bs_put_block");
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}
     
     Dbt key((void *)i_keydata,i_keysize);
     Dbt data((void *)i_blkdata,i_blksize);
     
     //delete key if it exists--necessary for root-node persistence
-    if (db->exists(NULL,&key,0) == 0) {
-    	db->del(NULL,&key,0); 
+    if (m_db->exists(NULL,&key,0) == 0) {
+    	m_db->del(NULL,&key,0); 
     }    
-    int results = db->put(NULL,&key,&data,DB_NOOVERWRITE);
+    int results = m_db->put(NULL,&key,&data,DB_NOOVERWRITE);
     if (results != 0) {
     	throwstream(InternalError, FILELINE
                 << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
@@ -170,12 +192,15 @@ BDBBlockStore::bs_refresh_start(uint64 i_rid)
     throw(InternalError,
           NotUniqueError)
 {
-	
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}	
     Dbt key((void *)i_rid,sizeof(i_rid));
 	//data should be date
     Dbt data((void *)i_rid,sizeof(i_rid));
 
-	int result = db_refresh_ids->get(NULL,&key,&data,0);
+	int result = m_db_refresh_ids->get(NULL,&key,&data,0);
 	if (result == 0) { //found
 		throwstream(NotUniqueError,
                     "refresh id " << i_rid << " already exists");
@@ -184,7 +209,7 @@ BDBBlockStore::bs_refresh_start(uint64 i_rid)
                 << "BDBBlockStore::bs_refresh_start: " << result << db_strerror(result));
     }
 
-	int results = db_refresh_ids->put(NULL,&key,&data,DB_NOOVERWRITE);
+	int results = m_db_refresh_ids->put(NULL,&key,&data,DB_NOOVERWRITE);
     if (results != 0) {
     	throwstream(InternalError, FILELINE
                 << "BDBBlockStore::bs_refresh_start returned error " << results << db_strerror(results));
@@ -199,6 +224,10 @@ BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
     throw(InternalError,
           NotFoundError)
 {
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}
     throwstream(InternalError, FILELINE << "Feature not implemented"); 
     o_missing.clear();
 
@@ -229,6 +258,10 @@ BDBBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,
           NotFoundError)
 {
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}
    // throwstream(InternalError, FILELINE
    //	            << "BDBBlockStore::bs_refresh_finish unimplemented");
 }
@@ -238,13 +271,13 @@ BDBBlockStore::bs_sync()
     throw(InternalError)
 {
 	if (! m_db_opened) {
-    	throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_sync cannot sync an a database that is not opened");
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
 	}
 
-	db->sync(0);
-	db_refresh_ids->sync(0);
-	db_refresh_entries->sync(0);
+	m_db->sync(0);
+	m_db_refresh_ids->sync(0);
+	m_db_refresh_entries->sync(0);
 }
 
 string 
@@ -264,48 +297,67 @@ BDBBlockStore::open_dbs(u_int32_t create_flag = 0)
 	//Open the bdb environment for transactions
 	u_int32_t flags = DB_INIT_TXN | DB_INIT_LOCK | DB_INIT_MPOOL | DB_INIT_LOG | create_flag;
 
- 
+
+	Scoped<DbEnv *> dbe(NULL,dbe_delete);
+	Scoped<Db *> db(NULL,db_delete);
+	Scoped<Db *> db_refresh_ids(NULL,db_delete);
+	Scoped<Db *> db_refresh_entries(NULL,db_delete);
+	
+	Scoped<DbEnv *> odbe(NULL,dbe_close);
+	Scoped<Db *> odb(NULL,db_close);
+	Scoped<Db *> odb_refresh_ids(NULL,db_close);
+	Scoped<Db *> odb_refresh_entries(NULL,db_close);
+
 	std::string db_path;
 
 	try {
 		dbe = new DbEnv(0);
 		dbe->open(m_rootpath.c_str(),flags ,0);
+		odbe = dbe.take();
+
 		db = new Db(dbe,0);
 		db_refresh_ids = new Db(dbe,0);
 		db_refresh_entries = new Db(dbe,0);
 		
 		db_path = "main.db";
-		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT | create_flag,0);		
+		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,create_flag,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
                 << "Cannot open  bdb block store at '" << m_rootpath << "/" << db_path
                 << ": error: " << result << db_strerror(result));		 
         }
-		
+		odb = db.take();
+
 		//open other dbs too
 		db_path = "refresh.db";
-		result = db_refresh_ids->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT | create_flag,0);		
+		result = db_refresh_ids->open(NULL,db_path.c_str(),NULL, DB_BTREE, create_flag,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
                 << "Cannot open  bdb block store at '" << m_rootpath << "/" << db_path
                 << ": error: " << result << db_strerror(result));		 
         }
+		odb_refresh_ids = db_refresh_ids.take();
 
 		//open other dbs too
 		db_path = "refresh_entries.db";
-		result = db_refresh_entries->open(NULL,db_path.c_str(),NULL, DB_BTREE,DB_AUTO_COMMIT | create_flag,0);		
+		result = db_refresh_entries->open(NULL,db_path.c_str(),NULL, DB_BTREE,create_flag,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
                 << "Cannot open  bdb block store at '" << m_rootpath << "/" << db_path
                 << ": error: " << result << db_strerror(result));		 
         }
-        
+        odb_refresh_entries = db_refresh_entries.take();
 	} catch (DbException e) {	
 		throwstream(InternalError, FILELINE
                 << "Cannot open bdb block store at '" << m_rootpath << "/" << db_path
                 << ": error: " << ACE_OS::strerror(errno)); 
 	}   
-	m_db_opened = true;                     
+
+	m_dbe = odbe.take();
+	m_db = odb.take();
+	m_db_refresh_ids = odb_refresh_ids.take();
+	m_db_refresh_entries = odb_refresh_entries.take();	
+	m_db_opened = true;                
 }
 } // namespace BDBBS
 

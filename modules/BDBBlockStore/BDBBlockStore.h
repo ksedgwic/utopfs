@@ -10,6 +10,8 @@
 #include "BlockStore.h"
 #include "bdbbsexp.h"
 
+
+
 class Db;
 class DbEnv;
 
@@ -75,10 +77,10 @@ public:
 protected:
 
 	bool m_db_opened;
-	DbEnv *dbe;
-	Db *db;
-	Db *db_refresh_ids; //refresh_id (unique,btree) => timestamp
-	Db *db_refresh_entries; //refresh_id (non-unique, btree)=> key
+	DbEnv *m_dbe;
+	Db *m_db;
+	Db *m_db_refresh_ids; 	//refresh_id (unique,btree) => timestamp
+	Db *m_db_refresh_entries; //refresh_id (non-unique, btree)=> key
 
     std::string m_rootpath;
     
