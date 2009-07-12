@@ -18,7 +18,8 @@ class Controller : public ACE_Event_Handler
 public:
     Controller(utp::BlockStoreHandle const & i_bsh,
                utp::FileSystemHandle const & i_fsh,
-               std::string const & i_controlpath);
+               std::string const & i_controlpath,
+               double i_syncsecs);
 
     virtual ~Controller();
 
@@ -45,6 +46,7 @@ private:
     utp::BlockStoreHandle	m_bsh;
     utp::FileSystemHandle	m_fsh;
     std::string				m_controlpath;
+    double					m_syncsecs;
     ACE_Reactor *			m_reactor;
     ACE_LSOCK_Acceptor		m_acceptor;
     

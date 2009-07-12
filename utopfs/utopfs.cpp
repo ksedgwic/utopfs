@@ -140,6 +140,7 @@ struct utopfs
     string path;
     string fsid;
     string passphrase;
+    double syncsecs;
     uint64_t size;
     string mntpath;
     BlockStoreHandle bsh;
@@ -289,7 +290,10 @@ utopfs_init(struct fuse_conn_info * i_conn)
 
         // Start the controller.
         string controlpath = utopfs.mntpath + "/.utopfs/control";
-        utopfs.control = new Controller(utopfs.bsh, utopfs.fsh, controlpath);
+        utopfs.control = new Controller(utopfs.bsh,
+                                        utopfs.fsh,
+                                        controlpath,
+                                        utopfs.syncsecs);
         utopfs.control->init();
     }
     catch (utp::Exception const & ex)
@@ -597,6 +601,7 @@ enum {
     KEY_PASSPHRASE,
 	KEY_HELP,
 	KEY_VERSION,
+	KEY_SYNCSECS,
 	KEY_FOREGROUND,
 	KEY_CONFIGFILE,
 };
@@ -612,6 +617,8 @@ static struct fuse_opt utopfs_opts[] = {
 	FUSE_OPT_KEY("-P ",            KEY_PASSPHRASE),
 	FUSE_OPT_KEY("-V",             KEY_VERSION),
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
+	FUSE_OPT_KEY("-S ",            KEY_SYNCSECS),
+	FUSE_OPT_KEY("--syncsecs ",    KEY_SYNCSECS),
 	FUSE_OPT_KEY("-h",             KEY_HELP),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
 	FUSE_OPT_KEY("debug",          KEY_FOREGROUND),
@@ -675,6 +682,10 @@ static int utopfs_opt_proc(void * data,
 
     case KEY_PASSPHRASE:
         utopfs.passphrase = &arg[2];
+        return 0;
+
+    case KEY_SYNCSECS:
+        utopfs.syncsecs = atof(&arg[2]);
         return 0;
 
 	case FUSE_OPT_KEY_OPT:
