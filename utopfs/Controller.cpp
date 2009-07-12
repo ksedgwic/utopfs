@@ -17,11 +17,13 @@ using namespace utp;
 
 Controller::Controller(BlockStoreHandle const & i_bsh,
                        FileSystemHandle const & i_fsh,
-                       string const & i_controlpath)
+                       string const & i_controlpath,
+                       double i_syncsecs)
     : m_opened(false)
     , m_bsh(i_bsh)
     , m_fsh(i_fsh)
     , m_controlpath(i_controlpath)
+    , m_syncsecs(i_syncsecs)
     , m_reactor(ACE_Reactor::instance())
 {
     LOG(lgr, 4, "CTOR");
@@ -94,7 +96,7 @@ Controller::handle_timeout(ACE_Time_Value const & current_time,
 void
 Controller::init()
 {
-    LOG(lgr, 4, "init");
+    LOG(lgr, 4, "init, syncing every " << m_syncsecs << " seconds");
 
     // Schedule a timeout to get the socket open on a different thread.
     //
@@ -102,10 +104,10 @@ Controller::init()
     // Surely there is a better way?  Can we trap some other FUSE
     // event and init then?
     //
-    m_reactor->schedule_timer(this,
-                              NULL,
-                              ACE_Time_Value(2, 0),
-                              ACE_Time_Value(10, 0));
+    ACE_Time_Value initdelay(2, 0);
+    ACE_Time_Value period;
+    period.set(m_syncsecs);
+    m_reactor->schedule_timer(this, NULL, initdelay, period);
 }
 
 void
