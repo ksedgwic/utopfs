@@ -52,7 +52,7 @@ class Test_bs_refresh_01:
     missing = self.bs.bs_refresh_blocks(42, keys)
     self.bs.bs_refresh_finish(42)
 
-    assert `len'(missing) == 0
+    assert len(missing) == 0
 
   def test_refresh_missing(self):
 
@@ -67,5 +67,5 @@ class Test_bs_refresh_01:
     self.bs.bs_refresh_start(714)
     missing = self.bs.bs_refresh_blocks(714, keys)
     self.bs.bs_refresh_finish(714)
-    assert `len'(missing) == 1
+    assert len(missing) == 1
     assert missing[0] == buffer('key4')

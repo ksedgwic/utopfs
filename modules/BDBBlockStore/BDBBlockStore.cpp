@@ -170,8 +170,26 @@ BDBBlockStore::bs_refresh_start(uint64 i_rid)
     throw(InternalError,
           NotUniqueError)
 {
-    throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_refresh_start unimplemented");
+	
+    Dbt key((void *)i_rid,sizeof(i_rid));
+	//data should be date
+    Dbt data((void *)i_rid,sizeof(i_rid));
+
+	int result = db_refresh_ids->get(NULL,&key,&data,0);
+	if (result == 0) { //found
+		throwstream(NotUniqueError,
+                    "refresh id " << i_rid << " already exists");
+	}else if (result != DB_NOTFOUND) {
+        throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_refresh_start: " << result << db_strerror(result));
+    }
+
+	int results = db_refresh_ids->put(NULL,&key,&data,DB_NOOVERWRITE);
+    if (results != 0) {
+    	throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_refresh_start returned error " << results << db_strerror(results));
+    }
+	
 }
 
 void
@@ -211,8 +229,8 @@ BDBBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,
           NotFoundError)
 {
-    throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_refresh_finish unimplemented");
+   // throwstream(InternalError, FILELINE
+   //	            << "BDBBlockStore::bs_refresh_finish unimplemented");
 }
 
 void
