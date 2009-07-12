@@ -6,6 +6,7 @@ include $(ROOTDIR)/config/define.mk
 
 TSTSRC += 	\
 			blockcipher.cpp \
+			scoped.cpp \
 			streamcipher.cpp \
 			$(NULL)
 

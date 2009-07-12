@@ -5,7 +5,6 @@
 #include <ace/OS_NS_stdio.h>
 
 #include "Base32.h"
-#include "Scoped.h"
 #include "Random.h"
 #include "BlockCipher.h"
 
