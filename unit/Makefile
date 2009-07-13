@@ -29,6 +29,7 @@ PYTESTS =	\
 			test_fs_symlink_02.py \
 			test_fs_truncate_01.py \
 			test_fs_truncate_02.py \
+			test_fs_truncate_03.py \
 			test_fs_rename_01.py \
 			test_fs_rename_02.py \
 			test_fs_link_01.py \

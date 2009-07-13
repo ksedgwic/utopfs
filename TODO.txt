@@ -6,6 +6,8 @@ work OK?
 
 # ----------------
 
+Appends to nohup.out don't seem to bump the mtime.
+
 Need to make everything work on a 32 bit machine.
 
 Memory footprint issues; what happens when we run on a machine with
