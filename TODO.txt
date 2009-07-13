@@ -1,3 +1,8 @@
+Debug next SEGV
+
+    ulimit -c unlimited
+    /var/tmp/core > /proc/sys/kernel/core_pattern
+
 Write a test to make sure it is OK to "truncate" a file to a larger
 size then it already is.
 
