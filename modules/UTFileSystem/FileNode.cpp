@@ -583,7 +583,7 @@ FileNode::rb_truncate(Context & i_ctxt,
                 ++nblocks;
 
                 // Zero the data after the truncation.
-                off_t off0 = i_size - (off + (ndx * BLKSZ));
+                off_t off0 = i_size - off;
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);

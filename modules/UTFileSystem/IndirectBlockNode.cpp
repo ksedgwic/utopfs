@@ -242,7 +242,10 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);
+
+                // Seems we could just set the dirty flag instead?
                 dbh->bn_persist(i_ctxt);
+
                 m_blkref[ndx] = dbh->bn_blkref();
 
                 bn_isdirty(true);

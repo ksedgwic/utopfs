@@ -61,6 +61,15 @@ class Test_fs_truncate_03:
     nbytes = st.st_size
     assert nbytes == newsz
 
+    # Now truncate to down to 156992
+    newsz = 156992
+    self.fs.fs_truncate(path, newsz)
+
+    # Make sure the size is OK
+    st = self.fs.fs_getattr(path)
+    nbytes = st.st_size
+    assert nbytes == newsz
+
     # ---------------- remount ----------------
 
     # Now we unmount the filesystem.
