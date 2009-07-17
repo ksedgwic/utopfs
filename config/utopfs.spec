@@ -11,7 +11,7 @@
 
 Summary: utopfs filesystem
 Name: utopfs
-Version: 0.2
+Version: 0.3.devel
 Release: 1%{?dist}
 License: Something
 Group: System Environment/Base
