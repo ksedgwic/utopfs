@@ -132,13 +132,36 @@ public:
     /// @throw ValueError One of the arguments is out of range.
     /// @throw NoSpaceError Out of space to store block.
     ///
-    virtual void bs_put_block(void const * i_keydata,
-                              size_t i_keysize,
-                              void const * i_blkdata,
-                              size_t i_blksize)
+    void bs_put_block(void const * i_keydata,
+                      size_t i_keysize,
+                      void const * i_blkdata,
+                      size_t i_blksize)
         throw(InternalError,
               ValueError,
-              NoSpaceError) = 0;
+              NoSpaceError);
+
+    /// Completion function interface for non-blocking put.
+    ///
+    class BlockPutCompletion
+    {
+    public:
+        virtual void bp_complete(void const * i_keydata,
+                                 size_t i_keysize) = 0;
+
+        virtual void bp_error(void const * i_keydata,
+                              size_t i_keysize,
+                              Exception const & i_exp) = 0;
+    };
+
+    /// Put block via non-blocking interface.
+    ///
+    virtual void bs_put_block_async(void const * i_keydata,
+                                    size_t i_keysize,
+                                    void const * i_blkdata,
+                                    size_t i_blksize,
+                                    BlockPutCompletion & i_cmpl)
+        throw(InternalError,
+              ValueError) = 0;
 
     /// Start a refresh cycle.
     ///

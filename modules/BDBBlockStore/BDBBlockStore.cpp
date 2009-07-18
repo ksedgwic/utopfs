@@ -200,6 +200,7 @@ BDBBlockStore::bs_get_block_async(void const * i_keydata,
     }
 }
 
+#if 0
 void
 BDBBlockStore::bs_put_block(void const * i_keydata,
                            size_t i_keysize,
@@ -227,6 +228,45 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
     	throwstream(InternalError, FILELINE
                 << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
     }      
+}
+#endif
+
+void
+BDBBlockStore::bs_put_block_async(void const * i_keydata,
+                                  size_t i_keysize,
+                                  void const * i_blkdata,
+                                  size_t i_blksize,
+                                  BlockPutCompletion & i_cmpl)
+    throw(InternalError,
+          ValueError)
+{
+    try
+    {
+        LOG(lgr, 6, "bs_put_block");
+        if (! m_db_opened) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore db not opened!");
+        }
+    
+        Dbt key((void *)i_keydata,i_keysize);
+        Dbt data((void *)i_blkdata,i_blksize);
+    
+        //delete key if it exists--necessary for root-node persistence
+        if (m_db->exists(NULL,&key,0) == 0) {
+            m_db->del(NULL,&key,0); 
+        }    
+        int results = m_db->put(NULL,&key,&data,DB_NOOVERWRITE);
+        if (results != 0) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
+        }      
+
+        i_cmpl.bp_complete(i_keydata, i_keysize);
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bp_error(i_keydata, i_keysize, ex);
+    }
 }
 
 void
