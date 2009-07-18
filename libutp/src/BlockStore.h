@@ -70,7 +70,11 @@ public:
     virtual void bs_stat(Stat & o_stat)
         throw(InternalError) = 0;
 
-    /// Get a block.
+
+    /// Get a block via blocking interface.
+    ///
+    /// @note This interface is a wrapper on the nonblocking
+    ///       interface.
     ///
     /// @param[in] i_keydata Pointer to the key data.
     /// @param[in] i_keysize Size of the key data.
@@ -83,15 +87,39 @@ public:
     ///
     /// @return The size of the returned block.
     ///
-    virtual size_t bs_get_block(void const * i_keydata,
-                                size_t i_keysize,
-                                void * o_outbuff,
-                                size_t i_outsize)
+    size_t bs_get_block(void const * i_keydata,
+                        size_t i_keysize,
+                        void * o_outbuff,
+                        size_t i_outsize)
         throw(InternalError,
               NotFoundError,
+              ValueError);
+
+    /// Completion function interface for non-blocking get.
+    ///
+    class BlockGetCompletion
+    {
+    public:
+        virtual void bg_complete(void const * i_keydata,
+                                 size_t i_keysize,
+                                 void const * i_blkdata,
+                                 size_t i_blksize) = 0;
+
+        virtual void bg_error(void const * i_keydata,
+                              size_t i_keysize,
+                              Exception const & i_exp) = 0;
+    };
+
+    /// Get blocks via non-blocking interface.
+    ///
+    virtual void bs_get_blocks_async(KeySeq const & i_keys,
+                                     BlockGetCompletion & i_cmpl)
+        throw(InternalError,
               ValueError) = 0;
 
-    /// Put a block, replaces existing.
+    /// Put a block via blocking interface.
+    ///
+    /// The inserted block replaces existing.
     ///
     /// @param[in] i_keydata Pointer to the key data.
     /// @param[in] i_keysize Size of the key data.

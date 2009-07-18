@@ -124,6 +124,7 @@ BDBBlockStore::bs_stat(Stat & o_stat)
                 << "BDBBlockStore::bs_stat unimplemented");
 }
 
+#if 0
 size_t
 BDBBlockStore::bs_get_block(void const * i_keydata,
                            size_t i_keysize,
@@ -156,6 +157,17 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
 	}	
     
     return data.get_size();    
+}
+#endif
+
+void
+BDBBlockStore::bs_get_blocks_async(KeySeq const & i_keys,
+                                   BlockGetCompletion & i_cmpl)
+    throw(InternalError,
+          ValueError)
+{
+    throwstream(InternalError, FILELINE
+                << "BDBBlockStore::bs_get_blocks_async unimplemented");
 }
 
 void

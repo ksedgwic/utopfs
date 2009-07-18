@@ -40,12 +40,19 @@ public:
     virtual void bs_stat(Stat & o_stat)
         throw(utp::InternalError);
 
+#if 0
     virtual size_t bs_get_block(void const * i_keydata,
                                 size_t i_keysize,
                                 void * o_outbuff,
                                 size_t i_outsize)
         throw(utp::InternalError,
               utp::NotFoundError,
+              utp::ValueError);
+#endif
+
+    virtual void bs_get_blocks_async(KeySeq const & i_keys,
+                                     BlockGetCompletion & i_cmpl)
+        throw(utp::InternalError,
               utp::ValueError);
 
     virtual void bs_put_block(void const * i_keydata,

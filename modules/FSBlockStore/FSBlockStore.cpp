@@ -204,6 +204,7 @@ FSBlockStore::bs_stat(Stat & o_stat)
     o_stat.bss_free = m_size - m_committed;
 }
 
+#if 0
 size_t
 FSBlockStore::bs_get_block(void const * i_keydata,
                            size_t i_keysize,
@@ -259,6 +260,70 @@ FSBlockStore::bs_get_block(void const * i_keydata,
     }
 
     return bytes_read;
+}
+#endif
+
+void
+FSBlockStore::bs_get_blocks_async(KeySeq const & i_keys,
+                                  BlockGetCompletion & i_cmpl)
+    throw(InternalError,
+          ValueError)
+{
+    for (unsigned i = 0; i < i_keys.size(); ++i)
+    {
+        void const * keydata = &i_keys[i][0];
+        size_t keysize = i_keys[i].size();
+
+        try
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+            string entry = entryname(keydata, keysize);
+            string blkpath = blockpath(entry);
+
+            ACE_stat statbuff;
+
+            int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
+            if (rv == -1)
+            {
+                if (errno == ENOENT)
+                    throwstream(NotFoundError,
+                                Base32::encode(keydata, keysize)
+                                << ": not found");
+                else
+                    throwstream(InternalError, FILELINE
+                                << "FSBlockStore::bs_get_block: "
+                                << Base32::encode(keydata, keysize)
+                                << ": error: " << ACE_OS::strerror(errno));
+            }
+
+            OctetSeq buffer(statbuff.st_size);
+
+            int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
+            int bytes_read = read(fd, &buffer[0], buffer.size());
+            close(fd);
+
+            if (bytes_read == -1) {
+                throwstream(InternalError, FILELINE
+                            << "FSBlockStore::bs_get_block: read failed: "
+                            << strerror(errno));
+            }
+
+        
+            if (bytes_read != statbuff.st_size) {
+                throwstream(InternalError, FILELINE
+                            << "FSBlockStore::expected to get "
+                            << statbuff.st_size
+                            << " bytes, but got " << bytes_read << " bytes");
+            }
+
+            i_cmpl.bg_complete(keydata, keysize, &buffer[0], buffer.size());
+        }
+        catch (Exception const & ex)
+        {
+            i_cmpl.bg_error(keydata, keysize, ex);
+        }
+    }
 }
 
 void

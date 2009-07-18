@@ -9,6 +9,8 @@
 #include <sstream>
 #include <string>
 
+#include <ace/OS_NS_string.h>
+
 #include "utpexp.h"
 
 namespace utp {
@@ -29,13 +31,23 @@ public:
         T_NOSPACE,
     };
 
-    virtual const char * what() const throw();
+    Exception(Exception const & i_ex)
+        : m_buffer(i_ex.m_buffer)
+        , m_details(i_ex.m_details)
+        , m_btsize(i_ex.m_btsize)
+    {
+        ACE_OS::memcpy(m_btdata, i_ex.m_btdata, NFRAMES * sizeof(void *));
+    }
 
     virtual ~Exception() throw() {}
+
+    virtual const char * what() const throw();
 
     virtual const char * details() const throw() { return m_details.c_str(); }
 
     virtual Type type() const { return T_BASE; }
+
+    virtual Exception * clone() const { return new Exception(*this); }
 
 protected:
     Exception(std::string const & i_base,
@@ -55,73 +67,73 @@ protected:
 class UTP_EXC_EXP InternalError : public Exception
 {
 public:
-    InternalError(std::string const & i_details)
-        : Exception("InternalError", i_details) {}
-
-    virtual Type type() const { return T_INTERNAL; }
+    InternalError(std::string const & i_details);
+    InternalError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 class UTP_EXC_EXP OperationError : public Exception
 {
 public:
-    OperationError(std::string const & i_details)
-        : Exception("OperationError", i_details) {}
-
-    virtual Type type() const { return T_OPERATION; }
+    OperationError(std::string const & i_details);
+    OperationError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 class UTP_EXC_EXP NotFoundError : public Exception
 {
 public:
-    NotFoundError(std::string const & i_details)
-        : Exception("NotFoundError", i_details) {}
-
-    virtual Type type() const { return T_NOTFOUND; }
+    NotFoundError(std::string const & i_details);
+    NotFoundError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 class UTP_EXC_EXP NotUniqueError : public Exception
 {
 public:
-    NotUniqueError(std::string const & i_details)
-        : Exception("NotUniqueError", i_details) {}
-
-    virtual Type type() const { return T_NOTUNIQUE; }
+    NotUniqueError(std::string const & i_details);
+    NotUniqueError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 class UTP_EXC_EXP ValueError : public Exception
 {
 public:
-    ValueError(std::string const & i_details)
-        : Exception("ValueError", i_details) {}
-
-    virtual Type type() const { return T_VALUE; }
+    ValueError(std::string const & i_details);
+    ValueError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 class UTP_EXC_EXP ParseError : public Exception
 {
 public:
-    ParseError(std::string const & i_details)
-        : Exception("ParseError", i_details) {}
-
-    virtual Type type() const { return T_PARSE; }
+    ParseError(std::string const & i_details);
+    ParseError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 class UTP_EXC_EXP VerificationError : public Exception
 {
 public:
-    VerificationError(std::string const & i_details)
-        : Exception("VerificationError", i_details) {}
-
-    virtual Type type() const { return T_VERIFICATION; }
+    VerificationError(std::string const & i_details);
+    VerificationError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 class UTP_EXC_EXP NoSpaceError : public Exception
 {
 public:
-    NoSpaceError(std::string const & i_details)
-        : Exception("NoSpaceError", i_details) {}
-
-    virtual Type type() const { return T_NOSPACE; }
+    NoSpaceError(std::string const & i_details);
+    NoSpaceError(Exception const & i_ex);
+    virtual Type type() const;
+    virtual Exception * clone() const;
 };
 
 // The throwstream macro assembles the string argument to the

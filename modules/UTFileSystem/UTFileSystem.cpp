@@ -95,7 +95,7 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
     {
         m_rdh = new RootDirNode(m_ctxt, rootref());
     }
-    catch (NotFoundError const & ex)
+    catch (utp::NotFoundError const & ex)
     {
         // Root directory not found.
         throwstream(NotFoundError, "filesystem root block not found");
