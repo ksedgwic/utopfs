@@ -564,6 +564,7 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
     touch_entry(rname, mtime, size);
 }
 
+#if 0
 void
 FSBlockStore::bs_refresh_blocks(uint64 i_rid,
                                 KeySeq const & i_keys,
@@ -623,7 +624,72 @@ FSBlockStore::bs_refresh_blocks(uint64 i_rid,
         touch_entry(entry, mtime, size);
     }
 }
+#endif
 
+void
+FSBlockStore::bs_refresh_block_async(uint64 i_rid,
+                                     void const * i_keydata,
+                                     size_t i_keysize,
+                                     BlockRefreshCompletion & i_cmpl)
+    throw(InternalError,
+          NotFoundError)
+{
+    string rname = ridname(i_rid);
+    string rpath = blockpath(rname);
+
+    string entry = entryname(i_keydata, i_keysize);
+    string blkpath = blockpath(entry);
+
+    bool ismissing = false;
+
+    LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
+
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+        // Does the refresh ID exist?
+        ACE_stat sb;
+        int rv = ACE_OS::stat(rpath.c_str(), &sb);
+        if (rv != 0 || !S_ISREG(sb.st_mode))
+            throwstream(NotFoundError,
+                        "refresh id " << i_rid << " not found");
+
+        // If the block doesn't exist add it to the missing list.
+        rv = ACE_OS::stat(blkpath.c_str(), &sb);
+        if (rv != 0 || !S_ISREG(sb.st_mode))
+        {
+            ismissing = true;
+        }
+        else
+        {
+            // Touch the block.
+            rv = utimes(blkpath.c_str(), NULL);
+            if (rv != 0)
+                throwstream(InternalError, FILELINE
+                            << "trouble touching \"" << blkpath
+                            << "\": " << ACE_OS::strerror(errno));
+
+            // Stat the file we just wrote so we can use the exact tstamp
+            // and size the filesystem sees.
+            rv = ACE_OS::stat(blkpath.c_str(), &sb);
+            if (rv == -1)
+                throwstream(InternalError, FILELINE
+                            << "stat " << blkpath << " failed: "
+                            << ACE_OS::strerror(errno));
+            time_t mtime = sb.st_mtime;
+            off_t size = sb.st_size;
+
+            // Update the entries.
+            touch_entry(entry, mtime, size);
+        }
+    }
+
+    if (ismissing)
+        i_cmpl.br_missing(i_keydata, i_keysize);
+    else
+        i_cmpl.br_complete(i_keydata, i_keysize);
+}
+        
 void
 FSBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,

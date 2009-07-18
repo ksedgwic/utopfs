@@ -8,30 +8,57 @@ using namespace utp;
 
 namespace {
 
-class GetCompletion : public BlockStore::BlockGetCompletion
+class BlockingCompletion
 {
 public:
-    GetCompletion()
+    BlockingCompletion()
         : m_except(NULL)
-        , m_sbgccond(m_sbgcmutex)
+        , m_bccond(m_bcmutex)
         , m_complete(false)
     {}
 
-    ~GetCompletion()
+    ~BlockingCompletion()
     {
         if (m_except)
             delete m_except;
     }
 
+    void done()
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+        m_complete = true;
+        m_bccond.broadcast();
+    }
+        
+    void wait()
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+        while (!m_complete)
+            m_bccond.wait();
+    }
+
+    bool is_error() { return m_except != NULL; }
+
+    void rethrow() { m_except->rethrow(); }
+
+protected:
+    Exception *					m_except;
+    ACE_Thread_Mutex			m_bcmutex;
+    ACE_Condition_Thread_Mutex	m_bccond;
+    bool						m_complete;
+};
+
+class GetCompletion
+    : public BlockStore::BlockGetCompletion
+    , public BlockingCompletion
+{
+public:
     virtual void bg_complete(void const * i_keydata,
                              size_t i_keysize,
                              size_t i_blksize)
     {
         m_size = i_blksize;
-
-        ACE_Guard<ACE_Thread_Mutex> guard(m_sbgcmutex);
-        m_complete = true;
-        m_sbgccond.broadcast();
+        done();
     }
 
     virtual void bg_error(void const * i_keydata,
@@ -39,54 +66,24 @@ public:
                           Exception const & i_ex)
     {
         m_except = i_ex.clone();
-
-        ACE_Guard<ACE_Thread_Mutex> guard(m_sbgcmutex);
-        m_complete = true;
-        m_sbgccond.broadcast();
+        done();
     }
-
-    void wait()
-    {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_sbgcmutex);
-        while (!m_complete)
-            m_sbgccond.wait();
-    }
-
-    bool is_error() { return m_except != NULL; }
-
-    void rethrow() { m_except->rethrow(); }
 
     size_t size() { return m_size; }
 
 private:
-    Exception *					m_except;
     size_t						m_size;
-    ACE_Thread_Mutex			m_sbgcmutex;
-    ACE_Condition_Thread_Mutex	m_sbgccond;
-    bool						m_complete;
 };
 
-class PutCompletion : public BlockStore::BlockPutCompletion
+class PutCompletion
+    : public BlockStore::BlockPutCompletion
+    , public BlockingCompletion
 {
 public:
-    PutCompletion()
-        : m_except(NULL)
-        , m_sbgccond(m_sbgcmutex)
-        , m_complete(false)
-    {}
-
-    ~PutCompletion()
-    {
-        if (m_except)
-            delete m_except;
-    }
-
     virtual void bp_complete(void const * i_keydata,
                              size_t i_keysize)
     {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_sbgcmutex);
-        m_complete = true;
-        m_sbgccond.broadcast();
+        done();
     }
 
     virtual void bp_error(void const * i_keydata,
@@ -94,28 +91,40 @@ public:
                           Exception const & i_ex)
     {
         m_except = i_ex.clone();
-
-        ACE_Guard<ACE_Thread_Mutex> guard(m_sbgcmutex);
-        m_complete = true;
-        m_sbgccond.broadcast();
+        done();
     }
+};
 
-    void wait()
+class RefreshCompletion
+    : public BlockStore::BlockRefreshCompletion
+    , public BlockingCompletion
+{
+public:
+    RefreshCompletion(size_t i_count,
+                      BlockStore::KeySeq & o_missing)
+        : m_count(i_count)
+        , m_missing(o_missing)
+    {}
+
+    virtual void br_complete(void const * i_keydata,
+                             size_t i_keysize)
     {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_sbgcmutex);
-        while (!m_complete)
-            m_sbgccond.wait();
+        if (--m_count == 0)
+            done();
     }
 
-    bool is_error() { return m_except != NULL; }
-
-    void rethrow() { m_except->rethrow(); }
+    virtual void br_missing(void const * i_keydata,
+                            size_t i_keysize)
+    {
+        m_missing.push_back(OctetSeq((uint8 const *) i_keydata,
+                                     (uint8 const *) i_keydata + i_keysize));
+        if (--m_count == 0)
+            done();
+    }
 
 private:
-    Exception *					m_except;
-    ACE_Thread_Mutex			m_sbgcmutex;
-    ACE_Condition_Thread_Mutex	m_sbgccond;
-    bool						m_complete;
+    size_t						m_count;
+    BlockStore::KeySeq &		m_missing;
 };
 
 } // end namespace
@@ -173,6 +182,28 @@ BlockStore::bs_put_block(void const * i_keydata,
     // If there was an exception, throw it.
     if (pc.is_error())
         pc.rethrow();
+}
+
+void
+BlockStore::bs_refresh_blocks(uint64 i_rid,
+                              BlockStore::KeySeq const & i_keys,
+                              BlockStore::KeySeq & o_missing)
+    throw(InternalError,
+          NotFoundError)
+{
+    // Create our completion handler.
+    RefreshCompletion rc(i_keys.size(), o_missing);
+
+    // Initiate all the refreshes asynchronously.
+    for (unsigned i = 0; i < i_keys.size(); ++i)
+        bs_refresh_block_async(i_rid, &i_keys[i][0], i_keys[i].size(), rc);
+
+    // Wait for completion.
+    rc.wait();
+
+    // If there was an exception, throw it.
+    if (rc.is_error())
+        rc.rethrow();
 }
 
 } // end namespace utp

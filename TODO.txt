@@ -1,15 +1,11 @@
-Debug next SEGV
-
-    ulimit -c unlimited
-    echo /var/tmp/core > /proc/sys/kernel/core_pattern
+Add OperationError for all the "not opened" internal errors
+in the BlockStore interface.
 
 Write a test to make sure it is OK to "truncate" a file to a larger
 size then it already is.
 
 Experiment w/ overflowing a utopfs when fuse mounted.  Does it all
 work OK?
-
-# ----------------
 
 Appends to nohup.out don't seem to bump the mtime.
 

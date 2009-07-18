@@ -80,12 +80,21 @@ public:
         throw(utp::InternalError,
               utp::NotUniqueError);
 
+#if 0
     virtual void bs_refresh_blocks(utp::uint64 i_rid,
                                    KeySeq const & i_keys,
                                    KeySeq & o_missing)
         throw(utp::InternalError,
               utp::NotFoundError);
+#endif
 
+    virtual void bs_refresh_block_async(utp::uint64 i_rid,
+                                        void const * i_keydata,
+                                        size_t i_keysize,
+                                        BlockRefreshCompletion & i_cmpl)
+        throw(utp::InternalError,
+              utp::NotFoundError);
+        
     virtual void bs_refresh_finish(utp::uint64 i_rid)
         throw(utp::InternalError,
               utp::NotFoundError);

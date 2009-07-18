@@ -307,6 +307,7 @@ BDBBlockStore::bs_refresh_start(uint64 i_rid)
 	
 }
 
+#if 0
 void
 BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
                                  KeySeq const & i_keys,
@@ -342,7 +343,24 @@ BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
                         << "\": " << ACE_OS::strerror(errno));
     }
 }
+#endif
 
+void
+BDBBlockStore::bs_refresh_block_async(uint64 i_rid,
+                                      void const * i_keydata,
+                                      size_t i_keysize,
+                                      BlockRefreshCompletion & i_cmpl)
+    throw(InternalError,
+          NotFoundError)
+{
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}
+
+    throwstream(InternalError, FILELINE << "Feature not implemented"); 
+}
+        
 void
 BDBBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,

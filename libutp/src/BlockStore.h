@@ -186,9 +186,38 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified refresh id was not found.
     ///
-    virtual void bs_refresh_blocks(utp::uint64 i_rid,
-                                   KeySeq const & i_keys,
-                                   KeySeq & o_missing)
+    void bs_refresh_blocks(utp::uint64 i_rid,
+                           KeySeq const & i_keys,
+                           KeySeq & o_missing)
+        throw(InternalError,
+              NotFoundError);
+        
+    /// Completion function interface for non-blocking refresh.
+    ///
+    class BlockRefreshCompletion
+    {
+    public:
+        virtual void br_complete(void const * i_keydata,
+                                 size_t i_keysize) = 0;
+
+        virtual void br_missing(void const * i_keydata,
+                                size_t i_keysize) = 0;
+    };
+
+    /// Refresh a block asynchronously, callback when done.
+    ///
+    /// @param[in] i_rid The unique refresh cycle id.
+    /// @param[in] i_keydata Pointer to the key data.
+    /// @param[in] i_keysize Size of the key data.
+    /// @param[in] i_cmpl Completion function.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError The specified refresh id was not found.
+    ///
+    virtual void bs_refresh_block_async(utp::uint64 i_rid,
+                                        void const * i_keydata,
+                                        size_t i_keysize,
+                                        BlockRefreshCompletion & i_cmpl)
         throw(InternalError,
               NotFoundError) = 0;
         
