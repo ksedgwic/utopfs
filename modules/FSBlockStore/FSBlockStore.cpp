@@ -264,65 +264,68 @@ FSBlockStore::bs_get_block(void const * i_keydata,
 #endif
 
 void
-FSBlockStore::bs_get_blocks_async(KeySeq const & i_keys,
-                                  BlockGetCompletion & i_cmpl)
+FSBlockStore::bs_get_block_async(void const * i_keydata,
+                                 size_t i_keysize,
+                                 void * o_buffdata,
+                                 size_t i_buffsize,
+                                 BlockGetCompletion & i_cmpl)
     throw(InternalError,
           ValueError)
 {
-    for (unsigned i = 0; i < i_keys.size(); ++i)
+    try
     {
-        void const * keydata = &i_keys[i][0];
-        size_t keysize = i_keys[i].size();
+        ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-        try
+        string entry = entryname(i_keydata, i_keysize);
+        string blkpath = blockpath(entry);
+
+        ACE_stat statbuff;
+
+        int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
+        if (rv == -1)
         {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-            string entry = entryname(keydata, keysize);
-            string blkpath = blockpath(entry);
-
-            ACE_stat statbuff;
-
-            int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
-            if (rv == -1)
-            {
-                if (errno == ENOENT)
-                    throwstream(NotFoundError,
-                                Base32::encode(keydata, keysize)
-                                << ": not found");
-                else
-                    throwstream(InternalError, FILELINE
-                                << "FSBlockStore::bs_get_block: "
-                                << Base32::encode(keydata, keysize)
-                                << ": error: " << ACE_OS::strerror(errno));
-            }
-
-            OctetSeq buffer(statbuff.st_size);
-
-            int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
-            int bytes_read = read(fd, &buffer[0], buffer.size());
-            close(fd);
-
-            if (bytes_read == -1) {
+            if (errno == ENOENT)
+                throwstream(NotFoundError,
+                            Base32::encode(i_keydata, i_keysize)
+                            << ": not found");
+            else
                 throwstream(InternalError, FILELINE
-                            << "FSBlockStore::bs_get_block: read failed: "
-                            << strerror(errno));
-            }
+                            << "FSBlockStore::bs_get_block: "
+                            << Base32::encode(i_keydata, i_keysize)
+                            << ": error: " << ACE_OS::strerror(errno));
+        }
+
+        if (statbuff.st_size > off_t(i_buffsize))
+        {
+            throwstream(ValueError, FILELINE
+                        << "buffer overflow: "
+                        << "buffer " << i_buffsize << ", "
+                        << "data " << statbuff.st_size);
+        }
+
+        int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
+        int bytes_read = read(fd, o_buffdata, i_buffsize);
+        close(fd);
+
+        if (bytes_read == -1) {
+            throwstream(InternalError, FILELINE
+                        << "FSBlockStore::bs_get_block: read failed: "
+                        << strerror(errno));
+        }
 
         
-            if (bytes_read != statbuff.st_size) {
-                throwstream(InternalError, FILELINE
-                            << "FSBlockStore::expected to get "
-                            << statbuff.st_size
-                            << " bytes, but got " << bytes_read << " bytes");
-            }
+        if (bytes_read != statbuff.st_size) {
+            throwstream(InternalError, FILELINE
+                        << "FSBlockStore::expected to get "
+                        << statbuff.st_size
+                        << " bytes, but got " << bytes_read << " bytes");
+        }
 
-            i_cmpl.bg_complete(keydata, keysize, &buffer[0], buffer.size());
-        }
-        catch (Exception const & ex)
-        {
-            i_cmpl.bg_error(keydata, keysize, ex);
-        }
+        i_cmpl.bg_complete(i_keydata, i_keysize, bytes_read);
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bg_error(i_keydata, i_keysize, ex);
     }
 }
 

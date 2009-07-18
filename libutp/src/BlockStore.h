@@ -102,7 +102,6 @@ public:
     public:
         virtual void bg_complete(void const * i_keydata,
                                  size_t i_keysize,
-                                 void const * i_blkdata,
                                  size_t i_blksize) = 0;
 
         virtual void bg_error(void const * i_keydata,
@@ -110,10 +109,13 @@ public:
                               Exception const & i_exp) = 0;
     };
 
-    /// Get blocks via non-blocking interface.
+    /// Get block via non-blocking interface.
     ///
-    virtual void bs_get_blocks_async(KeySeq const & i_keys,
-                                     BlockGetCompletion & i_cmpl)
+    virtual void bs_get_block_async(void const * i_keydata,
+                                    size_t i_keysize,
+                                    void * o_buffdata,
+                                    size_t i_buffsize,
+                                    BlockGetCompletion & i_cmpl)
         throw(InternalError,
               ValueError) = 0;
 

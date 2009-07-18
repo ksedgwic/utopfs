@@ -50,8 +50,11 @@ public:
               utp::ValueError);
 #endif
 
-    virtual void bs_get_blocks_async(KeySeq const & i_keys,
-                                     BlockGetCompletion & i_cmpl)
+    virtual void bs_get_block_async(void const * i_keydata,
+                                    size_t i_keysize,
+                                    void * o_outbuff,
+                                    size_t i_outsize,
+                                    BlockGetCompletion & i_cmpl)
         throw(utp::InternalError,
               utp::ValueError);
 

@@ -15,6 +15,18 @@ using namespace std;
 
 namespace utp {
 
+Exception::Exception(Exception const & i_ex)
+    : m_buffer(i_ex.m_buffer)
+    , m_details(i_ex.m_details)
+    , m_btsize(i_ex.m_btsize)
+{
+    ACE_OS::memcpy(m_btdata, i_ex.m_btdata, NFRAMES * sizeof(void *));
+}
+
+Exception::~Exception() throw()
+{
+}
+
 char const *
 Exception::what() const throw()
 {
@@ -60,6 +72,30 @@ Exception::what() const throw()
     return m_buffer.c_str();
 }
 
+const char *
+Exception::details() const throw()
+{
+    return m_details.c_str();
+}
+
+Exception::Type
+Exception::type() const
+{
+    return T_BASE;
+}
+
+Exception *
+Exception::clone() const
+{
+    return new Exception(*this);
+}
+
+void
+Exception::rethrow() const
+{
+    throw Exception(*this);
+}
+
 Exception::Exception(string const & i_base, string const & i_details)
     : m_buffer(i_base + ": " + i_details)
     , m_details(i_details)
@@ -91,6 +127,12 @@ InternalError::clone() const
     return new InternalError(*this);
 }
 
+void
+InternalError::rethrow() const
+{
+    throw InternalError(*this);
+}
+
 // ---- OperationError
 
 OperationError::OperationError(string const & i_details)
@@ -111,6 +153,12 @@ Exception *
 OperationError::clone() const
 {
     return new OperationError(*this);
+}
+
+void
+OperationError::rethrow() const
+{
+    throw OperationError(*this);
 }
 
 // ---- NotFoundError
@@ -135,6 +183,12 @@ NotFoundError::clone() const
     return new NotFoundError(*this);
 }
 
+void
+NotFoundError::rethrow() const
+{
+    throw NotFoundError(*this);
+}
+
 // ---- NotUniqueError
 
 NotUniqueError::NotUniqueError(string const & i_details)
@@ -155,6 +209,12 @@ Exception *
 NotUniqueError::clone() const
 {
     return new NotUniqueError(*this);
+}
+
+void
+NotUniqueError::rethrow() const
+{
+    throw NotUniqueError(*this);
 }
 
 // ---- ValueError
@@ -179,6 +239,12 @@ ValueError::clone() const
     return new ValueError(*this);
 }
 
+void
+ValueError::rethrow() const
+{
+    throw ValueError(*this);
+}
+
 // ---- ParseError
 
 ParseError::ParseError(string const & i_details)
@@ -199,6 +265,12 @@ Exception *
 ParseError::clone() const
 {
     return new ParseError(*this);
+}
+
+void
+ParseError::rethrow() const
+{
+    throw ParseError(*this);
 }
 
 // ---- VerificationError
@@ -223,6 +295,12 @@ VerificationError::clone() const
     return new VerificationError(*this);
 }
 
+void
+VerificationError::rethrow() const
+{
+    throw VerificationError(*this);
+}
+
 // ---- NoSpaceError
 
 NoSpaceError::NoSpaceError(string const & i_details)
@@ -243,6 +321,12 @@ Exception *
 NoSpaceError::clone() const
 {
     return new NoSpaceError(*this);
+}
+
+void
+NoSpaceError::rethrow() const
+{
+    throw NoSpaceError(*this);
 }
 
 } // end namespace utp

@@ -161,13 +161,43 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
 #endif
 
 void
-BDBBlockStore::bs_get_blocks_async(KeySeq const & i_keys,
-                                   BlockGetCompletion & i_cmpl)
+BDBBlockStore::bs_get_block_async(void const * i_keydata,
+                                  size_t i_keysize,
+                                  void * o_buffdata,
+                                  size_t i_buffsize,
+                                  BlockGetCompletion & i_cmpl)
     throw(InternalError,
           ValueError)
 {
-    throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_get_blocks_async unimplemented");
+    try
+    {
+        LOG(lgr, 6, "bs_get_block");
+        if (! m_db_opened) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore db not opened!");
+        }
+        
+        Dbt key((void *)i_keydata,i_keysize);
+        Dbt data;    
+        data.set_data(o_buffdata);
+        data.set_ulen(i_buffsize);
+        data.set_flags(DB_DBT_USERMEM);
+    
+	
+        int result = m_db->get(NULL,&key,&data,0);
+        if (result == DB_NOTFOUND) {
+            throwstream(NotFoundError, FILELINE);
+        } else if (result != 0) {
+            throwstream(NotFoundError, FILELINE
+                        << "BDBBlockStore::bs_get_block: " << result << db_strerror(result));
+        }	
+    
+        i_cmpl.bg_complete(i_keydata, i_keysize, data.get_size());
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bg_error(i_keydata, i_keysize, ex);
+    }
 }
 
 void

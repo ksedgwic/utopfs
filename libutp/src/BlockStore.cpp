@@ -11,10 +11,8 @@ namespace {
 class SyncBlockGetCompletion : public BlockStore::BlockGetCompletion
 {
 public:
-    SyncBlockGetCompletion(void * o_outbuff, size_t i_bufsize)
-        : m_outbuf(o_outbuff)
-        , m_bufsize(i_bufsize)
-        , m_except(NULL)
+    SyncBlockGetCompletion()
+        : m_except(NULL)
         , m_sbgccond(m_sbgcmutex)
         , m_complete(false)
     {}
@@ -27,18 +25,9 @@ public:
 
     virtual void bg_complete(void const * i_keydata,
                              size_t i_keysize,
-                             void const * i_blkdata,
                              size_t i_blksize)
     {
-        if (i_blksize > m_bufsize)
-        {
-            m_except = new ValueError("buffer overflow");
-        }
-        else
-        {
-            ACE_OS::memcpy(m_outbuf, i_blkdata, i_blksize);
-            m_size = i_blksize;
-        }
+        m_size = i_blksize;
 
         ACE_Guard<ACE_Thread_Mutex> guard(m_sbgcmutex);
         m_complete = true;
@@ -65,29 +54,11 @@ public:
 
     bool is_error() { return m_except != NULL; }
 
-    void rethrow()
-    {
-        switch (m_except->type())
-        {
-        case Exception::T_INTERNAL:
-            throw InternalError(*m_except);
-
-        case Exception::T_NOTFOUND:
-            throw NotFoundError(*m_except);
-
-        case Exception::T_VALUE:
-            throw ValueError(*m_except);
-
-        default:
-            throw * m_except;
-        }
-    }
+    void rethrow() { m_except->rethrow(); }
 
     size_t size() { return m_size; }
 
 private:
-    void *						m_outbuf;
-    size_t						m_bufsize;
     Exception *					m_except;
     size_t						m_size;
     ACE_Thread_Mutex			m_sbgcmutex;
@@ -112,16 +83,11 @@ BlockStore::bs_get_block(void const * i_keydata,
               NotFoundError,
               ValueError)
 {
-    // Make a key sequence w/ just our key in it.
-    KeySeq keys;
-    keys.push_back(OctetSeq((uint8 const *) i_keydata,
-                            (uint8 const *) i_keydata + i_keysize));
-
     // Create our completion handler.
-    SyncBlockGetCompletion sbgc(o_outbuff, i_outsize);
+    SyncBlockGetCompletion sbgc;
 
     // Initiate the asynchrounous get.
-    bs_get_blocks_async(keys, sbgc);
+    bs_get_block_async(i_keydata, i_keysize, o_outbuff, i_outsize, sbgc);
 
     // Wait for completion.
     sbgc.wait();

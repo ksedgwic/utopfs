@@ -31,23 +31,19 @@ public:
         T_NOSPACE,
     };
 
-    Exception(Exception const & i_ex)
-        : m_buffer(i_ex.m_buffer)
-        , m_details(i_ex.m_details)
-        , m_btsize(i_ex.m_btsize)
-    {
-        ACE_OS::memcpy(m_btdata, i_ex.m_btdata, NFRAMES * sizeof(void *));
-    }
+    Exception(Exception const & i_ex);
 
-    virtual ~Exception() throw() {}
+    virtual ~Exception() throw();
 
     virtual const char * what() const throw();
 
-    virtual const char * details() const throw() { return m_details.c_str(); }
+    virtual const char * details() const throw();
 
-    virtual Type type() const { return T_BASE; }
+    virtual Type type() const;
 
-    virtual Exception * clone() const { return new Exception(*this); }
+    virtual Exception * clone() const;
+
+    virtual void rethrow() const;
 
 protected:
     Exception(std::string const & i_base,
@@ -71,6 +67,7 @@ public:
     InternalError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 class UTP_EXC_EXP OperationError : public Exception
@@ -80,6 +77,7 @@ public:
     OperationError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 class UTP_EXC_EXP NotFoundError : public Exception
@@ -89,6 +87,7 @@ public:
     NotFoundError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 class UTP_EXC_EXP NotUniqueError : public Exception
@@ -98,6 +97,7 @@ public:
     NotUniqueError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 class UTP_EXC_EXP ValueError : public Exception
@@ -107,6 +107,7 @@ public:
     ValueError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 class UTP_EXC_EXP ParseError : public Exception
@@ -116,6 +117,7 @@ public:
     ParseError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 class UTP_EXC_EXP VerificationError : public Exception
@@ -125,6 +127,7 @@ public:
     VerificationError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 class UTP_EXC_EXP NoSpaceError : public Exception
@@ -134,6 +137,7 @@ public:
     NoSpaceError(Exception const & i_ex);
     virtual Type type() const;
     virtual Exception * clone() const;
+    virtual void rethrow() const;
 };
 
 // The throwstream macro assembles the string argument to the
