@@ -29,24 +29,24 @@ public:
     /// Create a block store.
     ///
     /// @param[in] i_size Size of the block store data in bytes.
-    /// @param[in] i_path Path to the block store.
+    /// @param[in] i_args BlockStore specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError One of the arguments is out of range.
     ///
-    virtual void bs_create(size_t i_size, std::string const & i_path)
+    virtual void bs_create(size_t i_size, StringSeq const & i_args)
         throw(NotUniqueError,
               InternalError,
               ValueError) = 0;
 
     /// Open a block store.
     ///
-    /// @param[in] i_path Path to the block store.
+    /// @param[in] i_args BlockStore specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified key was not found.
     ///
-    virtual void bs_open(std::string const & i_path)
+    virtual void bs_open(StringSeq const & i_args)
         throw(InternalError,
               NotFoundError) = 0;
 

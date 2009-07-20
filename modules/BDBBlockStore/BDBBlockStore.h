@@ -25,12 +25,12 @@ public:
     virtual ~BDBBlockStore();
 
     // BlockStore methods.
-    virtual void bs_create(size_t i_size, std::string const & i_path)
+    virtual void bs_create(size_t i_size, utp::StringSeq const & i_args)
         throw(utp::NotUniqueError,
               utp::InternalError,
               utp::ValueError);
 
-    virtual void bs_open(std::string const & i_path)
+    virtual void bs_open(utp::StringSeq const & i_args)
         throw(utp::InternalError,
               utp::NotFoundError);
 

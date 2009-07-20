@@ -48,14 +48,16 @@ BDBBlockStore::~BDBBlockStore()
 }
 
 void
-BDBBlockStore::bs_create(size_t i_size, string const & i_path)
+BDBBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,
           InternalError,
           ValueError)
 {
-    LOG(lgr, 4, "bs_create " << i_size << ' ' << i_path);
+    string const & path = i_args[0];
 
-	m_rootpath = i_path;
+    LOG(lgr, 4, "bs_create " << i_size << ' ' << path);
+
+	m_rootpath = path;
 
 	struct stat statbuff;    
     if (stat(m_rootpath.c_str(),&statbuff) == 0) {
@@ -74,19 +76,21 @@ BDBBlockStore::bs_create(size_t i_size, string const & i_path)
 }
 
 void
-BDBBlockStore::bs_open(string const & i_path)
+BDBBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 4, "bs_open " << i_path);	
+    string const & path = i_args[0];
+
+    LOG(lgr, 4, "bs_open " << path);	
 
     struct stat statbuff;    
-    if (stat(i_path.c_str(), &statbuff) != 0) {
+    if (stat(path.c_str(), &statbuff) != 0) {
         throwstream(NotFoundError, FILELINE
-                << "Cannot open bdb block store at '" << i_path << "'. File does not exist.");    
+                << "Cannot open bdb block store at '" << path << "'. File does not exist.");    
     }  
 
-	m_rootpath = i_path;
+	m_rootpath = path;
 	std::string db_path = "main";
 	
 	open_dbs(0);

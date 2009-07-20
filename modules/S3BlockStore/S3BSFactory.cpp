@@ -6,32 +6,32 @@
 #include "Log.h"
 #include "Types.h"
 
-#include "FSBlockStore.h"
+#include "S3BlockStore.h"
 
-#include "FSBSFactory.h"
-#include "fsbslog.h"
+#include "S3BSFactory.h"
+#include "s3bslog.h"
 
 using namespace std;
 using namespace utp;
 
-FSBSFactory::FSBSFactory()
+S3BSFactory::S3BSFactory()
 {
 }
 
-FSBSFactory::~FSBSFactory()
+S3BSFactory::~S3BSFactory()
 {
 }
 
 int
-FSBSFactory::init(int argc, char * argv[])
+S3BSFactory::init(int argc, char * argv[])
 {
-    BlockStoreFactory::register_factory("FSBS", this);
+    BlockStoreFactory::register_factory("S3BS", this);
 
     return 0;
 }
 
 int
-FSBSFactory::fini()
+S3BSFactory::fini()
 {
     // Don't try to log here.  We are called during static
     // destruction and the log categories may have already
@@ -40,39 +40,39 @@ FSBSFactory::fini()
 }
 
 int
-FSBSFactory::suspend()
+S3BSFactory::suspend()
 {
     return 0;
 }
 
 int
-FSBSFactory::resume()
+S3BSFactory::resume()
 {
     return 0;
 }
 
 BlockStoreHandle
-FSBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+S3BSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
 {
-    BlockStoreHandle bsh = new FSBS::FSBlockStore();
+    BlockStoreHandle bsh = new S3BS::S3BlockStore();
     bsh->bs_create(i_size, i_args);
     return bsh;
 }
 
 BlockStoreHandle
-FSBSFactory::bsf_open(StringSeq const & i_args)
+S3BSFactory::bsf_open(StringSeq const & i_args)
 {
-    BlockStoreHandle bsh = new FSBS::FSBlockStore();
+    BlockStoreHandle bsh = new S3BS::S3BlockStore();
     bsh->bs_open(i_args);
     return bsh;
 }
 
-ACE_SVC_FACTORY_DEFINE(FSBSFactory)
+ACE_SVC_FACTORY_DEFINE(S3BSFactory)
 
-ACE_STATIC_SVC_DEFINE(FSBSFactory,
-                      ACE_TEXT ("FSBSFactory"),
+ACE_STATIC_SVC_DEFINE(S3BSFactory,
+                      ACE_TEXT ("S3BSFactory"),
                       ACE_SVC_OBJ_T,
-                      &ACE_SVC_NAME (FSBSFactory),
+                      &ACE_SVC_NAME (S3BSFactory),
                       ACE_Service_Type::DELETE_THIS |
                       ACE_Service_Type::DELETE_OBJ,
                       0)

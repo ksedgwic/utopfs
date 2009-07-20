@@ -28,13 +28,14 @@ hierarchies etc.
 
 BuildRequires: ace-devel
 BuildRequires: gcc-c++
+BuildRequires: libs3-devel
 
 # ---------------- fuse-utopfs
 
 %package -n fuse-utopfs
 Summary: FUSE-Filesystem for utopfs
 Group: System Environment/Base
-Requires: ace
+Requires: ace libs3
 
 %description -n fuse-utopfs
 This is a FUSE-filesystem client which mounts a utopfs filesystem.
@@ -77,6 +78,7 @@ install \
   modules/DefaultLogger/%{OBJDIR}/UTPFS-DFLG.so \
   modules/FSBlockStore/%{OBJDIR}/UTPFS-FSBS.so \
   modules/BDBBlockStore/%{OBJDIR}/UTPFS-BDBBS.so \
+  modules/S3BlockStore/%{OBJDIR}/UTPFS-S3BS.so \
   modules/UTFileSystem/%{OBJDIR}/UTPFS-UTFS.so \
 $RPM_BUILD_ROOT%{_libdir}
 
@@ -86,6 +88,7 @@ pushd $RPM_BUILD_ROOT%{_libdir}
   ln -sf UTPFS-DFLG.so libUTPFS-DFLG.so
   ln -sf UTPFS-FSBS.so libUTPFS-FSBS.so
   ln -sf UTPFS-BDBBS.so libUTPFS-BDBBS.so
+  ln -sf UTPFS-S3BS.so libUTPFS-S3BS.so
   ln -sf UTPFS-UTFS.so libUTPFS-UTFS.so
 popd
 
@@ -126,11 +129,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/UTPFS-DFLG.so
 %{_libdir}/UTPFS-FSBS.so
 %{_libdir}/UTPFS-BDBBS.so
+%{_libdir}/UTPFS-S3BS.so
 %{_libdir}/UTPFS-UTFS.so
 
 %{_libdir}/libUTPFS-DFLG.so
 %{_libdir}/libUTPFS-FSBS.so
 %{_libdir}/libUTPFS-BDBBS.so
+%{_libdir}/libUTPFS-S3BS.so
 %{_libdir}/libUTPFS-UTFS.so
 
 %{_bindir}/utopfs

@@ -1,12 +1,14 @@
-#ifndef FSBlockStore_h__
-#define FSBlockStore_h__
+#ifndef S3BlockStore_h__
+#define S3BlockStore_h__
 
-/// @file FSBlockStore.h
+/// @file S3BlockStore.h
 /// FileSystem BlockStore Instance.
 
 #include <string>
 #include <set>
 #include <list>
+
+#include <libs3.h>
 
 #include <ace/Thread_Mutex.h>
 
@@ -15,16 +17,16 @@
 #include "BlockStore.h"
 #include "RC.h"
 
-#include "fsbsexp.h"
+#include "s3bsexp.h"
 
 
-namespace FSBS {
+namespace S3BS {
 
 class Entry;
 typedef utp::RCPtr<Entry> EntryHandle;
 typedef std::list<EntryHandle> EntryList;
 
-class FSBS_EXP Entry : public utp::RCObj
+class S3BS_EXP Entry : public utp::RCObj
 {
 public:
     Entry(std::string const & i_name, time_t i_tstamp, off_t i_size)
@@ -51,12 +53,12 @@ struct lessByTstamp {
     }
 };
 
-class FSBS_EXP FSBlockStore : public utp::BlockStore
+class S3BS_EXP S3BlockStore : public utp::BlockStore
 {
 public:
-    FSBlockStore();
+    S3BlockStore();
 
-    virtual ~FSBlockStore();
+    virtual ~S3BlockStore();
 
     // BlockStore methods.
 
@@ -76,16 +78,6 @@ public:
     virtual void bs_stat(Stat & o_stat)
         throw(utp::InternalError);
 
-#if 0
-    virtual size_t bs_get_block(void const * i_keydata,
-                                size_t i_keysize,
-                                void * o_outbuff,
-                                size_t i_outsize)
-        throw(utp::InternalError,
-              utp::NotFoundError,
-              utp::ValueError);
-#endif
-
     virtual void bs_get_block_async(void const * i_keydata,
                                     size_t i_keysize,
                                     void * o_outbuff,
@@ -93,16 +85,6 @@ public:
                                     BlockGetCompletion & i_cmpl)
         throw(utp::InternalError,
               utp::ValueError);
-
-#if 0
-    virtual void bs_put_block(void const * i_keydata,
-                              size_t i_keysize,
-                              void const * i_blkdata,
-                              size_t i_blksize)
-        throw(utp::InternalError,
-              utp::ValueError,
-              utp::NoSpaceError);
-#endif
 
     virtual void bs_put_block_async(void const * i_keydata,
                                     size_t i_keysize,
@@ -115,14 +97,6 @@ public:
     virtual void bs_refresh_start(utp::uint64 i_rid)
         throw(utp::InternalError,
               utp::NotUniqueError);
-
-#if 0
-    virtual void bs_refresh_blocks(utp::uint64 i_rid,
-                                   KeySeq const & i_keys,
-                                   KeySeq & o_missing)
-        throw(utp::InternalError,
-              utp::NotFoundError);
-#endif
 
     virtual void bs_refresh_block_async(utp::uint64 i_rid,
                                         void const * i_keydata,
@@ -157,13 +131,19 @@ private:
     typedef std::set<EntryHandle, lessByName> EntrySet;
     typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
 
+    S3Protocol			m_protocol;
+    S3UriStyle			m_uri_style;
+    std::string			m_access_key_id;
+    std::string			m_secret_access_key;
+    std::string			m_bucket_name;
+
     off_t				m_size;			// Total Size in Bytes
     off_t				m_committed;	// Committed Bytes (must be saved)
     off_t				m_uncommitted;	// Uncommitted Bytes (reclaimable)
     std::string			m_rootpath;
     std::string			m_blockspath;
 
-    ACE_Thread_Mutex	m_fsbsmutex;
+    ACE_Thread_Mutex	m_s3bsmutex;
 
     EntrySet			m_entries;
     EntryList			m_lru;		// front=newest, back=oldest
@@ -171,7 +151,7 @@ private:
     EntryHandle			m_mark;
 };
 
-} // namespace FSBS
+} // namespace S3BS
 
 // Local Variables:
 // mode: C++
@@ -180,4 +160,4 @@ private:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // FSBlockStore_h__
+#endif // S3BlockStore_h__

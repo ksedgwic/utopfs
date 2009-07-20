@@ -55,7 +55,7 @@ BlockStoreHandle
 BDBBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
 {
     BlockStoreHandle bsh = new BDBBS::BDBBlockStore();
-    bsh->bs_create(i_size, i_args[0]);
+    bsh->bs_create(i_size, i_args);
     return bsh;
 }
 
@@ -63,7 +63,7 @@ BlockStoreHandle
 BDBBSFactory::bsf_open(StringSeq const & i_args)
 {
     BlockStoreHandle bsh = new BDBBS::BDBBlockStore();
-    bsh->bs_open(i_args[0]);
+    bsh->bs_open(i_args);
     return bsh;
 }
 

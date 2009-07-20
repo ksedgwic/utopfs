@@ -6,15 +6,15 @@
 
 #include "Log.h"
 
-#include "FSBlockStore.h"
-#include "fsbslog.h"
+#include "S3BlockStore.h"
+#include "s3bslog.h"
 
 #include "Base32.h"
 
 using namespace std;
 using namespace utp;
 
-namespace FSBS {
+namespace S3BS {
 
 bool
 lessByKey(EntryHandle const & i_a, EntryHandle const & i_b)
@@ -28,7 +28,7 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
     return i_a->m_tstamp < i_b->m_tstamp;
 }
 
-FSBlockStore::FSBlockStore()
+S3BlockStore::S3BlockStore()
     : m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
@@ -36,14 +36,14 @@ FSBlockStore::FSBlockStore()
     LOG(lgr, 4, "CTOR");
 }
 
-FSBlockStore::~FSBlockStore()
+S3BlockStore::~S3BlockStore()
 {
     // Don't try and log here ... in static object destructor context
     // (way after main has returned ...)
 }
 
 void
-FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
+S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,
           InternalError,
           ValueError)
@@ -52,7 +52,7 @@ FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 
     LOG(lgr, 4, "bs_create " << i_size << ' ' << path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
     struct stat statbuff;    
     if (stat(path.c_str(),&statbuff) == 0) {
@@ -87,7 +87,7 @@ FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 }
 
 void
-FSBlockStore::bs_open(StringSeq const & i_args)
+S3BlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
@@ -95,7 +95,7 @@ FSBlockStore::bs_open(StringSeq const & i_args)
 
     LOG(lgr, 4, "bs_open " << path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
     ACE_stat sb;
     
@@ -190,85 +190,26 @@ FSBlockStore::bs_open(StringSeq const & i_args)
 }
 
 void
-FSBlockStore::bs_close()
+S3BlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, "bs_close");
 }
 
 void
-FSBlockStore::bs_stat(Stat & o_stat)
+S3BlockStore::bs_stat(Stat & o_stat)
     throw(InternalError)
 {
     LOG(lgr, 6, "bs_stat");
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
     o_stat.bss_size = m_size;
     o_stat.bss_free = m_size - m_committed;
 }
 
-#if 0
-size_t
-FSBlockStore::bs_get_block(void const * i_keydata,
-                           size_t i_keysize,
-                           void * o_outbuff,
-                           size_t i_outsize)
-    throw(InternalError,
-          NotFoundError,
-          ValueError)
-          
-{
-    LOG(lgr, 6, "bs_get_block");
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    string entry = entryname(i_keydata, i_keysize);
-    string blkpath = blockpath(entry);
-
-    ACE_stat statbuff;
-    
-    int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
-    if (rv == -1)
-    {
-        if (errno == ENOENT)
-            throwstream(NotFoundError,
-                        Base32::encode(i_keydata, i_keysize) << ": not found");
-        else
-            throwstream(InternalError, FILELINE
-                        << "FSBlockStore::bs_get_block: "
-                        << Base32::encode(i_keydata, i_keysize)
-                        << ": error: " << ACE_OS::strerror(errno));
-    }
-    
-    if (statbuff.st_size > off_t(i_outsize)) {
-        throwstream(InternalError, FILELINE
-                << "Passed buffer not big enough to hold block");
-    }
-    
-    int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
-    int bytes_read = read(fd,o_outbuff,statbuff.st_size);
-    close(fd);
-
-    if (bytes_read == -1) {
-        throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block: read failed: "
-                    << strerror(errno));
-    }
-
-        
-    if (bytes_read != statbuff.st_size) {
-        throwstream(InternalError, FILELINE
-                << "FSBlockStore::expected to get " << statbuff.st_size
-                    << " bytes, but got " << bytes_read << " bytes");
-    }
-
-    return bytes_read;
-}
-#endif
-
 void
-FSBlockStore::bs_get_block_async(void const * i_keydata,
+S3BlockStore::bs_get_block_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void * o_buffdata,
                                  size_t i_buffsize,
@@ -280,7 +221,7 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
     {
         int bytes_read;
         {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
@@ -296,7 +237,7 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
                                 << ": not found");
                 else
                     throwstream(InternalError, FILELINE
-                                << "FSBlockStore::bs_get_block: "
+                                << "S3BlockStore::bs_get_block: "
                                 << Base32::encode(i_keydata, i_keysize)
                                 << ": error: " << ACE_OS::strerror(errno));
             }
@@ -315,14 +256,14 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
 
             if (bytes_read == -1) {
                 throwstream(InternalError, FILELINE
-                            << "FSBlockStore::bs_get_block: read failed: "
+                            << "S3BlockStore::bs_get_block: read failed: "
                             << strerror(errno));
             }
 
         
             if (bytes_read != statbuff.st_size) {
                 throwstream(InternalError, FILELINE
-                            << "FSBlockStore::expected to get "
+                            << "S3BlockStore::expected to get "
                             << statbuff.st_size
                             << " bytes, but got " << bytes_read << " bytes");
             }
@@ -338,98 +279,8 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
     }
 }
 
-#if 0
 void
-FSBlockStore::bs_put_block(void const * i_keydata,
-                           size_t i_keysize,
-                           void const * i_blkdata,
-                           size_t i_blksize)
-    throw(InternalError,
-          ValueError,
-          NoSpaceError)
-{
-    LOG(lgr, 6, "bs_put_block");
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    string entry = entryname(i_keydata, i_keysize);
-    string blkpath = blockpath(entry);
-    
-    // Need to stat the block first so we can keep the size accounting
-    // straight ...
-    //
-    off_t prevsize = 0;
-    bool wascommitted = true;
-    ACE_stat sb;
-    int rv = ACE_OS::stat(blkpath.c_str(), &sb);
-    if (rv == 0)
-    {
-        prevsize = sb.st_size;
-
-        // Is this block older then the MARK?
-        if (m_mark && m_mark->m_tstamp > sb.st_mtime)
-            wascommitted = false;
-    }
-
-    off_t prevcommited = 0;
-    if (wascommitted)
-        prevcommited = prevsize;
-
-    // How much space will be available for this block?
-    off_t avail = m_size - m_committed + prevcommited;
-
-    if (off_t(i_blksize) > avail)
-        throwstream(NoSpaceError,
-                    "insufficent space: "
-                    << avail << " bytes avail, needed " << i_blksize);
-
-    // Do we need to remove uncommitted blocks to make room for this
-    // block?
-    while (m_committed + off_t(i_blksize) +
-           m_uncommitted - prevcommited > m_size)
-        purge_uncommitted();
-
-    int fd = open(blkpath.c_str(),
-                  O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
-    if (fd == -1)
-        throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_put_block: open failed on "
-                    << blkpath << ": " << strerror(errno));
-    
-    int bytes_written = write(fd, i_blkdata, i_blksize);
-    int write_errno = errno;
-    close(fd);
-    if (bytes_written == -1)
-        throwstream(InternalError, FILELINE
-                    << "write of " << blkpath << " failed: "
-                    << ACE_OS::strerror(write_errno));
-
-    // Stat the file we just wrote so we can use the exact tstamp
-    // and size the filesystem sees.
-    rv = ACE_OS::stat(blkpath.c_str(), &sb);
-    if (rv == -1)
-        throwstream(InternalError, FILELINE
-                    << "stat " << blkpath << " failed: "
-                    << ACE_OS::strerror(errno));
-    time_t mtime = sb.st_mtime;
-    off_t size = sb.st_size;
-
-    // First remove the prior block from the stats.
-    if (wascommitted)
-        m_committed -= prevsize;
-    else
-        m_uncommitted -= prevsize;
-
-    // Add the new block to the stats.
-    m_committed += size;
-
-    // Update the entries.
-    touch_entry(entry, mtime, size);
-}
-#endif
-
-void
-FSBlockStore::bs_put_block_async(void const * i_keydata,
+S3BlockStore::bs_put_block_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void const * i_blkdata,
                                  size_t i_blksize,
@@ -442,7 +293,7 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
         LOG(lgr, 6, "bs_put_block");
 
         {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
@@ -485,7 +336,7 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
                           O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
             if (fd == -1)
                 throwstream(InternalError, FILELINE
-                            << "FSBlockStore::bs_put_block: open failed on "
+                            << "S3BlockStore::bs_put_block: open failed on "
                             << blkpath << ": " << strerror(errno));
     
             int bytes_written = write(fd, i_blkdata, i_blksize);
@@ -530,7 +381,7 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
 }
 
 void
-FSBlockStore::bs_refresh_start(uint64 i_rid)
+S3BlockStore::bs_refresh_start(uint64 i_rid)
     throw(InternalError,
           NotUniqueError)
 {
@@ -539,7 +390,7 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
  
     LOG(lgr, 6, "bs_refresh_start " << rname);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
     // Does the refresh ID already exist?
     ACE_stat sb;
@@ -568,70 +419,8 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
     touch_entry(rname, mtime, size);
 }
 
-#if 0
 void
-FSBlockStore::bs_refresh_blocks(uint64 i_rid,
-                                KeySeq const & i_keys,
-                                KeySeq & o_missing)
-    throw(InternalError,
-          NotFoundError)
-{
-    o_missing.clear();
-
-    string rname = ridname(i_rid);
-    string rpath = blockpath(rname);
-
-    LOG(lgr, 6, "bs_refresh_blocks " << rname);
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    // Does the refresh ID exist?
-    ACE_stat sb;
-    int rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv != 0 || !S_ISREG(sb.st_mode))
-        throwstream(NotFoundError,
-                    "refresh id " << i_rid << " not found");
-
-    for (unsigned i = 0; i < i_keys.size(); ++i)
-    {
-        string entry = entryname(&i_keys[i][0], i_keys[i].size());
-        string blkpath = blockpath(entry);
-
-        LOG(lgr, 6, "bs_refresh_blocks [" << i << "] " << entry);
-
-        // If the block doesn't exist add it to the missing list.
-        rv = ACE_OS::stat(blkpath.c_str(), &sb);
-        if (rv != 0 || !S_ISREG(sb.st_mode))
-        {
-            o_missing.push_back(i_keys[i]);
-            continue;
-        }
-
-        // Touch the block.
-        rv = utimes(blkpath.c_str(), NULL);
-        if (rv != 0)
-            throwstream(InternalError, FILELINE
-                        << "trouble touching \"" << blkpath
-                        << "\": " << ACE_OS::strerror(errno));
-
-        // Stat the file we just wrote so we can use the exact tstamp
-        // and size the filesystem sees.
-        rv = ACE_OS::stat(blkpath.c_str(), &sb);
-        if (rv == -1)
-            throwstream(InternalError, FILELINE
-                        << "stat " << blkpath << " failed: "
-                        << ACE_OS::strerror(errno));
-        time_t mtime = sb.st_mtime;
-        off_t size = sb.st_size;
-
-        // Update the entries.
-        touch_entry(entry, mtime, size);
-    }
-}
-#endif
-
-void
-FSBlockStore::bs_refresh_block_async(uint64 i_rid,
+S3BlockStore::bs_refresh_block_async(uint64 i_rid,
                                      void const * i_keydata,
                                      size_t i_keysize,
                                      BlockRefreshCompletion & i_cmpl)
@@ -649,7 +438,7 @@ FSBlockStore::bs_refresh_block_async(uint64 i_rid,
     LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
 
     {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
         // Does the refresh ID exist?
         ACE_stat sb;
@@ -695,7 +484,7 @@ FSBlockStore::bs_refresh_block_async(uint64 i_rid,
 }
         
 void
-FSBlockStore::bs_refresh_finish(uint64 i_rid)
+S3BlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,
           NotFoundError)
 {
@@ -704,7 +493,7 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
 
     LOG(lgr, 6, "bs_refresh_finish " << rname);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
     // Does the refresh ID exist?
     ACE_stat sb;
@@ -794,7 +583,7 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
 }
 
 void
-FSBlockStore::bs_sync()
+S3BlockStore::bs_sync()
     throw(InternalError)
 {
 	//always synced to disk
@@ -802,13 +591,13 @@ FSBlockStore::bs_sync()
 
 
 string 
-FSBlockStore::entryname(void const * i_keydata, size_t i_keysize) const
+S3BlockStore::entryname(void const * i_keydata, size_t i_keysize) const
 {
     return Base32::encode(i_keydata, i_keysize);
 }
 
 string 
-FSBlockStore::ridname(uint64 i_rid) const
+S3BlockStore::ridname(uint64 i_rid) const
 {
     ostringstream ostrm;
     ostrm << "RID:" << i_rid;
@@ -816,13 +605,13 @@ FSBlockStore::ridname(uint64 i_rid) const
 }                                
 
 string 
-FSBlockStore::blockpath(string const & i_entry) const
+S3BlockStore::blockpath(string const & i_entry) const
 {
     return m_blockspath + '/' + i_entry;
 }                                
 
 void
-FSBlockStore::touch_entry(std::string const & i_entry,
+S3BlockStore::touch_entry(std::string const & i_entry,
                           time_t i_mtime,
                           off_t i_size)
 {
@@ -854,7 +643,7 @@ FSBlockStore::touch_entry(std::string const & i_entry,
 }
 
 void
-FSBlockStore::purge_uncommitted()
+S3BlockStore::purge_uncommitted()
 {
     // IMPORTANT - This routine presumes you already hold the mutex.
 
@@ -892,7 +681,7 @@ FSBlockStore::purge_uncommitted()
     m_uncommitted -= eh->m_size;
 }
 
-} // namespace FSBS
+} // namespace S3BS
 
 // Local Variables:
 // mode: C++
