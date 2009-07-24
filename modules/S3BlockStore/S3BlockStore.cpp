@@ -1,7 +1,10 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 
+#include <ace/Condition_Thread_Mutex.h>
+#include <ace/Thread_Mutex.h>
 #include <ace/Dirent.h>
 
 #include "Log.h"
@@ -10,11 +13,145 @@
 #include "s3bslog.h"
 
 #include "Base32.h"
+#include "MD5.h"
 
 using namespace std;
 using namespace utp;
 
 namespace S3BS {
+
+std::ostream & operator<<(std::ostream & ostrm, S3Status status)
+{
+    ostrm << S3_get_status_name(status);
+    return ostrm;
+}
+    
+class ResponseHandler
+{
+public:
+    ResponseHandler()
+        : m_s3rhcond(m_s3rhmutex)
+        , m_complete(false)
+    {
+    }
+
+    virtual S3Status rh_properties(S3ResponseProperties const * properties)
+    {
+        return S3StatusOK;
+    }
+
+    virtual void rh_complete(S3Status status,
+                             S3ErrorDetails const * errorDetails)
+    {
+        LOG(lgr, 6, "rh_complete: " << status);
+
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3rhmutex);
+        m_status = status;
+        m_complete = true;
+        m_s3rhcond.broadcast();
+    }
+
+    S3Status wait()
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3rhmutex);
+        while (!m_complete)
+            m_s3rhcond.wait();
+        return m_status;
+    }
+
+private:
+    ACE_Thread_Mutex			m_s3rhmutex;
+    ACE_Condition_Thread_Mutex	m_s3rhcond;
+    bool						m_complete;
+    S3Status					m_status;
+};
+
+class PutHandler : public ResponseHandler
+{
+public:
+    PutHandler(uint8 const * i_data, size_t i_size)
+        : m_data(i_data)
+        , m_size(i_size)
+    {
+        LOG(lgr, 6, "PutHandler CTOR " << i_size);
+    }
+
+    virtual int ph_objdata(int i_buffsz, char * o_buffer)
+    {
+        size_t sz = min(size_t(i_buffsz), m_size);
+
+        LOG(lgr, 6, "ph_objdata: " << sz);
+
+        ACE_OS::memcpy(o_buffer, m_data, sz);
+        m_data += sz;
+        m_size -= sz;
+        return sz;
+    }
+
+private:
+    uint8 const *		m_data;
+    size_t				m_size;
+};
+
+class GetHandler : public ResponseHandler
+{
+public:
+    GetHandler(uint8 * o_buffdata, size_t i_buffsize)
+        : m_buffdata(o_buffdata)
+        , m_buffsize(i_buffsize)
+        , m_size(0)
+    {}
+
+    virtual S3Status gh_objdata(int i_buffsz, char const * i_buffer)
+    {
+        size_t sz = min(size_t(i_buffsz), (m_buffsize - m_size));
+        ACE_OS::memcpy(&m_buffdata[m_size], i_buffer, sz);
+        m_size += sz;
+        return S3StatusOK;
+    }
+
+    size_t size() const { return m_size; }
+
+private:
+    uint8 *				m_buffdata;
+    size_t				m_buffsize;
+    size_t				m_size;
+};
+
+S3Status response_properties(S3ResponseProperties const * properties,
+                             void * callbackData)
+{
+    ResponseHandler * rhp = (ResponseHandler *) callbackData;
+    return rhp->rh_properties(properties);
+}
+
+void response_complete(S3Status status,
+                       S3ErrorDetails const * errorDetails,
+                       void * callbackData)
+{
+    ResponseHandler * rhp = (ResponseHandler *) callbackData;
+    rhp->rh_complete(status, errorDetails);
+}
+
+int put_objdata(int bufferSize, char * buffer, void * callbackData)
+{
+    PutHandler * php = (PutHandler *) callbackData;
+    return php->ph_objdata(bufferSize, buffer);
+}
+
+S3Status get_objdata(int bufferSize, char const * buffer, void * callbackData)
+{
+    GetHandler * ghp = (GetHandler *) callbackData;
+    return ghp->gh_objdata(bufferSize, buffer);
+}
+
+S3ResponseHandler rsp_tramp = { response_properties, response_complete };
+
+S3PutObjectHandler put_tramp = { rsp_tramp, put_objdata };
+
+S3GetObjectHandler get_tramp = { rsp_tramp, get_objdata };
+
+bool S3BlockStore::c_s3inited = false;
 
 bool
 lessByKey(EntryHandle const & i_a, EntryHandle const & i_b)
@@ -29,9 +166,12 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
 }
 
 S3BlockStore::S3BlockStore()
-    : m_size(0)
+    : m_protocol(S3ProtocolHTTP)
+    , m_uri_style(S3UriStyleVirtualHost)
+    , m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
+    , m_blockspath("BLOCKS")
 {
     LOG(lgr, 4, "CTOR");
 }
@@ -48,42 +188,93 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
           InternalError,
           ValueError)
 {
-    string const & path = i_args[0];
-
-    LOG(lgr, 4, "bs_create " << i_size << ' ' << path);
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
-    struct stat statbuff;    
-    if (stat(path.c_str(),&statbuff) == 0) {
-         throwstream(NotUniqueError, FILELINE
-                << "Cannot create file block store at '" << path
-                     << "'. File or directory already exists.");   
-    }
-
     m_size = i_size;
     m_uncommitted = 0;
     m_committed = 0;
 
-    // Make the parent directory.
-    m_rootpath = path;
-    if (mkdir(m_rootpath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
-        throwstream(InternalError, FILELINE
-                    << "mkdir " << m_rootpath << "failed: "
-                    << ACE_OS::strerror(errno));
+    parse_params(i_args);
 
-    // Make the BLOCKS subdir.
-    m_blockspath = m_rootpath + "/BLOCKS";
-    if (mkdir(m_blockspath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
-        throwstream(InternalError, FILELINE
-                    << "mkdir " << m_blockspath << "failed: "
-                    << ACE_OS::strerror(errno));
+    LOG(lgr, 4, "bs_create " << i_size << ' ' << m_bucket_name);
 
-    // Store the size in the root.
-    string szpath = m_rootpath + "/SIZE";
-    ofstream szstrm(szpath.c_str());
-    szstrm << m_size << endl;
-    szstrm.close();
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+    S3CannedAcl acl = S3CannedAclPrivate;
+    char const * loc = NULL;
+
+    // Make sure the bucket doesn't already exist.
+    ResponseHandler rh;
+    char locstr[128];
+    S3_test_bucket(m_protocol,
+                   m_uri_style,
+                   m_access_key_id.c_str(),
+                   m_secret_access_key.c_str(),
+                   m_bucket_name.c_str(),
+                   sizeof(locstr),
+                   locstr,
+                   NULL,
+                   &rsp_tramp,
+                   &rh);
+    S3Status st = rh.wait();
+
+    if (st == S3StatusOK)
+        throwstream(NotUniqueError,
+                    "bucket " << m_bucket_name << " already exists");
+
+    if (st != S3StatusErrorNoSuchBucket)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    // Create the bucket.
+    ResponseHandler rh2;
+    S3_create_bucket(m_protocol,
+                     m_access_key_id.c_str(),
+                     m_secret_access_key.c_str(),
+                     m_bucket_name.c_str(),
+                     acl,
+                     loc,
+                     NULL,
+                     &rsp_tramp,
+                     &rh2);
+    st = rh2.wait();
+
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = m_bucket_name.c_str();
+    buck.protocol = m_protocol;
+    buck.uriStyle = m_uri_style;
+    buck.accessKeyId = m_access_key_id.c_str();
+    buck.secretAccessKey = m_secret_access_key.c_str();
+
+    // Create a SIZE object record.
+    ostringstream ostrm;
+    ostrm << m_size << endl;
+    string const & obj = ostrm.str();
+    MD5 md5sum(obj.data(), obj.size());
+    LOG(lgr, 6, "md5: \"" << md5sum << "\"");
+
+    S3PutProperties pp;
+    ACE_OS::memset(&pp, '\0', sizeof(pp));
+    pp.md5 = md5sum;
+
+    PutHandler ph((uint8 const *) obj.data(), obj.size());
+
+    S3_put_object(&buck,
+                  "SIZE",
+                  obj.size(),
+                  &pp,
+                  NULL,
+                  &put_tramp,
+                  &ph);
+
+    st = ph.wait();
+
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
 }
 
 void
@@ -91,6 +282,72 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
+    parse_params(i_args);
+
+    LOG(lgr, 4, "bs_open " << m_bucket_name);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+    // Make sure the bucket exists.
+    ResponseHandler rh;
+    char locstr[128];
+    S3_test_bucket(m_protocol,
+                   m_uri_style,
+                   m_access_key_id.c_str(),
+                   m_secret_access_key.c_str(),
+                   m_bucket_name.c_str(),
+                   sizeof(locstr),
+                   locstr,
+                   NULL,
+                   &rsp_tramp,
+                   &rh);
+    S3Status st = rh.wait();
+
+    if (st == S3StatusErrorNoSuchBucket)
+        throwstream(NotFoundError,
+                    "bucket " << m_bucket_name << " doesn't exist");
+
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = m_bucket_name.c_str();
+    buck.protocol = m_protocol;
+    buck.uriStyle = m_uri_style;
+    buck.accessKeyId = m_access_key_id.c_str();
+    buck.secretAccessKey = m_secret_access_key.c_str();
+
+    S3GetConditions gc;
+    gc.ifModifiedSince = -1;
+    gc.ifNotModifiedSince = -1;
+    gc.ifMatchETag = NULL;
+    gc.ifNotMatchETag = NULL;
+
+    string buffer(1024, '\0');
+
+    GetHandler gh((uint8 *) &buffer[0], buffer.size());
+
+    S3_get_object(&buck,
+                  "SIZE",
+                  &gc,
+                  0,
+                  0,
+                  NULL,
+                  &get_tramp,
+                  &gh);
+
+    st = gh.wait();
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    istringstream istrm(buffer);
+    istrm >> m_size;
+    LOG(lgr, 4, "bs_open size=" << m_size);
+
+#if 0    
     string const & path = i_args[0];
 
     LOG(lgr, 4, "bs_open " << path);
@@ -187,6 +444,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     m_committed = committed;
     m_uncommitted = uncommitted;
+#endif
 }
 
 void
@@ -226,6 +484,38 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
 
+            // Setup a bucket context.
+            S3BucketContext buck;
+            buck.bucketName = m_bucket_name.c_str();
+            buck.protocol = m_protocol;
+            buck.uriStyle = m_uri_style;
+            buck.accessKeyId = m_access_key_id.c_str();
+            buck.secretAccessKey = m_secret_access_key.c_str();
+
+            S3GetConditions gc;
+            gc.ifModifiedSince = -1;
+            gc.ifNotModifiedSince = -1;
+            gc.ifMatchETag = NULL;
+            gc.ifNotMatchETag = NULL;
+
+            GetHandler gh((uint8 *) o_buffdata, i_buffsize);
+
+            S3_get_object(&buck,
+                          blkpath.c_str(),
+                          &gc,
+                          0,
+                          0,
+                          NULL,
+                          &get_tramp,
+                          &gh);
+
+            S3Status st = gh.wait();
+            if (st != S3StatusOK)
+                throwstream(InternalError, FILELINE
+                            << "Unexpected S3 error: " << st);
+
+            bytes_read = gh.size();
+#if 0
             ACE_stat statbuff;
 
             int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
@@ -267,6 +557,7 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
                             << statbuff.st_size
                             << " bytes, but got " << bytes_read << " bytes");
             }
+#endif
 
             // Release the mutex before the completion function.
         }
@@ -297,7 +588,40 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
 
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
-    
+
+            // Setup a bucket context.
+            S3BucketContext buck;
+            buck.bucketName = m_bucket_name.c_str();
+            buck.protocol = m_protocol;
+            buck.uriStyle = m_uri_style;
+            buck.accessKeyId = m_access_key_id.c_str();
+            buck.secretAccessKey = m_secret_access_key.c_str();
+
+            MD5 md5sum(i_blkdata, i_blksize);
+            LOG(lgr, 6, "md5: \"" << md5sum << "\"");
+
+            S3PutProperties pp;
+            ACE_OS::memset(&pp, '\0', sizeof(pp));
+            pp.md5 = md5sum;
+
+            PutHandler ph((uint8 const *) i_blkdata, i_blksize);
+
+            S3_put_object(&buck,
+                          blkpath.c_str(),
+                          i_blksize,
+                          &pp,
+                          NULL,
+                          &put_tramp,
+                          &ph);
+
+            S3Status st = ph.wait();
+
+            if (st != S3StatusOK)
+                throwstream(InternalError, FILELINE
+                            << "Unexpected S3 error: " << st);
+            
+
+#if 0    
             // Need to stat the block first so we can keep the size accounting
             // straight ...
             //
@@ -368,6 +692,7 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
 
             // Update the entries.
             touch_entry(entry, mtime, size);
+#endif
 
             // Release the mutex before the completion function.
         }
@@ -392,6 +717,7 @@ S3BlockStore::bs_refresh_start(uint64 i_rid)
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
+#if 0
     // Does the refresh ID already exist?
     ACE_stat sb;
     int rv = ACE_OS::stat(rpath.c_str(), &sb);
@@ -417,6 +743,7 @@ S3BlockStore::bs_refresh_start(uint64 i_rid)
 
     // Create the refresh_id entry.
     touch_entry(rname, mtime, size);
+#endif
 }
 
 void
@@ -440,6 +767,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
+#if 0
         // Does the refresh ID exist?
         ACE_stat sb;
         int rv = ACE_OS::stat(rpath.c_str(), &sb);
@@ -475,6 +803,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
             // Update the entries.
             touch_entry(entry, mtime, size);
         }
+#endif
     }
 
     if (ismissing)
@@ -495,6 +824,7 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
+#if 0
     // Does the refresh ID exist?
     ACE_stat sb;
     int rv = ACE_OS::stat(rpath.c_str(), &sb);
@@ -580,6 +910,7 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
 
     m_committed = committed;
     m_uncommitted = uncommitted;
+#endif
 }
 
 void
@@ -589,6 +920,45 @@ S3BlockStore::bs_sync()
 	//always synced to disk
 }
 
+void
+S3BlockStore::parse_params(StringSeq const & i_args)
+{
+    string const KEY_ID = "--s3-access-key-id=";
+    string const SECRET = "--s3-secret-access-key=";
+    string const BUCKET = "--bucket=";
+
+    for (unsigned i = 0; i < i_args.size(); ++i)
+    {
+        if (i_args[i].find(KEY_ID) == 0)
+            m_access_key_id = i_args[i].substr(KEY_ID.length());
+
+        else if (i_args[i].find(SECRET) == 0)
+            m_secret_access_key = i_args[i].substr(SECRET.length());
+
+        else if (i_args[i].find(BUCKET) == 0)
+            m_bucket_name = i_args[i].substr(BUCKET.length());
+
+        else
+            throwstream(ValueError,
+                        "unknown option S3BS parameter: " << i_args[i]);
+    }
+
+    if (m_access_key_id.empty())
+        throwstream(ValueError, "S3BS parameter " << KEY_ID << " missing");
+
+    if (m_secret_access_key.empty())
+        throwstream(ValueError, "S3BS parameter " << SECRET << " missing");
+
+    if (m_bucket_name.empty())
+        throwstream(ValueError, "S3BS parameter " << BUCKET << " missing");
+
+    // Perform one-time initialization.
+    if (!c_s3inited)
+    {
+        S3_initialize(NULL, S3_INIT_ALL);
+        c_s3inited = true;
+    }
+}
 
 string 
 S3BlockStore::entryname(void const * i_keydata, size_t i_keysize) const

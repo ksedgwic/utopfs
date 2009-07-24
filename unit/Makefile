@@ -45,6 +45,7 @@ SCRIPTS =	\
 			test1 \
 			test2 \
 			refresh \
+			s3test \
 			$(NULL)
 
 CFG =		\

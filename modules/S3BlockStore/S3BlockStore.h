@@ -113,6 +113,8 @@ public:
 		throw(utp::InternalError);
 
 protected:
+    void parse_params(utp::StringSeq const & i_args);
+
     std::string entryname(void const * i_keydata, size_t i_keysize) const;
 
     std::string ridname(utp::uint64 i_rid) const;
@@ -131,6 +133,8 @@ private:
     typedef std::set<EntryHandle, lessByName> EntrySet;
     typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
 
+    static bool		    c_s3inited;
+
     S3Protocol			m_protocol;
     S3UriStyle			m_uri_style;
     std::string			m_access_key_id;
@@ -140,7 +144,7 @@ private:
     off_t				m_size;			// Total Size in Bytes
     off_t				m_committed;	// Committed Bytes (must be saved)
     off_t				m_uncommitted;	// Uncommitted Bytes (reclaimable)
-    std::string			m_rootpath;
+
     std::string			m_blockspath;
 
     ACE_Thread_Mutex	m_s3bsmutex;

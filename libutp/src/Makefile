@@ -15,6 +15,7 @@ LIBSRC =	\
 			Log.cpp \
 			LogField.cpp \
 			LoggerBase.cpp \
+			MD5.cpp \
 			Random.cpp \
 			StreamCipher.cpp \
 			T64.cpp \

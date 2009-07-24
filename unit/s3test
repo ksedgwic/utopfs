@@ -1,0 +1,34 @@
+#!/bin/env python
+
+import os
+import sys
+
+import utp
+import utp.BlockStore
+import utp.FileSystem
+
+key_id = os.environ['S3_ACCESS_KEY_ID']
+secret = os.environ['S3_SECRET_ACCESS_KEY']
+
+try:
+    bs = utp.BlockStore.create("S3BS", 1024 * 1024 * 1024,
+                               ("--s3-access-key-id=%s" % key_id,
+                                "--s3-secret-access-key=%s" % secret,
+                                "--bucket=ksedgwic-utopfs0"))
+
+    # bs.bs_close()
+    # 
+    # bs = utp.BlockStore.open("S3BS",
+    # ("--s3-access-key-id=%s" % key_id,
+    # "--s3-secret-access-key=%s" % secret,
+    # "--bucket=ksedgwic-utopfs0"))
+
+    fs = utp.FileSystem.mkfs("UTFS", bs, "", "", "ksedgwic", "ksedgwic", ())
+
+
+except utp.Error, ex:
+    print ex[0]['what']
+
+except:
+    print "Unexpected error:", sys.exc_info()[0]
+    raise

@@ -15,6 +15,8 @@ PRGEXE = 	utopfs
 SCRIPTS =	\
 			runmkfs \
 			runmount \
+			runmkfs.s3 \
+			runmount.s3 \
 			$(NULL)
 
 CFG =		\
