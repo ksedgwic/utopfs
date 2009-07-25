@@ -44,9 +44,12 @@ Harvest RPM from ~/rpm/RPMS ...
 Development Prerequisites
 ----------------------------------------------------------------
 
+    # Python
+    sudo yum install -y python-devel
+
     # Ruby
     sudo yum install -y ruby rubygems
-    sudo gem install rspec
+    sudo gem install -y rspec
 
     # py.test
     sudo yum install -y python-py python-setuptools
@@ -60,6 +63,11 @@ Development Prerequisites
 
     # OpenSSL
     sudo yum install -y openssl-devel
+
+    # bdb
+    sudo yum install -y db4-cxx db4-devel
+
+
 
 
 Building
