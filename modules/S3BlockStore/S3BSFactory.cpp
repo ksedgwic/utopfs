@@ -53,6 +53,8 @@ S3BSFactory::resume()
 
 BlockStoreHandle
 S3BSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+    throw(InternalError,
+          NotUniqueError)
 {
     BlockStoreHandle bsh = new S3BS::S3BlockStore();
     bsh->bs_create(i_size, i_args);
@@ -61,10 +63,21 @@ S3BSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
 
 BlockStoreHandle
 S3BSFactory::bsf_open(StringSeq const & i_args)
+    throw(InternalError,
+          NotFoundError)
 {
     BlockStoreHandle bsh = new S3BS::S3BlockStore();
     bsh->bs_open(i_args);
     return bsh;
+}
+
+void
+S3BSFactory::bsf_destroy(StringSeq const & i_args)
+    throw(InternalError,
+          NotFoundError)
+{
+    throwstream(InternalError, FILELINE
+                << "S3BSFactory::bsf_destroy unimplemented");
 }
 
 ACE_SVC_FACTORY_DEFINE(S3BSFactory)

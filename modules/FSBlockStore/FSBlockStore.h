@@ -54,6 +54,8 @@ struct lessByTstamp {
 class FSBS_EXP FSBlockStore : public utp::BlockStore
 {
 public:
+    static void bs_destroy(utp::StringSeq const & i_args);
+
     FSBlockStore();
 
     virtual ~FSBlockStore();

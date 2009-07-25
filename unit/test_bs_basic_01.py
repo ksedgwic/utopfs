@@ -19,7 +19,6 @@ class Test_bs_basic_01:
     self.bs.bs_close()
     CONFIG.remove_bs(self.bspath)
 
-
   def test_put_and_get_block(self):    
         
     k = buffer("thekey%(random.randrange(999999999))")

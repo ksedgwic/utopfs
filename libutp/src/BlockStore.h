@@ -32,11 +32,12 @@ public:
     /// @param[in] i_args BlockStore specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotUniqueError The blockstore already exists.
     /// @throw ValueError One of the arguments is out of range.
     ///
     virtual void bs_create(size_t i_size, StringSeq const & i_args)
-        throw(NotUniqueError,
-              InternalError,
+        throw(InternalError,
+              NotUniqueError,
               ValueError) = 0;
 
     /// Open a block store.
@@ -44,7 +45,7 @@ public:
     /// @param[in] i_args BlockStore specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError The specified key was not found.
+    /// @throw NotFoundError The specified blockstore was not found.
     ///
     virtual void bs_open(StringSeq const & i_args)
         throw(InternalError,

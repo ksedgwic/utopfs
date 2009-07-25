@@ -18,12 +18,12 @@ class Test_fs_nospace_01:
     self.bspath = "fs_nospace_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_nospace(self):
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create a small filesystem
     bssz = 64 * 1024

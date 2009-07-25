@@ -19,13 +19,13 @@ class Test_fs_bigfile_01:
     self.bspath = "fs_bigfile_01.bs"
 
   def teardown_class(self):
-    #CONFIG.remove_bs(self.bspath) 
+    #CONFIG.remove_bs(self.bspath)
     asfd = 122
 
   def test_can_write_bigfile(self):
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS

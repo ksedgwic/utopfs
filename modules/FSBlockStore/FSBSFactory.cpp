@@ -53,6 +53,8 @@ FSBSFactory::resume()
 
 BlockStoreHandle
 FSBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+    throw(InternalError,
+          NotUniqueError)
 {
     BlockStoreHandle bsh = new FSBS::FSBlockStore();
     bsh->bs_create(i_size, i_args);
@@ -61,10 +63,20 @@ FSBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
 
 BlockStoreHandle
 FSBSFactory::bsf_open(StringSeq const & i_args)
+    throw(InternalError,
+          NotFoundError)
 {
     BlockStoreHandle bsh = new FSBS::FSBlockStore();
     bsh->bs_open(i_args);
     return bsh;
+}
+
+void
+FSBSFactory::bsf_destroy(StringSeq const & i_args)
+    throw(InternalError,
+          NotFoundError)
+{
+    FSBS::FSBlockStore::bs_destroy(i_args);
 }
 
 ACE_SVC_FACTORY_DEFINE(FSBSFactory)

@@ -28,24 +28,61 @@ public:
     /// @param[in] i_size Total size of the block store data in bytes.
     /// @param[in] i_args Implementation specific arguments.
     ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw ValueError The specified factory module was not found.
+    /// @throw NotUniqueError The specified blockstore already exists.
+    ///
     static BlockStoreHandle create(std::string const & i_name,
                                    size_t i_size,
-                                   StringSeq const & i_args);
+                                   StringSeq const & i_args)
+        throw(InternalError,
+              ValueError,
+              NotUniqueError);
 
     /// Called at runtime to open existing blockstore.
     ///
     /// @param[in] i_name Factory module name.
     /// @param[in] i_args Implementation specific arguments.
     ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw ValueError The specified factory module was not found.
+    /// @throw NotFoundError The specified blockstore was not found.
+    ///
     static BlockStoreHandle open(std::string const & i_name,
-                                 StringSeq const & i_args);
+                                 StringSeq const & i_args)
+        throw(InternalError,
+              ValueError,
+              NotFoundError);
+
+    /// Called at runtime to destroy/remove existing blockstore.
+    ///
+    /// @param[in] i_name Factory module name.
+    /// @param[in] i_args Implementation specific arguments.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw ValueError The specified factory module was not found.
+    /// @throw NotFoundError The specified blockstore was not found.
+    ///
+    static void destroy(std::string const & i_name,
+                        StringSeq const & i_args)
+        throw(InternalError,
+              ValueError,
+              NotFoundError);
 
     virtual ~BlockStoreFactory();
 
     virtual BlockStoreHandle bsf_create(size_t i_size,
-                                        StringSeq const & i_args) = 0;
+                                        StringSeq const & i_args)
+        throw(InternalError,
+              NotUniqueError) = 0;
 
-    virtual BlockStoreHandle bsf_open(StringSeq const & i_args) = 0;
+    virtual BlockStoreHandle bsf_open(StringSeq const & i_args)
+        throw(InternalError,
+              NotFoundError) = 0;
+
+    virtual void bsf_destroy(StringSeq const & i_args)
+        throw(InternalError,
+              NotFoundError) = 0;
 };
 
 } // end namespace utp

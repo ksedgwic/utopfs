@@ -17,7 +17,7 @@ class Test_fs_mkfs:
     self.bspath = "fs_mkfs.bs"
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     bsargs = (self.bspath,) + CONFIG.BSARGS
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
@@ -31,7 +31,7 @@ class Test_fs_mkfs:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_hasno_foodir(self):
     # The filesystem should not have a "foo" directory.

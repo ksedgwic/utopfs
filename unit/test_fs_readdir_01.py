@@ -39,7 +39,7 @@ class Test_fs_readdir_01:
     self.bspath = "fs_readdir_01.bs"
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
@@ -60,7 +60,7 @@ class Test_fs_readdir_01:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_can_readdir_root(self):
     # We should be able to list "/"

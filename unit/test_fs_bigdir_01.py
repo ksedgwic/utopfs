@@ -33,12 +33,12 @@ class Test_fs_bigdir_01:
     self.bspath = "fs_bigdir_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_bigdir(self):
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS

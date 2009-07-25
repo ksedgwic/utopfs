@@ -20,10 +20,10 @@ class Test_fs_write_01:
     self.bspath = "fs_write_01.bs"
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_write(self):
 

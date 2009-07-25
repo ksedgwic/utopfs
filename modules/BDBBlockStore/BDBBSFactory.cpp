@@ -53,6 +53,8 @@ BDBBSFactory::resume()
 
 BlockStoreHandle
 BDBBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+    throw(InternalError,
+          NotUniqueError)
 {
     BlockStoreHandle bsh = new BDBBS::BDBBlockStore();
     bsh->bs_create(i_size, i_args);
@@ -61,10 +63,21 @@ BDBBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
 
 BlockStoreHandle
 BDBBSFactory::bsf_open(StringSeq const & i_args)
+    throw(InternalError,
+          NotFoundError)
 {
     BlockStoreHandle bsh = new BDBBS::BDBBlockStore();
     bsh->bs_open(i_args);
     return bsh;
+}
+
+void
+BDBBSFactory::bsf_destroy(StringSeq const & i_args)
+    throw(InternalError,
+          NotFoundError)
+{
+    throwstream(InternalError, FILELINE
+                << "BDBBSFactory::bsf_destroy unimplemented");
 }
 
 ACE_SVC_FACTORY_DEFINE(BDBBSFactory)

@@ -18,12 +18,12 @@ class Test_fs_rmdir_01:
     self.bspath = "fs_rmdir_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_rmdir(self):
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS
@@ -90,7 +90,7 @@ class Test_fs_rmdir_01:
   def test_rmdir_nonempty(self):
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
     bsargs = (self.bspath,) + CONFIG.BSARGS

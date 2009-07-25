@@ -424,9 +424,42 @@ BlockStoreModule_open(PyObject *self, PyObject *i_args)
     PYUTP_CATCH_ALL;
 }
 
+static PyObject *
+BlockStoreModule_destroy(PyObject *self, PyObject *i_args)
+{
+    char * name;
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "sO!:destroy", &name, &PyTuple_Type, &tup))
+		return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "BlockStore::destroy arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        BlockStoreFactory::destroy(name, args);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
 static PyMethodDef BlockStoreModule_methods[] = {
 	{"create",		BlockStoreModule_create,			METH_VARARGS},
     {"open",		BlockStoreModule_open,				METH_VARARGS},
+    {"destroy",		BlockStoreModule_destroy,			METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

@@ -20,7 +20,7 @@ class Test_fs_symlink_02:
     self.bspath = "bs_symlink_02.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_symlink(self):
 

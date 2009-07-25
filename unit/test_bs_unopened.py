@@ -21,14 +21,14 @@ class TestUnopenedBlockStore:
                    utp.BlockStore.open, CONFIG.BSTYPE, ("NOEXIST",))
     
   def test_create(self):    
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
                                CONFIG.BSSIZE,
                                (self.bspath,))
     bs.bs_close()
 
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
     
   def test_should_be_able_to_create_close_and_open_a_block_store(self):
     CONFIG.remove_bs(self.bspath)
@@ -50,7 +50,7 @@ class TestUnopenedBlockStore:
   
   
   def test_create_on_prexisting_should_throw_error(self):
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
                                CONFIG.BSSIZE,
@@ -64,5 +64,5 @@ class TestUnopenedBlockStore:
 
     bs.bs_close()
 
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 

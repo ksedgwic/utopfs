@@ -36,6 +36,79 @@ FSBlockStore::FSBlockStore()
     LOG(lgr, 4, "CTOR");
 }
 
+void
+FSBlockStore::bs_destroy(StringSeq const & i_args)
+{
+    // This is painful, but at least we can make it safer then the old
+    // "rm -rf" approach.
+    //
+    // We loop over all the elements of the blockstore and remove them.
+    //
+    // Mostly we ignore errors, but not if the top level isn't what we
+    // think it is.
+
+    string const & path = i_args[0];
+
+    LOG(lgr, 4, "bs_destroy " << path);
+    
+    ACE_stat sb;
+
+    // Make sure the top level is a directory.
+    if (ACE_OS::stat(path.c_str(), &sb) != 0)
+        throwstream(NotFoundError,
+                    "FSBlockStore::bs_destroy: top dir \""
+                    << path << "\" does not exist");
+    
+    if (! S_ISDIR(sb.st_mode))
+        throwstream(NotFoundError,
+                    "FSBlockStore::bs_destroy: top dir \""
+                    << path << "\" not directory");
+
+    // Make sure the size file exists.
+    string sizepath = path + "/SIZE";
+    if (ACE_OS::stat(sizepath.c_str(), &sb) != 0)
+        throwstream(NotFoundError,
+                    "FSBlockStore::bs_destroy: size file \""
+                    << sizepath << "\" does not exist");
+    
+    if (! S_ISREG(sb.st_mode))
+        throwstream(NotFoundError,
+                    "FSBlockStore::bs_destroy: size file \""
+                    << sizepath << "\" not file");
+
+    // Unlink the SIZE file
+    unlink(sizepath.c_str());
+
+    // Read all of the existing blocks.
+    string blockspath = path + "/BLOCKS";
+    ACE_Dirent dir;
+    if (dir.open(blockspath.c_str()) == -1)
+        throwstream(InternalError, FILELINE
+                    << "dir open " << path << " failed: "
+                    << ACE_OS::strerror(errno));
+    for (ACE_DIRENT * dep = dir.read(); dep; dep = dir.read())
+    {
+        string entry = dep->d_name;
+
+        // Skip '.' and '..'.
+        if (entry == "." || entry == "..")
+            continue;
+
+        // Remove the block.
+        string blkpath = blockspath + '/' + entry;
+        unlink(blkpath.c_str());
+    }
+
+    // Remove the blocks subdir.
+    rmdir(blockspath.c_str());
+
+    // Remove the path.
+    if (rmdir(path.c_str()))
+        throwstream(InternalError, FILELINE
+                    << "FSBlockStore::bs_destroy failed: "
+                    << ACE_OS::strerror(errno));
+}
+
 FSBlockStore::~FSBlockStore()
 {
     // Don't try and log here ... in static object destructor context
