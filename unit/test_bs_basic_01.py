@@ -13,7 +13,7 @@ class Test_bs_basic_01:
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
                                     CONFIG.BSSIZE,
-                                    (self.bspath,))
+                                    CONFIG.BSARGS(self.bspath))
     
   def teardown_class(self):
     self.bs.bs_close()

@@ -797,6 +797,11 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
                           &gh);
 
             S3Status st = gh.wait();
+
+            if (st == S3StatusErrorNoSuchKey)
+                throwstream(NotFoundError,
+                            "key \"" << blkpath << "\" not found");
+
             if (st != S3StatusOK)
                 throwstream(InternalError, FILELINE
                             << "Unexpected S3 error: " << st);

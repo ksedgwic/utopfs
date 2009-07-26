@@ -46,6 +46,7 @@ SCRIPTS =	\
 			test2 \
 			refresh \
 			s3test \
+			rmbuck \
 			$(NULL)
 
 CFG =		\
