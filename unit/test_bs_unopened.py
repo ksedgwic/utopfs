@@ -20,7 +20,7 @@ class TestUnopenedBlockStore:
     py.test.raises(utp.NotFoundError,
                    utp.BlockStore.open,
                    CONFIG.BSTYPE,
-                   CONFIG.BSARGS("NOEXIST"))
+                   CONFIG.BSARGS("noexist"))
     
   def test_create(self):    
     CONFIG.remove_bs(self.bspath)

@@ -18,24 +18,24 @@ GNAME = grp.getgrgid(os.getegid()).gr_name
 ## BSSIZE = 1 * 1024 * 1024 * 1024
 ## def BSARGS(bspath): return (bspath,)
 
-# FSBlockStore
-#
-BSTYPE = "FSBS"
-BSSIZE = 1 * 1024 * 1024 * 1024
-def BSARGS(bspath): return (bspath,)
-
-## # S3BlockStore
+## # FSBlockStore
 ## #
-## key_id = os.environ['S3_ACCESS_KEY_ID']
-## secret = os.environ['S3_SECRET_ACCESS_KEY']
-## BSTYPE = "S3BS"
+## BSTYPE = "FSBS"
 ## BSSIZE = 1 * 1024 * 1024 * 1024
-## def BSARGS(bspath):
-##   # S3 doesn't allow underscores.
-##   bspath = string.replace(bspath, "_", "-")
-##   return ("--s3-access-key-id=%s" % key_id,
-##           "--s3-secret-access-key=%s" % secret,
-##           "--bucket=ksedgwic-utopfsunit-%s" % bspath)
+## def BSARGS(bspath): return (bspath,)
+
+# S3BlockStore
+#
+key_id = os.environ['S3_ACCESS_KEY_ID']
+secret = os.environ['S3_SECRET_ACCESS_KEY']
+BSTYPE = "S3BS"
+BSSIZE = 1 * 1024 * 1024 * 1024
+def BSARGS(bspath):
+  # S3 doesn't allow underscores.
+  bspath = string.replace(bspath, "_", "-")
+  return ("--s3-access-key-id=%s" % key_id,
+          "--s3-secret-access-key=%s" % secret,
+          "--bucket=ksedgwic-utopfs-unit-%s" % bspath)
 
 # Which FileSystem module should we use?
 FSTYPE = "UTFS"
@@ -43,7 +43,6 @@ FSARGS = ()
 
 def remove_bs(path):
   try:
-    print BSARGS(path)
     utp.BlockStore.destroy(BSTYPE, BSARGS(path))
   except utp.NotFoundError, ex:
     # It's ok of the blockstore doesn't exist ..

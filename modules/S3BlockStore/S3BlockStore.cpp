@@ -43,8 +43,6 @@ public:
     virtual void rh_complete(S3Status status,
                              S3ErrorDetails const * errorDetails)
     {
-        LOG(lgr, 6, "rh_complete: " << status);
-
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3rhmutex);
         m_status = status;
         m_complete = true;
@@ -73,14 +71,11 @@ public:
         : m_data(i_data)
         , m_size(i_size)
     {
-        LOG(lgr, 6, "PutHandler CTOR " << i_size);
     }
 
     virtual int ph_objdata(int i_buffsz, char * o_buffer)
     {
         size_t sz = min(size_t(i_buffsz), m_size);
-
-        LOG(lgr, 6, "ph_objdata: " << sz);
 
         ACE_OS::memcpy(o_buffer, m_data, sz);
         m_data += sz;
@@ -240,7 +235,6 @@ public:
         for (int i = 0; i < i_contents_count; ++i)
         {
             S3ListBucketContent const * cp = &i_contents[i];
-            LOG(lgr, 7, "lh_item " << cp->size << ' ' << cp->key);
             m_keys.push_back(cp->key);
         }
 
@@ -327,6 +321,8 @@ S3BlockStore::destroy(StringSeq const & i_args)
     // Delete all of the keys.
     for (unsigned i = 0; i < keys.size(); ++i)
     {
+        LOG(lgr, 7, "deleting " << keys[i]);
+
         ResponseHandler rh;
         S3_delete_object(&buck,
                          keys[i].c_str(),
@@ -354,15 +350,15 @@ S3BlockStore::destroy(StringSeq const & i_args)
         throwstream(InternalError, FILELINE
                     << "Unexpected S3 error: " << st);
 
-    // Re-init the s3 context; it appears buckets don't appear
-    // to go away until we re-initialize ... sigh.
-    //
-    S3_deinitialize();
-    S3_initialize(NULL, S3_INIT_ALL);
-
     // Unfortunately we must poll until it actually goes away ...
     for (unsigned i = 0; true; ++i)
     {
+        // Re-init the s3 context; it appears buckets don't appear
+        // to go away until we re-initialize ... sigh.
+        //
+        S3_deinitialize();
+        S3_initialize(NULL, S3_INIT_ALL);
+
         ResponseHandler rh;
         char locstr[128];
         S3_test_bucket(protocol,
@@ -393,65 +389,6 @@ S3BlockStore::destroy(StringSeq const & i_args)
         sleep(1);
         LOG(lgr, 7, "polling destroyed bucket again ...");
     }
-
-#if 0    
-    ACE_stat sb;
-
-    // Make sure the top level is a directory.
-    if (ACE_OS::stat(path.c_str(), &sb) != 0)
-        throwstream(NotFoundError,
-                    "S3BlockStore::destroy: top dir \""
-                    << path << "\" does not exist");
-    
-    if (! S_ISDIR(sb.st_mode))
-        throwstream(NotFoundError,
-                    "S3BlockStore::destroy: top dir \""
-                    << path << "\" not directory");
-
-    // Make sure the size file exists.
-    string sizepath = path + "/SIZE";
-    if (ACE_OS::stat(sizepath.c_str(), &sb) != 0)
-        throwstream(NotFoundError,
-                    "S3BlockStore::destroy: size file \""
-                    << sizepath << "\" does not exist");
-    
-    if (! S_ISREG(sb.st_mode))
-        throwstream(NotFoundError,
-                    "S3BlockStore::destroy: size file \""
-                    << sizepath << "\" not file");
-
-    // Unlink the SIZE file
-    unlink(sizepath.c_str());
-
-    // Read all of the existing blocks.
-    string blockspath = path + "/BLOCKS";
-    ACE_Dirent dir;
-    if (dir.open(blockspath.c_str()) == -1)
-        throwstream(InternalError, FILELINE
-                    << "dir open " << path << " failed: "
-                    << ACE_OS::strerror(errno));
-    for (ACE_DIRENT * dep = dir.read(); dep; dep = dir.read())
-    {
-        string entry = dep->d_name;
-
-        // Skip '.' and '..'.
-        if (entry == "." || entry == "..")
-            continue;
-
-        // Remove the block.
-        string blkpath = blockspath + '/' + entry;
-        unlink(blkpath.c_str());
-    }
-
-    // Remove the blocks subdir.
-    rmdir(blockspath.c_str());
-
-    // Remove the path.
-    if (rmdir(path.c_str()))
-        throwstream(InternalError, FILELINE
-                    << "S3BlockStore::destroy failed: "
-                    << ACE_OS::strerror(errno));
-#endif
 }
 
 S3BlockStore::S3BlockStore()
@@ -528,6 +465,46 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
         throwstream(InternalError, FILELINE
                     << "Unexpected S3 error: " << st);
 
+    // Poll until the bucket appears.
+    for (unsigned i = 0; true; ++i)
+    {
+        // Re-init the s3 context; it appears buckets don't appear
+        // until we re-initialize ... sigh.
+        //
+        S3_deinitialize();
+        S3_initialize(NULL, S3_INIT_ALL);
+
+        ResponseHandler rh;
+        char locstr[128];
+        S3_test_bucket(m_protocol,
+                       m_uri_style,
+                       m_access_key_id.c_str(),
+                       m_secret_access_key.c_str(),
+                       m_bucket_name.c_str(),
+                       sizeof(locstr),
+                       locstr,
+                       NULL,
+                       &rsp_tramp,
+                       &rh);
+        S3Status st = rh.wait();
+
+        // If it's gone we're done
+        if (st == S3StatusOK)
+            break;
+
+        // Did something else go wrong?
+        if (st != S3StatusErrorNoSuchBucket)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+
+        if (i >= 100)
+            throwstream(InternalError, FILELINE
+                        << "polled too many times; bucket still there");
+
+        sleep(1);
+        LOG(lgr, 7, "polling created bucket again ...");
+    }
+
     // Setup a bucket context.
     S3BucketContext buck;
     buck.bucketName = m_bucket_name.c_str();
@@ -541,7 +518,6 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     ostrm << m_size << endl;
     string const & obj = ostrm.str();
     MD5 md5sum(obj.data(), obj.size());
-    LOG(lgr, 6, "md5: \"" << md5sum << "\"");
 
     S3PutProperties pp;
     ACE_OS::memset(&pp, '\0', sizeof(pp));
