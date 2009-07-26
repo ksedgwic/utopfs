@@ -19,8 +19,7 @@ class Test_fs_bigfile_01:
     self.bspath = "fs_bigfile_01.bs"
 
   def teardown_class(self):
-    #CONFIG.remove_bs(self.bspath)
-    asfd = 122
+    CONFIG.remove_bs(self.bspath)
 
   def test_can_write_bigfile(self):
 
