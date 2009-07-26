@@ -44,7 +44,7 @@ class Test_fs_readdir_01:
     CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
@@ -60,7 +60,7 @@ class Test_fs_readdir_01:
     self.bs.bs_close()
 
     # Now mount it again.
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs, "", "", CONFIG.FSARGS)
 

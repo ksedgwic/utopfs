@@ -19,7 +19,7 @@ class Test_fs_mkfs:
     # Remove any prexisting blockstore.
     CONFIG.remove_bs(self.bspath)
 
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)

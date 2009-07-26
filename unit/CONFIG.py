@@ -15,13 +15,23 @@ GNAME = grp.getgrgid(os.getegid()).gr_name
 ## #
 ## BSTYPE = "BDBBS"
 ## BSSIZE = 1 * 1024 * 1024 * 1024
-## BSARGS = ()
+## def BSARGS(bspath): return (bspath,)
 
 # FSBlockStore
-
+#
 BSTYPE = "FSBS"
 BSSIZE = 1 * 1024 * 1024 * 1024
-BSARGS = ()
+def BSARGS(bspath): return (bspath,)
+
+## # S3BlockStore
+## #
+## key_id = os.environ['S3_ACCESS_KEY_ID']
+## secret = os.environ['S3_SECRET_ACCESS_KEY']
+## BSTYPE = "S3BS"
+## def BSPATH(bspath):
+##   return ("--s3-access-key-id=%s" % key_id,
+##           "--s3-secret-access-key=%s" % secret,
+##           "--bucket=ksedgwic-utopfsunit-%s" % bspath)
 
 # Which FileSystem module should we use?
 FSTYPE = "UTFS"
