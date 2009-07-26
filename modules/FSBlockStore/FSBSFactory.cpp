@@ -76,7 +76,7 @@ FSBSFactory::bsf_destroy(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    FSBS::FSBlockStore::bs_destroy(i_args);
+    FSBS::FSBlockStore::destroy(i_args);
 }
 
 ACE_SVC_FACTORY_DEFINE(FSBSFactory)

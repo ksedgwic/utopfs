@@ -118,6 +118,39 @@ private:
     size_t				m_size;
 };
 
+class ListHandler : public ResponseHandler
+{
+public:
+    ListHandler() {}
+
+    virtual S3Status lh_item(int i_istrunc,
+                             char const * i_next_marker,
+                             int i_contents_count,
+                             S3ListBucketContent const * i_contents,
+                             int i_common_prefixes_count,
+                             char const ** i_common_prefixes)
+    {
+        if (i_istrunc)
+            throwstream(InternalError, FILELINE
+                        << "Rats, need to implement truncated handling ...");
+
+        for (int i = 0; i < i_common_prefixes_count; ++i)
+        {
+            LOG(lgr, 7, "lh_item pfx " << i_common_prefixes[i]);
+        }
+
+        for (int i = 0; i < i_contents_count; ++i)
+        {
+            S3ListBucketContent const * cp = &i_contents[i];
+            LOG(lgr, 7, "lh_item " << cp->size << ' ' << cp->key);
+        }
+
+        return S3StatusOK;
+    }
+
+private:
+};
+
 S3Status response_properties(S3ResponseProperties const * properties,
                              void * callbackData)
 {
@@ -145,11 +178,30 @@ S3Status get_objdata(int bufferSize, char const * buffer, void * callbackData)
     return ghp->gh_objdata(bufferSize, buffer);
 }
 
+S3Status list_callback(int isTruncated,
+                       const char *nextMarker,
+                       int contentsCount, 
+                       const S3ListBucketContent *contents,
+                       int commonPrefixesCount,
+                       const char **commonPrefixes,
+                       void *callbackData)
+{
+    ListHandler * lhp = (ListHandler *) callbackData;
+    return lhp->lh_item(isTruncated,
+                        nextMarker,
+                        contentsCount,
+                        contents,
+                        commonPrefixesCount,
+                        commonPrefixes);
+}
+
 S3ResponseHandler rsp_tramp = { response_properties, response_complete };
 
 S3PutObjectHandler put_tramp = { rsp_tramp, put_objdata };
 
 S3GetObjectHandler get_tramp = { rsp_tramp, get_objdata };
+
+S3ListBucketHandler lst_tramp = { rsp_tramp, list_callback };
 
 bool S3BlockStore::c_s3inited = false;
 
@@ -165,10 +217,245 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
     return i_a->m_tstamp < i_b->m_tstamp;
 }
 
+class KeyListHandler : public ListHandler
+{
+public:
+    KeyListHandler(StringSeq & o_keys) : m_keys(o_keys) {}
+
+    virtual S3Status lh_item(int i_istrunc,
+                             char const * i_next_marker,
+                             int i_contents_count,
+                             S3ListBucketContent const * i_contents,
+                             int i_common_prefixes_count,
+                             char const ** i_common_prefixes)
+    {
+        if (i_istrunc)
+            throwstream(InternalError, FILELINE
+                        << "truncated lists make me sad");
+
+        if (i_common_prefixes_count)
+            throwstream(InternalError, FILELINE
+                        << "common prefixes make me sad");
+
+        for (int i = 0; i < i_contents_count; ++i)
+        {
+            S3ListBucketContent const * cp = &i_contents[i];
+            LOG(lgr, 7, "lh_item " << cp->size << ' ' << cp->key);
+            m_keys.push_back(cp->key);
+        }
+
+        return S3StatusOK;
+    }
+    
+private:
+    StringSeq & m_keys;
+};
+
+void
+S3BlockStore::destroy(StringSeq const & i_args)
+{
+    // This is painful, but at least we can make it safer then the old
+    // "rm -rf" approach.
+    //
+    // We loop over all the elements of the blockstore and remove them.
+    //
+    // Mostly we ignore errors, but not if the top level isn't what we
+    // think it is.
+
+    S3Protocol protocol;
+    S3UriStyle uri_style;
+    string access_key_id;
+    string secret_access_key;
+    string bucket_name;
+
+    parse_params(i_args,
+                 protocol,
+                 uri_style,
+                 access_key_id,
+                 secret_access_key,
+                 bucket_name);
+
+    LOG(lgr, 4, "destroy " << bucket_name);
+
+    // Make sure the bucket exists.
+    ResponseHandler rh;
+    char locstr[128];
+    S3_test_bucket(protocol,
+                   uri_style,
+                   access_key_id.c_str(),
+                   secret_access_key.c_str(),
+                   bucket_name.c_str(),
+                   sizeof(locstr),
+                   locstr,
+                   NULL,
+                   &rsp_tramp,
+                   &rh);
+    S3Status st = rh.wait();
+
+    if (st == S3StatusErrorNoSuchBucket)
+        throwstream(NotFoundError,
+                    "bucket " << bucket_name << " doesn't exist");
+
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = bucket_name.c_str();
+    buck.protocol = protocol;
+    buck.uriStyle = uri_style;
+    buck.accessKeyId = access_key_id.c_str();
+    buck.secretAccessKey = secret_access_key.c_str();
+
+    // Accumulate a list of all the keys.
+    StringSeq keys;
+    KeyListHandler klh(keys);
+    S3_list_bucket(&buck,
+                   NULL,
+                   NULL,
+                   NULL,
+                   INT_MAX,
+                   NULL,
+                   &lst_tramp,
+                   &klh);
+    st = klh.wait();
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    // Delete all of the keys.
+    for (unsigned i = 0; i < keys.size(); ++i)
+    {
+        ResponseHandler rh;
+        S3_delete_object(&buck,
+                         keys[i].c_str(),
+                         NULL,
+                         &rsp_tramp,
+                         &rh);
+        st = rh.wait();
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+    }
+
+    // Delete the bucket.
+    ResponseHandler rh2;
+    S3_delete_bucket(protocol,
+                     uri_style,
+                     access_key_id.c_str(),
+                     secret_access_key.c_str(),
+                     bucket_name.c_str(),
+                     NULL,
+                     &rsp_tramp,
+                     &rh2);
+    st = rh2.wait();
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    // Re-init the s3 context; it appears buckets don't appear
+    // to go away until we re-initialize ... sigh.
+    //
+    S3_deinitialize();
+    S3_initialize(NULL, S3_INIT_ALL);
+
+    // Unfortunately we must poll until it actually goes away ...
+    for (unsigned i = 0; true; ++i)
+    {
+        ResponseHandler rh;
+        char locstr[128];
+        S3_test_bucket(protocol,
+                       uri_style,
+                       access_key_id.c_str(),
+                       secret_access_key.c_str(),
+                       bucket_name.c_str(),
+                       sizeof(locstr),
+                       locstr,
+                       NULL,
+                       &rsp_tramp,
+                       &rh);
+        S3Status st = rh.wait();
+
+        // If it's gone we're done
+        if (st == S3StatusErrorNoSuchBucket)
+            break;
+
+        // Did something else go wrong?
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+
+        if (i >= 100)
+            throwstream(InternalError, FILELINE
+                        << "polled too many times; bucket still there");
+
+        sleep(1);
+        LOG(lgr, 7, "polling destroyed bucket again ...");
+    }
+
+#if 0    
+    ACE_stat sb;
+
+    // Make sure the top level is a directory.
+    if (ACE_OS::stat(path.c_str(), &sb) != 0)
+        throwstream(NotFoundError,
+                    "S3BlockStore::destroy: top dir \""
+                    << path << "\" does not exist");
+    
+    if (! S_ISDIR(sb.st_mode))
+        throwstream(NotFoundError,
+                    "S3BlockStore::destroy: top dir \""
+                    << path << "\" not directory");
+
+    // Make sure the size file exists.
+    string sizepath = path + "/SIZE";
+    if (ACE_OS::stat(sizepath.c_str(), &sb) != 0)
+        throwstream(NotFoundError,
+                    "S3BlockStore::destroy: size file \""
+                    << sizepath << "\" does not exist");
+    
+    if (! S_ISREG(sb.st_mode))
+        throwstream(NotFoundError,
+                    "S3BlockStore::destroy: size file \""
+                    << sizepath << "\" not file");
+
+    // Unlink the SIZE file
+    unlink(sizepath.c_str());
+
+    // Read all of the existing blocks.
+    string blockspath = path + "/BLOCKS";
+    ACE_Dirent dir;
+    if (dir.open(blockspath.c_str()) == -1)
+        throwstream(InternalError, FILELINE
+                    << "dir open " << path << " failed: "
+                    << ACE_OS::strerror(errno));
+    for (ACE_DIRENT * dep = dir.read(); dep; dep = dir.read())
+    {
+        string entry = dep->d_name;
+
+        // Skip '.' and '..'.
+        if (entry == "." || entry == "..")
+            continue;
+
+        // Remove the block.
+        string blkpath = blockspath + '/' + entry;
+        unlink(blkpath.c_str());
+    }
+
+    // Remove the blocks subdir.
+    rmdir(blockspath.c_str());
+
+    // Remove the path.
+    if (rmdir(path.c_str()))
+        throwstream(InternalError, FILELINE
+                    << "S3BlockStore::destroy failed: "
+                    << ACE_OS::strerror(errno));
+#endif
+}
+
 S3BlockStore::S3BlockStore()
-    : m_protocol(S3ProtocolHTTP)
-    , m_uri_style(S3UriStyleVirtualHost)
-    , m_size(0)
+    : m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
     , m_blockspath("BLOCKS")
@@ -192,7 +479,7 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     m_uncommitted = 0;
     m_committed = 0;
 
-    parse_params(i_args);
+    setup_params(i_args);
 
     LOG(lgr, 4, "bs_create " << i_size << ' ' << m_bucket_name);
 
@@ -282,7 +569,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    parse_params(i_args);
+    setup_params(i_args);
 
     LOG(lgr, 4, "bs_open " << m_bucket_name);
 
@@ -921,8 +1208,17 @@ S3BlockStore::bs_sync()
 }
 
 void
-S3BlockStore::parse_params(StringSeq const & i_args)
+S3BlockStore::parse_params(StringSeq const & i_args,
+                           S3Protocol & o_protocol,
+                           S3UriStyle & o_uri_style,
+                           string & o_access_key_id,
+                           string & o_secret_access_key,
+                           string & o_bucket_name)
 {
+    // For now just assign these
+    o_protocol = S3ProtocolHTTPS;
+    o_uri_style = S3UriStyleVirtualHost;
+
     string const KEY_ID = "--s3-access-key-id=";
     string const SECRET = "--s3-secret-access-key=";
     string const BUCKET = "--bucket=";
@@ -930,26 +1226,26 @@ S3BlockStore::parse_params(StringSeq const & i_args)
     for (unsigned i = 0; i < i_args.size(); ++i)
     {
         if (i_args[i].find(KEY_ID) == 0)
-            m_access_key_id = i_args[i].substr(KEY_ID.length());
+            o_access_key_id = i_args[i].substr(KEY_ID.length());
 
         else if (i_args[i].find(SECRET) == 0)
-            m_secret_access_key = i_args[i].substr(SECRET.length());
+            o_secret_access_key = i_args[i].substr(SECRET.length());
 
         else if (i_args[i].find(BUCKET) == 0)
-            m_bucket_name = i_args[i].substr(BUCKET.length());
+            o_bucket_name = i_args[i].substr(BUCKET.length());
 
         else
             throwstream(ValueError,
                         "unknown option S3BS parameter: " << i_args[i]);
     }
 
-    if (m_access_key_id.empty())
+    if (o_access_key_id.empty())
         throwstream(ValueError, "S3BS parameter " << KEY_ID << " missing");
 
-    if (m_secret_access_key.empty())
+    if (o_secret_access_key.empty())
         throwstream(ValueError, "S3BS parameter " << SECRET << " missing");
 
-    if (m_bucket_name.empty())
+    if (o_bucket_name.empty())
         throwstream(ValueError, "S3BS parameter " << BUCKET << " missing");
 
     // Perform one-time initialization.
@@ -958,6 +1254,17 @@ S3BlockStore::parse_params(StringSeq const & i_args)
         S3_initialize(NULL, S3_INIT_ALL);
         c_s3inited = true;
     }
+}
+
+void
+S3BlockStore::setup_params(StringSeq const & i_args)
+{
+    parse_params(i_args,
+                 m_protocol,
+                 m_uri_style,
+                 m_access_key_id,
+                 m_secret_access_key,
+                 m_bucket_name);
 }
 
 string 

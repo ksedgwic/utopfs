@@ -56,6 +56,8 @@ struct lessByTstamp {
 class S3BS_EXP S3BlockStore : public utp::BlockStore
 {
 public:
+    static void destroy(utp::StringSeq const & i_args);
+
     S3BlockStore();
 
     virtual ~S3BlockStore();
@@ -113,8 +115,15 @@ public:
 		throw(utp::InternalError);
 
 protected:
-    void parse_params(utp::StringSeq const & i_args);
+    static void parse_params(utp::StringSeq const & i_args,
+                             S3Protocol & o_protocol,
+                             S3UriStyle & o_uri_style,
+                             std::string & o_access_key_id,
+                             std::string & o_secret_access_key,
+                             std::string & o_bucket_name);
 
+    void setup_params(utp::StringSeq const & i_args);
+    
     std::string entryname(void const * i_keydata, size_t i_keysize) const;
 
     std::string ridname(utp::uint64 i_rid) const;

@@ -76,8 +76,7 @@ S3BSFactory::bsf_destroy(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    throwstream(InternalError, FILELINE
-                << "S3BSFactory::bsf_destroy unimplemented");
+    S3BS::S3BlockStore::destroy(i_args);
 }
 
 ACE_SVC_FACTORY_DEFINE(S3BSFactory)

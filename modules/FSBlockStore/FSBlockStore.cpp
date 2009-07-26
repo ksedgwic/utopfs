@@ -28,16 +28,8 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
     return i_a->m_tstamp < i_b->m_tstamp;
 }
 
-FSBlockStore::FSBlockStore()
-    : m_size(0)
-    , m_committed(0)
-    , m_uncommitted(0)
-{
-    LOG(lgr, 4, "CTOR");
-}
-
 void
-FSBlockStore::bs_destroy(StringSeq const & i_args)
+FSBlockStore::destroy(StringSeq const & i_args)
 {
     // This is painful, but at least we can make it safer then the old
     // "rm -rf" approach.
@@ -49,31 +41,31 @@ FSBlockStore::bs_destroy(StringSeq const & i_args)
 
     string const & path = i_args[0];
 
-    LOG(lgr, 4, "bs_destroy " << path);
+    LOG(lgr, 4, "destroy " << path);
     
     ACE_stat sb;
 
     // Make sure the top level is a directory.
     if (ACE_OS::stat(path.c_str(), &sb) != 0)
         throwstream(NotFoundError,
-                    "FSBlockStore::bs_destroy: top dir \""
+                    "FSBlockStore::destroy: top dir \""
                     << path << "\" does not exist");
     
     if (! S_ISDIR(sb.st_mode))
         throwstream(NotFoundError,
-                    "FSBlockStore::bs_destroy: top dir \""
+                    "FSBlockStore::destroy: top dir \""
                     << path << "\" not directory");
 
     // Make sure the size file exists.
     string sizepath = path + "/SIZE";
     if (ACE_OS::stat(sizepath.c_str(), &sb) != 0)
         throwstream(NotFoundError,
-                    "FSBlockStore::bs_destroy: size file \""
+                    "FSBlockStore::destroy: size file \""
                     << sizepath << "\" does not exist");
     
     if (! S_ISREG(sb.st_mode))
         throwstream(NotFoundError,
-                    "FSBlockStore::bs_destroy: size file \""
+                    "FSBlockStore::destroy: size file \""
                     << sizepath << "\" not file");
 
     // Unlink the SIZE file
@@ -105,8 +97,16 @@ FSBlockStore::bs_destroy(StringSeq const & i_args)
     // Remove the path.
     if (rmdir(path.c_str()))
         throwstream(InternalError, FILELINE
-                    << "FSBlockStore::bs_destroy failed: "
+                    << "FSBlockStore::destroy failed: "
                     << ACE_OS::strerror(errno));
+}
+
+FSBlockStore::FSBlockStore()
+    : m_size(0)
+    , m_committed(0)
+    , m_uncommitted(0)
+{
+    LOG(lgr, 4, "CTOR");
 }
 
 FSBlockStore::~FSBlockStore()
