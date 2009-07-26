@@ -56,6 +56,9 @@ struct lessByTstamp {
 class S3BS_EXP S3BlockStore : public utp::BlockStore
 {
 public:
+    typedef std::set<EntryHandle, lessByName> EntrySet;
+    typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
+
     static void destroy(utp::StringSeq const & i_args);
 
     S3BlockStore();
@@ -139,9 +142,6 @@ protected:
     void purge_uncommitted();
 
 private:
-    typedef std::set<EntryHandle, lessByName> EntrySet;
-    typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
-
     static bool		    c_s3inited;
 
     S3Protocol			m_protocol;

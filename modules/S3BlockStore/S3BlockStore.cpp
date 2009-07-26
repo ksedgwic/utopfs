@@ -6,6 +6,7 @@
 #include <ace/Condition_Thread_Mutex.h>
 #include <ace/Thread_Mutex.h>
 #include <ace/Dirent.h>
+#include <ace/os_include/os_byteswap.h>
 
 #include "Log.h"
 
@@ -30,13 +31,34 @@ class ResponseHandler
 {
 public:
     ResponseHandler()
-        : m_s3rhcond(m_s3rhmutex)
+        : m_propsvalid(false)
+        , m_s3rhcond(m_s3rhmutex)
         , m_complete(false)
     {
     }
 
-    virtual S3Status rh_properties(S3ResponseProperties const * properties)
+    virtual S3Status rh_properties(S3ResponseProperties const * pp)
     {
+        m_propsvalid = true;
+
+        if (pp->requestId)
+            m_reqid = pp->requestId;
+        if (pp->requestId2)
+            m_reqid2 = pp->requestId2;
+        if (pp->contentType)
+            m_content_type = pp->contentType;
+        m_content_length = pp->contentLength;
+        if (pp->server)
+            m_server = pp->server;
+        if (pp->eTag)
+            m_etag = pp->eTag;
+        m_last_modified = pp->lastModified;
+        for (int i = 0; i < pp->metaDataCount; ++i)
+        {
+            S3NameValue const * nvp = &pp->metaData[i];
+            m_metadata.push_back(make_pair(nvp->name, nvp->value));
+        }
+
         return S3StatusOK;
     }
 
@@ -56,6 +78,19 @@ public:
             m_s3rhcond.wait();
         return m_status;
     }
+
+    typedef vector<pair<string, string> > NameValueSeq;
+
+    // From the S3ResponseProperties
+    bool						m_propsvalid;
+    string						m_reqid;
+    string						m_reqid2;
+    string						m_content_type;
+    uint64_t					m_content_length;
+    string						m_server;
+    string						m_etag;
+    int64_t						m_last_modified;
+    NameValueSeq				m_metadata;
 
 private:
     ACE_Thread_Mutex			m_s3rhmutex;
@@ -540,6 +575,58 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
                     << "Unexpected S3 error: " << st);
 }
 
+class EntryListHandler : public ListHandler
+{
+public:
+    EntryListHandler(S3BlockStore::EntrySet & entries,
+                     S3BlockStore::EntryTimeSet & ets)
+        : m_entries(entries)
+        , m_ets(ets)
+    {}
+
+    virtual S3Status lh_item(int i_istrunc,
+                             char const * i_next_marker,
+                             int i_contents_count,
+                             S3ListBucketContent const * i_contents,
+                             int i_common_prefixes_count,
+                             char const ** i_common_prefixes)
+    {
+        if (i_istrunc)
+            throwstream(InternalError, FILELINE
+                        << "truncated lists make me sad");
+
+        if (i_common_prefixes_count)
+            throwstream(InternalError, FILELINE
+                        << "common prefixes make me sad");
+
+        for (int i = 0; i < i_contents_count; ++i)
+        {
+            S3ListBucketContent const * cp = &i_contents[i];
+
+            string entry = cp->key;
+            time_t mtime = time_t(cp->lastModified);
+            size_t size = cp->size;
+
+            // We only want to traverse items in BLOCKS/
+            if (entry.substr(7) != "BLOCKS/")
+                continue;
+
+            LOG(lgr, 7, "entry " << entry);
+
+            // Insert into the entries and time-sorted entries sets.
+            EntryHandle eh = new Entry(entry, mtime, size);
+            m_entries.insert(eh);
+            m_ets.insert(eh);
+        }
+
+        return S3StatusOK;
+    }
+    
+private:
+    S3BlockStore::EntrySet &			m_entries;
+    S3BlockStore::EntryTimeSet &		m_ets;
+};
+
 void
 S3BlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
@@ -610,62 +697,51 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     istrm >> m_size;
     LOG(lgr, 4, "bs_open size=" << m_size);
 
-#if 0    
-    string const & path = i_args[0];
-
-    LOG(lgr, 4, "bs_open " << path);
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
-    ACE_stat sb;
-    
-    if (ACE_OS::stat(path.c_str(), &sb) != 0)
-        throwstream(NotFoundError, FILELINE
-                << "Cannot open file block store at '" << path
-                    << "'. Directory does not exist.");    
-    
-    if (! S_ISDIR(sb.st_mode))
-        throwstream(NotFoundError, FILELINE
-                << "Cannot open file block store at '" << path
-                    << "'. Path is not a directory.");
-
-    m_rootpath = path;
-    m_blockspath = m_rootpath + "/BLOCKS";
-
-    // Figure out the size.
-    string szpath = m_rootpath + "/SIZE";
-    ifstream szstrm(szpath.c_str());
-    szstrm >> m_size;
-    szstrm.close();
-
-    // Read all of the existing blocks.
+    // Inventory all existing blocks, insert into entries and
+    // time-sorted entries sets.
+    //
     EntryTimeSet ets;
-    ACE_Dirent dir;
-    if (dir.open(m_blockspath.c_str()) == -1)
+    EntryListHandler elh(m_entries, ets);
+    S3_list_bucket(&buck,
+                   NULL,
+                   NULL,
+                   NULL,
+                   INT_MAX,
+                   NULL,
+                   &lst_tramp,
+                   &elh);
+    st = elh.wait();
+    if (st != S3StatusOK)
         throwstream(InternalError, FILELINE
-                    << "dir open " << path << " failed: "
-                    << ACE_OS::strerror(errno));
-    for (ACE_DIRENT * dep = dir.read(); dep; dep = dir.read())
+                    << "Unexpected S3 error: " << st);
+
+    int64_t marktstamp;
+    GetHandler gh2((uint8 *) &marktstamp, sizeof(marktstamp));
+    S3_get_object(&buck,
+                  markname().c_str(),
+                  &gc,
+                  0,
+                  0,
+                  NULL,
+                  &get_tramp,
+                  &gh2);
+    st = gh2.wait();
+
+    if (st == S3StatusOK)
     {
-        string entry = dep->d_name;
-
-        // Skip '.' and '..'.
-        if (entry == "." || entry == "..")
-            continue;
-
-        // Figure out the timestamp.
-        string blkpath = m_blockspath + '/' + entry;
-        if (ACE_OS::stat(blkpath.c_str(), &sb) != 0)
-            throwstream(InternalError, FILELINE
-                        << "trouble w/ stat of " << blkpath << ": "
-                        << ACE_OS::strerror(errno));
-        time_t mtime = sb.st_mtime;
-        size_t size = sb.st_size;
-
-        // Insert into the entries and time-sorted entries sets.
-        EntryHandle eh = new Entry(entry, mtime, size);
+        // Got the MARK timestamp, insert it.
+#if defined (ACE_LITTLE_ENDIAN)
+        marktstamp = bswap_64(marktstamp);
+#endif
+        EntryHandle eh = new Entry(markname(), time_t(marktstamp), 0);
         m_entries.insert(eh);
         ets.insert(eh);
+    }
+    else if (st != S3StatusErrorNoSuchKey)
+    {
+        // Something is very wrong ...
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
     }
 
     // Unroll the ordered set into the LRU list from recent to oldest.
@@ -707,7 +783,6 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     m_committed = committed;
     m_uncommitted = uncommitted;
-#endif
 }
 
 void
@@ -783,49 +858,6 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
                             << "Unexpected S3 error: " << st);
 
             bytes_read = gh.size();
-#if 0
-            ACE_stat statbuff;
-
-            int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
-            if (rv == -1)
-            {
-                if (errno == ENOENT)
-                    throwstream(NotFoundError,
-                                Base32::encode(i_keydata, i_keysize)
-                                << ": not found");
-                else
-                    throwstream(InternalError, FILELINE
-                                << "S3BlockStore::bs_get_block: "
-                                << Base32::encode(i_keydata, i_keysize)
-                                << ": error: " << ACE_OS::strerror(errno));
-            }
-
-            if (statbuff.st_size > off_t(i_buffsize))
-            {
-                throwstream(ValueError, FILELINE
-                            << "buffer overflow: "
-                            << "buffer " << i_buffsize << ", "
-                            << "data " << statbuff.st_size);
-            }
-
-            int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
-            bytes_read = read(fd, o_buffdata, i_buffsize);
-            close(fd);
-
-            if (bytes_read == -1) {
-                throwstream(InternalError, FILELINE
-                            << "S3BlockStore::bs_get_block: read failed: "
-                            << strerror(errno));
-            }
-
-        
-            if (bytes_read != statbuff.st_size) {
-                throwstream(InternalError, FILELINE
-                            << "S3BlockStore::expected to get "
-                            << statbuff.st_size
-                            << " bytes, but got " << bytes_read << " bytes");
-            }
-#endif
 
             // Release the mutex before the completion function.
         }
@@ -857,52 +889,19 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
 
-            // Setup a bucket context.
-            S3BucketContext buck;
-            buck.bucketName = m_bucket_name.c_str();
-            buck.protocol = m_protocol;
-            buck.uriStyle = m_uri_style;
-            buck.accessKeyId = m_access_key_id.c_str();
-            buck.secretAccessKey = m_secret_access_key.c_str();
-
-            MD5 md5sum(i_blkdata, i_blksize);
-            LOG(lgr, 6, "md5: \"" << md5sum << "\"");
-
-            S3PutProperties pp;
-            ACE_OS::memset(&pp, '\0', sizeof(pp));
-            pp.md5 = md5sum;
-
-            PutHandler ph((uint8 const *) i_blkdata, i_blksize);
-
-            S3_put_object(&buck,
-                          blkpath.c_str(),
-                          i_blksize,
-                          &pp,
-                          NULL,
-                          &put_tramp,
-                          &ph);
-
-            S3Status st = ph.wait();
-
-            if (st != S3StatusOK)
-                throwstream(InternalError, FILELINE
-                            << "Unexpected S3 error: " << st);
-            
-
-#if 0    
-            // Need to stat the block first so we can keep the size accounting
-            // straight ...
+            // We need to determine the current size of the block
+            // if it already exists.
             //
             off_t prevsize = 0;
             bool wascommitted = true;
-            ACE_stat sb;
-            int rv = ACE_OS::stat(blkpath.c_str(), &sb);
-            if (rv == 0)
+            EntryHandle meh = new Entry(blkpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(meh);
+            if (pos != m_entries.end())
             {
-                prevsize = sb.st_size;
+                prevsize = (*pos)->m_size;
 
                 // Is this block older then the MARK?
-                if (m_mark && m_mark->m_tstamp > sb.st_mtime)
+                if (m_mark && m_mark->m_tstamp > (*pos)->m_tstamp)
                     wascommitted = false;
             }
 
@@ -923,31 +922,59 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
             while (m_committed + off_t(i_blksize) +
                    m_uncommitted - prevcommited > m_size)
                 purge_uncommitted();
+            
+            // Setup a bucket context.
+            S3BucketContext buck;
+            buck.bucketName = m_bucket_name.c_str();
+            buck.protocol = m_protocol;
+            buck.uriStyle = m_uri_style;
+            buck.accessKeyId = m_access_key_id.c_str();
+            buck.secretAccessKey = m_secret_access_key.c_str();
 
-            int fd = open(blkpath.c_str(),
-                          O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
-            if (fd == -1)
+            MD5 md5sum(i_blkdata, i_blksize);
+            S3PutProperties pp;
+            ACE_OS::memset(&pp, '\0', sizeof(pp));
+            pp.md5 = md5sum;
+
+            PutHandler ph((uint8 const *) i_blkdata, i_blksize);
+
+            S3_put_object(&buck,
+                          blkpath.c_str(),
+                          i_blksize,
+                          &pp,
+                          NULL,
+                          &put_tramp,
+                          &ph);
+
+            S3Status st = ph.wait();
+
+            if (st != S3StatusOK)
                 throwstream(InternalError, FILELINE
-                            << "S3BlockStore::bs_put_block: open failed on "
-                            << blkpath << ": " << strerror(errno));
+                            << "Unexpected S3 error: " << st);
+
+            // Unfortunately we need to HEAD the new object to figure
+            // out it's modification tstamp.  This is incredibly sucky
+            // and we should try to avoid this somehow.
+
+            // Execute a head on the refresh ID to get it's tstamp.
+            ResponseHandler rh;
+            S3_head_object(&buck,
+                           blkpath.c_str(),
+                           NULL,
+                           &rsp_tramp,
+                           &rh);
+            st = rh.wait();
+
+            if (st != S3StatusOK)
+                throwstream(InternalError, FILELINE
+                            << "Unexpected S3 error: " << st);
     
-            int bytes_written = write(fd, i_blkdata, i_blksize);
-            int write_errno = errno;
-            close(fd);
-            if (bytes_written == -1)
+            if (!rh.m_propsvalid)
                 throwstream(InternalError, FILELINE
-                            << "write of " << blkpath << " failed: "
-                            << ACE_OS::strerror(write_errno));
+                            << "Rats, properties weren't valid!");
 
-            // Stat the file we just wrote so we can use the exact tstamp
-            // and size the filesystem sees.
-            rv = ACE_OS::stat(blkpath.c_str(), &sb);
-            if (rv == -1)
-                throwstream(InternalError, FILELINE
-                            << "stat " << blkpath << " failed: "
-                            << ACE_OS::strerror(errno));
-            time_t mtime = sb.st_mtime;
-            off_t size = sb.st_size;
+            time_t mtime = time_t(rh.m_last_modified);
+            off_t size = i_blksize;
 
             // First remove the prior block from the stats.
             if (wascommitted)
@@ -960,7 +987,6 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
 
             // Update the entries.
             touch_entry(entry, mtime, size);
-#endif
 
             // Release the mutex before the completion function.
         }
@@ -985,33 +1011,70 @@ S3BlockStore::bs_refresh_start(uint64 i_rid)
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-#if 0
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = m_bucket_name.c_str();
+    buck.protocol = m_protocol;
+    buck.uriStyle = m_uri_style;
+    buck.accessKeyId = m_access_key_id.c_str();
+    buck.secretAccessKey = m_secret_access_key.c_str();
+
     // Does the refresh ID already exist?
-    ACE_stat sb;
-    int rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv != -1)
+    ResponseHandler rh;
+    S3_head_object(&buck,
+                   rpath.c_str(),
+                   NULL,
+                   &rsp_tramp,
+                   &rh);
+    S3Status st = rh.wait();
+
+    if (st == S3StatusOK)
         throwstream(NotUniqueError,
                     "refresh id " << i_rid << " already exists");
 
-    // Create the refresh id mark.
-    if (mknod(rpath.c_str(), S_IFREG, 0) != 0)
+    if (st != S3StatusHttpErrorNotFound)
         throwstream(InternalError, FILELINE
-                    << "mknod " << rpath << " failed: "
-                    << ACE_OS::strerror(errno));
+                    << "Unexpected S3 error: " << st);
 
-    // Stat the file we just wrote so we can use the exact tstamp
-    // and size the filesystem sees.
-    rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv == -1)
+    // Create the refresh ID mark.
+    S3PutProperties pp;
+    ACE_OS::memset(&pp, '\0', sizeof(pp));
+    PutHandler ph((uint8 const *) NULL, 0);
+    S3_put_object(&buck,
+                  rpath.c_str(),
+                  0,
+                  &pp,
+                  NULL,
+                  &put_tramp,
+                  &ph);
+    st = ph.wait();
+
+    if (st != S3StatusOK)
         throwstream(InternalError, FILELINE
-                    << "stat " << rpath << " failed: "
-                    << ACE_OS::strerror(errno));
-    time_t mtime = sb.st_mtime;
-    off_t size = sb.st_size;
+                    << "Unexpected S3 error: " << st);
+
+    // Execute a head on the refresh ID to get it's tstamp.
+    ResponseHandler rh2;
+    S3_head_object(&buck,
+                   rpath.c_str(),
+                   NULL,
+                   &rsp_tramp,
+                   &rh2);
+    st = rh2.wait();
+
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+    
+    if (!rh2.m_propsvalid)
+        throwstream(InternalError, FILELINE
+                    << "Rats, properties weren't valid!");
+
+    time_t mtime = time_t(rh2.m_last_modified);
+    off_t size = 0;
 
     // Create the refresh_id entry.
-    touch_entry(rname, mtime, size);
-#endif
+    touch_entry(rpath, mtime, size);
 }
 
 void
@@ -1030,48 +1093,64 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
 
     bool ismissing = false;
 
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = m_bucket_name.c_str();
+    buck.protocol = m_protocol;
+    buck.uriStyle = m_uri_style;
+    buck.accessKeyId = m_access_key_id.c_str();
+    buck.secretAccessKey = m_secret_access_key.c_str();
+
     LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
 
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-#if 0
-        // Does the refresh ID exist?
-        ACE_stat sb;
-        int rv = ACE_OS::stat(rpath.c_str(), &sb);
-        if (rv != 0 || !S_ISREG(sb.st_mode))
+        EntryHandle reh = new Entry(rpath, 0, 0);
+        EntrySet::const_iterator pos = m_entries.find(reh);
+        if (pos == m_entries.end())
             throwstream(NotFoundError,
                         "refresh id " << i_rid << " not found");
 
-        // If the block doesn't exist add it to the missing list.
-        rv = ACE_OS::stat(blkpath.c_str(), &sb);
-        if (rv != 0 || !S_ISREG(sb.st_mode))
+        // "Touch" the block by copying it to itself.
+        S3PutProperties pp;
+        ACE_OS::memset(&pp, '\0', sizeof(pp));
+        int64_t last_mod_ret;
+        char etagbuf[1024];
+        ResponseHandler rh;
+        S3_copy_object(&buck,
+                       blkpath.c_str(),
+                       NULL,
+                       NULL,
+                       &pp,
+                       &last_mod_ret,
+                       sizeof(etagbuf),
+                       etagbuf,
+                       NULL,
+                       &rsp_tramp,
+                       &rh);
+        S3Status st = rh.wait();
+
+        if (st == S3StatusErrorNoSuchKey)
         {
+            // Block is missing.
             ismissing = true;
+        }
+        else if (st != S3StatusOK)
+        {
+            // Something weird is wrong.
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
         }
         else
         {
-            // Touch the block.
-            rv = utimes(blkpath.c_str(), NULL);
-            if (rv != 0)
-                throwstream(InternalError, FILELINE
-                            << "trouble touching \"" << blkpath
-                            << "\": " << ACE_OS::strerror(errno));
-
-            // Stat the file we just wrote so we can use the exact tstamp
-            // and size the filesystem sees.
-            rv = ACE_OS::stat(blkpath.c_str(), &sb);
-            if (rv == -1)
-                throwstream(InternalError, FILELINE
-                            << "stat " << blkpath << " failed: "
-                            << ACE_OS::strerror(errno));
-            time_t mtime = sb.st_mtime;
-            off_t size = sb.st_size;
-
+            // Block is here and updated.
+            time_t mtime = last_mod_ret;
+            off_t size = rh.m_content_length;
+        
             // Update the entries.
             touch_entry(entry, mtime, size);
         }
-#endif
     }
 
     if (ismissing)
@@ -1092,25 +1171,57 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-#if 0
-    // Does the refresh ID exist?
-    ACE_stat sb;
-    int rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv != 0 || !S_ISREG(sb.st_mode))
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = m_bucket_name.c_str();
+    buck.protocol = m_protocol;
+    buck.uriStyle = m_uri_style;
+    buck.accessKeyId = m_access_key_id.c_str();
+    buck.secretAccessKey = m_secret_access_key.c_str();
+
+    EntryHandle reh = new Entry(rpath, 0, 0);
+    EntrySet::const_iterator pos = m_entries.find(reh);
+    if (pos == m_entries.end())
         throwstream(NotFoundError,
                     "refresh id " << i_rid << " not found");
 
-    // Rename the refresh tag to the mark name.
-    string mname = markname();
-    string mpath = blockpath(mname);
-    if (rename(rpath.c_str(), mpath.c_str()) != 0)
-        throwstream(InternalError,
-                    "rename " << rpath << ' ' << mpath << " failed:"
-                    << ACE_OS::strerror(errno));
+    // Update MARK contents w/ tstamp from RID.
+    int64_t marktstamp = (*pos)->m_tstamp;
+#if defined (ACE_LITTLE_ENDIAN)
+    marktstamp = bswap_64(marktstamp);
+#endif
+    MD5 md5sum(&marktstamp, sizeof(marktstamp));
+    S3PutProperties pp;
+    ACE_OS::memset(&pp, '\0', sizeof(pp));
+    pp.md5 = md5sum;
+    PutHandler ph((uint8 const *) &marktstamp, sizeof(marktstamp));
+    S3_put_object(&buck,
+                  markname().c_str(),
+                  sizeof(marktstamp),
+                  &pp,
+                  NULL,
+                  &put_tramp,
+                  &ph);
+    S3Status st = ph.wait();
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
+
+    // Delete the refresh tag.
+    ResponseHandler rh2;
+    S3_delete_object(&buck,
+                     rpath.c_str(),
+                     NULL,
+                     &rsp_tramp,
+                     &rh2);
+    st = rh2.wait();
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "Unexpected S3 error: " << st);
 
     // Remove the MARK entry.
-    EntryHandle meh = new Entry(mname, 0, 0);
-    EntrySet::const_iterator pos = m_entries.find(meh);
+    EntryHandle meh = new Entry(markname(), 0, 0);
+    pos = m_entries.find(meh);
     if (pos == m_entries.end())
     {
         // Not in the entry table yet, no action needed ...
@@ -1128,7 +1239,7 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
     }
 
     // Find the Refresh token.
-    EntryHandle reh = new Entry(rname, 0, 0);
+    reh = new Entry(rpath, 0, 0);
     pos = m_entries.find(reh);
     if (pos == m_entries.end())
     {
@@ -1178,7 +1289,6 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
 
     m_committed = committed;
     m_uncommitted = uncommitted;
-#endif
 }
 
 void
@@ -1197,7 +1307,7 @@ S3BlockStore::parse_params(StringSeq const & i_args,
                            string & o_bucket_name)
 {
     // For now just assign these
-    o_protocol = S3ProtocolHTTPS;
+    o_protocol = S3ProtocolHTTP;
     o_uri_style = S3UriStyleVirtualHost;
 
     string const KEY_ID = "--s3-access-key-id=";
@@ -1258,7 +1368,7 @@ string
 S3BlockStore::ridname(uint64 i_rid) const
 {
     ostringstream ostrm;
-    ostrm << "RID:" << i_rid;
+    ostrm << "RID-" << i_rid;
     return ostrm.str();
 }                                
 
@@ -1328,12 +1438,25 @@ S3BlockStore::purge_uncommitted()
     // Remove from LRU list.
     m_lru.pop_back();
 
-    // Remove from storage.
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = m_bucket_name.c_str();
+    buck.protocol = m_protocol;
+    buck.uriStyle = m_uri_style;
+    buck.accessKeyId = m_access_key_id.c_str();
+    buck.secretAccessKey = m_secret_access_key.c_str();
+
     string blkpath = blockpath(eh->m_name);
-    if (unlink(blkpath.c_str()) != 0)
+    ResponseHandler rh;
+    S3_delete_object(&buck,
+                     blkpath.c_str(),
+                     NULL,
+                     &rsp_tramp,
+                     &rh);
+    S3Status st = rh.wait();
+    if (st != S3StatusOK)
         throwstream(InternalError, FILELINE
-                    << "unlink " << blkpath << " failed: "
-                    << ACE_OS::strerror(errno));
+                    << "Unexpected S3 error: " << st);
 
     // Update the accounting.
     m_uncommitted -= eh->m_size;
