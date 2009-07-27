@@ -21,6 +21,8 @@ using namespace utp;
 
 namespace S3BS {
 
+static unsigned const MAX_RETRIES = 10;
+
 std::ostream & operator<<(std::ostream & ostrm, S3Status status)
 {
     ostrm << S3_get_status_name(status);
@@ -582,7 +584,8 @@ class EntryListHandler : public ListHandler
 public:
     EntryListHandler(S3BlockStore::EntrySet & entries,
                      S3BlockStore::EntryTimeSet & ets)
-        : m_entries(entries)
+        : m_istrunc(false)
+        , m_entries(entries)
         , m_ets(ets)
     {}
 
@@ -593,9 +596,7 @@ public:
                              int i_common_prefixes_count,
                              char const ** i_common_prefixes)
     {
-        if (i_istrunc)
-            throwstream(InternalError, FILELINE
-                        << "truncated lists make me sad");
+        m_istrunc = i_istrunc;
 
         if (i_common_prefixes_count)
             throwstream(InternalError, FILELINE
@@ -624,8 +625,14 @@ public:
             m_ets.insert(eh);
         }
 
+        m_last_seen = i_contents_count ?
+            i_contents[i_contents_count-1].key : "";
+
         return S3StatusOK;
     }
+
+    bool								m_istrunc;
+    string								m_last_seen;
     
 private:
     S3BlockStore::EntrySet &			m_entries;
@@ -706,19 +713,27 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     // time-sorted entries sets.
     //
     EntryTimeSet ets;
-    EntryListHandler elh(m_entries, ets);
-    S3_list_bucket(&buck,
-                   NULL,
-                   NULL,
-                   NULL,
-                   INT_MAX,
-                   NULL,
-                   &lst_tramp,
-                   &elh);
-    st = elh.wait();
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+    string marker = "";
+    bool istrunc = false;
+    do
+    {
+        EntryListHandler elh(m_entries, ets);
+        S3_list_bucket(&buck,
+                       NULL,
+                       marker.empty() ? NULL : marker.c_str(),
+                       NULL,
+                       INT_MAX,
+                       NULL,
+                       &lst_tramp,
+                       &elh);
+        st = elh.wait();
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+        istrunc = elh.m_istrunc;
+        marker = elh.m_last_seen;
+    }
+    while (istrunc);
 
     m_markname.clear();
     char mnbuf[1024];
@@ -822,7 +837,7 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
 
-            LOG(lgr, 6, "bs_get_block " << entry);
+            LOG(lgr, 6, "bs_get_block " << entry.substr(0, 8) << "...");
 
             // Setup a bucket context.
             S3BucketContext buck;
@@ -883,63 +898,67 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
 {
     try
     {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+        string entry = entryname(i_keydata, i_keysize);
+        string blkpath = blockpath(entry);
+
+        LOG(lgr, 6, "bs_put_block " << entry.substr(0, 8) << "...");
+
+        // We need to determine the current size of the block
+        // if it already exists.
+        //
+        off_t prevsize = 0;
+        bool wascommitted = true;
+        EntryHandle meh = new Entry(blkpath, 0, 0);
+        EntrySet::const_iterator pos = m_entries.find(meh);
+        if (pos != m_entries.end())
         {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            prevsize = (*pos)->m_size;
 
-            string entry = entryname(i_keydata, i_keysize);
-            string blkpath = blockpath(entry);
+            // Is this block older then the MARK?
+            if (m_mark && m_mark->m_tstamp > (*pos)->m_tstamp)
+                wascommitted = false;
+        }
 
-            LOG(lgr, 6, "bs_put_block " << entry);
+        off_t prevcommited = 0;
+        if (wascommitted)
+            prevcommited = prevsize;
 
-            // We need to determine the current size of the block
-            // if it already exists.
-            //
-            off_t prevsize = 0;
-            bool wascommitted = true;
-            EntryHandle meh = new Entry(blkpath, 0, 0);
-            EntrySet::const_iterator pos = m_entries.find(meh);
-            if (pos != m_entries.end())
-            {
-                prevsize = (*pos)->m_size;
+        // How much space will be available for this block?
+        off_t avail = m_size - m_committed + prevcommited;
 
-                // Is this block older then the MARK?
-                if (m_mark && m_mark->m_tstamp > (*pos)->m_tstamp)
-                    wascommitted = false;
-            }
+        if (off_t(i_blksize) > avail)
+            throwstream(NoSpaceError,
+                        "insufficent space: "
+                        << avail << " bytes avail, needed " << i_blksize);
 
-            off_t prevcommited = 0;
-            if (wascommitted)
-                prevcommited = prevsize;
-
-            // How much space will be available for this block?
-            off_t avail = m_size - m_committed + prevcommited;
-
-            if (off_t(i_blksize) > avail)
-                throwstream(NoSpaceError,
-                            "insufficent space: "
-                            << avail << " bytes avail, needed " << i_blksize);
-
-            // Do we need to remove uncommitted blocks to make room for this
-            // block?
-            while (m_committed + off_t(i_blksize) +
-                   m_uncommitted - prevcommited > m_size)
-                purge_uncommitted();
+        // Do we need to remove uncommitted blocks to make room for this
+        // block?
+        while (m_committed + off_t(i_blksize) +
+               m_uncommitted - prevcommited > m_size)
+            purge_uncommitted();
             
-            // Setup a bucket context.
-            S3BucketContext buck;
-            buck.bucketName = m_bucket_name.c_str();
-            buck.protocol = m_protocol;
-            buck.uriStyle = m_uri_style;
-            buck.accessKeyId = m_access_key_id.c_str();
-            buck.secretAccessKey = m_secret_access_key.c_str();
+        // Setup a bucket context.
+        S3BucketContext buck;
+        buck.bucketName = m_bucket_name.c_str();
+        buck.protocol = m_protocol;
+        buck.uriStyle = m_uri_style;
+        buck.accessKeyId = m_access_key_id.c_str();
+        buck.secretAccessKey = m_secret_access_key.c_str();
 
-            MD5 md5sum(i_blkdata, i_blksize);
-            S3PutProperties pp;
-            ACE_OS::memset(&pp, '\0', sizeof(pp));
-            pp.md5 = md5sum;
+        MD5 md5sum(i_blkdata, i_blksize);
+        S3PutProperties pp;
+        ACE_OS::memset(&pp, '\0', sizeof(pp));
+        pp.md5 = md5sum;
+
+        for (unsigned i = 0; i <= MAX_RETRIES; ++i)
+        {
+            if (i == MAX_RETRIES)
+                throwstream(InternalError, FILELINE
+                            << "too many retries");
 
             PutHandler ph((uint8 const *) i_blkdata, i_blksize);
-
             S3_put_object(&buck,
                           blkpath.c_str(),
                           i_blksize,
@@ -947,13 +966,18 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
                           NULL,
                           &put_tramp,
                           &ph);
-
             S3Status st = ph.wait();
 
-            if (st != S3StatusOK)
-                throwstream(InternalError, FILELINE
-                            << "Unexpected S3 error: " << st);
+            if (st == S3StatusOK)
+                break;
 
+            LOG(lgr, 4, "bs_put_block_async " << entry.substr(0, 8) << "..."
+                << " ERROR: " << st << ", RETRYING");
+        }
+
+
+        for (unsigned i = 0; i <= MAX_RETRIES; ++i)
+        {
             // Unfortunately we need to HEAD the new object to figure
             // out it's modification tstamp.  This is incredibly sucky
             // and we should try to avoid this somehow.
@@ -965,35 +989,44 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
                            NULL,
                            &rsp_tramp,
                            &rh);
-            st = rh.wait();
+            S3Status st = rh.wait();
 
-            if (st != S3StatusOK)
-                throwstream(InternalError, FILELINE
-                            << "Unexpected S3 error: " << st);
-    
             if (!rh.m_propsvalid)
                 throwstream(InternalError, FILELINE
                             << "Rats, properties weren't valid!");
 
-            time_t mtime = time_t(rh.m_last_modified);
-            off_t size = i_blksize;
+            switch (st)
+            {
+            case S3StatusOK:
+                {
+                    time_t mtime = time_t(rh.m_last_modified);
+                    off_t size = i_blksize;
 
-            // First remove the prior block from the stats.
-            if (wascommitted)
-                m_committed -= prevsize;
-            else
-                m_uncommitted -= prevsize;
+                    // First remove the prior block from the stats.
+                    if (wascommitted)
+                        m_committed -= prevsize;
+                    else
+                        m_uncommitted -= prevsize;
 
-            // Add the new block to the stats.
-            m_committed += size;
+                    // Add the new block to the stats.
+                    m_committed += size;
 
-            // Update the entries.
-            touch_entry(blkpath, mtime, size);
+                    // Update the entries.
+                    touch_entry(blkpath, mtime, size);
 
-            // Release the mutex before the completion function.
+                    guard.release();
+                    i_cmpl.bp_complete(i_keydata, i_keysize);
+                    return;
+                }
+
+            default:
+                // Sigh ... these we retry a few times ...
+                LOG(lgr, 4, "bs_put_block_async " << entry.substr(0,8) << "..."
+                    << " ERROR: " << st << " RETRYING");
+                break;
+            }
         }
-
-        i_cmpl.bp_complete(i_keydata, i_keysize);
+        throwstream(InternalError, FILELINE << "too many retries");
     }
     catch (Exception const & ex)
     {
@@ -1093,9 +1126,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     string entry = entryname(i_keydata, i_keysize);
     string blkpath = blockpath(entry);
 
-    LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
-
-    bool ismissing = false;
+    LOG(lgr, 6, "refreshing " << entry.substr(0,8) << "...");
 
     // Setup a bucket context.
     S3BucketContext buck;
@@ -1105,6 +1136,8 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     buck.accessKeyId = m_access_key_id.c_str();
     buck.secretAccessKey = m_secret_access_key.c_str();
 
+    // We'll retry a few times ...
+    for (unsigned i = 0; i <= MAX_RETRIES; ++i)
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
@@ -1133,32 +1166,38 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
                        &rh);
         S3Status st = rh.wait();
 
-        if (st == S3StatusErrorNoSuchKey)
+        switch (st)
         {
+        case S3StatusErrorNoSuchKey:
             // Block is missing.
-            ismissing = true;
-        }
-        else if (st != S3StatusOK)
-        {
-            // Something weird is wrong.
-            throwstream(InternalError, FILELINE
-                        << "Unexpected S3 error: " << st);
-        }
-        else
-        {
-            // Block is here and updated.
-            time_t mtime = last_mod_ret;
-            off_t size = rh.m_content_length;
+            guard.release();
+            i_cmpl.br_missing(i_keydata, i_keysize);
+            return;
+            
+        case S3StatusOK:
+            {
+                // Block is here and updated.
+                time_t mtime = last_mod_ret;
+                off_t size = rh.m_content_length;
         
-            // Update the entries.
-            touch_entry(blkpath, mtime, size);
+                // Update the entries.
+                touch_entry(blkpath, mtime, size);
+
+                guard.release();
+                i_cmpl.br_complete(i_keydata, i_keysize);
+                return;
+            }
+
+        default:
+            // Sigh ... these we retry a few times ...
+            LOG(lgr, 4, "bs_refresh_block_async " << st
+                << " RETRYING: " << entry.substr(0,8) << "...");
+            break;
         }
     }
 
-    if (ismissing)
-        i_cmpl.br_missing(i_keydata, i_keysize);
-    else
-        i_cmpl.br_complete(i_keydata, i_keysize);
+    throwstream(InternalError, FILELINE
+                << "exceeded allowed retries");
 }
         
 void
@@ -1288,7 +1327,8 @@ S3BlockStore::parse_params(StringSeq const & i_args,
 {
     // For now just assign these
     o_protocol = S3ProtocolHTTP;
-    o_uri_style = S3UriStyleVirtualHost;
+    // o_uri_style = S3UriStyleVirtualHost;
+    o_uri_style = S3UriStylePath;
 
     string const KEY_ID = "--s3-access-key-id=";
     string const SECRET = "--s3-secret-access-key=";
