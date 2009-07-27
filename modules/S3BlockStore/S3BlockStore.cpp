@@ -254,7 +254,10 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
 class KeyListHandler : public ListHandler
 {
 public:
-    KeyListHandler(StringSeq & o_keys) : m_keys(o_keys) {}
+    KeyListHandler(StringSeq & o_keys)
+        : m_istrunc(false)
+        , m_keys(o_keys)
+    {}
 
     virtual S3Status lh_item(int i_istrunc,
                              char const * i_next_marker,
@@ -263,9 +266,7 @@ public:
                              int i_common_prefixes_count,
                              char const ** i_common_prefixes)
     {
-        if (i_istrunc)
-            throwstream(InternalError, FILELINE
-                        << "truncated lists make me sad");
+        m_istrunc = i_istrunc;
 
         if (i_common_prefixes_count)
             throwstream(InternalError, FILELINE
@@ -277,9 +278,15 @@ public:
             m_keys.push_back(cp->key);
         }
 
+        m_last_seen = i_contents_count ?
+            i_contents[i_contents_count-1].key : "";
+
         return S3StatusOK;
     }
     
+    bool m_istrunc;
+    string m_last_seen;
+
 private:
     StringSeq & m_keys;
 };
@@ -343,19 +350,27 @@ S3BlockStore::destroy(StringSeq const & i_args)
 
     // Accumulate a list of all the keys.
     StringSeq keys;
-    KeyListHandler klh(keys);
-    S3_list_bucket(&buck,
-                   NULL,
-                   NULL,
-                   NULL,
-                   INT_MAX,
-                   NULL,
-                   &lst_tramp,
-                   &klh);
-    st = klh.wait();
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+    string marker = "";
+    bool istrunc = false;
+    do
+    {
+        KeyListHandler klh(keys);
+        S3_list_bucket(&buck,
+                       NULL,
+                       marker.empty() ? NULL : marker.c_str(),
+                       NULL,
+                       INT_MAX,
+                       NULL,
+                       &lst_tramp,
+                       &klh);
+        st = klh.wait();
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+        istrunc = klh.m_istrunc;
+        marker = klh.m_last_seen;
+    }
+    while (istrunc);
 
     // Delete all of the keys.
     for (unsigned i = 0; i < keys.size(); ++i)
