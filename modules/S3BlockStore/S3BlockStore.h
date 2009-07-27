@@ -131,7 +131,7 @@ protected:
 
     std::string ridname(utp::uint64 i_rid) const;
 
-    std::string markname() const { return "MARK"; }
+    std::string markname() const { return m_markname; }
 
     std::string blockpath(std::string const & i_entry) const;
 
@@ -161,6 +161,7 @@ private:
     EntrySet			m_entries;
     EntryList			m_lru;		// front=newest, back=oldest
 
+    std::string			m_markname;
     EntryHandle			m_mark;
 };
 

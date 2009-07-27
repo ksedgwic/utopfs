@@ -52,7 +52,9 @@ public:
             m_server = pp->server;
         if (pp->eTag)
             m_etag = pp->eTag;
+
         m_last_modified = pp->lastModified;
+
         for (int i = 0; i < pp->metaDataCount; ++i)
         {
             S3NameValue const * nvp = &pp->metaData[i];
@@ -607,8 +609,11 @@ public:
             time_t mtime = time_t(cp->lastModified);
             size_t size = cp->size;
 
+            // BOGUS - there is a terrible TZ problem here!
+            mtime -= (7 * 60 * 60);
+
             // We only want to traverse items in BLOCKS/
-            if (entry.substr(7) != "BLOCKS/")
+            if (entry.substr(0, 7) != "BLOCKS/")
                 continue;
 
             LOG(lgr, 7, "entry " << entry);
@@ -715,10 +720,11 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         throwstream(InternalError, FILELINE
                     << "Unexpected S3 error: " << st);
 
-    int64_t marktstamp;
-    GetHandler gh2((uint8 *) &marktstamp, sizeof(marktstamp));
+    m_markname.clear();
+    char mnbuf[1024];
+    GetHandler gh2((uint8 *) mnbuf, sizeof(mnbuf));
     S3_get_object(&buck,
-                  markname().c_str(),
+                  "MARKNAME",
                   &gc,
                   0,
                   0,
@@ -729,13 +735,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     if (st == S3StatusOK)
     {
-        // Got the MARK timestamp, insert it.
-#if defined (ACE_LITTLE_ENDIAN)
-        marktstamp = bswap_64(marktstamp);
-#endif
-        EntryHandle eh = new Entry(markname(), time_t(marktstamp), 0);
-        m_entries.insert(eh);
-        ets.insert(eh);
+        m_markname = mnbuf;
     }
     else if (st != S3StatusErrorNoSuchKey)
     {
@@ -822,6 +822,8 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
 
+            LOG(lgr, 6, "bs_get_block " << entry);
+
             // Setup a bucket context.
             S3BucketContext buck;
             buck.bucketName = m_bucket_name.c_str();
@@ -881,13 +883,13 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, "bs_put_block");
-
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
+
+            LOG(lgr, 6, "bs_put_block " << entry);
 
             // We need to determine the current size of the block
             // if it already exists.
@@ -986,7 +988,7 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
             m_committed += size;
 
             // Update the entries.
-            touch_entry(entry, mtime, size);
+            touch_entry(blkpath, mtime, size);
 
             // Release the mutex before the completion function.
         }
@@ -1091,6 +1093,8 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     string entry = entryname(i_keydata, i_keysize);
     string blkpath = blockpath(entry);
 
+    LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
+
     bool ismissing = false;
 
     // Setup a bucket context.
@@ -1100,8 +1104,6 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     buck.uriStyle = m_uri_style;
     buck.accessKeyId = m_access_key_id.c_str();
     buck.secretAccessKey = m_secret_access_key.c_str();
-
-    LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
 
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
@@ -1149,7 +1151,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
             off_t size = rh.m_content_length;
         
             // Update the entries.
-            touch_entry(entry, mtime, size);
+            touch_entry(blkpath, mtime, size);
         }
     }
 
@@ -1185,19 +1187,15 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
         throwstream(NotFoundError,
                     "refresh id " << i_rid << " not found");
 
-    // Update MARK contents w/ tstamp from RID.
-    int64_t marktstamp = (*pos)->m_tstamp;
-#if defined (ACE_LITTLE_ENDIAN)
-    marktstamp = bswap_64(marktstamp);
-#endif
-    MD5 md5sum(&marktstamp, sizeof(marktstamp));
+    // Update the MARKNAME file.
+    MD5 md5sum(&rpath[0], rpath.size());
     S3PutProperties pp;
     ACE_OS::memset(&pp, '\0', sizeof(pp));
     pp.md5 = md5sum;
-    PutHandler ph((uint8 const *) &marktstamp, sizeof(marktstamp));
+    PutHandler ph((uint8 const *) &rpath[0], rpath.size());
     S3_put_object(&buck,
-                  markname().c_str(),
-                  sizeof(marktstamp),
+                  "MARKNAME",
+                  rpath.size(),
                   &pp,
                   NULL,
                   &put_tramp,
@@ -1207,63 +1205,44 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
         throwstream(InternalError, FILELINE
                     << "Unexpected S3 error: " << st);
 
-    // Delete the refresh tag.
-    ResponseHandler rh2;
-    S3_delete_object(&buck,
-                     rpath.c_str(),
-                     NULL,
-                     &rsp_tramp,
-                     &rh2);
-    st = rh2.wait();
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
-
-    // Remove the MARK entry.
-    EntryHandle meh = new Entry(markname(), 0, 0);
-    pos = m_entries.find(meh);
-    if (pos == m_entries.end())
+    // Delete the old mark
+    if (!m_markname.empty())
     {
-        // Not in the entry table yet, no action needed ...
+        ResponseHandler rh2;
+        S3_delete_object(&buck,
+                         m_markname.c_str(),
+                         NULL,
+                         &rsp_tramp,
+                         &rh2);
+        st = rh2.wait();
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+
+        // Remove the MARK entry.
+        EntryHandle meh = new Entry(m_markname, 0, 0);
+        pos = m_entries.find(meh);
+        if (pos == m_entries.end())
+        {
+            throwstream(InternalError, FILELINE
+                        << "missing mark: " << m_markname);
+
+        }
+        else
+        {
+            // Found it.
+            meh = *pos;
+
+            // Erase it from the entries set.
+            m_entries.erase(pos);
+
+            // Remove from current location in LRU list.
+            m_lru.erase(meh->m_listpos);
+        }
     }
-    else
-    {
-        // Found it.
-        meh = *pos;
 
-        // Erase it from the entries set.
-        m_entries.erase(pos);
-
-        // Remove from current location in LRU list.
-        m_lru.erase(meh->m_listpos);
-    }
-
-    // Find the Refresh token.
-    reh = new Entry(rpath, 0, 0);
-    pos = m_entries.find(reh);
-    if (pos == m_entries.end())
-    {
-        // Not in the entry table yet, very bad!
-        throwstream(InternalError, FILELINE << "Missing RID entry " << rname);
-    }
-    else
-    {
-        // Found it.
-        reh = *pos;
-
-        // Erase it from the entries set.
-        m_entries.erase(pos);
-
-        // Change it's name to the MARK.
-        reh->m_name = markname();
-
-        // Reinsert, leave in current spot in the LRU list with it's
-        // current tstamp.
-        //
-        m_entries.insert(reh);
-
-        m_mark = reh;
-    }
+    // Now we're using the new mark.
+    m_markname = rpath;
 
     // Add up all the committed memory.
     off_t committed = 0;
@@ -1280,6 +1259,7 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
         else if (eh->m_name == markname())
         {
             saw_mark = true;
+            m_mark = eh;
         }
         else
         {
@@ -1446,7 +1426,7 @@ S3BlockStore::purge_uncommitted()
     buck.accessKeyId = m_access_key_id.c_str();
     buck.secretAccessKey = m_secret_access_key.c_str();
 
-    string blkpath = blockpath(eh->m_name);
+    string blkpath = eh->m_name;
     ResponseHandler rh;
     S3_delete_object(&buck,
                      blkpath.c_str(),
