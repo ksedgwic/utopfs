@@ -269,7 +269,7 @@ utopfs_init(struct fuse_conn_info * i_conn)
 
             bsargs.push_back(string("--s3-access-key-id=") + key_id);
             bsargs.push_back(string("--s3-secret-access-key=") + secret);
-            bsargs.push_back(string("--bucket=ksedgwic-utopfs"));
+            bsargs.push_back(string("--bucket=") + utopfs.path);
         }
 
         if (utopfs.size)
