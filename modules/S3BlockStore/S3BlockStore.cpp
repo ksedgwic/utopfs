@@ -577,21 +577,32 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     ACE_OS::memset(&pp, '\0', sizeof(pp));
     pp.md5 = md5sum;
 
-    PutHandler ph((uint8 const *) obj.data(), obj.size());
+    for (unsigned i = 0; i <= MAX_RETRIES; ++i)
+    {
+        PutHandler ph((uint8 const *) obj.data(), obj.size());
+        S3_put_object(&buck,
+                      "SIZE",
+                      obj.size(),
+                      &pp,
+                      NULL,
+                      &put_tramp,
+                      &ph);
+        st = ph.wait();
 
-    S3_put_object(&buck,
-                  "SIZE",
-                  obj.size(),
-                  &pp,
-                  NULL,
-                  &put_tramp,
-                  &ph);
+        switch (st)
+        {
+        case S3StatusOK:
+            return;
 
-    st = ph.wait();
+        default:
+            // Sigh ... these we retry a few times ...
+            LOG(lgr, 4, "bs_create " << m_bucket_name
+                << " ERROR: " << st << " RETRYING");
+            break;
+        }
+    }
 
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+    throwstream(InternalError, FILELINE << "too many retries");
 }
 
 class EntryListHandler : public ListHandler
