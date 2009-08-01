@@ -756,11 +756,16 @@ main(int argc, char ** argv)
     // When we are daemonized our path is changed to '/'.  If the
     // blockstore path is relative convert it to absolute ...
     //
-    if (utopfs.path[0] != '/')
+    // If we are using the S3BS then we don't want to convert it.
+    //
+    if (utopfs.bsid != "S3BS")
     {
-        char cwdbuf[MAXPATHLEN];
-        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
-        utopfs.path = cwd + '/' + utopfs.path;
+        if (utopfs.path[0] != '/')
+        {
+            char cwdbuf[MAXPATHLEN];
+            string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+            utopfs.path = cwd + '/' + utopfs.path;
+        }
     }
 
     // Convert LCLCONF path to absolute.
