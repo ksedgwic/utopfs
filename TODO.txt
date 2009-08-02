@@ -1,10 +1,13 @@
+Add OperationError for all the "not opened" internal errors
+in the BlockStore interface.
+
 Write a test to make sure it is OK to "truncate" a file to a larger
 size then it already is.
 
 Experiment w/ overflowing a utopfs when fuse mounted.  Does it all
 work OK?
 
-# ----------------
+Appends to nohup.out don't seem to bump the mtime.
 
 Need to make everything work on a 32 bit machine.
 

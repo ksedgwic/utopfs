@@ -28,6 +28,79 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
     return i_a->m_tstamp < i_b->m_tstamp;
 }
 
+void
+FSBlockStore::destroy(StringSeq const & i_args)
+{
+    // This is painful, but at least we can make it safer then the old
+    // "rm -rf" approach.
+    //
+    // We loop over all the elements of the blockstore and remove them.
+    //
+    // Mostly we ignore errors, but not if the top level isn't what we
+    // think it is.
+
+    string const & path = i_args[0];
+
+    LOG(lgr, 4, "destroy " << path);
+    
+    ACE_stat sb;
+
+    // Make sure the top level is a directory.
+    if (ACE_OS::stat(path.c_str(), &sb) != 0)
+        throwstream(NotFoundError,
+                    "FSBlockStore::destroy: top dir \""
+                    << path << "\" does not exist");
+    
+    if (! S_ISDIR(sb.st_mode))
+        throwstream(NotFoundError,
+                    "FSBlockStore::destroy: top dir \""
+                    << path << "\" not directory");
+
+    // Make sure the size file exists.
+    string sizepath = path + "/SIZE";
+    if (ACE_OS::stat(sizepath.c_str(), &sb) != 0)
+        throwstream(NotFoundError,
+                    "FSBlockStore::destroy: size file \""
+                    << sizepath << "\" does not exist");
+    
+    if (! S_ISREG(sb.st_mode))
+        throwstream(NotFoundError,
+                    "FSBlockStore::destroy: size file \""
+                    << sizepath << "\" not file");
+
+    // Unlink the SIZE file
+    unlink(sizepath.c_str());
+
+    // Read all of the existing blocks.
+    string blockspath = path + "/BLOCKS";
+    ACE_Dirent dir;
+    if (dir.open(blockspath.c_str()) == -1)
+        throwstream(InternalError, FILELINE
+                    << "dir open " << path << " failed: "
+                    << ACE_OS::strerror(errno));
+    for (ACE_DIRENT * dep = dir.read(); dep; dep = dir.read())
+    {
+        string entry = dep->d_name;
+
+        // Skip '.' and '..'.
+        if (entry == "." || entry == "..")
+            continue;
+
+        // Remove the block.
+        string blkpath = blockspath + '/' + entry;
+        unlink(blkpath.c_str());
+    }
+
+    // Remove the blocks subdir.
+    rmdir(blockspath.c_str());
+
+    // Remove the path.
+    if (rmdir(path.c_str()))
+        throwstream(InternalError, FILELINE
+                    << "FSBlockStore::destroy failed: "
+                    << ACE_OS::strerror(errno));
+}
+
 FSBlockStore::FSBlockStore()
     : m_size(0)
     , m_committed(0)
@@ -43,19 +116,21 @@ FSBlockStore::~FSBlockStore()
 }
 
 void
-FSBlockStore::bs_create(size_t i_size, string const & i_path)
+FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,
           InternalError,
           ValueError)
 {
-    LOG(lgr, 4, "bs_create " << i_size << ' ' << i_path);
+    string const & path = i_args[0];
+
+    LOG(lgr, 4, "bs_create " << i_size << ' ' << path);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     struct stat statbuff;    
-    if (stat(i_path.c_str(),&statbuff) == 0) {
+    if (stat(path.c_str(),&statbuff) == 0) {
          throwstream(NotUniqueError, FILELINE
-                << "Cannot create file block store at '" << i_path
+                << "Cannot create file block store at '" << path
                      << "'. File or directory already exists.");   
     }
 
@@ -64,7 +139,7 @@ FSBlockStore::bs_create(size_t i_size, string const & i_path)
     m_committed = 0;
 
     // Make the parent directory.
-    m_rootpath = i_path;
+    m_rootpath = path;
     if (mkdir(m_rootpath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
         throwstream(InternalError, FILELINE
                     << "mkdir " << m_rootpath << "failed: "
@@ -85,27 +160,29 @@ FSBlockStore::bs_create(size_t i_size, string const & i_path)
 }
 
 void
-FSBlockStore::bs_open(string const & i_path)
+FSBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 4, "bs_open " << i_path);
+    string const & path = i_args[0];
+
+    LOG(lgr, 4, "bs_open " << path);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     ACE_stat sb;
     
-    if (ACE_OS::stat(i_path.c_str(), &sb) != 0)
+    if (ACE_OS::stat(path.c_str(), &sb) != 0)
         throwstream(NotFoundError, FILELINE
-                << "Cannot open file block store at '" << i_path
+                << "Cannot open file block store at '" << path
                     << "'. Directory does not exist.");    
     
     if (! S_ISDIR(sb.st_mode))
         throwstream(NotFoundError, FILELINE
-                << "Cannot open file block store at '" << i_path
+                << "Cannot open file block store at '" << path
                     << "'. Path is not a directory.");
 
-    m_rootpath = i_path;
+    m_rootpath = path;
     m_blockspath = m_rootpath + "/BLOCKS";
 
     // Figure out the size.
@@ -119,7 +196,7 @@ FSBlockStore::bs_open(string const & i_path)
     ACE_Dirent dir;
     if (dir.open(m_blockspath.c_str()) == -1)
         throwstream(InternalError, FILELINE
-                    << "dir open " << i_path << " failed: "
+                    << "dir open " << path << " failed: "
                     << ACE_OS::strerror(errno));
     for (ACE_DIRENT * dep = dir.read(); dep; dep = dir.read())
     {
@@ -204,149 +281,176 @@ FSBlockStore::bs_stat(Stat & o_stat)
     o_stat.bss_free = m_size - m_committed;
 }
 
-size_t
-FSBlockStore::bs_get_block(void const * i_keydata,
-                           size_t i_keysize,
-                           void * o_outbuff,
-                           size_t i_outsize)
+void
+FSBlockStore::bs_get_block_async(void const * i_keydata,
+                                 size_t i_keysize,
+                                 void * o_buffdata,
+                                 size_t i_buffsize,
+                                 BlockGetCompletion & i_cmpl)
     throw(InternalError,
-          NotFoundError,
           ValueError)
-          
 {
-    LOG(lgr, 6, "bs_get_block");
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    string entry = entryname(i_keydata, i_keysize);
-    string blkpath = blockpath(entry);
-
-    ACE_stat statbuff;
-    
-    int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
-    if (rv == -1)
+    try
     {
-        if (errno == ENOENT)
-            throwstream(NotFoundError,
-                        Base32::encode(i_keydata, i_keysize) << ": not found");
-        else
-            throwstream(InternalError, FILELINE
-                        << "FSBlockStore::bs_get_block: "
-                        << Base32::encode(i_keydata, i_keysize)
-                        << ": error: " << ACE_OS::strerror(errno));
-    }
-    
-    if (statbuff.st_size > off_t(i_outsize)) {
-        throwstream(InternalError, FILELINE
-                << "Passed buffer not big enough to hold block");
-    }
-    
-    int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
-    int bytes_read = read(fd,o_outbuff,statbuff.st_size);
-    close(fd);
+        int bytes_read;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    if (bytes_read == -1) {
-        throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_get_block: read failed: "
-                    << strerror(errno));
-    }
+            string entry = entryname(i_keydata, i_keysize);
+            string blkpath = blockpath(entry);
+
+            ACE_stat statbuff;
+
+            int rv = ACE_OS::stat(blkpath.c_str(), &statbuff);
+            if (rv == -1)
+            {
+                if (errno == ENOENT)
+                    throwstream(NotFoundError,
+                                Base32::encode(i_keydata, i_keysize)
+                                << ": not found");
+                else
+                    throwstream(InternalError, FILELINE
+                                << "FSBlockStore::bs_get_block: "
+                                << Base32::encode(i_keydata, i_keysize)
+                                << ": error: " << ACE_OS::strerror(errno));
+            }
+
+            if (statbuff.st_size > off_t(i_buffsize))
+            {
+                throwstream(ValueError, FILELINE
+                            << "buffer overflow: "
+                            << "buffer " << i_buffsize << ", "
+                            << "data " << statbuff.st_size);
+            }
+
+            int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
+            bytes_read = read(fd, o_buffdata, i_buffsize);
+            close(fd);
+
+            if (bytes_read == -1) {
+                throwstream(InternalError, FILELINE
+                            << "FSBlockStore::bs_get_block: read failed: "
+                            << strerror(errno));
+            }
 
         
-    if (bytes_read != statbuff.st_size) {
-        throwstream(InternalError, FILELINE
-                << "FSBlockStore::expected to get " << statbuff.st_size
-                    << " bytes, but got " << bytes_read << " bytes");
-    }
+            if (bytes_read != statbuff.st_size) {
+                throwstream(InternalError, FILELINE
+                            << "FSBlockStore::expected to get "
+                            << statbuff.st_size
+                            << " bytes, but got " << bytes_read << " bytes");
+            }
 
-    return bytes_read;
+            // Release the mutex before the completion function.
+        }
+
+        i_cmpl.bg_complete(i_keydata, i_keysize, bytes_read);
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bg_error(i_keydata, i_keysize, ex);
+    }
 }
 
 void
-FSBlockStore::bs_put_block(void const * i_keydata,
-                           size_t i_keysize,
-                           void const * i_blkdata,
-                           size_t i_blksize)
+FSBlockStore::bs_put_block_async(void const * i_keydata,
+                                 size_t i_keysize,
+                                 void const * i_blkdata,
+                                 size_t i_blksize,
+                                 BlockPutCompletion & i_cmpl)
     throw(InternalError,
-          ValueError,
-          NoSpaceError)
+          ValueError)
 {
-    LOG(lgr, 6, "bs_put_block");
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    string entry = entryname(i_keydata, i_keysize);
-    string blkpath = blockpath(entry);
-    
-    // Need to stat the block first so we can keep the size accounting
-    // straight ...
-    //
-    off_t prevsize = 0;
-    bool wascommitted = true;
-    ACE_stat sb;
-    int rv = ACE_OS::stat(blkpath.c_str(), &sb);
-    if (rv == 0)
+    try
     {
-        prevsize = sb.st_size;
+        LOG(lgr, 6, "bs_put_block");
 
-        // Is this block older then the MARK?
-        if (m_mark && m_mark->m_tstamp > sb.st_mtime)
-            wascommitted = false;
-    }
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    off_t prevcommited = 0;
-    if (wascommitted)
-        prevcommited = prevsize;
-
-    // How much space will be available for this block?
-    off_t avail = m_size - m_committed + prevcommited;
-
-    if (off_t(i_blksize) > avail)
-        throwstream(NoSpaceError,
-                    "insufficent space: "
-                    << avail << " bytes avail, needed " << i_blksize);
-
-    // Do we need to remove uncommitted blocks to make room for this
-    // block?
-    while (m_committed + off_t(i_blksize) +
-           m_uncommitted - prevcommited > m_size)
-        purge_uncommitted();
-
-    int fd = open(blkpath.c_str(),
-                  O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
-    if (fd == -1)
-        throwstream(InternalError, FILELINE
-                << "FSBlockStore::bs_put_block: open failed on "
-                    << blkpath << ": " << strerror(errno));
+            string entry = entryname(i_keydata, i_keysize);
+            string blkpath = blockpath(entry);
     
-    int bytes_written = write(fd, i_blkdata, i_blksize);
-    int write_errno = errno;
-    close(fd);
-    if (bytes_written == -1)
-        throwstream(InternalError, FILELINE
-                    << "write of " << blkpath << " failed: "
-                    << ACE_OS::strerror(write_errno));
+            // Need to stat the block first so we can keep the size accounting
+            // straight ...
+            //
+            off_t prevsize = 0;
+            bool wascommitted = true;
+            ACE_stat sb;
+            int rv = ACE_OS::stat(blkpath.c_str(), &sb);
+            if (rv == 0)
+            {
+                prevsize = sb.st_size;
 
-    // Stat the file we just wrote so we can use the exact tstamp
-    // and size the filesystem sees.
-    rv = ACE_OS::stat(blkpath.c_str(), &sb);
-    if (rv == -1)
-        throwstream(InternalError, FILELINE
-                    << "stat " << blkpath << " failed: "
-                    << ACE_OS::strerror(errno));
-    time_t mtime = sb.st_mtime;
-    off_t size = sb.st_size;
+                // Is this block older then the MARK?
+                if (m_mark && m_mark->m_tstamp > sb.st_mtime)
+                    wascommitted = false;
+            }
 
-    // First remove the prior block from the stats.
-    if (wascommitted)
-        m_committed -= prevsize;
-    else
-        m_uncommitted -= prevsize;
+            off_t prevcommited = 0;
+            if (wascommitted)
+                prevcommited = prevsize;
 
-    // Add the new block to the stats.
-    m_committed += size;
+            // How much space will be available for this block?
+            off_t avail = m_size - m_committed + prevcommited;
 
-    // Update the entries.
-    touch_entry(entry, mtime, size);
+            if (off_t(i_blksize) > avail)
+                throwstream(NoSpaceError,
+                            "insufficent space: "
+                            << avail << " bytes avail, needed " << i_blksize);
+
+            // Do we need to remove uncommitted blocks to make room for this
+            // block?
+            while (m_committed + off_t(i_blksize) +
+                   m_uncommitted - prevcommited > m_size)
+                purge_uncommitted();
+
+            int fd = open(blkpath.c_str(),
+                          O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
+            if (fd == -1)
+                throwstream(InternalError, FILELINE
+                            << "FSBlockStore::bs_put_block: open failed on "
+                            << blkpath << ": " << strerror(errno));
+    
+            int bytes_written = write(fd, i_blkdata, i_blksize);
+            int write_errno = errno;
+            close(fd);
+            if (bytes_written == -1)
+                throwstream(InternalError, FILELINE
+                            << "write of " << blkpath << " failed: "
+                            << ACE_OS::strerror(write_errno));
+
+            // Stat the file we just wrote so we can use the exact tstamp
+            // and size the filesystem sees.
+            rv = ACE_OS::stat(blkpath.c_str(), &sb);
+            if (rv == -1)
+                throwstream(InternalError, FILELINE
+                            << "stat " << blkpath << " failed: "
+                            << ACE_OS::strerror(errno));
+            time_t mtime = sb.st_mtime;
+            off_t size = sb.st_size;
+
+            // First remove the prior block from the stats.
+            if (wascommitted)
+                m_committed -= prevsize;
+            else
+                m_uncommitted -= prevsize;
+
+            // Add the new block to the stats.
+            m_committed += size;
+
+            // Update the entries.
+            touch_entry(entry, mtime, size);
+
+            // Release the mutex before the completion function.
+        }
+
+        i_cmpl.bp_complete(i_keydata, i_keysize);
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bp_error(i_keydata, i_keysize, ex);
+    }
 }
 
 void
@@ -389,65 +493,69 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
 }
 
 void
-FSBlockStore::bs_refresh_blocks(uint64 i_rid,
-                                KeySeq const & i_keys,
-                                KeySeq & o_missing)
+FSBlockStore::bs_refresh_block_async(uint64 i_rid,
+                                     void const * i_keydata,
+                                     size_t i_keysize,
+                                     BlockRefreshCompletion & i_cmpl)
     throw(InternalError,
           NotFoundError)
 {
-    o_missing.clear();
-
     string rname = ridname(i_rid);
     string rpath = blockpath(rname);
 
-    LOG(lgr, 6, "bs_refresh_blocks " << rname);
+    string entry = entryname(i_keydata, i_keysize);
+    string blkpath = blockpath(entry);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+    bool ismissing = false;
 
-    // Does the refresh ID exist?
-    ACE_stat sb;
-    int rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv != 0 || !S_ISREG(sb.st_mode))
-        throwstream(NotFoundError,
-                    "refresh id " << i_rid << " not found");
+    LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
 
-    for (unsigned i = 0; i < i_keys.size(); ++i)
     {
-        string entry = entryname(&i_keys[i][0], i_keys[i].size());
-        string blkpath = blockpath(entry);
+        ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-        LOG(lgr, 6, "bs_refresh_blocks [" << i << "] " << entry);
+        // Does the refresh ID exist?
+        ACE_stat sb;
+        int rv = ACE_OS::stat(rpath.c_str(), &sb);
+        if (rv != 0 || !S_ISREG(sb.st_mode))
+            throwstream(NotFoundError,
+                        "refresh id " << i_rid << " not found");
 
         // If the block doesn't exist add it to the missing list.
         rv = ACE_OS::stat(blkpath.c_str(), &sb);
         if (rv != 0 || !S_ISREG(sb.st_mode))
         {
-            o_missing.push_back(i_keys[i]);
-            continue;
+            ismissing = true;
         }
+        else
+        {
+            // Touch the block.
+            rv = utimes(blkpath.c_str(), NULL);
+            if (rv != 0)
+                throwstream(InternalError, FILELINE
+                            << "trouble touching \"" << blkpath
+                            << "\": " << ACE_OS::strerror(errno));
 
-        // Touch the block.
-        rv = utimes(blkpath.c_str(), NULL);
-        if (rv != 0)
-            throwstream(InternalError, FILELINE
-                        << "trouble touching \"" << blkpath
-                        << "\": " << ACE_OS::strerror(errno));
+            // Stat the file we just wrote so we can use the exact tstamp
+            // and size the filesystem sees.
+            rv = ACE_OS::stat(blkpath.c_str(), &sb);
+            if (rv == -1)
+                throwstream(InternalError, FILELINE
+                            << "stat " << blkpath << " failed: "
+                            << ACE_OS::strerror(errno));
+            time_t mtime = sb.st_mtime;
+            off_t size = sb.st_size;
 
-        // Stat the file we just wrote so we can use the exact tstamp
-        // and size the filesystem sees.
-        rv = ACE_OS::stat(blkpath.c_str(), &sb);
-        if (rv == -1)
-            throwstream(InternalError, FILELINE
-                        << "stat " << blkpath << " failed: "
-                        << ACE_OS::strerror(errno));
-        time_t mtime = sb.st_mtime;
-        off_t size = sb.st_size;
-
-        // Update the entries.
-        touch_entry(entry, mtime, size);
+            // Update the entries.
+            touch_entry(entry, mtime, size);
+        }
     }
-}
 
+    if (ismissing)
+        i_cmpl.br_missing(i_keydata, i_keysize);
+    else
+        i_cmpl.br_complete(i_keydata, i_keysize);
+}
+        
 void
 FSBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,

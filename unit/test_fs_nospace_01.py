@@ -18,16 +18,16 @@ class Test_fs_nospace_01:
     self.bspath = "fs_nospace_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_nospace(self):
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create a small filesystem
     bssz = 64 * 1024
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bssz, bsargs)
 
     # Check the blockstore stats.
@@ -68,7 +68,7 @@ class Test_fs_nospace_01:
     self.bs.bs_close()
 
     # Now mount it again.
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs,
                                    "", "", CONFIG.FSARGS)

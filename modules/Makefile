@@ -6,6 +6,7 @@ SUBDIRS =	\
 			BDBBlockStore \
 			DefaultLogger \
 			FSBlockStore \
+			S3BlockStore \
 			UTFileSystem \
 			$(NULL)
 

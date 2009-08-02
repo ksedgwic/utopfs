@@ -29,6 +29,7 @@ PYTESTS =	\
 			test_fs_symlink_02.py \
 			test_fs_truncate_01.py \
 			test_fs_truncate_02.py \
+			test_fs_truncate_03.py \
 			test_fs_rename_01.py \
 			test_fs_rename_02.py \
 			test_fs_link_01.py \
@@ -36,6 +37,7 @@ PYTESTS =	\
 			test_fs_nospace_01.py \
 			test_fs_bigdir_01.py \
 			test_fs_doubleslash_01.py \
+			test_fs_syncmiddle_01.py \
 			$(NULL)
 
 SCRIPTS =	\
@@ -43,6 +45,8 @@ SCRIPTS =	\
 			test1 \
 			test2 \
 			refresh \
+			s3test \
+			rmbuck \
 			$(NULL)
 
 CFG =		\
@@ -67,6 +71,7 @@ include $(ROOTDIR)/config/extdep/python.mk
 include $(ROOTDIR)/modules/DefaultLogger/export.mk
 include $(ROOTDIR)/modules/FSBlockStore/export.mk
 include $(ROOTDIR)/modules/BDBBlockStore/export.mk
+include $(ROOTDIR)/modules/S3BlockStore/export.mk
 include $(ROOTDIR)/modules/UTFileSystem/export.mk
 
 # Local Variables:

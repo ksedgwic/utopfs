@@ -257,10 +257,23 @@ utopfs_init(struct fuse_conn_info * i_conn)
     // Perform the mount.
     try
     {
+        StringSeq bsargs;
+        if (utopfs.bsid != "S3BS")
+        {
+            bsargs.push_back(utopfs.path);
+        }
+        else
+        {
+            char * key_id = getenv("S3_ACCESS_KEY_ID");
+            char * secret = getenv("S3_SECRET_ACCESS_KEY");
+
+            bsargs.push_back(string("--s3-access-key-id=") + key_id);
+            bsargs.push_back(string("--s3-secret-access-key=") + secret);
+            bsargs.push_back(string("--bucket=") + utopfs.path);
+        }
+
         if (utopfs.size)
         {
-            StringSeq bsargs;
-            bsargs.push_back(utopfs.path);
             utopfs.bsh = BlockStoreFactory::create(utopfs.bsid,
                                                    utopfs.size,
                                                    bsargs);
@@ -276,9 +289,8 @@ utopfs_init(struct fuse_conn_info * i_conn)
         }
         else
         {
-            StringSeq bsargs;
-            bsargs.push_back(utopfs.path);
-            utopfs.bsh = BlockStoreFactory::open(utopfs.bsid, bsargs);
+            utopfs.bsh = BlockStoreFactory::open(utopfs.bsid,
+                                                 bsargs);
 
             StringSeq fsargs;
             utopfs.fsh = FileSystemFactory::mount("UTFS",
@@ -732,6 +744,7 @@ main(int argc, char ** argv)
     utopfs.logpath = "utopfs.log";
     utopfs.loglevel = -1;
     utopfs.size = 0;
+    utopfs.syncsecs = 10.0;
 
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
@@ -743,11 +756,16 @@ main(int argc, char ** argv)
     // When we are daemonized our path is changed to '/'.  If the
     // blockstore path is relative convert it to absolute ...
     //
-    if (utopfs.path[0] != '/')
+    // If we are using the S3BS then we don't want to convert it.
+    //
+    if (utopfs.bsid != "S3BS")
     {
-        char cwdbuf[MAXPATHLEN];
-        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
-        utopfs.path = cwd + '/' + utopfs.path;
+        if (utopfs.path[0] != '/')
+        {
+            char cwdbuf[MAXPATHLEN];
+            string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+            utopfs.path = cwd + '/' + utopfs.path;
+        }
     }
 
     // Convert LCLCONF path to absolute.

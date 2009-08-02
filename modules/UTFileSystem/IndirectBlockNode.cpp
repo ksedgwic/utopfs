@@ -125,7 +125,7 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
         off_t off = i_base + (ndx * refspan);
 
         // If we are beyond the traversal region we're done.
-        if (off > i_rngoff + off_t(i_rngsize))
+        if (off >= i_rngoff + off_t(i_rngsize))
             goto done;
 
         // Find the block object to use.
@@ -172,6 +172,7 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
         if (i_trav.bt_visit(i_ctxt, nh->bn_data(), nh->bn_size(),
                             off, i_fn.size()))
         {
+            nh->bn_isdirty(true);
             bn_isdirty(true);
         }
     }
@@ -237,11 +238,14 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
                 ++nblocks;
 
                 // Zero the data after the truncation.
-                off_t off0 = i_size - (off + (ndx * BLKSZ));
+                off_t off0 = i_size - off;
                 ACE_OS::memset(dbh->bn_data() + off0,
                                '\0', 
                                dbh->bn_size() - off0);
+
+                // Seems we could just set the dirty flag instead?
                 dbh->bn_persist(i_ctxt);
+
                 m_blkref[ndx] = dbh->bn_blkref();
 
                 bn_isdirty(true);

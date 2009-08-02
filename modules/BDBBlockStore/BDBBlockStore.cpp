@@ -48,14 +48,16 @@ BDBBlockStore::~BDBBlockStore()
 }
 
 void
-BDBBlockStore::bs_create(size_t i_size, string const & i_path)
+BDBBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,
           InternalError,
           ValueError)
 {
-    LOG(lgr, 4, "bs_create " << i_size << ' ' << i_path);
+    string const & path = i_args[0];
 
-	m_rootpath = i_path;
+    LOG(lgr, 4, "bs_create " << i_size << ' ' << path);
+
+	m_rootpath = path;
 
 	struct stat statbuff;    
     if (stat(m_rootpath.c_str(),&statbuff) == 0) {
@@ -74,19 +76,21 @@ BDBBlockStore::bs_create(size_t i_size, string const & i_path)
 }
 
 void
-BDBBlockStore::bs_open(string const & i_path)
+BDBBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 4, "bs_open " << i_path);	
+    string const & path = i_args[0];
+
+    LOG(lgr, 4, "bs_open " << path);	
 
     struct stat statbuff;    
-    if (stat(i_path.c_str(), &statbuff) != 0) {
+    if (stat(path.c_str(), &statbuff) != 0) {
         throwstream(NotFoundError, FILELINE
-                << "Cannot open bdb block store at '" << i_path << "'. File does not exist.");    
+                << "Cannot open bdb block store at '" << path << "'. File does not exist.");    
     }  
 
-	m_rootpath = i_path;
+	m_rootpath = path;
 	std::string db_path = "main";
 	
 	open_dbs(0);
@@ -124,6 +128,7 @@ BDBBlockStore::bs_stat(Stat & o_stat)
                 << "BDBBlockStore::bs_stat unimplemented");
 }
 
+#if 0
 size_t
 BDBBlockStore::bs_get_block(void const * i_keydata,
                            size_t i_keysize,
@@ -157,7 +162,49 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
     
     return data.get_size();    
 }
+#endif
 
+void
+BDBBlockStore::bs_get_block_async(void const * i_keydata,
+                                  size_t i_keysize,
+                                  void * o_buffdata,
+                                  size_t i_buffsize,
+                                  BlockGetCompletion & i_cmpl)
+    throw(InternalError,
+          ValueError)
+{
+    try
+    {
+        LOG(lgr, 6, "bs_get_block");
+        if (! m_db_opened) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore db not opened!");
+        }
+        
+        Dbt key((void *)i_keydata,i_keysize);
+        Dbt data;    
+        data.set_data(o_buffdata);
+        data.set_ulen(i_buffsize);
+        data.set_flags(DB_DBT_USERMEM);
+    
+	
+        int result = m_db->get(NULL,&key,&data,0);
+        if (result == DB_NOTFOUND) {
+            throwstream(NotFoundError, FILELINE);
+        } else if (result != 0) {
+            throwstream(NotFoundError, FILELINE
+                        << "BDBBlockStore::bs_get_block: " << result << db_strerror(result));
+        }	
+    
+        i_cmpl.bg_complete(i_keydata, i_keysize, data.get_size());
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bg_error(i_keydata, i_keysize, ex);
+    }
+}
+
+#if 0
 void
 BDBBlockStore::bs_put_block(void const * i_keydata,
                            size_t i_keysize,
@@ -185,6 +232,45 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
     	throwstream(InternalError, FILELINE
                 << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
     }      
+}
+#endif
+
+void
+BDBBlockStore::bs_put_block_async(void const * i_keydata,
+                                  size_t i_keysize,
+                                  void const * i_blkdata,
+                                  size_t i_blksize,
+                                  BlockPutCompletion & i_cmpl)
+    throw(InternalError,
+          ValueError)
+{
+    try
+    {
+        LOG(lgr, 6, "bs_put_block");
+        if (! m_db_opened) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore db not opened!");
+        }
+    
+        Dbt key((void *)i_keydata,i_keysize);
+        Dbt data((void *)i_blkdata,i_blksize);
+    
+        //delete key if it exists--necessary for root-node persistence
+        if (m_db->exists(NULL,&key,0) == 0) {
+            m_db->del(NULL,&key,0); 
+        }    
+        int results = m_db->put(NULL,&key,&data,DB_NOOVERWRITE);
+        if (results != 0) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
+        }      
+
+        i_cmpl.bp_complete(i_keydata, i_keysize);
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bp_error(i_keydata, i_keysize, ex);
+    }
 }
 
 void
@@ -225,6 +311,7 @@ BDBBlockStore::bs_refresh_start(uint64 i_rid)
 	
 }
 
+#if 0
 void
 BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
                                  KeySeq const & i_keys,
@@ -278,7 +365,24 @@ BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
 						<< ACE_OS::strerror(errno));
 	}
 }
+#endif
 
+void
+BDBBlockStore::bs_refresh_block_async(uint64 i_rid,
+                                      void const * i_keydata,
+                                      size_t i_keysize,
+                                      BlockRefreshCompletion & i_cmpl)
+    throw(InternalError,
+          NotFoundError)
+{
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}
+
+    throwstream(InternalError, FILELINE << "Feature not implemented"); 
+}
+        
 void
 BDBBlockStore::bs_refresh_finish(uint64 i_rid)
     throw(InternalError,

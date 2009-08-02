@@ -17,17 +17,31 @@ static PyObject * BlockStoreErrorObject;
 /* BlockStore methods */
 
 static PyObject *
-BlockStore_bs_create(BlockStoreObject *self, PyObject *args)
+BlockStore_bs_create(BlockStoreObject * self, PyObject * i_args)
 {
-    char * path;
     unsigned long size;
-    if (!PyArg_ParseTuple(args, "sk:bs_create", &size, &path))
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "kO!:bs_create", &size, &PyTuple_Type, &tup))
         return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_create(size, path);
+        self->m_bsh->bs_create(size, args);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -35,16 +49,30 @@ BlockStore_bs_create(BlockStoreObject *self, PyObject *args)
 }
 
 static PyObject *
-BlockStore_bs_open(BlockStoreObject *self, PyObject *args)
+BlockStore_bs_open(BlockStoreObject * self, PyObject * i_args)
 {
-    char * path;
-    if (!PyArg_ParseTuple(args, "s:bs_open", &path))
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "s:bs_open", &PyTuple_Type, &tup))
         return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_open(path);
+        self->m_bsh->bs_open(args);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -396,9 +424,42 @@ BlockStoreModule_open(PyObject *self, PyObject *i_args)
     PYUTP_CATCH_ALL;
 }
 
+static PyObject *
+BlockStoreModule_destroy(PyObject *self, PyObject *i_args)
+{
+    char * name;
+    PyObject * tup;
+    if (!PyArg_ParseTuple(i_args, "sO!:destroy", &name, &PyTuple_Type, &tup))
+		return NULL;
+
+    StringSeq args;
+    for (int i = 0; i < PyTuple_Size(tup); ++i)
+    {
+        PyObject * str = PyTuple_GetItem(tup, i);
+        if (!PyString_Check(str))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "BlockStore::destroy arg must be tuple of strings");
+            return NULL;
+        }
+
+        args.push_back(std::string(PyString_AsString(str)));
+    }
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        BlockStoreFactory::destroy(name, args);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
 static PyMethodDef BlockStoreModule_methods[] = {
 	{"create",		BlockStoreModule_create,			METH_VARARGS},
     {"open",		BlockStoreModule_open,				METH_VARARGS},
+    {"destroy",		BlockStoreModule_destroy,			METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

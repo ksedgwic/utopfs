@@ -14,8 +14,7 @@ try:
     fsid = sys.argv[2]
     passwd = sys.argv[3]
 
-    bsargs = (bspath,) + CONFIG.BSARGS
-    bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
+    bs = utp.BlockStore.open(CONFIG.BSTYPE, CONFIG.BSARGS(bspath))
     fs = utp.FileSystem.mount(CONFIG.FSTYPE, bs, "", "", CONFIG.FSARGS)
 
     nb = fs.fs_refresh()

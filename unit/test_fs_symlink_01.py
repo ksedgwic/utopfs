@@ -20,15 +20,15 @@ class Test_fs_symlink_01:
     self.bspath = "fs_symlink_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_symlink(self):
 
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)

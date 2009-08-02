@@ -15,6 +15,8 @@ PRGEXE = 	utopfs
 SCRIPTS =	\
 			runmkfs \
 			runmount \
+			runmkfs.s3 \
+			runmount.s3 \
 			$(NULL)
 
 CFG =		\
@@ -34,4 +36,5 @@ include $(ROOTDIR)/config/extdep/ACE.mk
 include $(ROOTDIR)/modules/DefaultLogger/export.mk
 include $(ROOTDIR)/modules/FSBlockStore/export.mk
 include $(ROOTDIR)/modules/BDBBlockStore/export.mk
+include $(ROOTDIR)/modules/S3BlockStore/export.mk
 include $(ROOTDIR)/modules/UTFileSystem/export.mk

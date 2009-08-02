@@ -17,15 +17,14 @@ class Test_fs_persist_01:
     self.bspath = "fs_persist_01.bs"
 
   def teardown_class(self):
-    3
-    #CONFIG.remove_bs(self.bspath) 
+    CONFIG.remove_bs(self.bspath)
 
   def test_persistence(self):
     # Remove any prexisting blockstore.
-    CONFIG.remove_bs(self.bspath)  
+    CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
@@ -37,15 +36,12 @@ class Test_fs_persist_01:
     st = self.fs.fs_getattr("/foo");
     assert S_ISREG(st[ST_MODE])
     
-    
-    #assert 3 == 4    
-
     # Now we unmount the filesystem.
     self.fs.fs_umount()
     self.bs.bs_close()
 
     # Now mount it again.
-    bsargs = (self.bspath,) + CONFIG.BSARGS
+    bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
     self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs,
                                    "", "", CONFIG.FSARGS)

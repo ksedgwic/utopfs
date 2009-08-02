@@ -25,7 +25,9 @@ class Test_bs_size_02:
 
     # Create the blockstore with a small size.
     smallsz = 105
-    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, smallsz, (self.bspath,))
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    smallsz,
+                                    CONFIG.BSARGS(self.bspath))
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -66,7 +68,7 @@ class Test_bs_size_02:
 
     # Close and reopen the blockstore.
     self.bs.bs_close()
-    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, (self.bspath,))
+    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, CONFIG.BSARGS(self.bspath))
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -93,7 +95,9 @@ class Test_bs_size_02:
 
     # Create the blockstore with a small size.
     smallsz = 105
-    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, smallsz, (self.bspath,))
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    smallsz,
+                                    CONFIG.BSARGS(self.bspath))
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -143,7 +147,7 @@ class Test_bs_size_02:
 
     # Close and reopen the blockstore.
     self.bs.bs_close()
-    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, (self.bspath,))
+    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, CONFIG.BSARGS(self.bspath))
 
     # Now we can insert another block.
     k = buffer("k12")
