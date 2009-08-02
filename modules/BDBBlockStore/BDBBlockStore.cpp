@@ -1,4 +1,4 @@
-#include <sstream>
+	#include <sstream>
 #include <string>
 
 #include <db_cxx.h>
@@ -199,9 +199,9 @@ BDBBlockStore::bs_refresh_start(uint64 i_rid)
 
 	int results;
 	try {
-		Dbt key((void *)i_rid,sizeof(i_rid));
+		Dbt key((void *)&i_rid,sizeof(i_rid));
 		//data should be date
-		Dbt data((void *)i_rid,sizeof(i_rid));
+		Dbt data((void *)&i_rid,sizeof(i_rid));
 
 		results = m_db_refresh_ids->get(NULL,&key,&data,0);
 		if (results == 0) { //found
@@ -236,29 +236,47 @@ BDBBlockStore::bs_refresh_blocks(uint64 i_rid,
 		throwstream(InternalError, FILELINE
                 << "BDBBlockStore db not opened!");
 	}
-    throwstream(InternalError, FILELINE << "Feature not implemented"); 
-    o_missing.clear();
 
-    for (unsigned i = 0; i < i_keys.size(); ++i)
-    {
-        string s_filename = get_full_path(&i_keys[i][0], i_keys[i].size());
+	int results;
+	try {
+		//verify that i_rid exists
+		Dbt rid_key((void *)&i_rid,sizeof(i_rid));
 
-        // If the block doesn't exist add it to the missing list.
-        ACE_stat sb;
-        int rv = ACE_OS::stat(s_filename.c_str(), &sb);
-        if (rv != 0 || !S_ISREG(sb.st_mode))
-        {
-            o_missing.push_back(i_keys[i]);
-            continue;
-        }
+		results = m_db_refresh_ids->exists(NULL,&rid_key,0);
+		if (results == DB_NOTFOUND) {
+			throwstream(NotFoundError,
+		                "refresh id " << i_rid << " doesn't exist");
+		} else if (results != 0) {
+		    throwstream(InternalError, FILELINE
+		            << "BDBBlockStore::bs_refresh_blocks: " << results << db_strerror(results));
+		}
+		
+		//now put blocks
+		o_missing.clear();
 
-        // Touch the block.
-        rv = utimes(s_filename.c_str(), NULL);
-        if (rv != 0)
-            throwstream(InternalError, FILELINE
-                        << "trouble touching \"" << s_filename
-                        << "\": " << ACE_OS::strerror(errno));
-    }
+		for (unsigned i = 0; i < i_keys.size(); ++i)
+		{			
+			Dbt block_key((void *)&i_keys[i][0],i_keys[i].size());
+
+		    // If the block doesn't exist add it to the missing list.
+			if (m_db->exists(NULL,&block_key,0) == DB_NOTFOUND) {
+				o_missing.push_back(i_keys[i]);
+		        continue;
+		    }
+
+			results = m_db_refresh_entries->put(NULL,&rid_key,&block_key,0);
+			if (results != 0) {
+				throwstream(InternalError, FILELINE
+				        << "BDBBlockStore::bs_refresh_blocks returned error " 
+						<< results << db_strerror(results));
+			}
+
+		}
+	} catch(DbException e) {
+		throwstream(InternalError, FILELINE
+				        << "BDBBlockStore::bs_refresh_blocks returned error " 
+						<< ACE_OS::strerror(errno));
+	}
 }
 
 void
@@ -270,6 +288,18 @@ BDBBlockStore::bs_refresh_finish(uint64 i_rid)
 		throwstream(InternalError, FILELINE
                 << "BDBBlockStore db not opened!");
 	}
+
+	Dbt rid_key((void *)&i_rid,sizeof(i_rid));
+
+	int results = m_db_refresh_ids->exists(NULL,&rid_key,0);
+	if (results == DB_NOTFOUND) {
+		throwstream(NotFoundError,
+	                "refresh id " << i_rid << " doesn't exist");
+	} else if (results != 0) {
+	    throwstream(InternalError, FILELINE
+	            << "BDBBlockStore::bs_refresh_blocks: " << results << db_strerror(results));
+	}
+
    // throwstream(InternalError, FILELINE
    //	            << "BDBBlockStore::bs_refresh_finish unimplemented");
 }
