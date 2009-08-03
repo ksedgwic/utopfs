@@ -20,6 +20,9 @@ namespace BDBBS {
 class BDBBS_EXP BDBBlockStore : public utp::BlockStore
 {
 public:
+
+    static void destroy(utp::StringSeq const & i_args);
+
     BDBBlockStore();
 
     virtual ~BDBBlockStore();

@@ -76,8 +76,7 @@ BDBBSFactory::bsf_destroy(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    throwstream(InternalError, FILELINE
-                << "BDBBSFactory::bsf_destroy unimplemented");
+	BDBBS::BDBBlockStore::destroy(i_args);
 }
 
 ACE_SVC_FACTORY_DEFINE(BDBBSFactory)

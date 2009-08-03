@@ -35,6 +35,24 @@ void db_close(Db * dbp) {
 	delete dbp;
 }
 
+void
+BDBBlockStore::destroy(StringSeq const & i_args)
+{
+	LOG(lgr,4,"Destroy on" << i_args[0]);
+
+	ACE_stat sb;
+	
+	string const & path = i_args[0];
+	
+    // Make sure the top level is a directory.
+	if (ACE_OS::stat(path.c_str(), &sb) != 0)
+		throwstream(NotFoundError, "BDBBlockStore::destroy: top dir \""
+			<< path << "\" does not exist");
+
+	string cmd = "rm -rf " + path;
+	system(cmd.c_str());
+}
+
 BDBBlockStore::BDBBlockStore()
 {	
     LOG(lgr, 4, "CTOR");
