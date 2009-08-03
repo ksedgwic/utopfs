@@ -78,16 +78,6 @@ public:
     virtual void bs_stat(Stat & o_stat)
         throw(utp::InternalError);
 
-#if 0
-    virtual size_t bs_get_block(void const * i_keydata,
-                                size_t i_keysize,
-                                void * o_outbuff,
-                                size_t i_outsize)
-        throw(utp::InternalError,
-              utp::NotFoundError,
-              utp::ValueError);
-#endif
-
     virtual void bs_get_block_async(void const * i_keydata,
                                     size_t i_keysize,
                                     void * o_outbuff,
@@ -95,16 +85,6 @@ public:
                                     BlockGetCompletion & i_cmpl)
         throw(utp::InternalError,
               utp::ValueError);
-
-#if 0
-    virtual void bs_put_block(void const * i_keydata,
-                              size_t i_keysize,
-                              void const * i_blkdata,
-                              size_t i_blksize)
-        throw(utp::InternalError,
-              utp::ValueError,
-              utp::NoSpaceError);
-#endif
 
     virtual void bs_put_block_async(void const * i_keydata,
                                     size_t i_keysize,
@@ -117,14 +97,6 @@ public:
     virtual void bs_refresh_start(utp::uint64 i_rid)
         throw(utp::InternalError,
               utp::NotUniqueError);
-
-#if 0
-    virtual void bs_refresh_blocks(utp::uint64 i_rid,
-                                   KeySeq const & i_keys,
-                                   KeySeq & o_missing)
-        throw(utp::InternalError,
-              utp::NotFoundError);
-#endif
 
     virtual void bs_refresh_block_async(utp::uint64 i_rid,
                                         void const * i_keydata,
@@ -139,6 +111,19 @@ public:
 
     virtual void bs_sync()
 		throw(utp::InternalError);
+
+    virtual void bs_head_insert(utp::SignedHeadNode const & i_shn)
+        throw(utp::InternalError);
+
+    virtual void bs_head_follow(utp::SignedHeadNode const & i_seed,
+                                SignedHeadNodeFunc & i_func)
+        throw(utp::InternalError,
+              utp::NotFoundError);
+
+    virtual void bs_head_furthest(utp::SignedHeadNode const & i_seed,
+                                  SignedHeadNodeFunc & i_func)
+        throw(utp::InternalError,
+              utp::NotFoundError);
 
 protected:
     std::string entryname(void const * i_keydata, size_t i_keysize) const;

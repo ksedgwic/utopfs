@@ -1,4 +1,4 @@
-	#include <sstream>
+#include <sstream>
 #include <string>
 
 #include <db_cxx.h>
@@ -454,6 +454,62 @@ BDBBlockStore::bs_sync()
 	m_db->sync(0);
 	m_db_refresh_ids->sync(0);
 	m_db_refresh_entries->sync(0);
+}
+
+void
+BDBBlockStore::bs_head_insert(SignedHeadNode const & i_shn)
+throw(InternalError)
+{
+    // FIXME - This placeholder just uses the regular blockstore put
+    // and get operations to store a single head node.  This is what
+    // we used to do and needs to be replaced with a real headnode
+    // graph store ...
+    HeadNode hn;
+    hn.ParseFromString(i_shn.headnode());
+    string const & key = hn.fstag();
+    string buf;
+    i_shn.SerializeToString(&buf);
+    bs_put_block(key.data(), key.size(), buf.data(), buf.size());
+}
+
+void
+BDBBlockStore::bs_head_follow(SignedHeadNode const & i_seed,
+                              SignedHeadNodeFunc & i_func)
+    throw(InternalError,
+          NotFoundError)
+{
+    // FIXME - This placeholder just uses the regular blockstore put
+    // and get operations to store a single head node.  This is what
+    // we used to do and needs to be replaced with a real headnode
+    // graph store ...
+    HeadNode hn;
+    hn.ParseFromString(i_seed.headnode());
+    string const & key = hn.fstag();
+    uint8 buf[8192];
+    size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+    SignedHeadNode shn;
+    shn.ParseFromArray(buf, sz);
+    i_func.bs_head_func(shn);
+}
+
+void
+BDBBlockStore::bs_head_furthest(SignedHeadNode const & i_seed,
+                                SignedHeadNodeFunc & i_func)
+    throw(InternalError,
+          NotFoundError)
+{
+    // FIXME - This placeholder just uses the regular blockstore put
+    // and get operations to store a single head node.  This is what
+    // we used to do and needs to be replaced with a real headnode
+    // graph store ...
+    HeadNode hn;
+    hn.ParseFromString(i_seed.headnode());
+    string const & key = hn.fstag();
+    uint8 buf[8192];
+    size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+    SignedHeadNode shn;
+    shn.ParseFromArray(buf, sz);
+    i_func.bs_head_func(shn);
 }
 
 string 

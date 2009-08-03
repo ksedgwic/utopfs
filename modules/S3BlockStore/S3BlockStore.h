@@ -117,6 +117,19 @@ public:
     virtual void bs_sync()
 		throw(utp::InternalError);
 
+    virtual void bs_head_insert(utp::SignedHeadNode const & i_shn)
+        throw(utp::InternalError);
+
+    virtual void bs_head_follow(utp::SignedHeadNode const & i_seed,
+                                SignedHeadNodeFunc & i_func)
+        throw(utp::InternalError,
+              utp::NotFoundError);
+
+    virtual void bs_head_furthest(utp::SignedHeadNode const & i_seed,
+                                  SignedHeadNodeFunc & i_func)
+        throw(utp::InternalError,
+              utp::NotFoundError);
+
 protected:
     static void parse_params(utp::StringSeq const & i_args,
                              S3Protocol & o_protocol,

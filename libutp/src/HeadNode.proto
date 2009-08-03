@@ -1,0 +1,21 @@
+package utp;
+
+message HeadNode
+{
+    required bytes fstag = 1;			// FileSystem tag (digest of fsid)
+    required bytes rootref = 2;			// Encrypted Root Block Reference
+    required bytes prevref = 3;			// Encrypted Prev Root Block Reference
+    required uint64 tstamp = 4;			// uSec Since Epoch
+}
+
+message SignedHeadNode
+{
+    required bytes headnode = 1;		// Marshaled HeadNode
+    required bytes keyid = 2;			// Key Identifier
+    required bytes signature = 3;		// Digital Signature
+}
+
+message SignedHeadNodeSeq
+{
+    repeated SignedHeadNode shn = 1;
+}

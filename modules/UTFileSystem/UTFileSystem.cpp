@@ -50,6 +50,9 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
 
+    // Initialize the headnode.
+    null_headnode();
+
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
     m_ctxt.m_cipher.set_key(dig.data(), dig.size());
@@ -81,6 +84,9 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
+
+    // Initialize the headnode.
+    null_headnode();
 
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
@@ -999,32 +1005,75 @@ UTFileSystem::rootref(BlockRef const & i_blkref)
 {
     LOG(lgr, 6, "rootref set " << i_blkref);
 
+    // Encrypt the root reference.
     uint8 iv[16];
     memset(iv, '\0', sizeof(iv));
-
     uint8 buffer[sizeof(BlockRef)];
     ACE_OS::memcpy(buffer, i_blkref.data(), sizeof(buffer));
-
     m_ctxt.m_cipher.encrypt(iv, buffer, sizeof(buffer));
 
-    m_ctxt.m_bsh->bs_put_block(m_fsiddig.data(), m_fsiddig.size(),
-                               buffer, sizeof(buffer));
+    m_hn.set_fstag(m_fsiddig);
+    m_hn.set_prevref(m_hn.rootref());
+    m_hn.set_rootref(string((char *) buffer, sizeof(buffer)));
+    m_hn.set_tstamp(T64::now().usec());
+
+    // Serialize the HeadNode into the SignedHeadNode.
+    m_hn.SerializeToString(m_shn.mutable_headnode());
+
+    // FIXME - Set the keyid for real here!
+    uint8 keyid[16];
+    Random::fill(keyid, sizeof(keyid));
+    m_shn.set_keyid(keyid, sizeof(keyid));
+
+    // FIXME - Set the signature for real here!
+    uint8 sig[256];
+    Random::fill(sig, sizeof(sig));
+    m_shn.set_signature(sig, sizeof(sig));
+
+    m_ctxt.m_bsh->bs_head_insert(m_shn);
 }
+
+class RootRefFunc : public BlockStore::SignedHeadNodeFunc
+{
+public:
+    RootRefFunc() : m_seen(false) {}
+
+    virtual void bs_head_func(SignedHeadNode const & i_shn)
+    {
+        if (m_seen)
+            throwstream(InternalError, FILELINE
+                        << "RootRefFunc::bs_head_func "
+                        << "multiple heads found");
+
+        m_shn = i_shn;
+        m_seen = true;
+    }
+
+    bool				m_seen;
+    SignedHeadNode		m_shn;
+};
 
 BlockRef
 UTFileSystem::rootref()
 {
-    string refstr;
-    refstr.resize(sizeof(BlockRef));
+    // Update our signed head node.
+    RootRefFunc rrf;
+    m_ctxt.m_bsh->bs_head_furthest(m_shn, rrf);
+    if (!rrf.m_seen)
+        throwstream(NotFoundError, "signed head node not found");
 
-    m_ctxt.m_bsh->bs_get_block(m_fsiddig.data(), m_fsiddig.size(),
-                               &refstr[0], refstr.size());
+    // Store a copy of the new node.
+    m_shn = rrf.m_shn;
 
-    // Can this block be validated?
+    // FIXME - Authenticate the signature here.
 
+    // Unmarshal the signed head node.
+    m_hn.ParseFromString(m_shn.headnode());
+
+    // Decrypt the root reference.
     uint8 iv[16];
     memset(iv, '\0', sizeof(iv));
-
+    string const & refstr = m_hn.rootref();
     m_ctxt.m_cipher.decrypt(iv, (uint8 *) &refstr[0], refstr.size());
 
     BlockRef blkref(refstr);
@@ -1032,6 +1081,19 @@ UTFileSystem::rootref()
     LOG(lgr, 6, "rootref get " << blkref);
 
     return blkref;
+}
+
+void
+UTFileSystem::null_headnode()
+{
+    // Serialize empty fields into the head node.
+    m_hn.set_fstag(m_fsiddig);
+    m_hn.set_rootref("");
+    m_hn.set_prevref("");
+    m_hn.set_tstamp(0);
+
+    // Serialize the HeadNode into the SignedHeadNode.
+    m_hn.SerializeToString(m_shn.mutable_headnode());
 }
 
 } // namespace UTFS

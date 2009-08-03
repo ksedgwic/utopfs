@@ -10,6 +10,7 @@
 #include "utpexp.h"
 #include "utpfwd.h"
 
+#include "HeadNode.pb.h"
 #include "Except.h"
 #include "RC.h"
 #include "Types.h"
@@ -70,7 +71,6 @@ public:
     ///
     virtual void bs_stat(Stat & o_stat)
         throw(InternalError) = 0;
-
 
     /// Get a block via blocking interface.
     ///
@@ -239,9 +239,49 @@ public:
     ///
     virtual void bs_sync()
         throw(InternalError) = 0;
-        
-        
-    
+
+    /// Insert a SignedHeadNode into the BlockStore.
+    ///
+    /// @param[in] i_shn The SignedHeadNode
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void bs_head_insert(SignedHeadNode const & i_shn)
+        throw(InternalError) = 0;
+
+    /// Callback interface for SignedHeadNode traversals.
+    ///
+    class SignedHeadNodeFunc
+    {
+    public:
+        virtual void bs_head_func(SignedHeadNode const & i_shn) = 0;
+    };
+
+    /// Traverse all nodes which follow a node.
+    ///
+    /// If the rootref field of the seed node is empty all nodes will
+    /// be traversed.
+    /// 
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError No nodes were found.
+    ///
+    virtual void bs_head_follow(SignedHeadNode const & i_seed,
+                                SignedHeadNodeFunc & i_func)
+        throw(InternalError,
+              NotFoundError) = 0;
+
+    /// Traverse only the extreme heads which follow a node.
+    ///
+    /// If the rootref field of the seed node is empty all extreme
+    /// heads will be traversed.
+    /// 
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError No node was found.
+    ///
+    virtual void bs_head_furthest(SignedHeadNode const & i_seed,
+                                  SignedHeadNodeFunc & i_func)
+        throw(InternalError,
+              NotFoundError) = 0;
 };
 
 } // end namespace utp

@@ -2,6 +2,10 @@ ROOTDIR = ../..
 
 include $(ROOTDIR)/config/define.mk
 
+PROTO +=	\
+			HeadNode.proto \
+			$(NULL)
+
 LIBSRC =	\
 			Base32.cpp \
 			BlockCipher.cpp \
@@ -31,6 +35,7 @@ DEFS +=		-DUTP_IMPL
 include $(ROOTDIR)/config/depend.mk
 
 # External Dependencies
+include $(ROOTDIR)/config/extdep/protobuf.mk
 include $(ROOTDIR)/config/extdep/ACE.mk
 include $(ROOTDIR)/config/extdep/openssl.mk
 

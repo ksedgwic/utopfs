@@ -145,6 +145,8 @@ protected:
 
     BlockRef rootref();
 
+    void null_headnode();
+    
 private:
     typedef std::map<std::string, FileNodeHandle>	NodeMap;
 
@@ -155,6 +157,9 @@ private:
     Context					m_ctxt;
 
     DirNodeHandle			m_rdh;
+
+    utp::SignedHeadNode		m_shn;
+    utp::HeadNode			m_hn;
 };
 
 } // namespace UTFS
