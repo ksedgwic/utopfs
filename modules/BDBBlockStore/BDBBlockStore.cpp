@@ -301,20 +301,22 @@ BDBBlockStore::bs_refresh_start(uint64 i_rid)
                 << "BDBBlockStore db not opened!");
 	}	
 
-	int results;
 	try {
-		Dbt key((void *)&i_rid,sizeof(i_rid));
-		//data should be date
-		Dbt data((void *)&i_rid,sizeof(i_rid));
+		
+		Dbt rid_key((void *)&i_rid,sizeof(i_rid));
 
-		results = m_db_refresh_ids->get(NULL,&key,&data,0);
-		if (results == 0) { //found
+		int results = m_db_refresh_ids->exists(NULL,&rid_key,0);
+		if (results == 0) {
 			throwstream(NotUniqueError,
-		                "refresh id " << i_rid << " already exists");
-		} else if (results != DB_NOTFOUND) {
+		                "refresh id " << i_rid << " already exists!");
+		} else if (results != DB_NOTFOUND) { 
 		    throwstream(InternalError, FILELINE
 		            << "BDBBlockStore::bs_refresh_start: " << results << db_strerror(results));
 		}
+
+		Dbt key((void *)&i_rid,sizeof(i_rid));
+		//data should be date
+		Dbt data((void *)&i_rid,sizeof(i_rid));
 
 		results = m_db_refresh_ids->put(NULL,&key,&data,DB_NOOVERWRITE);
 		if (results != 0) {
@@ -398,7 +400,21 @@ BDBBlockStore::bs_refresh_block_async(uint64 i_rid,
                 << "BDBBlockStore db not opened!");
 	}
 
-    throwstream(InternalError, FILELINE << "Feature not implemented"); 
+	
+	Dbt rid_key((void *)&i_rid,sizeof(i_rid));
+
+	int results = m_db_refresh_ids->exists(NULL,&rid_key,0);
+	if (results == DB_NOTFOUND) {
+		throwstream(NotFoundError,
+	                "refresh id " << i_rid << " doesn't exist");
+	} else if (results != 0) {
+	    throwstream(InternalError, FILELINE
+	            << "BDBBlockStore::bs_refresh_blocks: " << results << db_strerror(results));
+	}
+	
+	i_cmpl.br_complete(i_keydata,i_keysize);
+
+    //throwstream(InternalError, FILELINE << "Feature not implemented"); 
 }
         
 void
@@ -479,7 +495,7 @@ BDBBlockStore::open_dbs(u_int32_t create_flag = 0)
 		db_refresh_ids = new Db(dbe,0);
 		db_refresh_entries = new Db(dbe,0);
 		
-		db_path = "main.db";
+		db_path = m_rootpath + "/main.db";
 		int result = db->open(NULL,db_path.c_str(),NULL, DB_BTREE,create_flag,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
@@ -489,7 +505,7 @@ BDBBlockStore::open_dbs(u_int32_t create_flag = 0)
 		odb = db.take();
 
 		//open other dbs too
-		db_path = "refresh.db";
+		db_path = m_rootpath + "/refresh.db";
 		result = db_refresh_ids->open(NULL,db_path.c_str(),NULL, DB_BTREE, create_flag,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
@@ -499,7 +515,7 @@ BDBBlockStore::open_dbs(u_int32_t create_flag = 0)
 		odb_refresh_ids = db_refresh_ids.take();
 
 		//open other dbs too
-		db_path = "refresh_entries.db";
+		db_path = m_rootpath + "/refresh_entries.db";
 		result = db_refresh_entries->open(NULL,db_path.c_str(),NULL, DB_BTREE,create_flag,0);		
 		if (result != 0) {
 			throwstream(InternalError, FILELINE
