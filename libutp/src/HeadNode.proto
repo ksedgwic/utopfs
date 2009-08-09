@@ -15,7 +15,7 @@ message SignedHeadNode
     required bytes signature = 3;		// Digital Signature
 }
 
-message SignedHeadNodeSeq
+message SignedHeadNodeVector
 {
     repeated SignedHeadNode shn = 1;
 }

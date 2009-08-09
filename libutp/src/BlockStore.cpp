@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "Except.h"
 #include "BlockStore.h"
 
@@ -127,6 +129,53 @@ private:
     BlockStore::KeySeq &		m_missing;
 };
 
+class InsertCompletion
+    : public BlockStore::SignedHeadInsertCompletion
+    , public BlockingCompletion
+{
+public:
+    virtual void shi_complete(SignedHeadNode const & i_shn)
+    {
+        done();
+    }
+
+    virtual void shi_error(SignedHeadNode const & i_shn,
+                           Exception const & i_exp)
+    {
+        m_except = i_exp.clone();
+        done();
+    }
+};
+
+class HeadTraversalCompletion
+    : public BlockStore::SignedHeadTraverseFunc
+    , public BlockingCompletion
+{
+public:
+    HeadTraversalCompletion(BlockStore::SignedHeadNodeSeq & o_nodes)
+        : m_nodes(o_nodes)
+    {}
+
+    virtual void sht_node(SignedHeadNode const & i_shn)
+    {
+        m_nodes.push_back(i_shn);
+    }
+
+    virtual void sht_complete()
+    {
+        done();
+    }
+
+    virtual void sht_error(Exception const & i_exp)
+    {
+        m_except = i_exp.clone();
+        done();
+    }
+
+private:
+    BlockStore::SignedHeadNodeSeq &		m_nodes;
+};
+
 } // end namespace
 
 namespace utp {
@@ -204,6 +253,64 @@ BlockStore::bs_refresh_blocks(uint64 i_rid,
     // If there was an exception, throw it.
     if (rc.is_error())
         rc.rethrow();
+}
+
+void
+BlockStore::bs_head_insert(SignedHeadNode const & i_shn)
+    throw(InternalError)
+{
+    // Create our completion handler.
+    InsertCompletion ic;
+
+    // Initiate the asynchronous insert.
+    bs_head_insert_async(i_shn, ic);
+
+    // Wait for completion.
+    ic.wait();
+
+    // If there was an exception, throw it.
+    if (ic.is_error())
+        ic.rethrow();
+}
+
+void
+BlockStore::bs_head_follow(SignedHeadNode const & i_seed,
+                           SignedHeadNodeSeq & o_nodes)
+    throw(InternalError,
+          NotFoundError)
+{
+    // Create our completion handler.
+    HeadTraversalCompletion htc(o_nodes);
+
+    // Initiate the asynchronous insert.
+    bs_head_follow_async(i_seed, htc);
+
+    // Wait for completion.
+    htc.wait();
+
+    // If there was an exception, throw it.
+    if (htc.is_error())
+        htc.rethrow();
+}
+
+void
+BlockStore::bs_head_furthest(SignedHeadNode const & i_seed,
+                             SignedHeadNodeSeq & o_nodes)
+    throw(InternalError,
+          NotFoundError)
+{
+    // Create our completion handler.
+    HeadTraversalCompletion htc(o_nodes);
+
+    // Initiate the asynchronous insert.
+    bs_head_furthest_async(i_seed, htc);
+
+    // Wait for completion.
+    htc.wait();
+
+    // If there was an exception, throw it.
+    if (htc.is_error())
+        htc.rethrow();
 }
 
 } // end namespace utp

@@ -20,8 +20,11 @@ namespace utp {
 class UTP_EXP BlockStore : public virtual RCObj
 {
 public:
-    /// List of keys.
+    /// Sequence of keys.
     typedef std::vector<OctetSeq> KeySeq;
+
+    /// Sequence of Signed Head Nodes
+    typedef std::deque<SignedHeadNode> SignedHeadNodeSeq;
 
     /// Destructor
     ///
@@ -74,8 +77,9 @@ public:
 
     /// Get a block via blocking interface.
     ///
-    /// @note This interface is a wrapper on the nonblocking
-    ///       interface.
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
     ///
     /// @param[in] i_keydata Pointer to the key data.
     /// @param[in] i_keysize Size of the key data.
@@ -95,6 +99,139 @@ public:
         throw(InternalError,
               NotFoundError,
               ValueError);
+
+    /// Put a block via blocking interface.
+    ///
+    /// The inserted block replaces existing.
+    ///
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
+    ///
+    /// @param[in] i_keydata Pointer to the key data.
+    /// @param[in] i_keysize Size of the key data.
+    /// @param[in] i_blkdata Pointer to the block data.
+    /// @param[in] i_blksize Size of the block data.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw ValueError One of the arguments is out of range.
+    /// @throw NoSpaceError Out of space to store block.
+    ///
+    void bs_put_block(void const * i_keydata,
+                      size_t i_keysize,
+                      void const * i_blkdata,
+                      size_t i_blksize)
+        throw(InternalError,
+              ValueError,
+              NoSpaceError);
+
+    /// Start a refresh cycle.
+    ///
+    /// @param[in] i_rid A unique refresh cycle identifier.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotUniqueError The specified refresh id is already in use.
+    ///
+    virtual void bs_refresh_start(utp::uint64 i_rid)
+        throw(InternalError,
+              NotUniqueError) = 0;
+
+    /// Refresh a list of blocks, return list of any missing.
+    ///
+    /// Refreshing a block updates it's access timestamp, moving it to
+    /// the front of the LRU queue.
+    ///
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
+    ///
+    /// @param[in] i_rid The unique refresh cycle id.
+    /// @param[in] i_keys List of keys for blocks to refresh.
+    /// @param[out] o_missing Keys which were not present.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError The specified refresh id was not found.
+    ///
+    void bs_refresh_blocks(utp::uint64 i_rid,
+                           KeySeq const & i_keys,
+                           KeySeq & o_missing)
+        throw(InternalError,
+              NotFoundError);
+        
+    /// Finish a refresh cycle.
+    ///
+    /// @param[in] i_rid The unique refresh cycle identifier.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError The specified refresh id was not found.
+    ///
+    virtual void bs_refresh_finish(utp::uint64 i_rid)
+        throw(InternalError,
+              NotFoundError) = 0;
+
+    /// Ensures blocks are persisted.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void bs_sync()
+        throw(InternalError) = 0;
+
+    /// Insert a SignedHeadNode into the BlockStore.
+    ///
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
+    ///
+    /// @param[in] i_shn The SignedHeadNode
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    void bs_head_insert(SignedHeadNode const & i_shn)
+        throw(InternalError);
+
+    /// Return all nodes which follow a node.
+    ///
+    /// If the rootref field of the seed node is empty all nodes will
+    /// be traversed.
+    /// 
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
+    ///
+    /// @param[in] i_shn The SignedHeadNode to start at.
+    /// @param[out] o_nodes Collection to hold returned nodes.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError No nodes were found.
+    ///
+    void bs_head_follow(SignedHeadNode const & i_seed,
+                        SignedHeadNodeSeq & o_nodes)
+        throw(InternalError,
+              NotFoundError);
+
+    /// Return only the extreme heads which follow a node.
+    ///
+    /// If the rootref field of the seed node is empty all extreme
+    /// heads will be traversed.
+    /// 
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
+    ///
+    /// @param[in] i_shn The SignedHeadNode to start at.
+    /// @param[out] o_nodes Collection to hold returned nodes.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError No nodes were found.
+    ///
+    void bs_head_furthest(SignedHeadNode const & i_seed,
+                          SignedHeadNodeSeq & o_nodes)
+        throw(InternalError,
+              NotFoundError);
+
+    // ----------------------------------------------------------------
+    // Asynchronous Interface Methods
+    // ----------------------------------------------------------------
 
     /// Completion function interface for non-blocking get.
     ///
@@ -120,27 +257,6 @@ public:
         throw(InternalError,
               ValueError) = 0;
 
-    /// Put a block via blocking interface.
-    ///
-    /// The inserted block replaces existing.
-    ///
-    /// @param[in] i_keydata Pointer to the key data.
-    /// @param[in] i_keysize Size of the key data.
-    /// @param[in] i_blkdata Pointer to the block data.
-    /// @param[in] i_blksize Size of the block data.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    /// @throw ValueError One of the arguments is out of range.
-    /// @throw NoSpaceError Out of space to store block.
-    ///
-    void bs_put_block(void const * i_keydata,
-                      size_t i_keysize,
-                      void const * i_blkdata,
-                      size_t i_blksize)
-        throw(InternalError,
-              ValueError,
-              NoSpaceError);
-
     /// Completion function interface for non-blocking put.
     ///
     class BlockPutCompletion
@@ -164,35 +280,6 @@ public:
         throw(InternalError,
               ValueError) = 0;
 
-    /// Start a refresh cycle.
-    ///
-    /// @param[in] i_rid A unique refresh cycle identifier.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotUniqueError The specified refresh id is already in use.
-    ///
-    virtual void bs_refresh_start(utp::uint64 i_rid)
-        throw(InternalError,
-              NotUniqueError) = 0;
-
-    /// Refresh a list of blocks, return list of any missing.
-    ///
-    /// Refreshing a block updates it's access timestamp, moving it to
-    /// the front of the LRU queue.
-    ///
-    /// @param[in] i_rid The unique refresh cycle id.
-    /// @param[in] i_keys List of keys for blocks to refresh.
-    /// @param[out] o_missing Keys which were not present.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError The specified refresh id was not found.
-    ///
-    void bs_refresh_blocks(utp::uint64 i_rid,
-                           KeySeq const & i_keys,
-                           KeySeq & o_missing)
-        throw(InternalError,
-              NotFoundError);
-        
     /// Completion function interface for non-blocking refresh.
     ///
     class BlockRefreshCompletion
@@ -222,39 +309,43 @@ public:
         throw(InternalError,
               NotFoundError) = 0;
         
-    /// Finish a refresh cycle.
+    /// Completion callback interface for async SignedHeadNode
+    /// insertion.
     ///
-    /// @param[in] i_rid The unique refresh cycle identifier.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError The specified refresh id was not found.
-    ///
-    virtual void bs_refresh_finish(utp::uint64 i_rid)
-        throw(InternalError,
-              NotFoundError) = 0;
+    class SignedHeadInsertCompletion
+    {
+    public:
+        virtual void shi_complete(SignedHeadNode const & i_shn) = 0;
 
-    /// Ensures blocks are persisted.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    ///
-    virtual void bs_sync()
-        throw(InternalError) = 0;
+        virtual void shi_error(SignedHeadNode const & i_shn,
+                               Exception const & i_exp) = 0;
+    };
 
     /// Insert a SignedHeadNode into the BlockStore.
     ///
-    /// @param[in] i_shn The SignedHeadNode
+    /// @param[in] i_shn The SignedHeadNode to be inserted.
+    /// @param[in] i_cmpl Completion function called when done.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     ///
-    virtual void bs_head_insert(SignedHeadNode const & i_shn)
+    virtual void bs_head_insert_async(SignedHeadNode const & i_shn,
+                                      SignedHeadInsertCompletion & i_cmpl)
         throw(InternalError) = 0;
 
-    /// Callback interface for SignedHeadNode traversals.
+    /// Callback interface for SignedHeadNode follow and furthest
+    /// traversals.
     ///
-    class SignedHeadNodeFunc
+    class SignedHeadTraverseFunc
     {
     public:
-        virtual void bs_head_func(SignedHeadNode const & i_shn) = 0;
+        // Called on each node in the traversal.
+        virtual void sht_node(SignedHeadNode const & i_shn) = 0;
+
+        // Called when the traversal is complete.
+        virtual void sht_complete() = 0;
+
+        // Called instead if there is an error.
+        virtual void sht_error(Exception const & i_exp) = 0;
     };
 
     /// Traverse all nodes which follow a node.
@@ -263,12 +354,10 @@ public:
     /// be traversed.
     /// 
     /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError No nodes were found.
     ///
-    virtual void bs_head_follow(SignedHeadNode const & i_seed,
-                                SignedHeadNodeFunc & i_func)
-        throw(InternalError,
-              NotFoundError) = 0;
+    virtual void bs_head_follow_async(SignedHeadNode const & i_seed,
+                                      SignedHeadTraverseFunc & i_func)
+        throw(InternalError) = 0;
 
     /// Traverse only the extreme heads which follow a node.
     ///
@@ -276,12 +365,10 @@ public:
     /// heads will be traversed.
     /// 
     /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError No node was found.
     ///
-    virtual void bs_head_furthest(SignedHeadNode const & i_seed,
-                                  SignedHeadNodeFunc & i_func)
-        throw(InternalError,
-              NotFoundError) = 0;
+    virtual void bs_head_furthest_async(SignedHeadNode const & i_seed,
+                                        SignedHeadTraverseFunc & i_func)
+        throw(InternalError) = 0;
 };
 
 } // end namespace utp

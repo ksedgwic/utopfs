@@ -1033,37 +1033,19 @@ UTFileSystem::rootref(BlockRef const & i_blkref)
     m_ctxt.m_bsh->bs_head_insert(m_shn);
 }
 
-class RootRefFunc : public BlockStore::SignedHeadNodeFunc
-{
-public:
-    RootRefFunc() : m_seen(false) {}
-
-    virtual void bs_head_func(SignedHeadNode const & i_shn)
-    {
-        if (m_seen)
-            throwstream(InternalError, FILELINE
-                        << "RootRefFunc::bs_head_func "
-                        << "multiple heads found");
-
-        m_shn = i_shn;
-        m_seen = true;
-    }
-
-    bool				m_seen;
-    SignedHeadNode		m_shn;
-};
-
 BlockRef
 UTFileSystem::rootref()
 {
-    // Update our signed head node.
-    RootRefFunc rrf;
-    m_ctxt.m_bsh->bs_head_furthest(m_shn, rrf);
-    if (!rrf.m_seen)
-        throwstream(NotFoundError, "signed head node not found");
+    BlockStore::SignedHeadNodeSeq shns;
+    m_ctxt.m_bsh->bs_head_furthest(m_shn, shns);
+
+    // We can only deal with a single head node yet.
+    if (shns.size() != 1)
+        throwstream(InternalError, FILELINE
+                    << "can't cope w/ " << shns.size() << " head nodes");
 
     // Store a copy of the new node.
-    m_shn = rrf.m_shn;
+    m_shn = shns[0];
 
     // FIXME - Authenticate the signature here.
 

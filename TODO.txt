@@ -1,3 +1,21 @@
+Convert follow and furthest name to _async.  Add complete/error calls.
+
+  Update hacks in blockstore modules to call complete/error funcs.
+
+Convert bs_head_insert to async.
+
+Add sync wrappers to follow and furthest.
+
+  They should have NotFound signatures.
+
+  Convert UTFileSysem to sync wrappers.
+
+Add python wrappers for bs_head functions.
+
+Write simple unit tests which break current bs_head hack.
+
+----------------------------------------------------------------
+
 Add OperationError for all the "not opened" internal errors
 in the BlockStore interface.
 

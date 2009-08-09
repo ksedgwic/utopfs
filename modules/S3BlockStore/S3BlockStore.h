@@ -117,18 +117,17 @@ public:
     virtual void bs_sync()
 		throw(utp::InternalError);
 
-    virtual void bs_head_insert(utp::SignedHeadNode const & i_shn)
+    virtual void bs_head_insert_async(utp::SignedHeadNode const & i_shn,
+                                      SignedHeadInsertCompletion & i_cmpl)
         throw(utp::InternalError);
 
-    virtual void bs_head_follow(utp::SignedHeadNode const & i_seed,
-                                SignedHeadNodeFunc & i_func)
-        throw(utp::InternalError,
-              utp::NotFoundError);
+    virtual void bs_head_follow_async(utp::SignedHeadNode const & i_seed,
+                                      SignedHeadTraverseFunc & i_func)
+        throw(utp::InternalError);
 
-    virtual void bs_head_furthest(utp::SignedHeadNode const & i_seed,
-                                  SignedHeadNodeFunc & i_func)
-        throw(utp::InternalError,
-              utp::NotFoundError);
+    virtual void bs_head_furthest_async(utp::SignedHeadNode const & i_seed,
+                                        SignedHeadTraverseFunc & i_func)
+        throw(utp::InternalError);
 
 protected:
     static void parse_params(utp::StringSeq const & i_args,

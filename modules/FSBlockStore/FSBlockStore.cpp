@@ -663,59 +663,83 @@ FSBlockStore::bs_sync()
 }
 
 void
-FSBlockStore::bs_head_insert(SignedHeadNode const & i_shn)
-        throw(InternalError)
+FSBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
+                                   SignedHeadInsertCompletion & i_cmpl)
+    throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
     // and get operations to store a single head node.  This is what
     // we used to do and needs to be replaced with a real headnode
     // graph store ...
-    HeadNode hn;
-    hn.ParseFromString(i_shn.headnode());
-    string const & key = hn.fstag();
-    string buf;
-    i_shn.SerializeToString(&buf);
-    bs_put_block(key.data(), key.size(), buf.data(), buf.size());
+    try
+    {
+        HeadNode hn;
+        hn.ParseFromString(i_shn.headnode());
+        string const & key = hn.fstag();
+        string buf;
+        i_shn.SerializeToString(&buf);
+        bs_put_block(key.data(), key.size(), buf.data(), buf.size());
+        i_cmpl.shi_complete(i_shn);
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.shi_error(i_shn, i_ex);
+    }
 }
 
 void
-FSBlockStore::bs_head_follow(SignedHeadNode const & i_seed,
-                             SignedHeadNodeFunc & i_func)
-    throw(InternalError,
-          NotFoundError)
+FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
+                                   SignedHeadTraverseFunc & i_func)
+    throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
     // and get operations to store a single head node.  This is what
     // we used to do and needs to be replaced with a real headnode
     // graph store ...
-    HeadNode hn;
-    hn.ParseFromString(i_seed.headnode());
-    string const & key = hn.fstag();
-    uint8 buf[8192];
-    size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
-    SignedHeadNode shn;
-    shn.ParseFromArray(buf, sz);
-    i_func.bs_head_func(shn);
+    try
+    {
+        HeadNode hn;
+        hn.ParseFromString(i_seed.headnode());
+        string const & key = hn.fstag();
+        uint8 buf[8192];
+        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+        SignedHeadNode shn;
+        shn.ParseFromArray(buf, sz);
+        i_func.sht_node(shn);
+        i_func.sht_complete();
+    }
+    catch (Exception const & i_ex)
+    {
+        i_func.sht_error(i_ex);
+    }
 }
 
 void
-FSBlockStore::bs_head_furthest(SignedHeadNode const & i_seed,
-                               SignedHeadNodeFunc & i_func)
-    throw(InternalError,
-          NotFoundError)
+FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_seed,
+                                     SignedHeadTraverseFunc & i_func)
+    throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
     // and get operations to store a single head node.  This is what
     // we used to do and needs to be replaced with a real headnode
     // graph store ...
-    HeadNode hn;
-    hn.ParseFromString(i_seed.headnode());
-    string const & key = hn.fstag();
-    uint8 buf[8192];
-    size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
-    SignedHeadNode shn;
-    shn.ParseFromArray(buf, sz);
-    i_func.bs_head_func(shn);
+    try
+    {
+        HeadNode hn;
+        hn.ParseFromString(i_seed.headnode());
+        string const & key = hn.fstag();
+        uint8 buf[8192];
+        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+        SignedHeadNode shn;
+        shn.ParseFromArray(buf, sz);
+        i_func.sht_node(shn);
+        i_func.sht_complete();
+    }
+    catch (Exception const & i_ex)
+    {
+        i_func.sht_error(i_ex);
+    }
+        
 }
 
 string 
