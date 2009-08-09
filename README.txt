@@ -47,10 +47,6 @@ Development Prerequisites
     # Python
     sudo yum install -y python-devel
 
-    # Ruby
-    sudo yum install -y ruby rubygems
-    sudo gem install -y rspec
-
     # py.test
     sudo yum install -y python-py python-setuptools
 

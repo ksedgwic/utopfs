@@ -31,8 +31,6 @@ BuildRequires: gcc-c++
 BuildRequires: libs3-devel
 BuildRequires: python-devel
 BuildRequires: python-py python-setuptools
-BuildRequires: ruby rubygems
-BuildRequires: rspec
 BuildRequires: protobuf protobuf-devel protobuf-compiler protobuf-debuginfo
 BuildRequires: fuse-devel
 BuildRequires: openssl-devel

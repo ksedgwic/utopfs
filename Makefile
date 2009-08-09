@@ -8,7 +8,6 @@ SUBDIRS =	\
 			modules \
 			utpcmd \
 			unit \
-			spec \
 			$(NULL)
 
 include $(ROOTDIR)/config/depend.mk
