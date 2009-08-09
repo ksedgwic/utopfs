@@ -27,7 +27,7 @@ class Test_fs_syncmiddle_01:
     self.bspath = "fs_syncmiddle_01.bs"
 
   def teardown_class(self):
-    CONFIG.remove_bs(self.bspath)
+    pass
 
   def test_syncmiddle(self):
 
@@ -87,3 +87,4 @@ class Test_fs_syncmiddle_01:
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
     self.bs = None
     self.fs = None
+    CONFIG.remove_bs(self.bspath)

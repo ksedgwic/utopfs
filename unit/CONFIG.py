@@ -12,17 +12,17 @@ GNAME = grp.getgrgid(os.getegid()).gr_name
 
 # Which BlockStore module should we use?
 
-# BDBBlockStore
-#
-BSTYPE = "BDBBS"
-BSSIZE = 1 * 1024 * 1024 * 1024
-def BSARGS(bspath): return (bspath,)
-
-## # FSBlockStore
+## # BDBBlockStore
 ## #
-## BSTYPE = "FSBS"
+## BSTYPE = "BDBBS"
 ## BSSIZE = 1 * 1024 * 1024 * 1024
 ## def BSARGS(bspath): return (bspath,)
+
+# FSBlockStore
+#
+BSTYPE = "FSBS"
+BSSIZE = 1 * 1024 * 1024 * 1024
+def BSARGS(bspath): return (bspath,)
 
 ## # S3BlockStore
 ## #
