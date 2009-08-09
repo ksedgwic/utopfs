@@ -9,6 +9,7 @@
 #include "pybsstat.h"
 #include "pydirentryfunc.h"
 #include "pyfilesystem.h"
+#include "pyshn.h"
 #include "pystat.h"
 #include "pystatvfs.h"
 
@@ -94,24 +95,27 @@ init_utp(void)
 
     PyObject *m, *d;
 
-    // make sure python threading is turned on
+    // Make sure python threading is turned on.
     PyEval_InitThreads();
 
-    // setup python thread state association
+    // Setup python thread state association.
     StateMap::initialize();
 
-    // initialize sub-types
-    init_stat();
-    init_statvfs();
-    init_bsstat();
+    // Initialize sub-types in their own modules.
     init_BlockStore();
+    init_bsstat();
     init_FileSystem();
     init_PyDirEntryFunc();
+    init_stat();
+    init_statvfs();
 
-    // create the module and add the functions
+    // Create the module and add the functions.
     m = Py_InitModule("_utp", module_methods);
 
-    // add some symbolic constants to the module
+    // Initialize sub-types which go in this module.
+    init_shn(m);
+
+    // Add some symbolic constants to the module.
     d = PyModule_GetDict(m);
 
     ErrorObject =
