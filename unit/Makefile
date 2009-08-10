@@ -9,6 +9,9 @@ PYTESTS =	\
 			test_bs_size_01.py \
 			test_bs_size_02.py \
 			test_bs_size_03.py \
+			test_bs_head_01.py \
+			test_bs_head_02.py \
+			test_bs_head_03.py \
 			test_fs_mkfs.py \
 			test_fs_persist_01.py \
 			test_fs_persist_02.py \
@@ -51,6 +54,7 @@ SCRIPTS =	\
 
 CFG =		\
 			CONFIG.py \
+			lenhack.py \
 			svc.conf \
 			$(NULL)
 

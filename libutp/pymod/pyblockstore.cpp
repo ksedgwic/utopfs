@@ -4,9 +4,10 @@
 #include "Types.h"
 #include "BlockStoreFactory.h"
 
-#include "pyutpinit.h"
 #include "pyblockstore.h"
 #include "pybsstat.h"
+#include "pyshn.h"
+#include "pyutpinit.h"
 
 using namespace utp;
 
@@ -265,6 +266,99 @@ BlockStore_bs_refresh_finish(BlockStoreObject *self, PyObject *args)
     PYUTP_CATCH_ALL;
 }
 
+static PyObject *
+BlockStore_bs_head_insert(BlockStoreObject *self, PyObject *args)
+{
+    PyObject * shnobj;
+    if (!PyArg_ParseTuple(args, "O!:bs_head_insert",
+                          &SignedHeadNodeType, &shnobj))
+        return NULL;
+
+    SignedHeadNode shn;
+    pyshn_asprotoshn(shnobj, shn);
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_head_insert(shn);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+BlockStore_bs_head_follow(BlockStoreObject *self, PyObject *args)
+{
+    PyObject * shnobj;
+    if (!PyArg_ParseTuple(args, "O!:bs_head_follow",
+                          &SignedHeadNodeType, &shnobj))
+        return NULL;
+
+    SignedHeadNode shn;
+    pyshn_asprotoshn(shnobj, shn);
+
+    BlockStore::SignedHeadNodeSeq shns;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_head_follow(shn, shns);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Translate the returned SignedHeadNodeSeq into a python list.
+    PyObject * shnsobj = PyList_New(shns.size());
+    for (unsigned i = 0; i < shns.size(); ++i)
+    {
+        PyObject * so = pyshn_fromprotoshn(shns[i]);
+        if (!so)
+        {
+            Py_DECREF(shnsobj);
+            return NULL;
+        }
+        PyList_SetItem(shnsobj, i, so);
+    }
+
+    return shnsobj;
+}
+
+static PyObject *
+BlockStore_bs_head_furthest(BlockStoreObject *self, PyObject *args)
+{
+    PyObject * shnobj;
+    if (!PyArg_ParseTuple(args, "O!:bs_head_furthest",
+                          &SignedHeadNodeType, &shnobj))
+        return NULL;
+
+    SignedHeadNode shn;
+    pyshn_asprotoshn(shnobj, shn);
+
+    BlockStore::SignedHeadNodeSeq shns;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_head_furthest(shn, shns);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Translate the returned SignedHeadNodeSeq into a python list.
+    PyObject * shnsobj = PyList_New(shns.size());
+    for (unsigned i = 0; i < shns.size(); ++i)
+    {
+        PyObject * so = pyshn_fromprotoshn(shns[i]);
+        if (!so)
+        {
+            Py_DECREF(shnsobj);
+            return NULL;
+        }
+        PyList_SetItem(shnsobj, i, so);
+    }
+
+    return shnsobj;
+}
+
 static PyMethodDef BlockStore_methods[] = {
     {"bs_create",		(PyCFunction)BlockStore_bs_create,		METH_VARARGS},
     {"bs_open",			(PyCFunction)BlockStore_bs_open,		METH_VARARGS},
@@ -272,9 +366,15 @@ static PyMethodDef BlockStore_methods[] = {
     {"bs_stat",			(PyCFunction)BlockStore_bs_stat,		METH_VARARGS},
     {"bs_get_block",	(PyCFunction)BlockStore_bs_get_block,	METH_VARARGS},
     {"bs_put_block",	(PyCFunction)BlockStore_bs_put_block,	METH_VARARGS},
-    {"bs_refresh_start",(PyCFunction)BlockStore_bs_refresh_start, METH_VARARGS},
-    {"bs_refresh_blocks",	(PyCFunction)BlockStore_bs_refresh_blocks,	METH_VARARGS},
-    {"bs_refresh_finish",	(PyCFunction)BlockStore_bs_refresh_finish,	METH_VARARGS},
+    {"bs_refresh_start",
+     				(PyCFunction)BlockStore_bs_refresh_start,	METH_VARARGS},
+    {"bs_refresh_blocks",
+					(PyCFunction)BlockStore_bs_refresh_blocks,	METH_VARARGS},
+    {"bs_refresh_finish",
+     				(PyCFunction)BlockStore_bs_refresh_finish,	METH_VARARGS},
+    {"bs_head_insert",	(PyCFunction)BlockStore_bs_head_insert,	METH_VARARGS},
+    {"bs_head_follow",	(PyCFunction)BlockStore_bs_head_follow,	METH_VARARGS},
+    {"bs_head_furthest",(PyCFunction)BlockStore_bs_head_furthest,METH_VARARGS},
     {NULL,		NULL}		/* sentinel */
 };
 

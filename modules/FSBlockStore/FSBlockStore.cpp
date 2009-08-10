@@ -296,6 +296,10 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
+            if (i_keysize == 0)
+                throwstream(NotFoundError,
+                            "empty key is always not found");
+
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
 

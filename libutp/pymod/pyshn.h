@@ -5,12 +5,14 @@
 
 namespace utp {
 
-extern PyTypeObject SignedHeadNodeResultType;
+extern PyTypeObject SignedHeadNodeType;
 
-#define SignedHeadNodeObject_Check(v)	\
-    ((v)->ob_type == &SignedHeadNodeResultType)
+#define SignedHeadNodeObject_Check(v) \
+    ((v)->ob_type == &SignedHeadNodeType)
 
 PyObject * pyshn_fromprotoshn(SignedHeadNode const & i_shn);
+
+void pyshn_asprotoshn(PyObject * shnobj, SignedHeadNode & shnref);
 
 #if defined(WIN32)
     __declspec( dllexport )

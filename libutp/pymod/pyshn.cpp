@@ -17,7 +17,7 @@ using namespace std;
 
 namespace utp {
 
-PyTypeObject SignedHeadNodeResultType;
+PyTypeObject SignedHeadNodeType;
 
 PyDoc_STRVAR(shn_result__doc__,
 "shn_result: Signed Head Node.\n\n\
@@ -77,7 +77,7 @@ bytes2buffer(string const & i_str)
 PyObject *
 pyshn_fromprotoshn(SignedHeadNode const & i_shn)
 {
-	PyObject * v = PyStructSequence_New(&SignedHeadNodeResultType);
+	PyObject * v = PyStructSequence_New(&SignedHeadNodeType);
 	if (v == NULL)
 		return NULL;
 
@@ -87,11 +87,13 @@ pyshn_fromprotoshn(SignedHeadNode const & i_shn)
 
     unsigned ndx = 0;
 
+    PyErr_Clear();
     PyStructSequence_SET_ITEM(v, ndx++, bytes2buffer(hn.fstag()));
     PyStructSequence_SET_ITEM(v, ndx++, bytes2buffer(hn.rootref()));
     PyStructSequence_SET_ITEM(v, ndx++, bytes2buffer(hn.prevref()));
     PyStructSequence_SET_ITEM(v, ndx++, PyLong_FromLongLong
                               ((PY_LONG_LONG) hn.tstamp()));
+
     PyStructSequence_SET_ITEM(v, ndx++, bytes2buffer(i_shn.keyid()));
     PyStructSequence_SET_ITEM(v, ndx++, bytes2buffer(i_shn.signature()));
 
@@ -103,6 +105,42 @@ pyshn_fromprotoshn(SignedHeadNode const & i_shn)
 	return v;
 }
 
+static string
+buffer2bytes(PyObject * bufobj)
+{
+    void const * ptr;
+    Py_ssize_t len;
+    if (PyObject_AsReadBuffer(bufobj, &ptr, &len))
+    {
+        PyErr_Clear();
+        return string();
+    }
+
+    return string((char const *) ptr, len);
+}
+
+void pyshn_asprotoshn(PyObject * shnobj, SignedHeadNode & shnref)
+{
+    HeadNode hn;
+
+    int ndx = 0;
+
+    // First fields go into a HeadNode.
+    hn.set_fstag(buffer2bytes(PySequence_GetItem(shnobj, ndx++)));
+    hn.set_rootref(buffer2bytes(PySequence_GetItem(shnobj, ndx++)));
+    hn.set_prevref(buffer2bytes(PySequence_GetItem(shnobj, ndx++)));
+    hn.set_tstamp(PyLong_AsLongLong(PySequence_GetItem(shnobj, ndx++)));
+
+    // Serialize the HeadNode into the SignedHeadNode.
+    hn.SerializeToString(shnref.mutable_headnode());
+
+    // FIXME - We should be signing here!
+
+    // Set the keyid and signature.
+    shnref.set_keyid(buffer2bytes(PySequence_GetItem(shnobj, ndx++)));
+    shnref.set_signature(buffer2bytes(PySequence_GetItem(shnobj, ndx++)));
+}
+
 #if defined(WIN32)
 __declspec( dllexport )
 #endif
@@ -110,14 +148,12 @@ void
 init_shn(PyObject * m)
 {
     shn_result_desc.name = (char *) "utp" ".SignedHeadNode";
-    PyStructSequence_InitType(&SignedHeadNodeResultType, &shn_result_desc);
-    structseq_new = SignedHeadNodeResultType.tp_new;
-    SignedHeadNodeResultType.tp_new = shnresult_new;
+    PyStructSequence_InitType(&SignedHeadNodeType, &shn_result_desc);
+    structseq_new = SignedHeadNodeType.tp_new;
+    SignedHeadNodeType.tp_new = shnresult_new;
 
-	Py_INCREF((PyObject*) &SignedHeadNodeResultType);
-	PyModule_AddObject(m,
-                       "SignedHeadNode",
-                       (PyObject*) &SignedHeadNodeResultType);
+	Py_INCREF((PyObject*) &SignedHeadNodeType);
+	PyModule_AddObject(m, "SignedHeadNode", (PyObject*) &SignedHeadNodeType);
 }
 
 } // end namespace utp

@@ -84,6 +84,11 @@ Base32::encode(uint8 const * i_raw,
                string & o_encoded)
 {
     o_encoded.erase();
+
+    // If the string is empty, just return an empty encoding.
+    if (i_size == 0)
+        return;
+        
     o_encoded.reserve((((i_size - 1)/5) + 1) * 8);
 
     uint8 const * pos = i_raw;
