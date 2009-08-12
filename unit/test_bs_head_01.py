@@ -143,10 +143,9 @@ class Test_bs_head_01:
     node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.bs.bs_head_insert(node)
 
-    # Follow should return the node we inserted.
+    # Follow should return the empty set
     shns = self.bs.bs_head_follow(node)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    assert lenhack(shns) == 0
 
     # Close the blockstore.
     self.bs.bs_close()

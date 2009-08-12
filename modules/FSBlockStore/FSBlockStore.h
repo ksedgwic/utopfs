@@ -4,9 +4,10 @@
 /// @file FSBlockStore.h
 /// FileSystem BlockStore Instance.
 
-#include <string>
-#include <set>
+#include <fstream>
 #include <list>
+#include <set>
+#include <string>
 
 #include <ace/Thread_Mutex.h>
 
@@ -16,7 +17,6 @@
 #include "RC.h"
 
 #include "fsbsexp.h"
-
 
 namespace FSBS {
 
@@ -51,6 +51,32 @@ struct lessByTstamp {
     }
 };
 
+// A NodeRef consists of a filesystem tag and the rootref.
+//
+typedef std::pair<std::string, std::string> NodeRef;
+
+// Helpful for debugging.
+std::ostream & operator<<(std::ostream & ostrm, NodeRef const & i_nr);
+
+// A Edge represents a connection between two nodes.  They're
+// reference counted so they can be held in multiple collections.
+//
+struct FSBS_EXP Edge : public utp::RCObj
+{
+    NodeRef					m_prev;
+    NodeRef					m_root;
+    utp::SignedHeadNode		m_shn;
+
+    Edge(utp::SignedHeadNode const & i_shn);
+};
+
+typedef utp::RCPtr<Edge> EdgeHandle;
+
+// Helpful for debugging.
+std::ostream & operator<<(std::ostream & ostrm, Edge const & i_e);
+
+// The Filesystem-based BlockStore.
+//
 class FSBS_EXP FSBlockStore : public utp::BlockStore
 {
 public:
@@ -131,6 +157,8 @@ protected:
 
     std::string markname() const { return "MARK"; }
 
+    std::string headspath() const;
+
     std::string blockpath(std::string const & i_entry) const;
 
     void touch_entry(std::string const & i_entry,
@@ -139,9 +167,15 @@ protected:
 
     void purge_uncommitted();
 
+    void insert_head(utp::SignedHeadNode const & i_shn);
+
+    void write_head(utp::SignedHeadNode const & i_shn);
+
 private:
     typedef std::set<EntryHandle, lessByName> EntrySet;
     typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
+    typedef std::multimap<NodeRef, EdgeHandle> EdgeMap;
+    typedef std::set<NodeRef> NodeRefSet;
 
     off_t				m_size;			// Total Size in Bytes
     off_t				m_committed;	// Committed Bytes (must be saved)
@@ -149,12 +183,18 @@ private:
     std::string			m_rootpath;
     std::string			m_blockspath;
 
+    std::ofstream		m_headsstrm;
+
     ACE_Thread_Mutex	m_fsbsmutex;
 
     EntrySet			m_entries;
-    EntryList			m_lru;		// front=newest, back=oldest
+    EntryList			m_lru;			// front=newest, back=oldest
 
     EntryHandle			m_mark;
+
+    EdgeMap				m_prevmap;
+    EdgeMap				m_rootmap;
+    NodeRefSet			m_roots;		// Roots of the graph
 };
 
 } // namespace FSBS

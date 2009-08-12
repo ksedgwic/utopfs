@@ -6,39 +6,22 @@ import utp
 import utp.BlockStore
 import utp.FileSystem
 
+import time
+
+import CONFIG
+from lenhack import *
+
 try:
-    # Find the BlockStore singleton.
-    bs = utp.BlockStore.instance()
+    bspath = "test.bs"
+    CONFIG.remove_bs(bspath)
+    bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                               CONFIG.BSSIZE,
+                               CONFIG.BSARGS(bspath))
 
-    # Create the BlockStore at a path.
-    bs.bs_create("myfsbs")
+    # Insert a single SHN.
+    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    bs.bs_head_insert(node)
 
-    # Put a block of data.
-    bs.bs_put_block(buffer("thekey"), buffer("thevalue"))
-
-    # Get a block of data.
-    b = bs.bs_get_block(buffer("thekey"))
-    print b
-    
-    bs.bs_del_block(buffer("thekey"))
-
-    # Put a second block of data.
-    bs.bs_put_block(buffer("thekey2"), buffer("thevalue2"))
-    
-    # Get the block of data.
-    b = bs.bs_get_block(buffer("thekey2"))
-    print b
-
-    # Put a bad block of data.
-    bs.bs_put_block(buffer("thekey2"), buffer("thevalue2"))
-
-
-    # try geting a block of data that doesn't exist
-    #b = bs.bs_get_block(buffer("thekey3"))
-    #print b
-
-    
-    # Close the BlockStore.
     bs.bs_close()
 
 except utp.Error, ex:

@@ -10,6 +10,7 @@
 #include "fsbslog.h"
 
 #include "Base32.h"
+#include "Base64.h"
 
 using namespace std;
 using namespace utp;
@@ -26,6 +27,40 @@ bool
 lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
 {
     return i_a->m_tstamp < i_b->m_tstamp;
+}
+
+ostream &
+operator<<(ostream & ostrm, NodeRef const & i_nr)
+{
+    string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
+    string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
+
+    // Use the ends because tests vary on one end or the other ...
+    ostrm << pt1.substr(0, 3) << ':';
+    if (pt2.size() <= 5)
+        ostrm << pt2;
+    else
+        ostrm << pt2.substr(0, 2) << ".." << pt2.substr(pt2.size() - 2);
+
+    return ostrm;
+}
+
+Edge::Edge(utp::SignedHeadNode const & i_shn)
+    : m_shn(i_shn)
+{
+    HeadNode hn;
+    if (!hn.ParseFromString(i_shn.headnode()))
+        throwstream(InternalError, FILELINE << "failed to parse headNode");
+
+    m_prev = make_pair(hn.fstag(), hn.prevref());
+    m_root = make_pair(hn.fstag(), hn.rootref());
+}
+
+ostream &
+operator<<(ostream & ostrm, Edge const & i_e)
+{
+    ostrm << i_e.m_prev << " -> " << i_e.m_root;
+    return ostrm;
 }
 
 void
@@ -71,6 +106,10 @@ FSBlockStore::destroy(StringSeq const & i_args)
     // Unlink the SIZE file
     unlink(sizepath.c_str());
 
+    // Unlink the HEADS file
+    string headspath = path + "/HEADS";
+    unlink(headspath.c_str());
+
     // Read all of the existing blocks.
     string blockspath = path + "/BLOCKS";
     ACE_Dirent dir;
@@ -113,6 +152,10 @@ FSBlockStore::~FSBlockStore()
 {
     // Don't try and log here ... in static object destructor context
     // (way after main has returned ...)
+
+    // Close the HEADS stream.
+    if (m_headsstrm.is_open())
+        m_headsstrm.close();
 }
 
 void
@@ -157,6 +200,13 @@ FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     ofstream szstrm(szpath.c_str());
     szstrm << m_size << endl;
     szstrm.close();
+
+    // Open the HEADS output stream.
+    m_headsstrm.open(headspath().c_str(), ofstream::out | ofstream::app);
+    if (!m_headsstrm.good())
+        throwstream(InternalError, FILELINE
+                    << "Trouble opening " << headspath() << ": "
+                    << ACE_OS::strerror(errno));
 }
 
 void
@@ -260,6 +310,27 @@ FSBlockStore::bs_open(StringSeq const & i_args)
 
     m_committed = committed;
     m_uncommitted = uncommitted;
+
+    // Read all of the existing SignedHeadNodes
+    ifstream shnstrm(headspath().c_str());
+    string linebuf;
+    while (getline(shnstrm, linebuf))
+    {
+        SignedHeadNode shn;
+        string data = Base64::decode(linebuf);
+        int ok = shn.ParseFromString(data);
+        if (!ok)
+            throwstream(InternalError, FILELINE
+                        << " SignedHeadNode deserialize failed");
+        insert_head(shn);
+    }
+    
+    // Open the HEADS output stream.
+    m_headsstrm.open(headspath().c_str(), ofstream::out | ofstream::app);
+    if (!m_headsstrm.good())
+        throwstream(InternalError, FILELINE
+                    << "Trouble opening " << headspath() << ": "
+                    << ACE_OS::strerror(errno));
 }
 
 void
@@ -267,6 +338,10 @@ FSBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, "bs_close");
+
+    // Close the HEADS stream.
+    if (m_headsstrm.is_open())
+        m_headsstrm.close();
 }
 
 void
@@ -671,79 +746,213 @@ FSBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
                                    SignedHeadInsertCompletion & i_cmpl)
     throw(InternalError)
 {
-    // FIXME - This placeholder just uses the regular blockstore put
-    // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headnode
-    // graph store ...
-    try
-    {
-        HeadNode hn;
-        hn.ParseFromString(i_shn.headnode());
-        string const & key = hn.fstag();
-        string buf;
-        i_shn.SerializeToString(&buf);
-        bs_put_block(key.data(), key.size(), buf.data(), buf.size());
-        i_cmpl.shi_complete(i_shn);
-    }
-    catch (Exception const & i_ex)
-    {
-        i_cmpl.shi_error(i_shn, i_ex);
-    }
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+    insert_head(i_shn);
+
+    write_head(i_shn);
+
+    i_cmpl.shi_complete(i_shn);
 }
 
 void
-FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
+FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                                    SignedHeadTraverseFunc & i_func)
     throw(InternalError)
 {
-    // FIXME - This placeholder just uses the regular blockstore put
-    // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headnode
-    // graph store ...
-    try
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+    // Obtain the seed from the seed edge.
+    Edge edge(i_shn);
+    NodeRef seed = edge.m_root;
+
+    // Expand the seeds.
+    NodeRefSet seeds;
+    if (seed.second.size() == 0)
     {
-        HeadNode hn;
-        hn.ParseFromString(i_seed.headnode());
-        string const & key = hn.fstag();
-        uint8 buf[8192];
-        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
-        SignedHeadNode shn;
-        shn.ParseFromArray(buf, sz);
-        i_func.sht_node(shn);
-        i_func.sht_complete();
+        // There was no reference, we should use all roots w/ the same fstag.
+        for (NodeRefSet::const_iterator it = m_roots.lower_bound(seed);
+             it != m_roots.end() && it->first == seed.first;
+             ++it)
+        {
+            NodeRef nr = *it;
+            seeds.insert(nr);
+        }
     }
-    catch (Exception const & i_ex)
+    else
     {
-        i_func.sht_error(i_ex);
+        // Yes, see if we can find the seed in the rootmap
+        EdgeMap::const_iterator pos = m_rootmap.find(seed);
+        if (pos != m_rootmap.end())
+        {
+            // It's here, we can start with it.
+            seeds.insert(pos->first);
+        }
+        else
+        {
+            // Can we find children of this node instead?
+            EdgeMap::const_iterator it = m_prevmap.lower_bound(seed);
+            EdgeMap::const_iterator end = m_prevmap.upper_bound(seed);
+            for (; it != end; ++it)
+            {
+                seeds.insert(it->second->m_root);
+
+                // We need to call the traverse function on the
+                // children as well since they follow the seed.
+                //
+                i_func.sht_node(it->second->m_shn);
+            }
+        }
     }
+
+    // If our seeds collection is empty, we are out of luck.
+    if (seeds.empty())
+        i_func.sht_error(NotFoundError("no starting seed found"));
+
+    // Replace elements of the seed set w/ their children.
+    bool done ;
+    do
+    {
+        // Start optimistically
+        done = true;
+
+        // Find a seed with children.
+        for (NodeRefSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
+        {
+            NodeRef nr = *it;
+
+            // Find all the children of this seed.
+            NodeRefSet kids;
+            EdgeMap::iterator kit = m_prevmap.lower_bound(nr);
+            EdgeMap::iterator end = m_prevmap.upper_bound(nr);
+            for (; kit != end; ++kit)
+            {
+                kids.insert(kit->second->m_root);
+
+                // Call the traverse function on the kid.
+                i_func.sht_node(kit->second->m_shn);
+            }
+
+            // Were there kids?
+            if (!kids.empty())
+            {
+                // Remove the parent from the set.
+                seeds.erase(nr);
+
+                // Insert the kids instead.
+                seeds.insert(kids.begin(), kids.end());
+
+                // Start over, we're not done.
+                done = false;
+                break;
+            }
+        }
+    }
+    while (!done);
+
+    i_func.sht_complete();
 }
 
 void
-FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_seed,
+FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
                                      SignedHeadTraverseFunc & i_func)
     throw(InternalError)
 {
-    // FIXME - This placeholder just uses the regular blockstore put
-    // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headnode
-    // graph store ...
-    try
+    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+
+    // Obtain the seed from the seed edge.
+    Edge edge(i_shn);
+    NodeRef seed = edge.m_root;
+
+    // Expand the seeds.
+    NodeRefSet seeds;
+    if (seed.second.size() == 0)
     {
-        HeadNode hn;
-        hn.ParseFromString(i_seed.headnode());
-        string const & key = hn.fstag();
-        uint8 buf[8192];
-        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
-        SignedHeadNode shn;
-        shn.ParseFromArray(buf, sz);
-        i_func.sht_node(shn);
-        i_func.sht_complete();
+        // There was no reference, we should use all roots w/ the same fstag.
+        for (NodeRefSet::const_iterator it = m_roots.lower_bound(seed);
+             it != m_roots.end() && it->first == seed.first;
+             ++it)
+        {
+            NodeRef nr = *it;
+            seeds.insert(nr);
+        }
     }
-    catch (Exception const & i_ex)
+    else
     {
-        i_func.sht_error(i_ex);
+        // Yes, see if we can find the seed in the rootmap
+        EdgeMap::const_iterator pos = m_rootmap.find(seed);
+        if (pos != m_rootmap.end())
+        {
+            // It's here, we can start with it.
+            seeds.insert(pos->first);
+        }
+        else
+        {
+            // Can we find children of this node instead?
+            EdgeMap::const_iterator it = m_prevmap.lower_bound(seed);
+            EdgeMap::const_iterator end = m_prevmap.upper_bound(seed);
+            for (; it != end; ++it)
+                seeds.insert(it->second->m_root);
+        }
     }
+
+    // If our seeds collection is empty, we are out of luck.
+    if (seeds.empty())
+        i_func.sht_error(NotFoundError("no starting seed found"));
+
+    // Replace elements of the seed set w/ their children.
+    bool done ;
+    do
+    {
+        // Start optimistically
+        done = true;
+
+        // Find a seed with children.
+        for (NodeRefSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
+        {
+            NodeRef nr = *it;
+
+            // Find all the children of this seed.
+            NodeRefSet kids;
+            EdgeMap::iterator kit = m_prevmap.lower_bound(nr);
+            EdgeMap::iterator end = m_prevmap.upper_bound(nr);
+            for (; kit != end; ++kit)
+            {
+                LOG(lgr, 8, "adding kid " << *kit->second);
+                kids.insert(kit->second->m_root);
+            }
+
+            // Were there kids?
+            if (!kids.empty())
+            {
+                // Remove the parent from the set.
+                LOG(lgr, 8, "removing parent " << nr);
+                seeds.erase(nr);
+
+                // Insert the kids instead.
+                seeds.insert(kids.begin(), kids.end());
+
+                // Start over, we're not done.
+                done = false;
+                break;
+            }
+        }
+    }
+    while (!done);
+
+    // Call the traversal function on each remaining node.
+    for (NodeRefSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
+    {
+        EdgeMap::const_iterator pos = m_rootmap.find(*it);
+        if (pos == m_rootmap.end())
+            throwstream(InternalError, FILELINE << "missing rootmap entry");
+
+        // We just use the first matching node ...
         
+        i_func.sht_node(pos->second->m_shn);
+    }
+
+    i_func.sht_complete();
 }
 
 string 
@@ -766,8 +975,14 @@ FSBlockStore::blockpath(string const & i_entry) const
     return m_blockspath + '/' + i_entry;
 }                                
 
+string 
+FSBlockStore::headspath() const
+{
+    return m_rootpath + "/HEADS";
+}                                
+
 void
-FSBlockStore::touch_entry(std::string const & i_entry,
+FSBlockStore::touch_entry(string const & i_entry,
                           time_t i_mtime,
                           off_t i_size)
 {
@@ -835,6 +1050,39 @@ FSBlockStore::purge_uncommitted()
 
     // Update the accounting.
     m_uncommitted -= eh->m_size;
+}
+
+void
+FSBlockStore::insert_head(SignedHeadNode const & i_shn)
+{
+    // IMPORTANT - We presume the mutex is held by the caller.
+
+    EdgeHandle eh = new Edge(i_shn);
+
+    if (eh->m_prev == eh->m_root)
+        throwstream(InternalError, FILELINE
+                    << "we'd really rather not have self-loops");
+
+    m_prevmap.insert(make_pair(eh->m_prev, eh));
+
+    m_rootmap.insert(make_pair(eh->m_root, eh));
+
+    // Remove any nodes which we preceede from the root set.
+    m_roots.erase(eh->m_root);
+
+    // Are we in the root set so far?  If our previous node
+    // hasn't been seen we insert ourselves ...
+    //
+    if (m_rootmap.find(eh->m_prev) == m_rootmap.end())
+        m_roots.insert(eh->m_prev);
+}
+
+void
+FSBlockStore::write_head(SignedHeadNode const & i_shn)
+{
+    string linebuf;
+    i_shn.SerializeToString(&linebuf);
+    m_headsstrm << Base64::encode(linebuf.data(), linebuf.size()) << endl;
 }
 
 } // namespace FSBS

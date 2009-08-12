@@ -8,6 +8,7 @@ PROTO +=	\
 
 LIBSRC =	\
 			Base32.cpp \
+			Base64.cpp \
 			BlockCipher.cpp \
 			BlockStore.cpp \
 			BlockStoreFactory.cpp \

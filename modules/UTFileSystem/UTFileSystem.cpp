@@ -1012,6 +1012,10 @@ UTFileSystem::rootref(BlockRef const & i_blkref)
     ACE_OS::memcpy(buffer, i_blkref.data(), sizeof(buffer));
     m_ctxt.m_cipher.encrypt(iv, buffer, sizeof(buffer));
 
+    // If the root reference hasn't changed, bail ...
+    if (m_hn.rootref() == string((char *) buffer, sizeof(buffer)))
+        return;
+
     m_hn.set_fstag(m_fsiddig);
     m_hn.set_prevref(m_hn.rootref());
     m_hn.set_rootref(string((char *) buffer, sizeof(buffer)));

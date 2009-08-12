@@ -1,3 +1,7 @@
+Fix Base64 class to handle unwrapped base64 encoding.
+
+Add unit tests for BlockStore HEAD data persistence.
+
 Convert follow and furthest name to _async.  Add complete/error calls.
 
   Update hacks in blockstore modules to call complete/error funcs.

@@ -45,14 +45,14 @@ class Test_bs_head_03:
     node0 = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
     shns = self.bs.bs_head_furthest(node0)
     assert lenhack(shns) == 2
-    assert sorted(str(shns[0].rootref),
-                  str(shns[1].rootref)) == ("node2", "node3")
+    assert sorted((str(shns[0].rootref),
+                   str(shns[1].rootref))) == ["node2", "node3"]
 
     # Furthest w/ first should return the two branch heads.
     shns = self.bs.bs_head_furthest(node1)
     assert lenhack(shns) == 2
-    assert sorted(str(shns[0].rootref),
-                  str(shns[1].rootref)) == ("node2", "node3")
+    assert sorted((str(shns[0].rootref),
+                   str(shns[1].rootref))) == ["node2", "node3"]
 
     # Furthest w/ one branch should return that branch.
     shns = self.bs.bs_head_furthest(node2)
@@ -62,16 +62,15 @@ class Test_bs_head_03:
     # Follow w/ empty should return all nodes.
     shns = self.bs.bs_head_follow(node0)
     assert lenhack(shns) == 3
-    assert sorted(str(shns[0].rootref),
-                  str(shns[1].rootref),
-                  str(shns[2].rootref)) == ("node1", "node2", "node3")
+    assert sorted((str(shns[0].rootref),
+                   str(shns[1].rootref),
+                   str(shns[2].rootref))) == ["node1", "node2", "node3"]
 
-    # Follow w/ first should return all nodes.
+    # Follow w/ first should return all nodes except the starting.
     shns = self.bs.bs_head_follow(node1)
-    assert lenhack(shns) == 3
-    assert sorted(str(shns[0].rootref),
-                  str(shns[1].rootref),
-                  str(shns[2].rootref)) == ("node1", "node2", "node3")
+    assert lenhack(shns) == 2
+    assert sorted((str(shns[0].rootref),
+                   str(shns[1].rootref))) == ["node2", "node3"]
 
     # Follow w/ branch should return that branch only.
     shns = self.bs.bs_head_furthest(node3)

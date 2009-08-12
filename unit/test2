@@ -1,58 +1,27 @@
 #!/bin/env python
 
-from os import *
 import sys
-import shutil
 
 import utp
 import utp.BlockStore
 import utp.FileSystem
-import utp.PyDirEntryFunc
 
-class DirEntryPrinter(utp.PyDirEntryFunc.PyDirEntryFunc):
-    def __init__(self):
-        utp.PyDirEntryFunc.PyDirEntryFunc.__init__(self)
+import time
 
-    def def_entry(self, name, statbuf, offset):
-        print "def_entry", name, statbuf, offset
+import CONFIG
+from lenhack import *
 
 try:
-    bspath = "test2.bs"
+    bspath = "test.bs"
+    bs = utp.BlockStore.open(CONFIG.BSTYPE,
+                             CONFIG.BSARGS(bspath))
 
-    # Remove any prexisting blockstore.
-    shutil.rmtree(bspath, True)  
+    node0 = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    shns = bs.bs_head_furthest(node0)
+    
+    print shns
 
-    # Get the FileSystem singleton.
-    fs = utp.FileSystem.instance()
-
-    # Make a new filesystem.
-    fs.fs_mkfs(bspath, "", "");
-
-    # Stat something.
-    print fs.fs_getattr("/.utopfs");
-
-    # See if readdir works
-    decb = DirEntryPrinter()
-    fs.fs_readdir("/.utopfs", 0, decb)
-
-    # Create a file
-    fs.fs_mknod("/foo", 0666, 0)
-
-    # Stat the file
-    st = fs.fs_getattr("/foo")
-    print st.st_mtime 
-
-    # Unmount the filesystem.
-    fs.fs_unmount()
-
-    # Mount the existing filesystem.
-    fs.fs_mount(bspath, "", "")
-
-    # Stat the file
-    print fs.fs_getattr("/foo")
-
-    # Don't Clean up.
-    # shutil.rmtree(bspath, True)  
+    bs.bs_close()
 
 except utp.Error, ex:
     print ex[0]['what']
