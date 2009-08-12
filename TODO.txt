@@ -1,22 +1,6 @@
-Fix Base64 class to handle unwrapped base64 encoding.
-
 Add unit tests for BlockStore HEAD data persistence.
 
-Convert follow and furthest name to _async.  Add complete/error calls.
-
-  Update hacks in blockstore modules to call complete/error funcs.
-
-Convert bs_head_insert to async.
-
-Add sync wrappers to follow and furthest.
-
-  They should have NotFound signatures.
-
-  Convert UTFileSysem to sync wrappers.
-
-Add python wrappers for bs_head functions.
-
-Write simple unit tests which break current bs_head hack.
+Implement real S3BS bs_head_{insert,follow,further}.
 
 ----------------------------------------------------------------
 
