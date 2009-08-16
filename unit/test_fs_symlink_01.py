@@ -127,5 +127,6 @@ class Test_fs_symlink_01:
       assert ex.errno == ENOENT
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None

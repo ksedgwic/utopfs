@@ -48,6 +48,8 @@ class Test_fs_fsid_01:
                    utp.FileSystem.mount, CONFIG.FSTYPE, self.bs,
                    "second", "", CONFIG.FSARGS)
 
+    self.bs.bs_close()
+
     # Now mount it again.
     bsargs = CONFIG.BSARGS(self.bspath)
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE, "rootbs", bsargs)
@@ -58,5 +60,6 @@ class Test_fs_fsid_01:
     st = self.fs.fs_getattr("/first")
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None

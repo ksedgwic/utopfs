@@ -56,5 +56,6 @@ class Test_fs_persist_01:
     assert S_ISREG(st[ST_MODE])
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None

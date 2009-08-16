@@ -9,12 +9,12 @@
 #include <ace/os_include/os_byteswap.h>
 
 #include "Log.h"
+#include "Base32.h"
+#include "MD5.h"
+#include "BlockStoreFactory.h"
 
 #include "S3BlockStore.h"
 #include "s3bslog.h"
-
-#include "Base32.h"
-#include "MD5.h"
 
 using namespace std;
 using namespace utp;
@@ -833,6 +833,23 @@ S3BlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, m_instname << ' ' << "bs_close");
+
+    // Unregister this instance.
+    try
+    {
+        BlockStoreFactory::remove(m_instname);
+    }
+    catch (InternalError const & ex)
+    {
+        // This we can just rethrow ...
+        throw;
+    }
+    catch (Exception const & ex)
+    {
+        // These shouldn't happen and need to be converted to
+        // InternalError ...
+        throw InternalError(ex.what());
+    }
 }
 
 void

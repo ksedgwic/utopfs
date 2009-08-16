@@ -28,12 +28,14 @@ class Test_fs_mkfs:
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
   def teardown_class(self):
+
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     olvl = utp.FileSystem.loglevel(-1)
     self.bs = None
     self.fs = None
     utp.FileSystem.loglevel(olvl)
-
+    
     CONFIG.remove_bs(self.bspath)
 
   def test_hasno_foodir(self):

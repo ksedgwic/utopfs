@@ -92,5 +92,6 @@ class Test_fs_bigdir_01:
     assert cntr.count == nfiles + 2
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None

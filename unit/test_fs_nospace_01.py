@@ -79,5 +79,6 @@ class Test_fs_nospace_01:
                                    "", "", CONFIG.FSARGS)
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None

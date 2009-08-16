@@ -30,15 +30,15 @@ public:
     /// @param[in] i_args Implementation specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
-    /// @throw ValueError The specified factory module was not found.
-    /// @throw NotUniqueError The specified blockstore already exists.
+    /// @throw NotFoundError The specified factory module was not found.
+    /// @throw NotUniqueError The specified blockstore instance already exists.
     ///
     static BlockStoreHandle create(std::string const & i_factname,
                                    std::string const & i_instname,
                                    size_t i_size,
                                    StringSeq const & i_args)
         throw(InternalError,
-              ValueError,
+              NotFoundError,
               NotUniqueError);
 
     /// Open existing blockstore.
@@ -48,14 +48,36 @@ public:
     /// @param[in] i_args Implementation specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
-    /// @throw ValueError The specified factory module was not found.
-    /// @throw NotFoundError The specified blockstore was not found.
+    /// @throw NotFoundError The specified blockstore factory was not found.
+    /// @throw NotUniqueError The specified blockstore instance already exists.
     ///
     static BlockStoreHandle open(std::string const & i_factname,
                                  std::string const & i_instname,
                                  StringSeq const & i_args)
         throw(InternalError,
-              ValueError,
+              NotFoundError,
+              NotUniqueError);
+
+    /// Find open blockstore.
+    ///
+    /// @param[in] i_instname BlockStore instance name.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError The specified blockstore was not found.
+    ///
+    static BlockStoreHandle find(std::string const & i_instname)
+        throw(InternalError,
+              NotFoundError);
+
+    /// Remove blockstore from open list.
+    ///
+    /// @param[in] i_instname BlockStore instance name.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    /// @throw NotFoundError The specified blockstore was not found.
+    ///
+    static void remove(std::string const & i_instname)
+        throw(InternalError,
               NotFoundError);
 
     /// Remove existing blockstore.

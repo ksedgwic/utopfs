@@ -4,13 +4,13 @@
 
 #include <ace/Dirent.h>
 
+#include "Base32.h"
+#include "Base64.h"
+#include "BlockStoreFactory.h"
 #include "Log.h"
 
 #include "FSBlockStore.h"
 #include "fsbslog.h"
-
-#include "Base32.h"
-#include "Base64.h"
 
 using namespace std;
 using namespace utp;
@@ -339,6 +339,23 @@ FSBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, m_instname << ' ' << "bs_close");
+
+    // Unregister this instance.
+    try
+    {
+        BlockStoreFactory::remove(m_instname);
+    }
+    catch (InternalError const & ex)
+    {
+        // This we can just rethrow ...
+        throw;
+    }
+    catch (Exception const & ex)
+    {
+        // These shouldn't happen and need to be converted to
+        // InternalError ...
+        throw InternalError(ex.what());
+    }
 
     // Close the HEADS stream.
     if (m_headsstrm.is_open())

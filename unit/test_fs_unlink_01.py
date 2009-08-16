@@ -87,5 +87,6 @@ class Test_fs_unlink_01:
     st = self.fs.fs_getattr("/foo");
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None

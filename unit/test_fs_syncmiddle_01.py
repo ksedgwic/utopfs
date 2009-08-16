@@ -88,6 +88,7 @@ class Test_fs_syncmiddle_01:
       offset += bufsz
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None
     CONFIG.remove_bs(self.bspath)

@@ -33,6 +33,7 @@ class Test_fs_link_01:
 
   def teardown_class(self):
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     olvl = utp.FileSystem.loglevel(-1)
     self.bs = None
     self.fs = None

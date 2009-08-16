@@ -1,10 +1,8 @@
 #include "Log.h"
+#include "BlockStoreFactory.h"
 
 #include "VBlockStore.h"
 #include "vbslog.h"
-
-#include "Base32.h"
-#include "Base64.h"
 
 using namespace std;
 using namespace utp;
@@ -53,6 +51,23 @@ VBlockStore::bs_close()
 {
     throwstream(InternalError, FILELINE
                 << "VBlockStore::bs_close unimplemented");
+
+    // Unregister this instance.
+    try
+    {
+        BlockStoreFactory::remove(m_instname);
+    }
+    catch (InternalError const & ex)
+    {
+        // This we can just rethrow ...
+        throw;
+    }
+    catch (Exception const & ex)
+    {
+        // These shouldn't happen and need to be converted to
+        // InternalError ...
+        throw InternalError(ex.what());
+    }
 }
 
 void

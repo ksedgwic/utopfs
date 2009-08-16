@@ -3,14 +3,14 @@
 
 #include <db_cxx.h>
 
-#include "Scoped.h"
-
+#include "Base32.h"
+#include "BlockStoreFactory.h"
 #include "Log.h"
+#include "Scoped.h"
 
 #include "BDBBlockStore.h"
 #include "bdbbslog.h"
 
-#include "Base32.h"
 
 using namespace std;
 using namespace utp;
@@ -121,6 +121,24 @@ BDBBlockStore::bs_close()
     throw(InternalError)
 {
     LOG(lgr, 4, m_instname << ' ' << "bs_close");
+
+    // Unregister this instance.
+    try
+    {
+        BlockStoreFactory::remove(m_instname);
+    }
+    catch (InternalError const & ex)
+    {
+        // This we can just rethrow ...
+        throw;
+    }
+    catch (Exception const & ex)
+    {
+        // These shouldn't happen and need to be converted to
+        // InternalError ...
+        throw InternalError(ex.what());
+    }
+
 	if (m_db_opened) {		
 		try {
 			m_db->close(0);

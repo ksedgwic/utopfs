@@ -91,6 +91,7 @@ class Test_fs_truncate_03:
     assert nbytes == newsz
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None
 

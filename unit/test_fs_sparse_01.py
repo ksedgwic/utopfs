@@ -176,6 +176,7 @@ class Test_fs_sparse_01:
     assert nb == 13
     
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None
 

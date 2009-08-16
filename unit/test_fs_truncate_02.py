@@ -102,6 +102,7 @@ class Test_fs_truncate_02:
     assert nblocks == (1 + 2) * 8192 / 512
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None
 

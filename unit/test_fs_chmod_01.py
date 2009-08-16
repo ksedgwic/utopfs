@@ -81,5 +81,6 @@ class Test_fs_chmod_01:
     assert st[ST_MODE] & 0777 == 0510
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None

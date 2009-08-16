@@ -60,5 +60,6 @@ class Test_fs_statfs_01:
     assert stvfs.f_bavail == (CONFIG.BSSIZE / BLKSZ) - BLKSUSED
 
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
+    self.bs.bs_close()
     self.bs = None
     self.fs = None
