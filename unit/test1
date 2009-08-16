@@ -15,6 +15,7 @@ try:
     bspath = "test.bs"
     CONFIG.remove_bs(bspath)
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                               "rootbs",
                                CONFIG.BSSIZE,
                                CONFIG.BSARGS(bspath))
 

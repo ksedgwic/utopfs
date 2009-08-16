@@ -23,6 +23,7 @@ class Test_bs_size_01:
 
     # Create the blockstore.
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -57,6 +58,7 @@ class Test_bs_size_01:
     # Close and reopen the blockstore.
     self.bs.bs_close()
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE,
+                                  "rootbs",
                                   CONFIG.BSARGS(self.bspath))
 
     # Check the blockstore stats.
@@ -74,6 +76,7 @@ class Test_bs_size_01:
 
     # Create the blockstore.
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -121,6 +124,7 @@ class Test_bs_size_01:
     # Close and reopen the blockstore.
     self.bs.bs_close()
     self.bs = utp.BlockStore.open(CONFIG.BSTYPE,
+                                  "rootbs",
                                   CONFIG.BSARGS(self.bspath))
 
     # Check the blockstore stats.

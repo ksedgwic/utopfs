@@ -52,21 +52,24 @@ VBSFactory::resume()
 }
 
 BlockStoreHandle
-VBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+VBSFactory::bsf_create(string const & i_instname,
+                       size_t i_size,
+                       StringSeq const & i_args)
     throw(InternalError,
           NotUniqueError)
 {
-    BlockStoreHandle bsh = new VBS::VBlockStore();
+    BlockStoreHandle bsh = new VBS::VBlockStore(i_instname);
     bsh->bs_create(i_size, i_args);
     return bsh;
 }
 
 BlockStoreHandle
-VBSFactory::bsf_open(StringSeq const & i_args)
+VBSFactory::bsf_open(string const & i_instname,
+                     StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    BlockStoreHandle bsh = new VBS::VBlockStore();
+    BlockStoreHandle bsh = new VBS::VBlockStore(i_instname);
     bsh->bs_open(i_args);
     return bsh;
 }

@@ -53,9 +53,10 @@ BDBBlockStore::destroy(StringSeq const & i_args)
 	system(cmd.c_str());
 }
 
-BDBBlockStore::BDBBlockStore()
+BDBBlockStore::BDBBlockStore(string const & i_instname)
+    : m_instname(i_instname)
 {	
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 4, m_instname << ' ' << "CTOR");
 	m_db_opened = false;
 }
 
@@ -73,7 +74,7 @@ BDBBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 {
     string const & path = i_args[0];
 
-    LOG(lgr, 4, "bs_create " << i_size << ' ' << path);
+    LOG(lgr, 4, m_instname << ' ' << "bs_create " << i_size << ' ' << path);
 
 	m_rootpath = path;
 
@@ -100,7 +101,7 @@ BDBBlockStore::bs_open(StringSeq const & i_args)
 {
     string const & path = i_args[0];
 
-    LOG(lgr, 4, "bs_open " << path);	
+    LOG(lgr, 4, m_instname << ' ' << "bs_open " << path);	
 
     struct stat statbuff;    
     if (stat(path.c_str(), &statbuff) != 0) {
@@ -119,7 +120,7 @@ void
 BDBBlockStore::bs_close()
     throw(InternalError)
 {
-    LOG(lgr, 4, "bs_close");    
+    LOG(lgr, 4, m_instname << ' ' << "bs_close");
 	if (m_db_opened) {		
 		try {
 			m_db->close(0);
@@ -131,8 +132,9 @@ BDBBlockStore::bs_close()
 			m_dbe->close(0);	
 			delete(m_dbe);
 		} catch (DbException e) {
-			LOG(lgr, 1, FILELINE << "BDBBlockStore error on close" 
-								 << ": error: " << ACE_OS::strerror(errno));
+			LOG(lgr, 1, FILELINE
+                << m_instname << ' ' << "BDBBlockStore error on close" 
+                << ": error: " << ACE_OS::strerror(errno));
 		}
 	}	
 	m_db_opened = false;
@@ -157,7 +159,7 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
           ValueError)
           
 {
-    LOG(lgr, 6, "bs_get_block");
+    LOG(lgr, 6, m_instname << ' ' << "bs_get_block");
 	if (! m_db_opened) {
 		throwstream(InternalError, FILELINE
                 << "BDBBlockStore db not opened!");
@@ -193,7 +195,7 @@ BDBBlockStore::bs_get_block_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, "bs_get_block");
+        LOG(lgr, 6, m_instname << ' ' << "bs_get_block");
         if (! m_db_opened) {
             throwstream(InternalError, FILELINE
                         << "BDBBlockStore db not opened!");
@@ -232,7 +234,7 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
           ValueError,
           NoSpaceError)
 {
-    LOG(lgr, 6, "bs_put_block");
+    LOG(lgr, 6, m_instname << ' ' << "bs_put_block");
 	if (! m_db_opened) {
 		throwstream(InternalError, FILELINE
                 << "BDBBlockStore db not opened!");
@@ -264,7 +266,7 @@ BDBBlockStore::bs_put_block_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, "bs_put_block");
+        LOG(lgr, 6, m_instname << ' ' << "bs_put_block");
         if (! m_db_opened) {
             throwstream(InternalError, FILELINE
                         << "BDBBlockStore db not opened!");

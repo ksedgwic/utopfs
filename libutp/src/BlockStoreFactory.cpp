@@ -32,36 +32,44 @@ find_factory(string const & i_name)
 namespace utp {
 
 void
-BlockStoreFactory::register_factory(string const & i_name,
+BlockStoreFactory::register_factory(string const & i_factname,
                                     BlockStoreFactory * i_bsfp)
 {
-    LOG(lgr, 4, "register_factory " << i_name);
+    LOG(lgr, 4, "register_factory " << i_factname);
 
-    g_bsfm[i_name] = i_bsfp;
+    g_bsfm[i_factname] = i_bsfp;
 }
 
 BlockStoreHandle
-BlockStoreFactory::create(string const & i_name,
+BlockStoreFactory::create(string const & i_factname,
+                          string const & i_instname,
                           size_t i_size,
                           StringSeq const & i_args)
         throw(InternalError,
               ValueError,
               NotUniqueError)
 {
-    LOG(lgr, 4, "create " << i_name << ' ' << i_size);
+    LOG(lgr, 4, "create"
+        << ' ' << i_factname
+        << ' ' << i_instname
+        << ' ' << i_size);
 
-    return find_factory(i_name)->bsf_create(i_size, i_args);
+    return find_factory(i_factname)->bsf_create(i_instname, i_size, i_args);
 }
                           
 BlockStoreHandle
-BlockStoreFactory::open(string const & i_name, StringSeq const & i_args)
+BlockStoreFactory::open(string const & i_factname,
+                        string const & i_instname,
+                        StringSeq const & i_args)
         throw(InternalError,
               ValueError,
               NotFoundError)
 {
-    LOG(lgr, 4, "open " << i_name);
+    LOG(lgr, 4, "open"
+        << ' ' << i_factname
+        << ' ' << i_instname);
 
-    return find_factory(i_name)->bsf_open(i_args);
+    return find_factory(i_factname)->bsf_open(i_instname, i_args);
 }
                           
 void

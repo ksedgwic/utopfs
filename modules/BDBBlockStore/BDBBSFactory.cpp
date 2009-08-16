@@ -52,21 +52,24 @@ BDBBSFactory::resume()
 }
 
 BlockStoreHandle
-BDBBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+BDBBSFactory::bsf_create(string const & i_instname,
+                         size_t i_size,
+                         StringSeq const & i_args)
     throw(InternalError,
           NotUniqueError)
 {
-    BlockStoreHandle bsh = new BDBBS::BDBBlockStore();
+    BlockStoreHandle bsh = new BDBBS::BDBBlockStore(i_instname);
     bsh->bs_create(i_size, i_args);
     return bsh;
 }
 
 BlockStoreHandle
-BDBBSFactory::bsf_open(StringSeq const & i_args)
+BDBBSFactory::bsf_open(string const & i_instname,
+                       StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    BlockStoreHandle bsh = new BDBBS::BDBBlockStore();
+    BlockStoreHandle bsh = new BDBBS::BDBBlockStore(i_instname);
     bsh->bs_open(i_args);
     return bsh;
 }

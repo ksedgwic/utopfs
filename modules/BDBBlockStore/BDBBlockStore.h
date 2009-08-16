@@ -23,7 +23,7 @@ public:
 
     static void destroy(utp::StringSeq const & i_args);
 
-    BDBBlockStore();
+    BDBBlockStore(std::string const & i_instname);
 
     virtual ~BDBBlockStore();
 
@@ -90,6 +90,7 @@ public:
         throw(utp::InternalError);
 
 protected:
+    std::string				m_instname;
 
 	bool m_db_opened;
 	DbEnv *m_dbe;

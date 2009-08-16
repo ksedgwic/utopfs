@@ -445,13 +445,14 @@ S3BlockStore::destroy(StringSeq const & i_args)
     }
 }
 
-S3BlockStore::S3BlockStore()
-    : m_size(0)
+S3BlockStore::S3BlockStore(std::string const & i_instname)
+    : m_instname(i_instname)
+    , m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
     , m_blockspath("BLOCKS")
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 4, m_instname << ' ' << "CTOR");
 }
 
 S3BlockStore::~S3BlockStore()
@@ -472,7 +473,8 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 
     setup_params(i_args);
 
-    LOG(lgr, 4, "bs_create " << i_size << ' ' << m_bucket_name);
+    LOG(lgr, 4, m_instname << ' '
+        << "bs_create " << i_size << ' ' << m_bucket_name);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
@@ -556,7 +558,7 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
                         << "polled too many times; bucket still there");
 
         sleep(1);
-        LOG(lgr, 7, "polling created bucket again ...");
+        LOG(lgr, 7, m_instname << ' ' << "polling created bucket again ...");
     }
 
     // Setup a bucket context.
@@ -596,7 +598,7 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 
         default:
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, "bs_create " << m_bucket_name
+            LOG(lgr, 4, m_instname << ' ' << "bs_create " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
             break;
         }
@@ -672,7 +674,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 {
     setup_params(i_args);
 
-    LOG(lgr, 4, "bs_open " << m_bucket_name);
+    LOG(lgr, 4, m_instname << ' ' << "bs_open " << m_bucket_name);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
@@ -733,7 +735,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     istringstream istrm(buffer);
     istrm >> m_size;
-    LOG(lgr, 4, "bs_open size=" << m_size);
+    LOG(lgr, 4, m_instname << ' ' << "bs_open size=" << m_size);
 
     // Inventory all existing blocks, insert into entries and
     // time-sorted entries sets.
@@ -830,14 +832,14 @@ void
 S3BlockStore::bs_close()
     throw(InternalError)
 {
-    LOG(lgr, 4, "bs_close");
+    LOG(lgr, 4, m_instname << ' ' << "bs_close");
 }
 
 void
 S3BlockStore::bs_stat(Stat & o_stat)
     throw(InternalError)
 {
-    LOG(lgr, 6, "bs_stat");
+    LOG(lgr, 6, m_instname << ' ' << "bs_stat");
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
@@ -863,7 +865,8 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
 
-            LOG(lgr, 6, "bs_get_block " << entry.substr(0, 8) << "...");
+            LOG(lgr, 6, m_instname << ' '
+                << "bs_get_block " << entry.substr(0, 8) << "...");
 
             // Setup a bucket context.
             S3BucketContext buck;
@@ -929,7 +932,8 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
         string entry = entryname(i_keydata, i_keysize);
         string blkpath = blockpath(entry);
 
-        LOG(lgr, 6, "bs_put_block " << entry.substr(0, 8) << "...");
+        LOG(lgr, 6, m_instname << ' '
+            << "bs_put_block " << entry.substr(0, 8) << "...");
 
         // We need to determine the current size of the block
         // if it already exists.
@@ -997,7 +1001,8 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
             if (st == S3StatusOK)
                 break;
 
-            LOG(lgr, 4, "bs_put_block_async " << entry.substr(0, 8) << "..."
+            LOG(lgr, 4, m_instname << ' '
+                << "bs_put_block_async " << entry.substr(0, 8) << "..."
                 << " ERROR: " << st << ", RETRYING");
         }
 
@@ -1047,7 +1052,8 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
 
             default:
                 // Sigh ... these we retry a few times ...
-                LOG(lgr, 4, "bs_put_block_async " << entry.substr(0,8) << "..."
+                LOG(lgr, 4, m_instname << ' '
+                    << "bs_put_block_async " << entry.substr(0,8) << "..."
                     << " ERROR: " << st << " RETRYING");
                 break;
             }
@@ -1068,7 +1074,7 @@ S3BlockStore::bs_refresh_start(uint64 i_rid)
     string rname = ridname(i_rid);
     string rpath = blockpath(rname);
  
-    LOG(lgr, 6, "bs_refresh_start " << rname);
+    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
@@ -1152,7 +1158,8 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     string entry = entryname(i_keydata, i_keysize);
     string blkpath = blockpath(entry);
 
-    LOG(lgr, 6, "refreshing " << entry.substr(0,8) << "...");
+    LOG(lgr, 6, m_instname << ' '
+        << "refreshing " << entry.substr(0,8) << "...");
 
     // Setup a bucket context.
     S3BucketContext buck;
@@ -1216,7 +1223,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
 
         default:
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, "bs_refresh_block_async " << st
+            LOG(lgr, 4, m_instname << ' ' << "bs_refresh_block_async " << st
                 << " RETRYING: " << entry.substr(0,8) << "...");
             break;
         }
@@ -1234,7 +1241,7 @@ S3BlockStore::bs_refresh_finish(uint64 i_rid)
     string rname = ridname(i_rid);
     string rpath = blockpath(rname);
 
-    LOG(lgr, 6, "bs_refresh_finish " << rname);
+    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
@@ -1558,7 +1565,7 @@ S3BlockStore::purge_uncommitted()
         throwstream(InternalError, FILELINE
                     << "LRU block on list is more recent then MARK");
 
-    LOG(lgr, 6, "purge uncommitted: " << eh->m_name);
+    LOG(lgr, 6, m_instname << ' ' << "purge uncommitted: " << eh->m_name);
 
     // Remove from LRU list.
     m_lru.pop_back();

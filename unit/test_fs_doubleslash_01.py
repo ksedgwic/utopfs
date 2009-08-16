@@ -30,7 +30,10 @@ class Test_fs_doubleslash_01:
 
     # Create the filesystem
     bsargs = CONFIG.BSARGS(self.bspath)
-    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
+                                    CONFIG.BSSIZE,
+                                    bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 

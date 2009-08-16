@@ -23,6 +23,7 @@ class Test_bs_head_02:
   def test_two_nodes(self):
 
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 

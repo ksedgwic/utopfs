@@ -28,7 +28,10 @@ class Test_fs_nospace_01:
     # Create a small filesystem
     bssz = 64 * 1024
     bsargs = CONFIG.BSARGS(self.bspath)
-    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, bssz, bsargs)
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
+                                    bssz,
+                                    bsargs)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -69,7 +72,9 @@ class Test_fs_nospace_01:
 
     # Now mount it again.
     bsargs = CONFIG.BSARGS(self.bspath)
-    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
+    self.bs = utp.BlockStore.open(CONFIG.BSTYPE,
+                                  "rootbs",
+                                  bsargs)
     self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs,
                                    "", "", CONFIG.FSARGS)
 

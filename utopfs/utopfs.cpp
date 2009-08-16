@@ -274,7 +274,8 @@ utopfs_init(struct fuse_conn_info * i_conn)
 
         if (utopfs.size)
         {
-            utopfs.bsh = BlockStoreFactory::create(utopfs.bsid,
+            utopfs.bsh = BlockStoreFactory::create("rootbs",
+                                                   utopfs.bsid,
                                                    utopfs.size,
                                                    bsargs);
 
@@ -289,7 +290,8 @@ utopfs_init(struct fuse_conn_info * i_conn)
         }
         else
         {
-            utopfs.bsh = BlockStoreFactory::open(utopfs.bsid,
+            utopfs.bsh = BlockStoreFactory::open("rootbs",
+                                                 utopfs.bsid,
                                                  bsargs);
 
             StringSeq fsargs;

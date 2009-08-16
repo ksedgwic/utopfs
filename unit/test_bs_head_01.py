@@ -23,6 +23,7 @@ class Test_bs_head_01:
   def test_furthest_on_empty(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -41,6 +42,7 @@ class Test_bs_head_01:
   def test_furthest_on_single(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -61,6 +63,7 @@ class Test_bs_head_01:
   def test_furthest_on_single_w_seed(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -80,6 +83,7 @@ class Test_bs_head_01:
   def test_furthest_on_single_w_miss(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -98,6 +102,7 @@ class Test_bs_head_01:
   def test_follow_on_empty(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -116,6 +121,7 @@ class Test_bs_head_01:
   def test_follow_on_single(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -136,6 +142,7 @@ class Test_bs_head_01:
   def test_follow_on_single_w_seed(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
@@ -154,6 +161,7 @@ class Test_bs_head_01:
   def test_follow_on_single_w_miss(self):
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 

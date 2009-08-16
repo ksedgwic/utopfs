@@ -14,6 +14,7 @@ from lenhack import *
 try:
     bspath = "test.bs"
     bs = utp.BlockStore.open(CONFIG.BSTYPE,
+                             "rootbs",
                              CONFIG.BSARGS(bspath))
 
     node0 = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))

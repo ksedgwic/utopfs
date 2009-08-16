@@ -465,11 +465,12 @@ mkBlockStoreObject(BlockStoreHandle const & i_nmh)
 static PyObject *
 BlockStoreModule_create(PyObject *self, PyObject *i_args)
 {
-    char * name;
+    char * factname;
+    char * instname;
     unsigned long size;
     PyObject * tup;
-    if (!PyArg_ParseTuple(i_args, "skO!:create",
-                          &name, &size, &PyTuple_Type, &tup))
+    if (!PyArg_ParseTuple(i_args, "sskO!:create",
+                          &factname, &instname, &size, &PyTuple_Type, &tup))
 		return NULL;
 
     StringSeq args;
@@ -489,7 +490,10 @@ BlockStoreModule_create(PyObject *self, PyObject *i_args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        return mkBlockStoreObject(BlockStoreFactory::create(name, size, args));
+        return mkBlockStoreObject(BlockStoreFactory::create(factname,
+                                                            instname,
+                                                            size,
+                                                            args));
     }
     PYUTP_CATCH_ALL;
 }
@@ -497,9 +501,11 @@ BlockStoreModule_create(PyObject *self, PyObject *i_args)
 static PyObject *
 BlockStoreModule_open(PyObject *self, PyObject *i_args)
 {
-    char * name;
+    char * factname;
+    char * instname;
     PyObject * tup;
-    if (!PyArg_ParseTuple(i_args, "sO!:open", &name, &PyTuple_Type, &tup))
+    if (!PyArg_ParseTuple(i_args, "ssO!:open",
+                          &factname, &instname, &PyTuple_Type, &tup))
 		return NULL;
 
     StringSeq args;
@@ -519,7 +525,9 @@ BlockStoreModule_open(PyObject *self, PyObject *i_args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        return mkBlockStoreObject(BlockStoreFactory::open(name, args));
+        return mkBlockStoreObject(BlockStoreFactory::open(factname,
+                                                          instname,
+                                                          args));
     }
     PYUTP_CATCH_ALL;
 }

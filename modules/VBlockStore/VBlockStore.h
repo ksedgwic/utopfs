@@ -27,7 +27,7 @@ class VBS_EXP VBlockStore : public utp::BlockStore
 public:
     static void destroy(utp::StringSeq const & i_args);
 
-    VBlockStore();
+    VBlockStore(std::string const & i_instname);
 
     virtual ~VBlockStore();
 
@@ -98,6 +98,7 @@ public:
 protected:
 
 private:
+    std::string				m_instname;
 };
 
 } // namespace VBS

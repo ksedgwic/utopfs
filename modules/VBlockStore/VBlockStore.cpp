@@ -18,9 +18,10 @@ VBlockStore::destroy(StringSeq const & i_args)
                 << "VBlockStore::destroy unimplemented");
 }
 
-VBlockStore::VBlockStore()
+VBlockStore::VBlockStore(string const & i_instname)
+    : m_instname(i_instname)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 4, m_instname << ' ' << "CTOR");
 }
 
 VBlockStore::~VBlockStore()

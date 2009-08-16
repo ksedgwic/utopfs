@@ -52,21 +52,24 @@ S3BSFactory::resume()
 }
 
 BlockStoreHandle
-S3BSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+S3BSFactory::bsf_create(string const & i_instname,
+                        size_t i_size,
+                        StringSeq const & i_args)
     throw(InternalError,
           NotUniqueError)
 {
-    BlockStoreHandle bsh = new S3BS::S3BlockStore();
+    BlockStoreHandle bsh = new S3BS::S3BlockStore(i_instname);
     bsh->bs_create(i_size, i_args);
     return bsh;
 }
 
 BlockStoreHandle
-S3BSFactory::bsf_open(StringSeq const & i_args)
+S3BSFactory::bsf_open(string const & i_instname,
+                      StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    BlockStoreHandle bsh = new S3BS::S3BlockStore();
+    BlockStoreHandle bsh = new S3BS::S3BlockStore(i_instname);
     bsh->bs_open(i_args);
     return bsh;
 }

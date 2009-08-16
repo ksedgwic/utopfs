@@ -52,21 +52,24 @@ FSBSFactory::resume()
 }
 
 BlockStoreHandle
-FSBSFactory::bsf_create(size_t i_size, StringSeq const & i_args)
+FSBSFactory::bsf_create(string const & i_instname,
+                        size_t i_size,
+                        StringSeq const & i_args)
     throw(InternalError,
           NotUniqueError)
 {
-    BlockStoreHandle bsh = new FSBS::FSBlockStore();
+    BlockStoreHandle bsh = new FSBS::FSBlockStore(i_instname);
     bsh->bs_create(i_size, i_args);
     return bsh;
 }
 
 BlockStoreHandle
-FSBSFactory::bsf_open(StringSeq const & i_args)
+FSBSFactory::bsf_open(string const & i_instname,
+                      StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    BlockStoreHandle bsh = new FSBS::FSBlockStore();
+    BlockStoreHandle bsh = new FSBS::FSBlockStore(i_instname);
     bsh->bs_open(i_args);
     return bsh;
 }

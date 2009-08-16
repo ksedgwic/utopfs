@@ -61,7 +61,7 @@ public:
 
     static void destroy(utp::StringSeq const & i_args);
 
-    S3BlockStore();
+    S3BlockStore(std::string const & i_instname);
 
     virtual ~S3BlockStore();
 
@@ -155,6 +155,8 @@ protected:
 
 private:
     static bool		    c_s3inited;
+
+    std::string			m_instname;
 
     S3Protocol			m_protocol;
     S3UriStyle			m_uri_style;

@@ -22,9 +22,10 @@ public:
     static void register_factory(std::string const & i_name,
                                  BlockStoreFactory * i_bsfp);
 
-    /// Called at runtime to create new blockstore.
+    /// Create new blockstore.
     ///
-    /// @param[in] i_name Factory module name.
+    /// @param[in] i_factname Factory module name.
+    /// @param[in] i_instname BlockStore instance name.
     /// @param[in] i_size Total size of the block store data in bytes.
     /// @param[in] i_args Implementation specific arguments.
     ///
@@ -32,29 +33,36 @@ public:
     /// @throw ValueError The specified factory module was not found.
     /// @throw NotUniqueError The specified blockstore already exists.
     ///
-    static BlockStoreHandle create(std::string const & i_name,
+    static BlockStoreHandle create(std::string const & i_factname,
+                                   std::string const & i_instname,
                                    size_t i_size,
                                    StringSeq const & i_args)
         throw(InternalError,
               ValueError,
               NotUniqueError);
 
-    /// Called at runtime to open existing blockstore.
+    /// Open existing blockstore.
     ///
-    /// @param[in] i_name Factory module name.
+    /// @param[in] i_factname Factory module name.
+    /// @param[in] i_instname BlockStore instance name.
     /// @param[in] i_args Implementation specific arguments.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw ValueError The specified factory module was not found.
     /// @throw NotFoundError The specified blockstore was not found.
     ///
-    static BlockStoreHandle open(std::string const & i_name,
+    static BlockStoreHandle open(std::string const & i_factname,
+                                 std::string const & i_instname,
                                  StringSeq const & i_args)
         throw(InternalError,
               ValueError,
               NotFoundError);
 
-    /// Called at runtime to destroy/remove existing blockstore.
+    /// Remove existing blockstore.
+    ///
+    /// NOTE - This should not be called when the blockstore is open;
+    /// it removes any persistent storage associated with the
+    /// blockstore.
     ///
     /// @param[in] i_name Factory module name.
     /// @param[in] i_args Implementation specific arguments.
@@ -71,12 +79,14 @@ public:
 
     virtual ~BlockStoreFactory();
 
-    virtual BlockStoreHandle bsf_create(size_t i_size,
+    virtual BlockStoreHandle bsf_create(std::string const & i_instname,
+                                        size_t i_size,
                                         StringSeq const & i_args)
         throw(InternalError,
               NotUniqueError) = 0;
 
-    virtual BlockStoreHandle bsf_open(StringSeq const & i_args)
+    virtual BlockStoreHandle bsf_open(std::string const & i_instname,
+                                      StringSeq const & i_args)
         throw(InternalError,
               NotFoundError) = 0;
 

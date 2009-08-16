@@ -37,12 +37,14 @@ public:
 
     /// BlockStoreFactory methods.
 
-    virtual utp::BlockStoreHandle bsf_create(size_t i_size,
+    virtual utp::BlockStoreHandle bsf_create(std::string const & i_instname,
+                                             size_t i_size,
                                              utp::StringSeq const & i_args)
         throw(utp::InternalError,
               utp::NotUniqueError);
 
-    virtual utp::BlockStoreHandle bsf_open(utp::StringSeq const & i_args)
+    virtual utp::BlockStoreHandle bsf_open(std::string const & i_instname,
+                                           utp::StringSeq const & i_args)
         throw(utp::InternalError,
               utp::NotFoundError);
 

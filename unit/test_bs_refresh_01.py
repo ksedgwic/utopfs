@@ -14,6 +14,7 @@ class Test_bs_refresh_01:
     self.bspath = "bs_refresh_01"
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
     

@@ -20,12 +20,14 @@ class TestUnopenedBlockStore:
     py.test.raises(utp.NotFoundError,
                    utp.BlockStore.open,
                    CONFIG.BSTYPE,
+                   "rootbs",
                    CONFIG.BSARGS("noexist"))
     
   def test_create(self):    
     CONFIG.remove_bs(self.bspath)
 
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                               "rootbs",
                                CONFIG.BSSIZE,
                                CONFIG.BSARGS(self.bspath))
     bs.bs_close()
@@ -35,6 +37,7 @@ class TestUnopenedBlockStore:
   def test_should_be_able_to_create_close_and_open_a_block_store(self):
     CONFIG.remove_bs(self.bspath)
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                               "rootbs",
                                CONFIG.BSSIZE,
                                CONFIG.BSARGS(self.bspath))
        
@@ -43,7 +46,9 @@ class TestUnopenedBlockStore:
     bs.bs_put_block(k, v)    
     bs.bs_close()
     
-    bs1 = utp.BlockStore.open(CONFIG.BSTYPE, CONFIG.BSARGS(self.bspath))
+    bs1 = utp.BlockStore.open(CONFIG.BSTYPE,
+                              "rootbs",
+                              CONFIG.BSARGS(self.bspath))
     b = bs1.bs_get_block(k)
     bs1.bs_close()
     CONFIG.remove_bs(self.bspath)
@@ -55,12 +60,14 @@ class TestUnopenedBlockStore:
     CONFIG.remove_bs(self.bspath)
 
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                               "rootbs",
                                CONFIG.BSSIZE,
                                CONFIG.BSARGS(self.bspath))
 
     py.test.raises(utp.NotUniqueError,
                    utp.BlockStore.create,
                    CONFIG.BSTYPE,
+                   "rootbs",
                    CONFIG.BSSIZE,
                    CONFIG.BSARGS(self.bspath))
 

@@ -140,12 +140,13 @@ FSBlockStore::destroy(StringSeq const & i_args)
                     << ACE_OS::strerror(errno));
 }
 
-FSBlockStore::FSBlockStore()
-    : m_size(0)
+FSBlockStore::FSBlockStore(string const & i_instname)
+    : m_instname(i_instname)
+    , m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 4, m_instname << ' ' << "CTOR");
 }
 
 FSBlockStore::~FSBlockStore()
@@ -166,7 +167,7 @@ FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 {
     string const & path = i_args[0];
 
-    LOG(lgr, 4, "bs_create " << i_size << ' ' << path);
+    LOG(lgr, 4, m_instname << ' ' << "bs_create " << i_size << ' ' << path);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
@@ -216,7 +217,7 @@ FSBlockStore::bs_open(StringSeq const & i_args)
 {
     string const & path = i_args[0];
 
-    LOG(lgr, 4, "bs_open " << path);
+    LOG(lgr, 4, m_instname << ' ' << "bs_open " << path);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
@@ -337,7 +338,7 @@ void
 FSBlockStore::bs_close()
     throw(InternalError)
 {
-    LOG(lgr, 4, "bs_close");
+    LOG(lgr, 4, m_instname << ' ' << "bs_close");
 
     // Close the HEADS stream.
     if (m_headsstrm.is_open())
@@ -348,7 +349,7 @@ void
 FSBlockStore::bs_stat(Stat & o_stat)
     throw(InternalError)
 {
-    LOG(lgr, 6, "bs_stat");
+    LOG(lgr, 6, m_instname << ' ' << "bs_stat");
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
@@ -442,7 +443,7 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, "bs_put_block");
+        LOG(lgr, 6, m_instname << ' ' << "bs_put_block");
 
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
@@ -540,7 +541,7 @@ FSBlockStore::bs_refresh_start(uint64 i_rid)
     string rname = ridname(i_rid);
     string rpath = blockpath(rname);
  
-    LOG(lgr, 6, "bs_refresh_start " << rname);
+    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
@@ -587,7 +588,8 @@ FSBlockStore::bs_refresh_block_async(uint64 i_rid,
 
     bool ismissing = false;
 
-    LOG(lgr, 6, "bs_refresh_block_async " << rname << ' ' << entry);
+    LOG(lgr, 6, m_instname << ' '
+        << "bs_refresh_block_async " << rname << ' ' << entry);
 
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
@@ -643,7 +645,7 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
     string rname = ridname(i_rid);
     string rpath = blockpath(rname);
 
-    LOG(lgr, 6, "bs_refresh_finish " << rname);
+    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
@@ -918,7 +920,7 @@ FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
             EdgeMap::iterator end = m_prevmap.upper_bound(nr);
             for (; kit != end; ++kit)
             {
-                LOG(lgr, 8, "adding kid " << *kit->second);
+                LOG(lgr, 8, m_instname << ' ' << "adding kid " << *kit->second);
                 kids.insert(kit->second->m_root);
             }
 
@@ -926,7 +928,7 @@ FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
             if (!kids.empty())
             {
                 // Remove the parent from the set.
-                LOG(lgr, 8, "removing parent " << nr);
+                LOG(lgr, 8, m_instname << ' ' << "removing parent " << nr);
                 seeds.erase(nr);
 
                 // Insert the kids instead.
@@ -1036,7 +1038,7 @@ FSBlockStore::purge_uncommitted()
         throwstream(InternalError, FILELINE
                     << "LRU block on list is more recent then MARK");
 
-    LOG(lgr, 6, "purge uncommitted: " << eh->m_name);
+    LOG(lgr, 6, m_instname << ' ' << "purge uncommitted: " << eh->m_name);
 
     // Remove from LRU list.
     m_lru.pop_back();

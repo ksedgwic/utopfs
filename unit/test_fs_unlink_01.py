@@ -27,7 +27,10 @@ class Test_fs_unlink_01:
 
     # Create the filesystem
     bsargs = CONFIG.BSARGS(self.bspath)
-    self.bs = utp.BlockStore.create(CONFIG.BSTYPE, CONFIG.BSSIZE, bsargs)
+    self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
+                                    "rootbs",
+                                    CONFIG.BSSIZE,
+                                    bsargs)
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
@@ -69,7 +72,7 @@ class Test_fs_unlink_01:
 
     # Now mount it again.
     bsargs = CONFIG.BSARGS(self.bspath)
-    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, bsargs)
+    self.bs = utp.BlockStore.open(CONFIG.BSTYPE, "rootbs", bsargs)
     self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs,
                                    "", "", CONFIG.FSARGS)
 

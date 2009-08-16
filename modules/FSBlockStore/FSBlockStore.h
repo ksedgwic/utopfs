@@ -82,7 +82,7 @@ class FSBS_EXP FSBlockStore : public utp::BlockStore
 public:
     static void destroy(utp::StringSeq const & i_args);
 
-    FSBlockStore();
+    FSBlockStore(std::string const & i_instname);
 
     virtual ~FSBlockStore();
 
@@ -176,6 +176,8 @@ private:
     typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
     typedef std::multimap<NodeRef, EdgeHandle> EdgeMap;
     typedef std::set<NodeRef> NodeRefSet;
+
+    std::string			m_instname;
 
     off_t				m_size;			// Total Size in Bytes
     off_t				m_committed;	// Committed Bytes (must be saved)
