@@ -37,4 +37,5 @@ include $(ROOTDIR)/modules/DefaultLogger/export.mk
 include $(ROOTDIR)/modules/FSBlockStore/export.mk
 include $(ROOTDIR)/modules/BDBBlockStore/export.mk
 include $(ROOTDIR)/modules/S3BlockStore/export.mk
+include $(ROOTDIR)/modules/VBlockStore/export.mk
 include $(ROOTDIR)/modules/UTFileSystem/export.mk

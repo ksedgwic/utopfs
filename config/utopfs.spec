@@ -85,6 +85,7 @@ install \
   modules/FSBlockStore/%{OBJDIR}/UTPFS-FSBS.so \
   modules/BDBBlockStore/%{OBJDIR}/UTPFS-BDBBS.so \
   modules/S3BlockStore/%{OBJDIR}/UTPFS-S3BS.so \
+  modules/VBlockStore/%{OBJDIR}/UTPFS-VBS.so \
   modules/UTFileSystem/%{OBJDIR}/UTPFS-UTFS.so \
 $RPM_BUILD_ROOT%{_libdir}
 
@@ -95,6 +96,7 @@ pushd $RPM_BUILD_ROOT%{_libdir}
   ln -sf UTPFS-FSBS.so libUTPFS-FSBS.so
   ln -sf UTPFS-BDBBS.so libUTPFS-BDBBS.so
   ln -sf UTPFS-S3BS.so libUTPFS-S3BS.so
+  ln -sf UTPFS-VBS.so libUTPFS-VBS.so
   ln -sf UTPFS-UTFS.so libUTPFS-UTFS.so
 popd
 
@@ -136,12 +138,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/UTPFS-FSBS.so
 %{_libdir}/UTPFS-BDBBS.so
 %{_libdir}/UTPFS-S3BS.so
+%{_libdir}/UTPFS-VBS.so
 %{_libdir}/UTPFS-UTFS.so
 
 %{_libdir}/libUTPFS-DFLG.so
 %{_libdir}/libUTPFS-FSBS.so
 %{_libdir}/libUTPFS-BDBBS.so
 %{_libdir}/libUTPFS-S3BS.so
+%{_libdir}/libUTPFS-VBS.so
 %{_libdir}/libUTPFS-UTFS.so
 
 %{_bindir}/utopfs
