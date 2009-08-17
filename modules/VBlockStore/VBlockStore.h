@@ -2,7 +2,7 @@
 #define VBlockStore_h__
 
 /// @file VBlockStore.h
-/// FileSystem BlockStore Instance.
+/// Virtual BlockStore.
 
 #include <fstream>
 #include <list>
@@ -17,6 +17,7 @@
 #include "RC.h"
 
 #include "vbsexp.h"
+#include "vbsfwd.h"
 
 namespace VBS {
 
@@ -98,7 +99,10 @@ public:
 protected:
 
 private:
+    typedef std::map<std::string, VBSChildHandle> VBSChildMap;
+
     std::string				m_instname;
+    VBSChildMap				m_child;
 };
 
 } // namespace VBS

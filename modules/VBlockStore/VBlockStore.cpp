@@ -1,6 +1,7 @@
 #include "Log.h"
 #include "BlockStoreFactory.h"
 
+#include "VBSChild.h"
 #include "VBlockStore.h"
 #include "vbslog.h"
 
@@ -41,17 +42,19 @@ VBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_open unimplemented");
+    LOG(lgr, 4, m_instname << ' ' << "CTOR");
+
+    for (size_t ii = 0; ii < i_args.size(); ++ii)
+    {
+        string const & instname = i_args[ii];
+        m_child.insert(make_pair(instname, new VBSChild(instname)));
+    }
 }
 
 void
 VBlockStore::bs_close()
     throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_close unimplemented");
-
     // Unregister this instance.
     try
     {

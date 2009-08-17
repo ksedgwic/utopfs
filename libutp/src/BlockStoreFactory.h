@@ -58,14 +58,14 @@ public:
               NotFoundError,
               NotUniqueError);
 
-    /// Find open blockstore.
+    /// Lookup open blockstore.
     ///
     /// @param[in] i_instname BlockStore instance name.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified blockstore was not found.
     ///
-    static BlockStoreHandle find(std::string const & i_instname)
+    static BlockStoreHandle lookup(std::string const & i_instname)
         throw(InternalError,
               NotFoundError);
 

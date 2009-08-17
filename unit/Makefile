@@ -3,6 +3,7 @@ ROOTDIR =	..
 include $(ROOTDIR)/config/define.mk
 
 PYTESTS =	\
+			test_vbs_open_01.py \
 			test_bs_unopened.py \
 			test_bs_basic_01.py \
 			test_bs_refresh_01.py \

@@ -146,11 +146,11 @@ BlockStoreFactory::open(string const & i_factname,
 }
 
 BlockStoreHandle
-BlockStoreFactory::find(string const & i_instname)
+BlockStoreFactory::lookup(string const & i_instname)
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 4, "find" << ' ' << i_instname);
+    LOG(lgr, 4, "lookup" << ' ' << i_instname);
 
     ACE_Guard<ACE_Thread_Mutex> guard(g_bsfmutex);
 

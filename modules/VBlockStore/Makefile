@@ -3,6 +3,7 @@ ROOTDIR =	../..
 include $(ROOTDIR)/config/define.mk
 
 LIBSRC += 	\
+			VBSChild.cpp \
 			VBlockStore.cpp \
 			VBSFactory.cpp \
 			vbslog.cpp \
