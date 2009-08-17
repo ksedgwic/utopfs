@@ -24,6 +24,8 @@ public:
 
     virtual ~VBSChild();
 
+    utp::BlockStoreHandle const & bs() const { return m_bsh; }
+
 protected:
 
 private:

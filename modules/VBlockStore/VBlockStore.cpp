@@ -47,7 +47,7 @@ VBlockStore::bs_open(StringSeq const & i_args)
     for (size_t ii = 0; ii < i_args.size(); ++ii)
     {
         string const & instname = i_args[ii];
-        m_child.insert(make_pair(instname, new VBSChild(instname)));
+        m_children.insert(make_pair(instname, new VBSChild(instname)));
     }
 }
 
@@ -77,8 +77,28 @@ void
 VBlockStore::bs_stat(Stat & o_stat)
     throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_stat unimplemented");
+    // For now we presume that the stat call doesn't block and we just
+    // call all of the children directly ...
+
+    // Start by setting the values to zero.
+    o_stat.bss_size = 0;
+    o_stat.bss_free = 0;
+
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+    {
+        // Make the stat request on the child.
+        Stat stat;
+        it->second->bs()->bs_stat(stat);
+
+        // Is this bigger then what we have so far?
+        if (o_stat.bss_size < stat.bss_size)
+        {
+            o_stat.bss_size = stat.bss_size;
+            o_stat.bss_free = stat.bss_free;
+        }
+    }
 }
 
 void

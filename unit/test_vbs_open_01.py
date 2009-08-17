@@ -8,7 +8,7 @@ import utp.BlockStore
 import CONFIG
 from lenhack import *
 
-class Test_bs_refresh_01:
+class Test_vbs_open_01:
 
   def setup_class(self):
     pass
