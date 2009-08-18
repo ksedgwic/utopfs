@@ -106,5 +106,4 @@ class Test_bs_size_03:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)

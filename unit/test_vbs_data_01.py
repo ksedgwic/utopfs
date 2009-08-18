@@ -76,7 +76,6 @@ class Test_vbs_data_01:
     self.vbs = None
 
     self.bs1.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(bspath1)
 
   def test_data_two_children(self):
@@ -144,7 +143,5 @@ class Test_vbs_data_01:
     self.bs2 = None
     self.bs1.bs_close()
     self.bs1 = None
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(bspath2)
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(bspath1)

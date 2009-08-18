@@ -32,7 +32,6 @@ class TestUnopenedBlockStore:
                                CONFIG.BSSIZE,
                                CONFIG.BSARGS(self.bspath))
     bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
     
   def test_should_be_able_to_create_close_and_open_a_block_store(self):
@@ -53,7 +52,6 @@ class TestUnopenedBlockStore:
                               CONFIG.BSARGS(self.bspath))
     b = bs1.bs_get_block(k)
     bs1.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
     
     assert b == v
@@ -77,6 +75,5 @@ class TestUnopenedBlockStore:
 
     bs.bs_close()
 
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 

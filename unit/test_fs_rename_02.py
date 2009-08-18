@@ -40,7 +40,6 @@ class Test_fs_rename_02:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_rename(self):

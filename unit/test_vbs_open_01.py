@@ -32,9 +32,7 @@ class Test_vbs_open_01:
     vbs.bs_close()
 
     bs1.bs_close()
-    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
-    CONFIG.unmap_bs("rootbs")
 
   def test_open_two_children(self):
     bspath1 = "vbs_open_01_c1"
@@ -60,14 +58,11 @@ class Test_vbs_open_01:
                               ("child1", "child2"))
 
     vbs.bs_close()
-    CONFIG.unmap_bs("rootbs")
 
     bs2.bs_close()
-    CONFIG.unmap_bs("child2")
     CONFIG.remove_bs(bspath2)
 
     bs1.bs_close()
-    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
 
 
@@ -103,18 +98,14 @@ class Test_vbs_open_01:
                               ("child1", "child2", "child3"))
 
     vbs.bs_close()
-    CONFIG.unmap_bs("rootbs")
 
     bs3.bs_close()
-    CONFIG.unmap_bs("child3")
     CONFIG.remove_bs(bspath3)
 
     bs2.bs_close()
-    CONFIG.unmap_bs("child2")
     CONFIG.remove_bs(bspath2)
 
     bs1.bs_close()
-    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
 
   def test_open_with_missing(self):
@@ -144,9 +135,7 @@ class Test_vbs_open_01:
                    ("child1", "child2", "child3"))
 
     bs3.bs_close()
-    CONFIG.unmap_bs("child3")
     CONFIG.remove_bs(bspath3)
 
     bs1.bs_close()
-    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)

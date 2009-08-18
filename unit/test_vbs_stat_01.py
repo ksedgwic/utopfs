@@ -66,10 +66,8 @@ class Test_vbs_stat_01:
     self.vbs = None
 
     self.bs1.bs_close()
-    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
 
-    CONFIG.unmap_bs("rootbs")
 
   def test_stat_two_children(self):
     bspath1 = "vbs_stat_01_c1"
@@ -126,8 +124,5 @@ class Test_vbs_stat_01:
     self.bs2 = None
     self.bs1.bs_close()
     self.bs1 = None
-    CONFIG.unmap_bs("child2")
     CONFIG.remove_bs(bspath2)
-    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
-    CONFIG.unmap_bs("rootbs")

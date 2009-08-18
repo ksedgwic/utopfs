@@ -76,7 +76,6 @@ class Test_fs_readdir_01:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_can_readdir_root(self):

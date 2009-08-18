@@ -21,7 +21,6 @@ class Test_bs_refresh_01:
     
   def teardown_class(self):
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_refresh_nostart(self):

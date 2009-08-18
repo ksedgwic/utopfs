@@ -40,7 +40,6 @@ class Test_fs_truncate_01:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_trucate(self):

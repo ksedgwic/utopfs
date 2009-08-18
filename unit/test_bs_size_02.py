@@ -93,7 +93,6 @@ class Test_bs_size_02:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_compact(self):
@@ -182,5 +181,4 @@ class Test_bs_size_02:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)

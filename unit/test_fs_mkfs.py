@@ -37,7 +37,6 @@ class Test_fs_mkfs:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
     
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_hasno_foodir(self):

@@ -54,7 +54,6 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_furthest_on_single(self):
@@ -89,7 +88,6 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_furthest_on_single_w_seed(self):
@@ -122,7 +120,6 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_furthest_on_single_w_miss(self):
@@ -153,7 +150,6 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_follow_on_empty(self):
@@ -188,7 +184,6 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_follow_on_single(self):
@@ -223,7 +218,6 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_follow_on_single_w_seed(self):
@@ -254,7 +248,6 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_follow_on_single_w_miss(self):
@@ -285,6 +278,5 @@ class Test_bs_head_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 

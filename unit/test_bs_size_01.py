@@ -71,7 +71,6 @@ class Test_bs_size_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_refresh_changes_free(self):
@@ -139,5 +138,4 @@ class Test_bs_size_01:
 
     # Close the blockstore.
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)

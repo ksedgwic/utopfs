@@ -19,7 +19,6 @@ class Test_bs_basic_01:
     
   def teardown_class(self):
     self.bs.bs_close()
-    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_put_and_get_block(self):    
