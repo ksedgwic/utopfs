@@ -26,6 +26,8 @@ public:
 
     utp::BlockStoreHandle const & bs() const { return m_bsh; }
 
+    void enqueue_put(VBSPutRequestHandle const & i_prh);
+
 protected:
 
 private:

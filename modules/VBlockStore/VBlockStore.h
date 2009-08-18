@@ -101,6 +101,10 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
+    // VBS Methods
+
+    void remove_request(VBSRequestHandle const & i_rh);
+
 protected:
 
 private:
@@ -109,6 +113,8 @@ private:
 
     std::string				m_instname;
     VBSChildMap				m_children;
+
+    ACE_Thread_Mutex		m_vbsmutex;
     VBSRequestSet			m_requests;
 };
 

@@ -45,6 +45,7 @@ VBlockStore::bs_open(StringSeq const & i_args)
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");
 
+    // Insert each of the child blockstores in our collection.
     for (size_t ii = 0; ii < i_args.size(); ++ii)
     {
         string const & instname = i_args[ii];
@@ -126,8 +127,29 @@ VBlockStore::bs_put_block_async(void const * i_keydata,
     throw(InternalError,
           ValueError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_put_block_async unimplemented");
+    // Create a VBSPutRequest.
+    VBSPutRequestHandle prh = new VBSPutRequest(*this,
+                                                i_keydata,
+                                                i_keysize,
+                                                i_blkdata,
+                                                i_blksize,
+                                                i_cmpl,
+                                                i_argp);
+
+    LOG(lgr, 6, m_instname << ' ' << "bs_put_block_async " << *prh);
+
+    // Insert this request in our request list.  We need to do this
+    // first in case the request completes synchrounously below.
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+        m_requests.insert(prh);
+    }
+
+    // Enqueue the request w/ all of the kids.
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+        it->second->enqueue_put(prh);
 }
 
 void
@@ -197,6 +219,18 @@ VBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
 {
     throwstream(InternalError, FILELINE
                 << "VBlockStore::bs_head_furthest_async unimplemented");
+}
+
+void
+VBlockStore::remove_request(VBSRequestHandle const & i_rh)
+{
+    LOG(lgr, 6, m_instname << ' ' << "remove_request " << *i_rh);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+    size_t nrm = m_requests.erase(i_rh);
+    if (nrm != 1)
+        throwstream(InternalError, FILELINE
+                    << "expected to remove one request, removed " << nrm);
 }
 
 } // namespace VBS

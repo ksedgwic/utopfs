@@ -22,6 +22,13 @@ VBSChild::~VBSChild()
 {
 }
 
+void
+VBSChild::enqueue_put(VBSPutRequestHandle const & i_prh)
+{
+    throwstream(InternalError, FILELINE
+                << "VBSChild::enqueue_put unimplemented");
+}
+
 } // namespace VBS
 
 // Local Variables:

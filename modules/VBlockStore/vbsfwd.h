@@ -8,6 +8,8 @@
 
 namespace VBS {
 
+class VBlockStore;
+
 class VBSChild;
 /// Handle to VBSChild object.
 typedef utp::RCPtr<VBSChild> VBSChildHandle;
@@ -15,6 +17,10 @@ typedef utp::RCPtr<VBSChild> VBSChildHandle;
 class VBSRequest;
 /// Handle to VBSRequest object.
 typedef utp::RCPtr<VBSRequest> VBSRequestHandle;
+
+class VBSPutRequest;
+/// Handle to VBSPutRequest object.
+typedef utp::RCPtr<VBSPutRequest> VBSPutRequestHandle;
 
 } // end namespace VBS
 

@@ -29,13 +29,14 @@ class Test_vbs_data_01:
 
   def test_data_single_child(self):
     bspath1 = "vbs_data_01_c1"
-    CONFIG.unmap_bs("rootbs")
+    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
     self.bs1 = utp.BlockStore.create(CONFIG.BSTYPE,
                                      "child1",
                                      CONFIG.BSSIZE,
                                      CONFIG.BSARGS(bspath1))
 
+    CONFIG.unmap_bs("rootbs")
     self.vbs = utp.BlockStore.open("VBS",
                                    "rootbs",
                                    ("child1",))
@@ -80,7 +81,7 @@ class Test_vbs_data_01:
 
   def test_data_two_children(self):
     bspath1 = "vbs_data_01_c1"
-    CONFIG.unmap_bs("rootbs")
+    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
     self.bs1 = utp.BlockStore.create(CONFIG.BSTYPE,
                                      "child1",
@@ -89,7 +90,7 @@ class Test_vbs_data_01:
 
     # Second child is twice as big
     bspath2 = "vbs_data_01_c2"
-    CONFIG.unmap_bs("rootbs")
+    CONFIG.unmap_bs("child2")
     CONFIG.remove_bs(bspath2)
     self.bs2 = utp.BlockStore.create(CONFIG.BSTYPE,
                                      "child2",
@@ -97,6 +98,7 @@ class Test_vbs_data_01:
                                      CONFIG.BSARGS(bspath2))
 
 
+    CONFIG.unmap_bs("rootbs")
     self.vbs = utp.BlockStore.open("VBS",
                                    "rootbs",
                                    ("child1", "child2"))
