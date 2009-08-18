@@ -17,6 +17,7 @@ class Test_fs_mkfs:
     self.bspath = "fs_mkfs.bs"
 
     # Remove any prexisting blockstore.
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     bsargs = CONFIG.BSARGS(self.bspath)
@@ -36,6 +37,7 @@ class Test_fs_mkfs:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
     
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_hasno_foodir(self):

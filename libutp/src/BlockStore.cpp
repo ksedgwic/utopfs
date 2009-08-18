@@ -57,6 +57,7 @@ class GetCompletion
 public:
     virtual void bg_complete(void const * i_keydata,
                              size_t i_keysize,
+                             void const * i_argp,
                              size_t i_blksize)
     {
         m_size = i_blksize;
@@ -65,6 +66,7 @@ public:
 
     virtual void bg_error(void const * i_keydata,
                           size_t i_keysize,
+                          void const * i_argp,
                           Exception const & i_ex)
     {
         m_except = i_ex.clone();
@@ -83,13 +85,15 @@ class PutCompletion
 {
 public:
     virtual void bp_complete(void const * i_keydata,
-                             size_t i_keysize)
+                             size_t i_keysize,
+                             void const * i_argp)
     {
         done();
     }
 
     virtual void bp_error(void const * i_keydata,
                           size_t i_keysize,
+                          void const * i_argp,
                           Exception const & i_ex)
     {
         m_except = i_ex.clone();
@@ -109,14 +113,16 @@ public:
     {}
 
     virtual void br_complete(void const * i_keydata,
-                             size_t i_keysize)
+                             size_t i_keysize,
+                             void const * i_argp)
     {
         if (--m_count == 0)
             done();
     }
 
     virtual void br_missing(void const * i_keydata,
-                            size_t i_keysize)
+                            size_t i_keysize,
+                            void const * i_argp)
     {
         m_missing.push_back(OctetSeq((uint8 const *) i_keydata,
                                      (uint8 const *) i_keydata + i_keysize));
@@ -134,12 +140,14 @@ class InsertCompletion
     , public BlockingCompletion
 {
 public:
-    virtual void shi_complete(SignedHeadNode const & i_shn)
+    virtual void shi_complete(SignedHeadNode const & i_shn,
+                              void const * i_argp)
     {
         done();
     }
 
     virtual void shi_error(SignedHeadNode const & i_shn,
+                           void const * i_argp,
                            Exception const & i_exp)
     {
         m_except = i_exp.clone();
@@ -156,17 +164,19 @@ public:
         : m_nodes(o_nodes)
     {}
 
-    virtual void sht_node(SignedHeadNode const & i_shn)
+    virtual void sht_node(void const * i_argp,
+                          SignedHeadNode const & i_shn)
     {
         m_nodes.push_back(i_shn);
     }
 
-    virtual void sht_complete()
+    virtual void sht_complete(void const * i_argp)
     {
         done();
     }
 
-    virtual void sht_error(Exception const & i_exp)
+    virtual void sht_error(void const * i_argp,
+                           Exception const & i_exp)
     {
         m_except = i_exp.clone();
         done();
@@ -197,7 +207,7 @@ BlockStore::bs_get_block(void const * i_keydata,
     GetCompletion gc;
 
     // Initiate the asynchrounous get.
-    bs_get_block_async(i_keydata, i_keysize, o_outbuff, i_outsize, gc);
+    bs_get_block_async(i_keydata, i_keysize, o_outbuff, i_outsize, gc, NULL);
 
     // Wait for completion.
     gc.wait();
@@ -223,7 +233,7 @@ BlockStore::bs_put_block(void const * i_keydata,
     PutCompletion pc;
 
     // Initiate the asynchrounous get.
-    bs_put_block_async(i_keydata, i_keysize, i_blkdata, i_blksize, pc);
+    bs_put_block_async(i_keydata, i_keysize, i_blkdata, i_blksize, pc, NULL);
 
     // Wait for completion.
     pc.wait();
@@ -245,7 +255,8 @@ BlockStore::bs_refresh_blocks(uint64 i_rid,
 
     // Initiate all the refreshes asynchronously.
     for (unsigned i = 0; i < i_keys.size(); ++i)
-        bs_refresh_block_async(i_rid, &i_keys[i][0], i_keys[i].size(), rc);
+        bs_refresh_block_async(i_rid, &i_keys[i][0],
+                               i_keys[i].size(), rc, NULL);
 
     // Wait for completion.
     rc.wait();
@@ -263,7 +274,7 @@ BlockStore::bs_head_insert(SignedHeadNode const & i_shn)
     InsertCompletion ic;
 
     // Initiate the asynchronous insert.
-    bs_head_insert_async(i_shn, ic);
+    bs_head_insert_async(i_shn, ic, NULL);
 
     // Wait for completion.
     ic.wait();
@@ -283,7 +294,7 @@ BlockStore::bs_head_follow(SignedHeadNode const & i_seed,
     HeadTraversalCompletion htc(o_nodes);
 
     // Initiate the asynchronous insert.
-    bs_head_follow_async(i_seed, htc);
+    bs_head_follow_async(i_seed, htc, NULL);
 
     // Wait for completion.
     htc.wait();
@@ -303,7 +314,7 @@ BlockStore::bs_head_furthest(SignedHeadNode const & i_seed,
     HeadTraversalCompletion htc(o_nodes);
 
     // Initiate the asynchronous insert.
-    bs_head_furthest_async(i_seed, htc);
+    bs_head_furthest_async(i_seed, htc, NULL);
 
     // Wait for completion.
     htc.wait();

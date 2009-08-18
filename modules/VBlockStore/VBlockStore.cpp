@@ -1,9 +1,10 @@
 #include "Log.h"
 #include "BlockStoreFactory.h"
 
-#include "VBSChild.h"
 #include "VBlockStore.h"
+#include "VBSChild.h"
 #include "vbslog.h"
+#include "VBSRequest.h"
 
 using namespace std;
 using namespace utp;
@@ -58,7 +59,7 @@ VBlockStore::bs_close()
     // Unregister this instance.
     try
     {
-        BlockStoreFactory::remove(m_instname);
+        BlockStoreFactory::unmap(m_instname);
     }
     catch (InternalError const & ex)
     {
@@ -103,10 +104,11 @@ VBlockStore::bs_stat(Stat & o_stat)
 
 void
 VBlockStore::bs_get_block_async(void const * i_keydata,
-                                 size_t i_keysize,
-                                 void * o_buffdata,
-                                 size_t i_buffsize,
-                                 BlockGetCompletion & i_cmpl)
+                                size_t i_keysize,
+                                void * o_buffdata,
+                                size_t i_buffsize,
+                                BlockGetCompletion & i_cmpl,
+                                void const * i_argp)
     throw(InternalError,
           ValueError)
 {
@@ -116,10 +118,11 @@ VBlockStore::bs_get_block_async(void const * i_keydata,
 
 void
 VBlockStore::bs_put_block_async(void const * i_keydata,
-                                 size_t i_keysize,
-                                 void const * i_blkdata,
-                                 size_t i_blksize,
-                                 BlockPutCompletion & i_cmpl)
+                                size_t i_keysize,
+                                void const * i_blkdata,
+                                size_t i_blksize,
+                                BlockPutCompletion & i_cmpl,
+                                void const * i_argp)
     throw(InternalError,
           ValueError)
 {
@@ -138,9 +141,10 @@ VBlockStore::bs_refresh_start(uint64 i_rid)
 
 void
 VBlockStore::bs_refresh_block_async(uint64 i_rid,
-                                     void const * i_keydata,
-                                     size_t i_keysize,
-                                     BlockRefreshCompletion & i_cmpl)
+                                    void const * i_keydata,
+                                    size_t i_keysize,
+                                    BlockRefreshCompletion & i_cmpl,
+                                    void const * i_argp)
     throw(InternalError,
           NotFoundError)
 {
@@ -167,7 +171,8 @@ VBlockStore::bs_sync()
 
 void
 VBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
-                                   SignedHeadInsertCompletion & i_cmpl)
+                                  SignedHeadInsertCompletion & i_cmpl,
+                                  void const * i_argp)
     throw(InternalError)
 {
     throwstream(InternalError, FILELINE
@@ -176,7 +181,8 @@ VBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
 
 void
 VBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
-                                   SignedHeadTraverseFunc & i_func)
+                                  SignedHeadTraverseFunc & i_func,
+                                  void const * i_argp)
     throw(InternalError)
 {
     throwstream(InternalError, FILELINE
@@ -185,7 +191,8 @@ VBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
 
 void
 VBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
-                                     SignedHeadTraverseFunc & i_func)
+                                    SignedHeadTraverseFunc & i_func,
+                                    void const * i_argp)
     throw(InternalError)
 {
     throwstream(InternalError, FILELINE

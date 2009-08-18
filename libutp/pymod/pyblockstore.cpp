@@ -533,6 +533,38 @@ BlockStoreModule_open(PyObject *self, PyObject *i_args)
 }
 
 static PyObject *
+BlockStoreModule_lookup(PyObject *self, PyObject *i_args)
+{
+    char * instname;
+    if (!PyArg_ParseTuple(i_args, "s:lookup", &instname))
+		return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        return mkBlockStoreObject(BlockStoreFactory::lookup(instname));
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
+BlockStoreModule_unmap(PyObject *self, PyObject *i_args)
+{
+    char * instname;
+    if (!PyArg_ParseTuple(i_args, "s:unmap", &instname))
+		return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        BlockStoreFactory::unmap(instname);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
 BlockStoreModule_destroy(PyObject *self, PyObject *i_args)
 {
     char * name;
@@ -565,9 +597,11 @@ BlockStoreModule_destroy(PyObject *self, PyObject *i_args)
 }
 
 static PyMethodDef BlockStoreModule_methods[] = {
-	{"create",		BlockStoreModule_create,			METH_VARARGS},
-    {"open",		BlockStoreModule_open,				METH_VARARGS},
-    {"destroy",		BlockStoreModule_destroy,			METH_VARARGS},
+	{"create",			BlockStoreModule_create,			METH_VARARGS},
+    {"open",			BlockStoreModule_open,				METH_VARARGS},
+    {"lookup",			BlockStoreModule_lookup,			METH_VARARGS},
+    {"unmap",			BlockStoreModule_unmap,				METH_VARARGS},
+    {"destroy",			BlockStoreModule_destroy,			METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

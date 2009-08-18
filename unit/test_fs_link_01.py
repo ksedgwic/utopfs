@@ -20,6 +20,7 @@ class Test_fs_link_01:
     self.bspath = "fs_link_01.bs"
 
     # Remove any prexisting blockstore.
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
@@ -39,6 +40,7 @@ class Test_fs_link_01:
     self.fs = None
     utp.FileSystem.loglevel(olvl)
 
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_link(self):

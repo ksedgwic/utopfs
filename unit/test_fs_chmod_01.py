@@ -17,9 +17,11 @@ class Test_fs_chmod_01:
     self.bspath = "fs_chmod_01.bs"
 
     # Remove any prexisting blockstore.
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def teardown_class(self):
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_chmod(self):

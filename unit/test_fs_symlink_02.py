@@ -20,11 +20,13 @@ class Test_fs_symlink_02:
     self.bspath = "bs_symlink_02.bs"
 
   def teardown_class(self):
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_symlink(self):
 
     # Remove any prexisting blockstore.
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem

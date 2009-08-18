@@ -1,4 +1,3 @@
-Add unit tests for BlockStore HEAD data persistence.
 
 Implement real S3BS bs_head_{insert,follow,further}.
 

@@ -11,6 +11,7 @@ class TestUnopenedBlockStore:
 
   def setup_class(self):
     self.bspath = "bs_unopened.bs"
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def teardown_class(self):
@@ -24,17 +25,18 @@ class TestUnopenedBlockStore:
                    CONFIG.BSARGS("noexist"))
     
   def test_create(self):    
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
-
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
                                "rootbs",
                                CONFIG.BSSIZE,
                                CONFIG.BSARGS(self.bspath))
     bs.bs_close()
-
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
     
   def test_should_be_able_to_create_close_and_open_a_block_store(self):
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
                                "rootbs",
@@ -51,12 +53,14 @@ class TestUnopenedBlockStore:
                               CONFIG.BSARGS(self.bspath))
     b = bs1.bs_get_block(k)
     bs1.bs_close()
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
     
     assert b == v
   
   
   def test_create_on_prexisting_should_throw_error(self):
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     bs = utp.BlockStore.create(CONFIG.BSTYPE,
@@ -73,5 +77,6 @@ class TestUnopenedBlockStore:
 
     bs.bs_close()
 
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 

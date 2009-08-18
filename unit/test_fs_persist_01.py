@@ -17,10 +17,12 @@ class Test_fs_persist_01:
     self.bspath = "fs_persist_01.bs"
 
   def teardown_class(self):
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_persistence(self):
     # Remove any prexisting blockstore.
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem

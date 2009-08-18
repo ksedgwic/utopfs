@@ -12,6 +12,10 @@ class VBSChild;
 /// Handle to VBSChild object.
 typedef utp::RCPtr<VBSChild> VBSChildHandle;
 
+class VBSRequest;
+/// Handle to VBSRequest object.
+typedef utp::RCPtr<VBSRequest> VBSRequestHandle;
+
 } // end namespace VBS
 
 // Local Variables:

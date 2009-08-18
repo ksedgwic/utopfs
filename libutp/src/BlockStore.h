@@ -240,10 +240,12 @@ public:
     public:
         virtual void bg_complete(void const * i_keydata,
                                  size_t i_keysize,
+                                 void const * i_argp,
                                  size_t i_blksize) = 0;
 
         virtual void bg_error(void const * i_keydata,
                               size_t i_keysize,
+                              void const * i_argp,
                               Exception const & i_exp) = 0;
     };
 
@@ -253,7 +255,8 @@ public:
                                     size_t i_keysize,
                                     void * o_buffdata,
                                     size_t i_buffsize,
-                                    BlockGetCompletion & i_cmpl)
+                                    BlockGetCompletion & i_cmpl,
+                                    void const * i_argp)
         throw(InternalError,
               ValueError) = 0;
 
@@ -263,10 +266,12 @@ public:
     {
     public:
         virtual void bp_complete(void const * i_keydata,
-                                 size_t i_keysize) = 0;
+                                 size_t i_keysize,
+                                 void const * i_argp) = 0;
 
         virtual void bp_error(void const * i_keydata,
                               size_t i_keysize,
+                              void const * i_argp,
                               Exception const & i_exp) = 0;
     };
 
@@ -276,7 +281,8 @@ public:
                                     size_t i_keysize,
                                     void const * i_blkdata,
                                     size_t i_blksize,
-                                    BlockPutCompletion & i_cmpl)
+                                    BlockPutCompletion & i_cmpl,
+                                    void const * i_argp)
         throw(InternalError,
               ValueError) = 0;
 
@@ -286,10 +292,12 @@ public:
     {
     public:
         virtual void br_complete(void const * i_keydata,
-                                 size_t i_keysize) = 0;
+                                 size_t i_keysize,
+                                 void const * i_argp) = 0;
 
         virtual void br_missing(void const * i_keydata,
-                                size_t i_keysize) = 0;
+                                size_t i_keysize,
+                                void const * i_argp) = 0;
     };
 
     /// Refresh a block asynchronously, callback when done.
@@ -305,7 +313,8 @@ public:
     virtual void bs_refresh_block_async(utp::uint64 i_rid,
                                         void const * i_keydata,
                                         size_t i_keysize,
-                                        BlockRefreshCompletion & i_cmpl)
+                                        BlockRefreshCompletion & i_cmpl,
+                                        void const * i_argp)
         throw(InternalError,
               NotFoundError) = 0;
         
@@ -315,9 +324,11 @@ public:
     class SignedHeadInsertCompletion
     {
     public:
-        virtual void shi_complete(SignedHeadNode const & i_shn) = 0;
+        virtual void shi_complete(SignedHeadNode const & i_shn,
+                                  void const * i_argp) = 0;
 
         virtual void shi_error(SignedHeadNode const & i_shn,
+                               void const * i_argp,
                                Exception const & i_exp) = 0;
     };
 
@@ -329,7 +340,8 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     ///
     virtual void bs_head_insert_async(SignedHeadNode const & i_shn,
-                                      SignedHeadInsertCompletion & i_cmpl)
+                                      SignedHeadInsertCompletion & i_cmpl,
+                                      void const * i_argp)
         throw(InternalError) = 0;
 
     /// Callback interface for SignedHeadNode follow and furthest
@@ -339,13 +351,15 @@ public:
     {
     public:
         // Called on each node in the traversal.
-        virtual void sht_node(SignedHeadNode const & i_shn) = 0;
+        virtual void sht_node(void const * i_argp,
+                              SignedHeadNode const & i_shn) = 0;
 
         // Called when the traversal is complete.
-        virtual void sht_complete() = 0;
+        virtual void sht_complete(void const * i_argp) = 0;
 
         // Called instead if there is an error.
-        virtual void sht_error(Exception const & i_exp) = 0;
+        virtual void sht_error(void const * i_argp,
+                               Exception const & i_exp) = 0;
     };
 
     /// Traverse all nodes which follow a node.
@@ -356,7 +370,8 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     ///
     virtual void bs_head_follow_async(SignedHeadNode const & i_seed,
-                                      SignedHeadTraverseFunc & i_func)
+                                      SignedHeadTraverseFunc & i_func,
+                                      void const * i_argp)
         throw(InternalError) = 0;
 
     /// Traverse only the extreme heads which follow a node.
@@ -367,7 +382,8 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     ///
     virtual void bs_head_furthest_async(SignedHeadNode const & i_seed,
-                                        SignedHeadTraverseFunc & i_func)
+                                        SignedHeadTraverseFunc & i_func,
+                                        void const * i_argp)
         throw(InternalError) = 0;
 };
 

@@ -3,10 +3,11 @@ ROOTDIR =	../..
 include $(ROOTDIR)/config/define.mk
 
 LIBSRC += 	\
-			VBSChild.cpp \
 			VBlockStore.cpp \
+			VBSChild.cpp \
 			VBSFactory.cpp \
 			vbslog.cpp \
+			VBSRequest.cpp \
 			$(NULL)
 
 MODSO =		UTPFS-VBS

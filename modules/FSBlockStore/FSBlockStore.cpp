@@ -343,7 +343,7 @@ FSBlockStore::bs_close()
     // Unregister this instance.
     try
     {
-        BlockStoreFactory::remove(m_instname);
+        BlockStoreFactory::unmap(m_instname);
     }
     catch (InternalError const & ex)
     {
@@ -379,7 +379,8 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void * o_buffdata,
                                  size_t i_buffsize,
-                                 BlockGetCompletion & i_cmpl)
+                                 BlockGetCompletion & i_cmpl,
+                                 void const * i_argp)
     throw(InternalError,
           ValueError)
 {
@@ -441,11 +442,11 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
             // Release the mutex before the completion function.
         }
 
-        i_cmpl.bg_complete(i_keydata, i_keysize, bytes_read);
+        i_cmpl.bg_complete(i_keydata, i_keysize, i_argp, bytes_read);
     }
     catch (Exception const & ex)
     {
-        i_cmpl.bg_error(i_keydata, i_keysize, ex);
+        i_cmpl.bg_error(i_keydata, i_keysize, i_argp, ex);
     }
 }
 
@@ -454,7 +455,8 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void const * i_blkdata,
                                  size_t i_blksize,
-                                 BlockPutCompletion & i_cmpl)
+                                 BlockPutCompletion & i_cmpl,
+                                 void const * i_argp)
     throw(InternalError,
           ValueError)
 {
@@ -542,11 +544,11 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
             // Release the mutex before the completion function.
         }
 
-        i_cmpl.bp_complete(i_keydata, i_keysize);
+        i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
     }
     catch (Exception const & ex)
     {
-        i_cmpl.bp_error(i_keydata, i_keysize, ex);
+        i_cmpl.bp_error(i_keydata, i_keysize, i_argp, ex);
     }
 }
 
@@ -593,7 +595,8 @@ void
 FSBlockStore::bs_refresh_block_async(uint64 i_rid,
                                      void const * i_keydata,
                                      size_t i_keysize,
-                                     BlockRefreshCompletion & i_cmpl)
+                                     BlockRefreshCompletion & i_cmpl,
+                                     void const * i_argp)
     throw(InternalError,
           NotFoundError)
 {
@@ -649,9 +652,9 @@ FSBlockStore::bs_refresh_block_async(uint64 i_rid,
     }
 
     if (ismissing)
-        i_cmpl.br_missing(i_keydata, i_keysize);
+        i_cmpl.br_missing(i_keydata, i_keysize, i_argp);
     else
-        i_cmpl.br_complete(i_keydata, i_keysize);
+        i_cmpl.br_complete(i_keydata, i_keysize, i_argp);
 }
         
 void
@@ -762,7 +765,8 @@ FSBlockStore::bs_sync()
 
 void
 FSBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
-                                   SignedHeadInsertCompletion & i_cmpl)
+                                   SignedHeadInsertCompletion & i_cmpl,
+                                   void const * i_argp)
     throw(InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
@@ -771,12 +775,13 @@ FSBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
 
     write_head(i_shn);
 
-    i_cmpl.shi_complete(i_shn);
+    i_cmpl.shi_complete(i_shn, i_argp);
 }
 
 void
 FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
-                                   SignedHeadTraverseFunc & i_func)
+                                   SignedHeadTraverseFunc & i_func,
+                                   void const * i_argp)
     throw(InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
@@ -819,14 +824,14 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                 // We need to call the traverse function on the
                 // children as well since they follow the seed.
                 //
-                i_func.sht_node(it->second->m_shn);
+                i_func.sht_node(i_argp, it->second->m_shn);
             }
         }
     }
 
     // If our seeds collection is empty, we are out of luck.
     if (seeds.empty())
-        i_func.sht_error(NotFoundError("no starting seed found"));
+        i_func.sht_error(i_argp, NotFoundError("no starting seed found"));
 
     // Replace elements of the seed set w/ their children.
     bool done ;
@@ -849,7 +854,7 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                 kids.insert(kit->second->m_root);
 
                 // Call the traverse function on the kid.
-                i_func.sht_node(kit->second->m_shn);
+                i_func.sht_node(i_argp, kit->second->m_shn);
             }
 
             // Were there kids?
@@ -869,12 +874,13 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
     }
     while (!done);
 
-    i_func.sht_complete();
+    i_func.sht_complete(i_argp);
 }
 
 void
 FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
-                                     SignedHeadTraverseFunc & i_func)
+                                     SignedHeadTraverseFunc & i_func,
+                                     void const * i_argp)
     throw(InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
@@ -917,7 +923,7 @@ FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
 
     // If our seeds collection is empty, we are out of luck.
     if (seeds.empty())
-        i_func.sht_error(NotFoundError("no starting seed found"));
+        i_func.sht_error(i_argp, NotFoundError("no starting seed found"));
 
     // Replace elements of the seed set w/ their children.
     bool done ;
@@ -968,10 +974,10 @@ FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
 
         // We just use the first matching node ...
         
-        i_func.sht_node(pos->second->m_shn);
+        i_func.sht_node(i_argp, pos->second->m_shn);
     }
 
-    i_func.sht_complete();
+    i_func.sht_complete(i_argp);
 }
 
 string 

@@ -12,6 +12,7 @@ class Test_bs_refresh_01:
 
   def setup_class(self):
     self.bspath = "bs_refresh_01"
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
     self.bs = utp.BlockStore.create(CONFIG.BSTYPE,
                                     "rootbs",
@@ -20,6 +21,7 @@ class Test_bs_refresh_01:
     
   def teardown_class(self):
     self.bs.bs_close()
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_refresh_nostart(self):

@@ -108,7 +108,8 @@ public:
                                     size_t i_keysize,
                                     void * o_outbuff,
                                     size_t i_outsize,
-                                    BlockGetCompletion & i_cmpl)
+                                    BlockGetCompletion & i_cmpl,
+                                    void const * i_argp)
         throw(utp::InternalError,
               utp::ValueError);
 
@@ -116,7 +117,8 @@ public:
                                     size_t i_keysize,
                                     void const * i_blkdata,
                                     size_t i_blksize,
-                                    BlockPutCompletion & i_cmpl)
+                                    BlockPutCompletion & i_cmpl,
+                                    void const * i_argp)
         throw(utp::InternalError,
               utp::ValueError);
 
@@ -127,7 +129,8 @@ public:
     virtual void bs_refresh_block_async(utp::uint64 i_rid,
                                         void const * i_keydata,
                                         size_t i_keysize,
-                                        BlockRefreshCompletion & i_cmpl)
+                                        BlockRefreshCompletion & i_cmpl,
+                                        void const * i_argp)
         throw(utp::InternalError,
               utp::NotFoundError);
         
@@ -139,15 +142,18 @@ public:
 		throw(utp::InternalError);
 
     virtual void bs_head_insert_async(utp::SignedHeadNode const & i_shn,
-                                      SignedHeadInsertCompletion & i_cmpl)
+                                      SignedHeadInsertCompletion & i_cmpl,
+                                      void const * i_argp)
         throw(utp::InternalError);
 
     virtual void bs_head_follow_async(utp::SignedHeadNode const & i_seed,
-                                      SignedHeadTraverseFunc & i_func)
+                                      SignedHeadTraverseFunc & i_func,
+                                      void const * i_argp)
         throw(utp::InternalError);
 
     virtual void bs_head_furthest_async(utp::SignedHeadNode const & i_seed,
-                                        SignedHeadTraverseFunc & i_func)
+                                        SignedHeadTraverseFunc & i_func,
+                                        void const * i_argp)
         throw(utp::InternalError);
 
 protected:

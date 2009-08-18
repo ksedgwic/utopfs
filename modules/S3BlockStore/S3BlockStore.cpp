@@ -837,7 +837,7 @@ S3BlockStore::bs_close()
     // Unregister this instance.
     try
     {
-        BlockStoreFactory::remove(m_instname);
+        BlockStoreFactory::unmap(m_instname);
     }
     catch (InternalError const & ex)
     {
@@ -869,7 +869,8 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void * o_buffdata,
                                  size_t i_buffsize,
-                                 BlockGetCompletion & i_cmpl)
+                                 BlockGetCompletion & i_cmpl,
+                                 void const * i_argp)
     throw(InternalError,
           ValueError)
 {
@@ -925,11 +926,11 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
             // Release the mutex before the completion function.
         }
 
-        i_cmpl.bg_complete(i_keydata, i_keysize, bytes_read);
+        i_cmpl.bg_complete(i_keydata, i_keysize, i_argp, bytes_read);
     }
     catch (Exception const & ex)
     {
-        i_cmpl.bg_error(i_keydata, i_keysize, ex);
+        i_cmpl.bg_error(i_keydata, i_keysize, i_argp, ex);
     }
 }
 
@@ -938,7 +939,8 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void const * i_blkdata,
                                  size_t i_blksize,
-                                 BlockPutCompletion & i_cmpl)
+                                 BlockPutCompletion & i_cmpl,
+                                 void const * i_argp)
     throw(InternalError,
           ValueError)
 {
@@ -1063,7 +1065,7 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
                     touch_entry(blkpath, mtime, size);
 
                     guard.release();
-                    i_cmpl.bp_complete(i_keydata, i_keysize);
+                    i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
                     return;
                 }
 
@@ -1079,7 +1081,7 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
     }
     catch (Exception const & ex)
     {
-        i_cmpl.bp_error(i_keydata, i_keysize, ex);
+        i_cmpl.bp_error(i_keydata, i_keysize, i_argp, ex);
     }
 }
 
@@ -1165,7 +1167,8 @@ void
 S3BlockStore::bs_refresh_block_async(uint64 i_rid,
                                      void const * i_keydata,
                                      size_t i_keysize,
-                                     BlockRefreshCompletion & i_cmpl)
+                                     BlockRefreshCompletion & i_cmpl,
+                                     void const * i_argp)
     throw(InternalError,
           NotFoundError)
 {
@@ -1221,7 +1224,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
         case S3StatusErrorNoSuchKey:
             // Block is missing.
             guard.release();
-            i_cmpl.br_missing(i_keydata, i_keysize);
+            i_cmpl.br_missing(i_keydata, i_keysize, i_argp);
             return;
             
         case S3StatusOK:
@@ -1234,7 +1237,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
                 touch_entry(blkpath, mtime, size);
 
                 guard.release();
-                i_cmpl.br_complete(i_keydata, i_keysize);
+                i_cmpl.br_complete(i_keydata, i_keysize, i_argp);
                 return;
             }
 
@@ -1368,7 +1371,8 @@ S3BlockStore::bs_sync()
 
 void
 S3BlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
-                                   SignedHeadInsertCompletion & i_cmpl)
+                                   SignedHeadInsertCompletion & i_cmpl,
+                                   void const * i_argp)
     throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
@@ -1383,17 +1387,18 @@ S3BlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
         string buf;
         i_shn.SerializeToString(&buf);
         bs_put_block(key.data(), key.size(), buf.data(), buf.size());
-        i_cmpl.shi_complete(i_shn);
+        i_cmpl.shi_complete(i_shn, i_argp);
     }
     catch (Exception const & i_ex)
     {
-        i_cmpl.shi_error(i_shn, i_ex);
+        i_cmpl.shi_error(i_shn, i_argp, i_ex);
     }
 }
 
 void
 S3BlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
-                                   SignedHeadTraverseFunc & i_func)
+                                   SignedHeadTraverseFunc & i_func,
+                                   void const * i_argp)
     throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
@@ -1409,18 +1414,19 @@ S3BlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
         size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadNode shn;
         shn.ParseFromArray(buf, sz);
-        i_func.sht_node(shn);
-        i_func.sht_complete();
+        i_func.sht_node(i_argp, shn);
+        i_func.sht_complete(i_argp);
     }
     catch (Exception const & i_ex)
     {
-        i_func.sht_error(i_ex);
+        i_func.sht_error(i_argp, i_ex);
     }
 }
 
 void
 S3BlockStore::bs_head_furthest_async(SignedHeadNode const & i_seed,
-                                     SignedHeadTraverseFunc & i_func)
+                                     SignedHeadTraverseFunc & i_func,
+                                     void const * i_argp)
     throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
@@ -1436,12 +1442,12 @@ S3BlockStore::bs_head_furthest_async(SignedHeadNode const & i_seed,
         size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadNode shn;
         shn.ParseFromArray(buf, sz);
-        i_func.sht_node(shn);
-        i_func.sht_complete();
+        i_func.sht_node(i_argp, shn);
+        i_func.sht_complete(i_argp);
     }
     catch (Exception const & i_ex)
     {
-        i_func.sht_error(i_ex);
+        i_func.sht_error(i_argp, i_ex);
     }
         
 }

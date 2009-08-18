@@ -8,7 +8,7 @@ import utp.BlockStore
 import CONFIG
 from lenhack import *
 
-class Test_vbs_stat_01:
+class Test_vbs_data_01:
 
   def setup_class(self):
     self.bs1 = None
@@ -27,24 +27,31 @@ class Test_vbs_stat_01:
       self.bs1.bs_close()
       self.bs1 = None
 
-  def test_stat_single_child(self):
-    bspath1 = "vbs_stat_01_c1"
-    CONFIG.unmap_bs("child1")
+  def test_data_single_child(self):
+    bspath1 = "vbs_data_01_c1"
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(bspath1)
     self.bs1 = utp.BlockStore.create(CONFIG.BSTYPE,
                                      "child1",
                                      CONFIG.BSSIZE,
                                      CONFIG.BSARGS(bspath1))
 
-    CONFIG.unmap_bs("rootbs")
     self.vbs = utp.BlockStore.open("VBS",
                                    "rootbs",
                                    ("child1",))
 
-    # Check the blockstore stats.
-    bss = self.vbs.bs_stat();
-    assert bss.bss_size == CONFIG.BSSIZE
-    assert bss.bss_free == CONFIG.BSSIZE
+    # Put a block of data.
+    key1 = buffer("key1")
+    val1 = buffer("val1")
+    self.vbs.bs_put_block(key1, val1)
+
+    # Retrieve the block.
+    blk1 = self.vbs.bs_get_block(key1)
+    assert blk1 == val1
+
+    # Test block that doesn't exist.
+    key2 = buffer("key2")
+    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
 
     # Close and reopen everything.
     self.vbs.bs_close()
@@ -54,26 +61,27 @@ class Test_vbs_stat_01:
                                    CONFIG.BSARGS(bspath1))
     self.vbs = utp.BlockStore.open("VBS",
                                    "rootbs",
-                                   ("child1",))
+                                   ("child1", "child2"))
 
-    # Check the blockstore stats again.
-    bss = self.vbs.bs_stat();
-    assert bss.bss_size == CONFIG.BSSIZE
-    assert bss.bss_free == CONFIG.BSSIZE
+    # Retrieve the block.
+    blk1 = self.vbs.bs_get_block(key1)
+    assert blk1 == val1
+
+    # Test block that doesn't exist.
+    key2 = buffer("key2")
+    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
 
     # Close for good.
     self.vbs.bs_close()
     self.vbs = None
 
     self.bs1.bs_close()
-    CONFIG.unmap_bs("child1")
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(bspath1)
 
+  def test_data_two_children(self):
+    bspath1 = "vbs_data_01_c1"
     CONFIG.unmap_bs("rootbs")
-
-  def test_stat_two_children(self):
-    bspath1 = "vbs_stat_01_c1"
-    CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
     self.bs1 = utp.BlockStore.create(CONFIG.BSTYPE,
                                      "child1",
@@ -81,8 +89,8 @@ class Test_vbs_stat_01:
                                      CONFIG.BSARGS(bspath1))
 
     # Second child is twice as big
-    bspath2 = "vbs_stat_01_c2"
-    CONFIG.unmap_bs("child2")
+    bspath2 = "vbs_data_01_c2"
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(bspath2)
     self.bs2 = utp.BlockStore.create(CONFIG.BSTYPE,
                                      "child2",
@@ -90,15 +98,22 @@ class Test_vbs_stat_01:
                                      CONFIG.BSARGS(bspath2))
 
 
-    CONFIG.unmap_bs("rootbs")
     self.vbs = utp.BlockStore.open("VBS",
                                    "rootbs",
                                    ("child1", "child2"))
 
-    # Check the blockstore stats.
-    bss = self.vbs.bs_stat();
-    assert bss.bss_size == 2 * CONFIG.BSSIZE
-    assert bss.bss_free == 2 * CONFIG.BSSIZE
+    # Put a block of data.
+    key1 = buffer("key1")
+    val1 = buffer("val1")
+    self.vbs.bs_put_block(key1, val1)
+
+    # Retrieve the block.
+    blk1 = self.vbs.bs_get_block(key1)
+    assert blk1 == val1
+
+    # Test block that doesn't exist.
+    key2 = buffer("key2")
+    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
 
     # Close and reopen everything.
     self.vbs.bs_close()
@@ -114,10 +129,13 @@ class Test_vbs_stat_01:
                                    "rootbs",
                                    ("child1", "child2"))
 
-    # Check the blockstore stats again.
-    bss = self.vbs.bs_stat();
-    assert bss.bss_size == 2 * CONFIG.BSSIZE
-    assert bss.bss_free == 2 * CONFIG.BSSIZE
+    # Retrieve the block.
+    blk1 = self.vbs.bs_get_block(key1)
+    assert blk1 == val1
+
+    # Test block that doesn't exist.
+    key2 = buffer("key2")
+    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
 
     # Close for good.
     self.vbs.bs_close()
@@ -126,8 +144,7 @@ class Test_vbs_stat_01:
     self.bs2 = None
     self.bs1.bs_close()
     self.bs1 = None
-    CONFIG.unmap_bs("child2")
-    CONFIG.remove_bs(bspath2)
-    CONFIG.unmap_bs("child1")
-    CONFIG.remove_bs(bspath1)
     CONFIG.unmap_bs("rootbs")
+    CONFIG.remove_bs(bspath2)
+    CONFIG.unmap_bs("rootbs")
+    CONFIG.remove_bs(bspath1)

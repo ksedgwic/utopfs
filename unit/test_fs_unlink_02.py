@@ -20,9 +20,11 @@ class Test_fs_unlink_02:
     self.bspath = "fs_unlink_02.bs"
 
     # Remove any prexisting blockstore.
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def teardown_class(self):
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_unlink(self):

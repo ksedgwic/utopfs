@@ -14,13 +14,16 @@ class Test_bs_size_02:
 
   def setup_class(self):
     self.bspath = "bs_size_02"
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
     
   def teardown_class(self):
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_size_limited(self):
     # In case it already exists ...
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     # Create the blockstore with a small size.
@@ -90,10 +93,12 @@ class Test_bs_size_02:
 
     # Close the blockstore.
     self.bs.bs_close()
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
   def test_compact(self):
     # In case it already exists ...
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     # Create the blockstore with a small size.
@@ -177,4 +182,5 @@ class Test_bs_size_02:
 
     # Close the blockstore.
     self.bs.bs_close()
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)

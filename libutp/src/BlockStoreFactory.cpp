@@ -164,11 +164,11 @@ BlockStoreFactory::lookup(string const & i_instname)
 }
 
 void
-BlockStoreFactory::remove(string const & i_instname)
+BlockStoreFactory::unmap(string const & i_instname)
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 4, "remove" << ' ' << i_instname);
+    LOG(lgr, 4, "unmap" << ' ' << i_instname);
 
     ACE_Guard<ACE_Thread_Mutex> guard(g_bsfmutex);
 

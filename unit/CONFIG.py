@@ -41,6 +41,13 @@ def BSARGS(bspath): return (bspath,)
 FSTYPE = "UTFS"
 FSARGS = ()
 
+def unmap_bs(name):
+  try:
+    utp.BlockStore.unmap(name)
+  except utp.NotFoundError, ex:
+    # It's ok of the blockstore doesn't exist ..
+    pass
+
 def remove_bs(path):
   try:
     utp.BlockStore.destroy(BSTYPE, BSARGS(path))

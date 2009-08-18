@@ -69,14 +69,14 @@ public:
         throw(InternalError,
               NotFoundError);
 
-    /// Remove blockstore from open list.
+    /// Unmap blockstore from open list.
     ///
     /// @param[in] i_instname BlockStore instance name.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified blockstore was not found.
     ///
-    static void remove(std::string const & i_instname)
+    static void unmap(std::string const & i_instname)
         throw(InternalError,
               NotFoundError);
 

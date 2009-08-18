@@ -32,6 +32,7 @@ class Test_fs_syncmiddle_01:
   def test_syncmiddle(self):
 
     # Remove any prexisting blockstore.
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
 
     # Create the filesystem
@@ -91,4 +92,5 @@ class Test_fs_syncmiddle_01:
     self.bs.bs_close()
     self.bs = None
     self.fs = None
+    CONFIG.unmap_bs("rootbs")
     CONFIG.remove_bs(self.bspath)
