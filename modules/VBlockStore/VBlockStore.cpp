@@ -28,6 +28,12 @@ VBlockStore::~VBlockStore()
 {
 }
 
+string const &
+VBlockStore::bs_instname() const
+{
+    return m_instname;
+}
+
 void
 VBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,
@@ -129,6 +135,7 @@ VBlockStore::bs_put_block_async(void const * i_keydata,
 {
     // Create a VBSPutRequest.
     VBSPutRequestHandle prh = new VBSPutRequest(*this,
+                                                m_children.size(),
                                                 i_keydata,
                                                 i_keysize,
                                                 i_blkdata,

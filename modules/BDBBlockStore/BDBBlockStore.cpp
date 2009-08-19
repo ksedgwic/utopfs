@@ -66,6 +66,12 @@ BDBBlockStore::~BDBBlockStore()
     // (way after main has returned ...)
 }
 
+string const &
+BDBBlockStore::bs_instname() const
+{
+    return m_instname;
+}
+
 void
 BDBBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,

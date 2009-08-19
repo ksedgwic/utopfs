@@ -461,6 +461,12 @@ S3BlockStore::~S3BlockStore()
     // (way after main has returned ...)
 }
 
+string const &
+S3BlockStore::bs_instname() const
+{
+    return m_instname;
+}
+
 void
 S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,

@@ -23,7 +23,7 @@ namespace VBS {
 class VBS_EXP VBSRequest : public virtual utp::RCObj
 {
 public:
-    VBSRequest(VBlockStore & i_vbs);
+    VBSRequest(VBlockStore & i_vbs, long i_outstanding);
 
     virtual ~VBSRequest();
 
@@ -34,17 +34,22 @@ public:
     virtual void done();
 
 protected:
+    VBlockStore &						m_vbs;
 
-private:
-    VBlockStore &				m_vbs;
+    ACE_Thread_Mutex					m_vbsreqmutex;
+    bool								m_succeeded;
+    long								m_outstanding;
 };
 
 std::ostream & operator<<(std::ostream & ostrm, VBSRequest const & i_req);
 
-class VBS_EXP VBSPutRequest : public VBSRequest
+class VBS_EXP VBSPutRequest
+    : public VBSRequest
+    , public utp::BlockStore::BlockPutCompletion
 {
 public:
     VBSPutRequest(VBlockStore & i_vbs,
+                  long i_outstanding,
                   void const * i_keydata,
                   size_t i_keysize,
                   void const * i_blkdata,
@@ -54,13 +59,30 @@ public:
 
     virtual ~VBSPutRequest();
 
+    // VBSRequest
+
     virtual void stream_insert(std::ostream & ostrm) const;
 
+    // BlockPutCompletion
+
+    virtual void bp_complete(void const * i_keydata,
+                             size_t i_keysize,
+                             void const * i_argp);
+
+    virtual void bp_error(void const * i_keydata,
+                          size_t i_keysize,
+                          void const * i_argp,
+                          utp::Exception const & i_exp);
+
+    // VBSPutRequest
+
+    virtual void process(VBSChild * i_cp,
+                         utp::BlockStoreHandle const & i_bsh);
+                         
+
 private:
-    void const *							m_keydata;
-    size_t									m_keysize;
-    void const *							m_blkdata;
-    size_t									m_blksize;
+    utp::OctetSeq							m_key;
+    utp::OctetSeq							m_blk;
     utp::BlockStore::BlockPutCompletion &	m_cmpl;
     void const *							m_argp;
 };

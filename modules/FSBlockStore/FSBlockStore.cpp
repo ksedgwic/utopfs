@@ -159,6 +159,12 @@ FSBlockStore::~FSBlockStore()
         m_headsstrm.close();
 }
 
+string const &
+FSBlockStore::bs_instname() const
+{
+    return m_instname;
+}
+
 void
 FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     throw(NotUniqueError,

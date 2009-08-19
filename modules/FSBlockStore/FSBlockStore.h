@@ -88,6 +88,8 @@ public:
 
     // BlockStore methods.
 
+    virtual std::string const & bs_instname() const;
+
     virtual void bs_create(size_t i_size,
                            utp::StringSeq const & i_args)
         throw(utp::NotUniqueError,

@@ -30,6 +30,9 @@ public:
     ///
     virtual ~BlockStore();
 
+    /// Returns instance name
+    virtual std::string const & bs_instname() const = 0;
+    
     /// Create a block store.
     ///
     /// @param[in] i_size Size of the block store data in bytes.
