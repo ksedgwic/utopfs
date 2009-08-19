@@ -61,6 +61,8 @@ VBSChild::handle_exception(ACE_HANDLE fd)
 void
 VBSChild::enqueue_put(VBSPutRequestHandle const & i_prh)
 {
+    LOG(lgr, 4, m_instname << ' ' << "enqueue_put " << *i_prh);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
     m_putreqs.push_back(i_prh);

@@ -49,7 +49,7 @@ VBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
           NotFoundError)
 {
-    LOG(lgr, 4, m_instname << ' ' << "CTOR");
+    LOG(lgr, 4, m_instname << ' ' << "bs_open");
 
     // Insert each of the child blockstores in our collection.
     for (size_t ii = 0; ii < i_args.size(); ++ii)

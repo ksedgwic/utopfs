@@ -11,6 +11,7 @@ LIBSRC =	\
 			pystat.cpp \
 			pystatvfs.cpp \
 			pyutpinit.cpp \
+			pyutplog.cpp \
 			statemap.cpp \
 			$(NULL)
 

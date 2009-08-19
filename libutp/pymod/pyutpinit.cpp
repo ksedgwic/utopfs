@@ -1,6 +1,10 @@
 #include <typeinfo>
+#include <stdexcept>
 
+#include <ace/Reactor.h>
 #include <ace/Service_Config.h>
+#include <ace/Task.h>
+#include <ace/TP_Reactor.h>
 
 #include "pyutpinit.h"
 #include "statemap.h"
@@ -12,6 +16,9 @@
 #include "pyshn.h"
 #include "pystat.h"
 #include "pystatvfs.h"
+#include "pyutplog.h"
+
+using namespace std;
 
 namespace utp {
 
@@ -76,6 +83,56 @@ static PyMethodDef module_methods[] =
     {NULL,		NULL}		/* sentinel */
 };
 
+class ThreadPool : public ACE_Task_Base
+{
+public:
+    ThreadPool(ACE_Reactor * i_reactor, int i_numthreads)
+        : m_reactor(i_reactor)
+    {
+        LOG(lgr, 4, "ThreadPool CTOR");
+
+        if (activate(THR_NEW_LWP | THR_JOINABLE, i_numthreads) != 0)
+            abort();
+    }
+    
+    ~ThreadPool()
+    {
+        LOG(lgr, 4, "ThreadPool DTOR");
+        wait();
+    }
+
+    virtual int svc(void)
+    {
+        LOG(lgr, 4, "ThreadPool starting");
+
+        // Run the Reactor event loop.  Catch exceptions and report but keep
+        // the threads running ...
+        //
+        while (true)
+        {
+            try
+            {
+                m_reactor->run_reactor_event_loop();
+            }
+
+            catch (exception const & ex)
+            {
+                cerr << "caught std::exception: " << ex.what() << endl;
+            }
+            catch (...)
+            {
+                cerr << "caught UNKNOWN EXCEPTION" << endl;
+            }
+        }
+
+        LOG(lgr, 4, "ThreadPool finished");
+        return 0;
+    }
+
+private:
+    ACE_Reactor *		m_reactor;
+};
+
 } // end namespace utp
 
 extern "C" {
@@ -92,6 +149,13 @@ init_utp(void)
     int argc = 0;
     char * argv[1] = { NULL };
     ACE_Service_Config::open(argc, argv);
+
+    // Instantiate the reactor explicitly.
+    ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor), 1);
+
+    // Start the thread pool.
+    ThreadPool * thrpool = new ThreadPool(ACE_Reactor::instance(), 1);
+    (void) thrpool;	// FIXME - Clean this up when we are done ...
 
     PyObject *m, *d;
 
