@@ -100,7 +100,7 @@ VBSGetRequest::bg_error(void const * i_keydata,
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " bg_complete");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " bg_error");
 
     bool do_complete = false;
     bool do_done = false;
