@@ -40,7 +40,11 @@ public:
 
     // VBSChild
 
+    std::string const & instname() const { return m_instname; }
+
     utp::BlockStoreHandle const & bs() const { return m_bsh; }
+
+    void enqueue_get(VBSGetRequestHandle const & i_grh);
 
     void enqueue_put(VBSPutRequestHandle const & i_prh);
 
@@ -54,6 +58,7 @@ private:
 
     ACE_Thread_Mutex					m_chldmutex;
     bool								m_notified;
+    std::deque<VBSGetRequestHandle>		m_getreqs;
     std::deque<VBSPutRequestHandle>		m_putreqs;
 };
 

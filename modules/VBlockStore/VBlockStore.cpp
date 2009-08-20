@@ -3,7 +3,9 @@
 
 #include "VBlockStore.h"
 #include "VBSChild.h"
+#include "VBSGetRequest.h"
 #include "vbslog.h"
+#include "VBSPutRequest.h"
 #include "VBSRequest.h"
 
 using namespace std;
@@ -119,8 +121,30 @@ VBlockStore::bs_get_block_async(void const * i_keydata,
     throw(InternalError,
           ValueError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_get_block_async unimplemented");
+    // Create a VBSGetRequest.
+    VBSGetRequestHandle grh = new VBSGetRequest(*this,
+                                                m_children.size(),
+                                                i_keydata,
+                                                i_keysize,
+                                                o_buffdata,
+                                                i_buffsize,
+                                                i_cmpl,
+                                                i_argp);
+
+    LOG(lgr, 6, m_instname << ' ' << "bs_get_block_async " << *grh);
+
+    // Insert this request in our request list.  We need to do this
+    // first in case the request completes synchrounously below.
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+        m_requests.insert(grh);
+    }
+
+    // Enqueue the request w/ all of the kids.
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+        it->second->enqueue_get(grh);
 }
 
 void

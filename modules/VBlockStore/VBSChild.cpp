@@ -7,6 +7,8 @@
 #include "VBSChild.h"
 #include "vbslog.h"
 #include "VBSRequest.h"
+#include "VBSGetRequest.h"
+#include "VBSPutRequest.h"
 
 using namespace std;
 using namespace utp;
@@ -59,6 +61,22 @@ VBSChild::handle_exception(ACE_HANDLE fd)
 }
 
 void
+VBSChild::enqueue_get(VBSGetRequestHandle const & i_grh)
+{
+    LOG(lgr, 4, m_instname << ' ' << "enqueue_get " << *i_grh);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+
+    m_getreqs.push_back(i_grh);
+
+    if (!m_notified)
+    {
+        m_reactor->notify(this);
+        m_notified = true;
+    }
+}
+
+void
 VBSChild::enqueue_put(VBSPutRequestHandle const & i_prh)
 {
     LOG(lgr, 4, m_instname << ' ' << "enqueue_put " << *i_prh);
@@ -79,16 +97,25 @@ VBSChild::process_requests()
 {
     LOG(lgr, 4, m_instname << ' ' << "process_requests starting");
 
+    // NOTE - This request loop prioritizes gets over puts; I think
+    // this is on purpose ...
+    //
     while (true)
     {
         // First, figure out what we are going to do with the mutex
         // held.
         //
+        VBSGetRequestHandle grh = NULL;
         VBSPutRequestHandle prh = NULL;
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
-            if (!m_putreqs.empty())
+            if (!m_getreqs.empty())
+            {
+                grh = m_getreqs.front();
+                m_getreqs.pop_front();
+            }
+            else if (!m_putreqs.empty())
             {
                 prh = m_putreqs.front();
                 m_putreqs.pop_front();
@@ -102,7 +129,11 @@ VBSChild::process_requests()
 
         // Next, carry out the action w/o the mutex held.
         //
-        if (prh)
+        if (grh)
+        {
+            grh->process(this, m_bsh);
+        }
+        else if (prh)
         {
             prh->process(this, m_bsh);
         }

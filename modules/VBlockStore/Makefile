@@ -6,7 +6,9 @@ LIBSRC += 	\
 			VBlockStore.cpp \
 			VBSChild.cpp \
 			VBSFactory.cpp \
+			VBSGetRequest.cpp \
 			vbslog.cpp \
+			VBSPutRequest.cpp \
 			VBSRequest.cpp \
 			$(NULL)
 

@@ -62,7 +62,7 @@ class Test_vbs_data_01:
                                    CONFIG.BSARGS(bspath1))
     self.vbs = utp.BlockStore.open("VBS",
                                    "rootbs",
-                                   ("child1", "child2"))
+                                   ("child1",))
 
     # Retrieve the block.
     blk1 = self.vbs.bs_get_block(key1)

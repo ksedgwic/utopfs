@@ -18,6 +18,10 @@ class VBSRequest;
 /// Handle to VBSRequest object.
 typedef utp::RCPtr<VBSRequest> VBSRequestHandle;
 
+class VBSGetRequest;
+/// Handle to VBSGetRequest object.
+typedef utp::RCPtr<VBSGetRequest> VBSGetRequestHandle;
+
 class VBSPutRequest;
 /// Handle to VBSPutRequest object.
 typedef utp::RCPtr<VBSPutRequest> VBSPutRequestHandle;
