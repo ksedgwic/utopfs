@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 
+#include <ace/Condition_Thread_Mutex.h>
 #include <ace/Thread_Mutex.h>
 
 #include "utpfwd.h"
@@ -113,11 +114,13 @@ private:
     typedef std::map<std::string, VBSChildHandle> VBSChildMap;
     typedef std::set<VBSRequestHandle> VBSRequestSet;
 
-    std::string				m_instname;
-    VBSChildMap				m_children;
+    std::string					m_instname;
+    VBSChildMap					m_children;
 
-    ACE_Thread_Mutex		m_vbsmutex;
-    VBSRequestSet			m_requests;
+    ACE_Thread_Mutex			m_vbsmutex;
+    ACE_Condition_Thread_Mutex	m_vbscond;
+    bool						m_waiting;
+    VBSRequestSet				m_requests;
 };
 
 } // namespace VBS

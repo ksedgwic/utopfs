@@ -115,6 +115,22 @@ BlockStore_bs_stat(BlockStoreObject *self, PyObject *args)
 }
 
 static PyObject *
+BlockStore_bs_sync(BlockStoreObject *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ":bs_sync"))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        self->m_bsh->bs_sync();
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    PYUTP_CATCH_ALL;
+}
+
+static PyObject *
 BlockStore_bs_block_get(BlockStoreObject *self, PyObject *args)
 {
     PyObject * keyobj;
@@ -364,6 +380,7 @@ static PyMethodDef BlockStore_methods[] = {
     {"bs_open",			(PyCFunction)BlockStore_bs_open,		METH_VARARGS},
     {"bs_close",		(PyCFunction)BlockStore_bs_close,		METH_VARARGS},
     {"bs_stat",			(PyCFunction)BlockStore_bs_stat,		METH_VARARGS},
+    {"bs_sync",			(PyCFunction)BlockStore_bs_sync,		METH_VARARGS},
     {"bs_block_get",	(PyCFunction)BlockStore_bs_block_get,	METH_VARARGS},
     {"bs_block_put",	(PyCFunction)BlockStore_bs_block_put,	METH_VARARGS},
     {"bs_refresh_start",

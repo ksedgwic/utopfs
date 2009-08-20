@@ -22,6 +22,8 @@ VBlockStore::destroy(StringSeq const & i_args)
 
 VBlockStore::VBlockStore(string const & i_instname)
     : m_instname(i_instname)
+    , m_vbscond(m_vbsmutex)
+    , m_waiting(false)
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");
 }
@@ -115,8 +117,13 @@ void
 VBlockStore::bs_sync()
     throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_sync unimplemented");
+    ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+
+    while (!m_requests.empty())
+    {
+        m_waiting = true;
+        m_vbscond.wait();
+    }
 }
 
 void
@@ -258,10 +265,19 @@ VBlockStore::remove_request(VBSRequestHandle const & i_rh)
     LOG(lgr, 6, m_instname << ' ' << "remove_request " << *i_rh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+
+    // Erase this request from the set.
     size_t nrm = m_requests.erase(i_rh);
     if (nrm != 1)
         throwstream(InternalError, FILELINE
                     << "expected to remove one request, removed " << nrm);
+
+    // If we've emptied the request list wake any waiters.
+    if (m_requests.empty() && m_waiting)
+    {
+        m_vbscond.broadcast();
+        m_waiting = false;
+    }
 }
 
 } // namespace VBS
