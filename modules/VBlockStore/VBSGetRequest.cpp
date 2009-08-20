@@ -152,7 +152,7 @@ VBSGetRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
     // Allocate our buffer now.
     m_blk.resize(m_buffsize);
 
-    i_bsh->bs_get_block_async(&m_key[0], m_key.size(),
+     i_bsh->bs_block_get_async(&m_key[0], m_key.size(),
                               &m_blk[0], m_blk.size(),
                               *this, i_cp);
 }

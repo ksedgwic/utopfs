@@ -188,7 +188,7 @@ BDBBlockStore::bs_sync()
 
 #if 0
 size_t
-BDBBlockStore::bs_get_block(void const * i_keydata,
+BDBBlockStore::bs_block_get(void const * i_keydata,
                            size_t i_keysize,
                            void * o_outbuff,
                            size_t i_outsize)
@@ -197,7 +197,7 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
           ValueError)
           
 {
-    LOG(lgr, 6, m_instname << ' ' << "bs_get_block");
+    LOG(lgr, 6, m_instname << ' ' << "bs_block_get");
 	if (! m_db_opened) {
 		throwstream(InternalError, FILELINE
                 << "BDBBlockStore db not opened!");
@@ -215,7 +215,7 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
         throwstream(NotFoundError, FILELINE);
     } else if (result != 0) {
         throwstream(NotFoundError, FILELINE
-                << "BDBBlockStore::bs_get_block: " << result << db_strerror(result));
+                << "BDBBlockStore::bs_block_get: " << result << db_strerror(result));
 	}	
     
     return data.get_size();    
@@ -223,7 +223,7 @@ BDBBlockStore::bs_get_block(void const * i_keydata,
 #endif
 
 void
-BDBBlockStore::bs_get_block_async(void const * i_keydata,
+ BDBBlockStore::bs_block_get_async(void const * i_keydata,
                                   size_t i_keysize,
                                   void * o_buffdata,
                                   size_t i_buffsize,
@@ -234,7 +234,7 @@ BDBBlockStore::bs_get_block_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, m_instname << ' ' << "bs_get_block");
+        LOG(lgr, 6, m_instname << ' ' << "bs_block_get");
         if (! m_db_opened) {
             throwstream(InternalError, FILELINE
                         << "BDBBlockStore db not opened!");
@@ -252,7 +252,7 @@ BDBBlockStore::bs_get_block_async(void const * i_keydata,
             throwstream(NotFoundError, FILELINE);
         } else if (result != 0) {
             throwstream(NotFoundError, FILELINE
-                        << "BDBBlockStore::bs_get_block: " << result << db_strerror(result));
+                        << "BDBBlockStore::bs_block_get: " << result << db_strerror(result));
         }	
     
         i_cmpl.bg_complete(i_keydata, i_keysize, i_argp, data.get_size());
@@ -265,7 +265,7 @@ BDBBlockStore::bs_get_block_async(void const * i_keydata,
 
 #if 0
 void
-BDBBlockStore::bs_put_block(void const * i_keydata,
+BDBBlockStore::bs_block_put(void const * i_keydata,
                            size_t i_keysize,
                            void const * i_blkdata,
                            size_t i_blksize)
@@ -273,7 +273,7 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
           ValueError,
           NoSpaceError)
 {
-    LOG(lgr, 6, m_instname << ' ' << "bs_put_block");
+    LOG(lgr, 6, m_instname << ' ' << "bs_block_put");
 	if (! m_db_opened) {
 		throwstream(InternalError, FILELINE
                 << "BDBBlockStore db not opened!");
@@ -289,13 +289,13 @@ BDBBlockStore::bs_put_block(void const * i_keydata,
     int results = m_db->put(NULL,&key,&data,DB_NOOVERWRITE);
     if (results != 0) {
     	throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
+                << "BDBBlockStore::bs_block_put returned error " << results << db_strerror(results));
     }      
 }
 #endif
 
 void
-BDBBlockStore::bs_put_block_async(void const * i_keydata,
+BDBBlockStore::bs_block_put_async(void const * i_keydata,
                                   size_t i_keysize,
                                   void const * i_blkdata,
                                   size_t i_blksize,
@@ -306,7 +306,7 @@ BDBBlockStore::bs_put_block_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, m_instname << ' ' << "bs_put_block");
+        LOG(lgr, 6, m_instname << ' ' << "bs_block_put");
         if (! m_db_opened) {
             throwstream(InternalError, FILELINE
                         << "BDBBlockStore db not opened!");
@@ -322,7 +322,7 @@ BDBBlockStore::bs_put_block_async(void const * i_keydata,
         int results = m_db->put(NULL,&key,&data,DB_NOOVERWRITE);
         if (results != 0) {
             throwstream(InternalError, FILELINE
-                        << "BDBBlockStore::bs_put_block returned error " << results << db_strerror(results));
+                        << "BDBBlockStore::bs_block_put returned error " << results << db_strerror(results));
         }      
 
         i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
@@ -502,7 +502,7 @@ BDBBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
         string const & key = hn.fstag();
         string buf;
         i_shn.SerializeToString(&buf);
-        bs_put_block(key.data(), key.size(), buf.data(), buf.size());
+        bs_block_put(key.data(), key.size(), buf.data(), buf.size());
         i_cmpl.shi_complete(i_shn, i_argp);
     }
     catch (Exception const & i_ex)
@@ -527,7 +527,7 @@ BDBBlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
         hn.ParseFromString(i_seed.headnode());
         string const & key = hn.fstag();
         uint8 buf[8192];
-        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+        size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadNode shn;
         shn.ParseFromArray(buf, sz);
         i_func.sht_node(i_argp, shn);
@@ -555,7 +555,7 @@ BDBBlockStore::bs_head_furthest_async(SignedHeadNode const & i_seed,
         hn.ParseFromString(i_seed.headnode());
         string const & key = hn.fstag();
         uint8 buf[8192];
-        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+        size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadNode shn;
         shn.ParseFromArray(buf, sz);
         i_func.sht_node(i_argp, shn);

@@ -43,7 +43,7 @@ class Test_bs_size_03:
       kstr = "k%02d" % (kval,)
       k = buffer(kstr)
       v = buffer("0123456789")
-      self.bs.bs_put_block(k, v)
+      self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -66,13 +66,13 @@ class Test_bs_size_03:
 
     # Uncommitted block should be there still.
     k = buffer('k01')
-    v = self.bs.bs_get_block(k)
+    v = self.bs.bs_block_get(k)
     assert v == buffer("0123456789")
 
     # Now we can insert another block.
     k = buffer("k11")
     v = buffer("0123456789")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -81,7 +81,7 @@ class Test_bs_size_03:
 
     # And now the uncommitted block should be missing.
     k = buffer('k01')
-    py.test.raises(Exception, self.bs.bs_get_block, k)
+    py.test.raises(Exception, self.bs.bs_block_get, k)
 
     # Close and reopen the blockstore.
     self.bs.bs_close()
@@ -92,7 +92,7 @@ class Test_bs_size_03:
     # Now we can insert another block w/ the same key.
     k = buffer("k11")
     v = buffer("0123456789")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -102,7 +102,7 @@ class Test_bs_size_03:
     # But a different key should cause NoSpaceError
     k = buffer("k13")
     v = buffer("0123456789")
-    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_block_put, k, v)
 
     # Close the blockstore.
     self.bs.bs_close()

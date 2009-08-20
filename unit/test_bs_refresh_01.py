@@ -44,7 +44,7 @@ class Test_bs_refresh_01:
     for keystr in ('key1', 'key2', 'key3'):
       k = buffer(keystr)
       v = buffer("this phrase is data")
-      self.bs.bs_put_block(k, v)
+      self.bs.bs_block_put(k, v)
 
     # refresh 2 of them
     keys = (buffer('key1'), buffer('key3'))
@@ -60,7 +60,7 @@ class Test_bs_refresh_01:
     for keystr in ('key1', 'key2', 'key3'):
       k = buffer(keystr)
       v = buffer("this phrase is also data")
-      self.bs.bs_put_block(k, v)
+      self.bs.bs_block_put(k, v)
 
     # refresh 1 of them and one that isn't there
     keys = (buffer('key2'), buffer('key4'))

@@ -195,7 +195,7 @@ BlockStore::~BlockStore()
 }
 
 size_t
-BlockStore::bs_get_block(void const * i_keydata,
+BlockStore::bs_block_get(void const * i_keydata,
                          size_t i_keysize,
                          void * o_outbuff,
                          size_t i_outsize)
@@ -207,7 +207,7 @@ BlockStore::bs_get_block(void const * i_keydata,
     GetCompletion gc;
 
     // Initiate the asynchrounous get.
-    bs_get_block_async(i_keydata, i_keysize, o_outbuff, i_outsize, gc, NULL);
+     bs_block_get_async(i_keydata, i_keysize, o_outbuff, i_outsize, gc, NULL);
 
     // Wait for completion.
     gc.wait();
@@ -221,7 +221,7 @@ BlockStore::bs_get_block(void const * i_keydata,
 }
 
 void
-BlockStore::bs_put_block(void const * i_keydata,
+BlockStore::bs_block_put(void const * i_keydata,
                          size_t i_keysize,
                          void const * i_blkdata,
                          size_t i_blksize)
@@ -233,7 +233,7 @@ BlockStore::bs_put_block(void const * i_keydata,
     PutCompletion pc;
 
     // Initiate the asynchrounous get.
-    bs_put_block_async(i_keydata, i_keysize, i_blkdata, i_blksize, pc, NULL);
+    bs_block_put_async(i_keydata, i_keysize, i_blkdata, i_blksize, pc, NULL);
 
     // Wait for completion.
     pc.wait();

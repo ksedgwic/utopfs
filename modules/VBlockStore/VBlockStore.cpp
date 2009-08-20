@@ -120,7 +120,7 @@ VBlockStore::bs_sync()
 }
 
 void
-VBlockStore::bs_get_block_async(void const * i_keydata,
+VBlockStore::bs_block_get_async(void const * i_keydata,
                                 size_t i_keysize,
                                 void * o_buffdata,
                                 size_t i_buffsize,
@@ -139,7 +139,7 @@ VBlockStore::bs_get_block_async(void const * i_keydata,
                                                 i_cmpl,
                                                 i_argp);
 
-    LOG(lgr, 6, m_instname << ' ' << "bs_get_block_async " << *grh);
+     LOG(lgr, 6, m_instname << ' ' << "bs_block_get_async " << *grh);
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
@@ -156,7 +156,7 @@ VBlockStore::bs_get_block_async(void const * i_keydata,
 }
 
 void
-VBlockStore::bs_put_block_async(void const * i_keydata,
+VBlockStore::bs_block_put_async(void const * i_keydata,
                                 size_t i_keysize,
                                 void const * i_blkdata,
                                 size_t i_blksize,
@@ -175,7 +175,7 @@ VBlockStore::bs_put_block_async(void const * i_keydata,
                                                 i_cmpl,
                                                 i_argp);
 
-    LOG(lgr, 6, m_instname << ' ' << "bs_put_block_async " << *prh);
+    LOG(lgr, 6, m_instname << ' ' << "bs_block_put_async " << *prh);
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.

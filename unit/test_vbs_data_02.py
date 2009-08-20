@@ -43,7 +43,7 @@ class Test_vbs_data_02:
     # Put a block of data only in the first child.
     key1 = buffer("key1")
     val1 = buffer("val1")
-    self.bs1.bs_put_block(key1, val1)
+    self.bs1.bs_block_put(key1, val1)
 
     # Second child.
     bspath2 = "vbs_data_02_c2"
@@ -57,7 +57,7 @@ class Test_vbs_data_02:
     # Put a block of data only in the second child.
     key2 = buffer("key2")
     val2 = buffer("val2")
-    self.bs2.bs_put_block(key2, val2)
+    self.bs2.bs_block_put(key2, val2)
 
     # Third child.
     bspath3 = "vbs_data_02_c3"
@@ -71,7 +71,7 @@ class Test_vbs_data_02:
     # Put a block of data only in the third child.
     key3 = buffer("key3")
     val3 = buffer("val3")
-    self.bs3.bs_put_block(key3, val3)
+    self.bs3.bs_block_put(key3, val3)
 
     # Open the virtual block store.
     CONFIG.unmap_bs("rootbs")
@@ -80,20 +80,20 @@ class Test_vbs_data_02:
                                    ("child1", "child2", "child3"))
 
     # Retrieve the first block.
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
     # Retrieve the second block.
-    blk2 = self.vbs.bs_get_block(key2)
+    blk2 = self.vbs.bs_block_get(key2)
     assert blk2 == val2
 
     # Retrieve the third block.
-    blk3 = self.vbs.bs_get_block(key3)
+    blk3 = self.vbs.bs_block_get(key3)
     assert blk3 == val3
 
     # Test block that doesn't exist.
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key4)
 
     # Close and reopen everything.
     self.vbs.bs_close()
@@ -114,20 +114,20 @@ class Test_vbs_data_02:
                                    ("child1", "child2", "child3"))
 
     # Retrieve the first block.
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
     # Retrieve the second block.
-    blk2 = self.vbs.bs_get_block(key2)
+    blk2 = self.vbs.bs_block_get(key2)
     assert blk2 == val2
 
     # Retrieve the third block.
-    blk3 = self.vbs.bs_get_block(key3)
+    blk3 = self.vbs.bs_block_get(key3)
     assert blk3 == val3
 
     # Test block that doesn't exist.
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key4)
 
     # Close for good.
     self.vbs.bs_close()

@@ -44,15 +44,15 @@ class Test_vbs_data_01:
     # Put a block of data.
     key1 = buffer("key1")
     val1 = buffer("val1")
-    self.vbs.bs_put_block(key1, val1)
+    self.vbs.bs_block_put(key1, val1)
 
     # Retrieve the block.
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
     # Test block that doesn't exist.
     key2 = buffer("key2")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
     # Close and reopen everything.
     self.vbs.bs_close()
@@ -65,12 +65,12 @@ class Test_vbs_data_01:
                                    ("child1",))
 
     # Retrieve the block.
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
     # Test block that doesn't exist.
     key2 = buffer("key2")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
     # Close for good.
     self.vbs.bs_close()
@@ -106,15 +106,15 @@ class Test_vbs_data_01:
     # Put a block of data.
     key1 = buffer("key1")
     val1 = buffer("val1")
-    self.vbs.bs_put_block(key1, val1)
+    self.vbs.bs_block_put(key1, val1)
 
     # Retrieve the block.
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
     # Test block that doesn't exist.
     key2 = buffer("key2")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
     # Close and reopen everything.
     self.vbs.bs_close()
@@ -131,12 +131,12 @@ class Test_vbs_data_01:
                                    ("child1", "child2"))
 
     # Retrieve the block.
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
     # Test block that doesn't exist.
     key2 = buffer("key2")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key2)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
     # Close for good.
     self.vbs.bs_close()

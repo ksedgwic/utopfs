@@ -34,7 +34,7 @@ DataBlockNode::DataBlockNode(Context & i_ctxt, BlockRef const & i_ref)
     LOG(lgr, 6, "CTOR " << i_ref);
 
     // Read the block from the blockstore.
-    i_ctxt.m_bsh->bs_get_block(i_ref.data(), i_ref.size(),
+    i_ctxt.m_bsh->bs_block_get(i_ref.data(), i_ref.size(),
                                m_data, sizeof(m_data));
 
     // Validate the block.
@@ -69,7 +69,7 @@ DataBlockNode::bn_persist(Context & i_ctxt)
     LOG(lgr, 6, "persist " << bn_blkref());
 
     // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_put_block(m_ref.data(), m_ref.size(),
+    i_ctxt.m_bsh->bs_block_put(m_ref.data(), m_ref.size(),
                                buf, sizeof(buf));
 
     bn_isdirty(false);

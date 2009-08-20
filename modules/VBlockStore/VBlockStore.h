@@ -54,7 +54,7 @@ public:
     virtual void bs_sync()
 		throw(utp::InternalError);
 
-    virtual void bs_get_block_async(void const * i_keydata,
+     virtual void bs_block_get_async(void const * i_keydata,
                                     size_t i_keysize,
                                     void * o_outbuff,
                                     size_t i_outsize,
@@ -63,7 +63,7 @@ public:
         throw(utp::InternalError,
               utp::ValueError);
 
-    virtual void bs_put_block_async(void const * i_keydata,
+    virtual void bs_block_put_async(void const * i_keydata,
                                     size_t i_keysize,
                                     void const * i_blkdata,
                                     size_t i_blksize,

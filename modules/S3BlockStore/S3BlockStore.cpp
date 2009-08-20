@@ -877,7 +877,7 @@ S3BlockStore::bs_sync()
 }
 
 void
-S3BlockStore::bs_get_block_async(void const * i_keydata,
+ S3BlockStore::bs_block_get_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void * o_buffdata,
                                  size_t i_buffsize,
@@ -896,7 +896,7 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
             string blkpath = blockpath(entry);
 
             LOG(lgr, 6, m_instname << ' '
-                << "bs_get_block " << entry.substr(0, 8) << "...");
+                << "bs_block_get " << entry.substr(0, 8) << "...");
 
             // Setup a bucket context.
             S3BucketContext buck;
@@ -947,7 +947,7 @@ S3BlockStore::bs_get_block_async(void const * i_keydata,
 }
 
 void
-S3BlockStore::bs_put_block_async(void const * i_keydata,
+S3BlockStore::bs_block_put_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void const * i_blkdata,
                                  size_t i_blksize,
@@ -964,7 +964,7 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
         string blkpath = blockpath(entry);
 
         LOG(lgr, 6, m_instname << ' '
-            << "bs_put_block " << entry.substr(0, 8) << "...");
+            << "bs_block_put " << entry.substr(0, 8) << "...");
 
         // We need to determine the current size of the block
         // if it already exists.
@@ -1033,7 +1033,7 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
                 break;
 
             LOG(lgr, 4, m_instname << ' '
-                << "bs_put_block_async " << entry.substr(0, 8) << "..."
+                << "bs_block_put_async " << entry.substr(0, 8) << "..."
                 << " ERROR: " << st << ", RETRYING");
         }
 
@@ -1084,7 +1084,7 @@ S3BlockStore::bs_put_block_async(void const * i_keydata,
             default:
                 // Sigh ... these we retry a few times ...
                 LOG(lgr, 4, m_instname << ' '
-                    << "bs_put_block_async " << entry.substr(0,8) << "..."
+                    << "bs_block_put_async " << entry.substr(0,8) << "..."
                     << " ERROR: " << st << " RETRYING");
                 break;
             }
@@ -1392,7 +1392,7 @@ S3BlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
         string const & key = hn.fstag();
         string buf;
         i_shn.SerializeToString(&buf);
-        bs_put_block(key.data(), key.size(), buf.data(), buf.size());
+        bs_block_put(key.data(), key.size(), buf.data(), buf.size());
         i_cmpl.shi_complete(i_shn, i_argp);
     }
     catch (Exception const & i_ex)
@@ -1417,7 +1417,7 @@ S3BlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
         hn.ParseFromString(i_seed.headnode());
         string const & key = hn.fstag();
         uint8 buf[8192];
-        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+        size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadNode shn;
         shn.ParseFromArray(buf, sz);
         i_func.sht_node(i_argp, shn);
@@ -1445,7 +1445,7 @@ S3BlockStore::bs_head_furthest_async(SignedHeadNode const & i_seed,
         hn.ParseFromString(i_seed.headnode());
         string const & key = hn.fstag();
         uint8 buf[8192];
-        size_t sz = bs_get_block(key.data(), key.size(), buf, sizeof(buf));
+        size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadNode shn;
         shn.ParseFromArray(buf, sz);
         i_func.sht_node(i_argp, shn);

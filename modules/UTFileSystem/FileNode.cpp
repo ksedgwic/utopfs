@@ -84,7 +84,7 @@ FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
     uint8 buf[BlockNode::BLKSZ];
 
     // Read the block from the blockstore.
-    i_ctxt.m_bsh->bs_get_block(i_ref.data(), i_ref.size(),
+    i_ctxt.m_bsh->bs_block_get(i_ref.data(), i_ref.size(),
                                buf, sizeof(buf));
 
     // Validate the block.
@@ -200,7 +200,7 @@ FileNode::bn_persist(Context & i_ctxt)
     LOG(lgr, 6, "persist " << m_ref);
 
     // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_put_block(m_ref.data(), m_ref.size(),
+    i_ctxt.m_bsh->bs_block_put(m_ref.data(), m_ref.size(),
                                buf, sizeof(buf));
 
     bn_isdirty(false);

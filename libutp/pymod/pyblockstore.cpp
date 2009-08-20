@@ -115,10 +115,10 @@ BlockStore_bs_stat(BlockStoreObject *self, PyObject *args)
 }
 
 static PyObject *
-BlockStore_bs_get_block(BlockStoreObject *self, PyObject *args)
+BlockStore_bs_block_get(BlockStoreObject *self, PyObject *args)
 {
     PyObject * keyobj;
-    if (!PyArg_ParseTuple(args, "O!:bs_get_block",
+    if (!PyArg_ParseTuple(args, "O!:bs_block_get",
                           &PyBuffer_Type, &keyobj))
         return NULL;
 
@@ -133,7 +133,7 @@ BlockStore_bs_get_block(BlockStoreObject *self, PyObject *args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        outsz = self->m_bsh->bs_get_block(keyptr, keylen,
+        outsz = self->m_bsh->bs_block_get(keyptr, keylen,
                                           outbuf, sizeof(outbuf));
     }
     PYUTP_CATCH_ALL;
@@ -149,11 +149,11 @@ BlockStore_bs_get_block(BlockStoreObject *self, PyObject *args)
 }
 
 static PyObject *
-BlockStore_bs_put_block(BlockStoreObject *self, PyObject *args)
+BlockStore_bs_block_put(BlockStoreObject *self, PyObject *args)
 {
     PyObject * keyobj;
     PyObject * valobj;
-    if (!PyArg_ParseTuple(args, "O!O!:bs_put_block",
+    if (!PyArg_ParseTuple(args, "O!O!:bs_block_put",
                           &PyBuffer_Type, &keyobj,
                           &PyBuffer_Type, &valobj))
         return NULL;
@@ -171,7 +171,7 @@ BlockStore_bs_put_block(BlockStoreObject *self, PyObject *args)
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_put_block(keyptr, keylen, valptr, vallen);
+        self->m_bsh->bs_block_put(keyptr, keylen, valptr, vallen);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -364,8 +364,8 @@ static PyMethodDef BlockStore_methods[] = {
     {"bs_open",			(PyCFunction)BlockStore_bs_open,		METH_VARARGS},
     {"bs_close",		(PyCFunction)BlockStore_bs_close,		METH_VARARGS},
     {"bs_stat",			(PyCFunction)BlockStore_bs_stat,		METH_VARARGS},
-    {"bs_get_block",	(PyCFunction)BlockStore_bs_get_block,	METH_VARARGS},
-    {"bs_put_block",	(PyCFunction)BlockStore_bs_put_block,	METH_VARARGS},
+    {"bs_block_get",	(PyCFunction)BlockStore_bs_block_get,	METH_VARARGS},
+    {"bs_block_put",	(PyCFunction)BlockStore_bs_block_put,	METH_VARARGS},
     {"bs_refresh_start",
      				(PyCFunction)BlockStore_bs_refresh_start,	METH_VARARGS},
     {"bs_refresh_blocks",

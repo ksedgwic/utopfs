@@ -41,7 +41,7 @@ class Test_bs_size_01:
     # Use some bytes.
     k = buffer("samplekey")
     v = buffer("sampledata")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -51,7 +51,7 @@ class Test_bs_size_01:
     # Use some more bytes.
     k = buffer("samplekey2")
     v = buffer("sampledata2")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -92,7 +92,7 @@ class Test_bs_size_01:
     # Use some bytes.
     k = buffer("samplekey")
     v = buffer("sampledata")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -102,7 +102,7 @@ class Test_bs_size_01:
     # Use some more bytes.
     k = buffer("samplekey2")
     v = buffer("sampledata2")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();

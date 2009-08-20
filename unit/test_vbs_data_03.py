@@ -43,7 +43,7 @@ class Test_vbs_data_03:
     # Put a block of data only in the first child.
     key1 = buffer("key1")
     val1 = buffer("val1")
-    self.bs1.bs_put_block(key1, val1)
+    self.bs1.bs_block_put(key1, val1)
 
     # Second child.
     bspath2 = "vbs_data_03_c2"
@@ -57,7 +57,7 @@ class Test_vbs_data_03:
     # Put a block of data only in the second child.
     key2 = buffer("key2")
     val2 = buffer("val2")
-    self.bs2.bs_put_block(key2, val2)
+    self.bs2.bs_block_put(key2, val2)
 
     # Third child.
     bspath3 = "vbs_data_03_c3"
@@ -71,7 +71,7 @@ class Test_vbs_data_03:
     # Put a block of data only in the third child.
     key3 = buffer("key3")
     val3 = buffer("val3")
-    self.bs3.bs_put_block(key3, val3)
+    self.bs3.bs_block_put(key3, val3)
 
     # Open the virtual block store.
     CONFIG.unmap_bs("rootbs")
@@ -81,14 +81,14 @@ class Test_vbs_data_03:
 
     # ---- Retrieve using the virtual blockstore
     #
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.vbs.bs_get_block(key2)
+    blk2 = self.vbs.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.vbs.bs_get_block(key3)
+    blk3 = self.vbs.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key4)
 
     # That should queue up inter-child transfers of everything.  Sync
     # to make sure they are done.
@@ -97,36 +97,36 @@ class Test_vbs_data_03:
 
     # ---- Repeat using only the first blockstore
     #
-    blk1 = self.bs1.bs_get_block(key1)
+    blk1 = self.bs1.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.bs1.bs_get_block(key2)
+    blk2 = self.bs1.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.bs1.bs_get_block(key3)
+    blk3 = self.bs1.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.bs1.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.bs1.bs_block_get, key4)
 
     # ---- Repeat using only the second blockstore
     #
-    blk1 = self.bs2.bs_get_block(key1)
+    blk1 = self.bs2.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.bs2.bs_get_block(key2)
+    blk2 = self.bs2.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.bs2.bs_get_block(key3)
+    blk3 = self.bs2.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.bs2.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.bs2.bs_block_get, key4)
 
     # ---- Repeat using only the third blockstore
     #
-    blk1 = self.bs3.bs_get_block(key1)
+    blk1 = self.bs3.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.bs3.bs_get_block(key2)
+    blk2 = self.bs3.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.bs3.bs_get_block(key3)
+    blk3 = self.bs3.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.bs3.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.bs3.bs_block_get, key4)
 
     # Close and reopen everything.
     self.vbs.bs_close()
@@ -148,47 +148,47 @@ class Test_vbs_data_03:
 
     # ---- Repeat using only the first blockstore
     #
-    blk1 = self.bs1.bs_get_block(key1)
+    blk1 = self.bs1.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.bs1.bs_get_block(key2)
+    blk2 = self.bs1.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.bs1.bs_get_block(key3)
+    blk3 = self.bs1.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.bs1.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.bs1.bs_block_get, key4)
 
     # ---- Repeat using only the second blockstore
     #
-    blk1 = self.bs2.bs_get_block(key1)
+    blk1 = self.bs2.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.bs2.bs_get_block(key2)
+    blk2 = self.bs2.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.bs2.bs_get_block(key3)
+    blk3 = self.bs2.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.bs2.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.bs2.bs_block_get, key4)
 
     # ---- Repeat using only the third blockstore
     #
-    blk1 = self.bs3.bs_get_block(key1)
+    blk1 = self.bs3.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.bs3.bs_get_block(key2)
+    blk2 = self.bs3.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.bs3.bs_get_block(key3)
+    blk3 = self.bs3.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.bs3.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.bs3.bs_block_get, key4)
 
     # ---- Retrieve using the virtual blockstore
     #
-    blk1 = self.vbs.bs_get_block(key1)
+    blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
-    blk2 = self.vbs.bs_get_block(key2)
+    blk2 = self.vbs.bs_block_get(key2)
     assert blk2 == val2
-    blk3 = self.vbs.bs_get_block(key3)
+    blk3 = self.vbs.bs_block_get(key3)
     assert blk3 == val3
     key4 = buffer("key4")
-    py.test.raises(utp.NotFoundError, self.vbs.bs_get_block, key4)
+    py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key4)
 
     # Close for good.
     self.vbs.bs_close()

@@ -140,7 +140,7 @@ VBSPutRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
 {
     LOG(lgr, 6, *this << " process");
 
-    i_bsh->bs_put_block_async(&m_key[0], m_key.size(),
+    i_bsh->bs_block_put_async(&m_key[0], m_key.size(),
                               &m_blk[0], m_blk.size(),
                               *this, i_cp);
 }

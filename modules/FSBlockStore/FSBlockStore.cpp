@@ -388,7 +388,7 @@ FSBlockStore::bs_sync()
 }
 
 void
-FSBlockStore::bs_get_block_async(void const * i_keydata,
+ FSBlockStore::bs_block_get_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void * o_buffdata,
                                  size_t i_buffsize,
@@ -464,7 +464,7 @@ FSBlockStore::bs_get_block_async(void const * i_keydata,
 }
 
 void
-FSBlockStore::bs_put_block_async(void const * i_keydata,
+FSBlockStore::bs_block_put_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void const * i_blkdata,
                                  size_t i_blksize,
@@ -475,7 +475,7 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, m_instname << ' ' << "bs_put_block");
+        LOG(lgr, 6, m_instname << ' ' << "bs_block_put");
 
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
@@ -521,7 +521,7 @@ FSBlockStore::bs_put_block_async(void const * i_keydata,
                           O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
             if (fd == -1)
                 throwstream(InternalError, FILELINE
-                            << "FSBlockStore::bs_put_block: open failed on "
+                            << "FSBlockStore::bs_block_put: open failed on "
                             << blkpath << ": " << strerror(errno));
     
             int bytes_written = write(fd, i_blkdata, i_blksize);

@@ -44,13 +44,13 @@ class TestUnopenedBlockStore:
        
     k = buffer("persistentkey%(random.randrange(999999999))")
     v = buffer("persistentvalue")      
-    bs.bs_put_block(k, v)    
+    bs.bs_block_put(k, v)    
     bs.bs_close()
     
     bs1 = utp.BlockStore.open(CONFIG.BSTYPE,
                               "rootbs",
                               CONFIG.BSARGS(self.bspath))
-    b = bs1.bs_get_block(k)
+    b = bs1.bs_block_get(k)
     bs1.bs_close()
     CONFIG.remove_bs(self.bspath)
     

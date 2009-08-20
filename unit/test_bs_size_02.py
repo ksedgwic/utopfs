@@ -41,7 +41,7 @@ class Test_bs_size_02:
     # Use some bytes.
     k = buffer("k01")
     v = buffer("0123456789")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -53,7 +53,7 @@ class Test_bs_size_02:
       kstr = "k%02d" % (kval,)
       k = buffer(kstr)
       v = buffer("0123456789")
-      self.bs.bs_put_block(k, v)
+      self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -63,7 +63,7 @@ class Test_bs_size_02:
     # Next put should cause an NoSpaceError
     k = buffer("k11")
     v = buffer("0123456789")
-    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_block_put, k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -84,7 +84,7 @@ class Test_bs_size_02:
     # Next put should cause an NoSpaceError
     k = buffer("k11")
     v = buffer("0123456789")
-    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_block_put, k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -117,7 +117,7 @@ class Test_bs_size_02:
       kstr = "k%02d" % (kval,)
       k = buffer(kstr)
       v = buffer("0123456789")
-      self.bs.bs_put_block(k, v)
+      self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -127,7 +127,7 @@ class Test_bs_size_02:
     # Next put should cause an NoSpaceError
     k = buffer("k11")
     v = buffer("0123456789")
-    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_block_put, k, v)
 
     # Refresh all but first two blocks.
     time.sleep(1)
@@ -146,7 +146,7 @@ class Test_bs_size_02:
     # Now we can insert another block.
     k = buffer("k11")
     v = buffer("0123456789")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -162,7 +162,7 @@ class Test_bs_size_02:
     # Now we can insert another block.
     k = buffer("k12")
     v = buffer("0123456789")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # Check the blockstore stats.
     bss = self.bs.bs_stat();
@@ -172,12 +172,12 @@ class Test_bs_size_02:
     # Inserting the same key again should be fine.
     k = buffer("k12")
     v = buffer("0123456789")
-    self.bs.bs_put_block(k, v)
+    self.bs.bs_block_put(k, v)
 
     # But a different key should cause NoSpaceError
     k = buffer("k13")
     v = buffer("0123456789")
-    py.test.raises(utp.NoSpaceError, self.bs.bs_put_block, k, v)
+    py.test.raises(utp.NoSpaceError, self.bs.bs_block_put, k, v)
 
     # Close the blockstore.
     self.bs.bs_close()

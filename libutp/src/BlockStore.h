@@ -102,7 +102,7 @@ public:
     ///
     /// @return The size of the returned block.
     ///
-    size_t bs_get_block(void const * i_keydata,
+    size_t bs_block_get(void const * i_keydata,
                         size_t i_keysize,
                         void * o_outbuff,
                         size_t i_outsize)
@@ -127,7 +127,7 @@ public:
     /// @throw ValueError One of the arguments is out of range.
     /// @throw NoSpaceError Out of space to store block.
     ///
-    void bs_put_block(void const * i_keydata,
+    void bs_block_put(void const * i_keydata,
                       size_t i_keysize,
                       void const * i_blkdata,
                       size_t i_blksize)
@@ -254,7 +254,7 @@ public:
 
     /// Get block via non-blocking interface.
     ///
-    virtual void bs_get_block_async(void const * i_keydata,
+     virtual void bs_block_get_async(void const * i_keydata,
                                     size_t i_keysize,
                                     void * o_buffdata,
                                     size_t i_buffsize,
@@ -280,7 +280,7 @@ public:
 
     /// Put block via non-blocking interface.
     ///
-    virtual void bs_put_block_async(void const * i_keydata,
+    virtual void bs_block_put_async(void const * i_keydata,
                                     size_t i_keysize,
                                     void const * i_blkdata,
                                     size_t i_blksize,
