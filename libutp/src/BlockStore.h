@@ -137,6 +137,10 @@ public:
 
     /// Start a refresh cycle.
     ///
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
+    ///
     /// @param[in] i_rid A unique refresh cycle identifier.
     ///
     /// @throw InternalError An non-recoverable error occurred.
@@ -144,7 +148,7 @@ public:
     ///
     virtual void bs_refresh_start(utp::uint64 i_rid)
         throw(InternalError,
-              NotUniqueError) = 0;
+              NotUniqueError);
 
     /// Refresh a list of blocks, return list of any missing.
     ///
@@ -170,6 +174,10 @@ public:
         
     /// Finish a refresh cycle.
     ///
+    /// @note This interface is a base class implemented wrapper on
+    ///       the nonblocking interface.  Implementing classes do not
+    ///       need to implement this ...
+    ///
     /// @param[in] i_rid The unique refresh cycle identifier.
     ///
     /// @throw InternalError An non-recoverable error occurred.
@@ -177,7 +185,7 @@ public:
     ///
     virtual void bs_refresh_finish(utp::uint64 i_rid)
         throw(InternalError,
-              NotFoundError) = 0;
+              NotFoundError);
 
     /// Insert a SignedHeadNode into the BlockStore.
     ///
@@ -289,16 +297,36 @@ public:
         throw(InternalError,
               ValueError) = 0;
 
-    /// Completion function interface for non-blocking refresh.
+    /// Completion function interface for async RefreshStart
     ///
-    class BlockRefreshCompletion
+    class RefreshStartCompletion
     {
     public:
-        virtual void br_complete(void const * i_keydata,
+        virtual void rs_complete(utp::uint64 i_rid,
+                                 void const * i_argp) = 0;
+
+        virtual void rs_error(utp::uint64 i_rid,
+                              void const * i_argp,
+                              Exception const & i_exp) = 0;
+    };
+
+    /// Start a refresh cycle via the non-blocking interface.
+    ///
+    virtual void bs_refresh_start_async(utp::uint64 i_rid,
+                                        RefreshStartCompletion & i_cmpl,
+                                        void const * i_argp)
+        throw(InternalError) = 0;
+
+    /// Completion function interface for non-blocking refresh.
+    ///
+    class RefreshBlockCompletion
+    {
+    public:
+        virtual void rb_complete(void const * i_keydata,
                                  size_t i_keysize,
                                  void const * i_argp) = 0;
 
-        virtual void br_missing(void const * i_keydata,
+        virtual void rb_missing(void const * i_keydata,
                                 size_t i_keysize,
                                 void const * i_argp) = 0;
     };
@@ -316,11 +344,31 @@ public:
     virtual void bs_refresh_block_async(utp::uint64 i_rid,
                                         void const * i_keydata,
                                         size_t i_keysize,
-                                        BlockRefreshCompletion & i_cmpl,
+                                        RefreshBlockCompletion & i_cmpl,
                                         void const * i_argp)
         throw(InternalError,
               NotFoundError) = 0;
-        
+
+    /// Completion function interface for async RefreshFinish
+    ///
+    class RefreshFinishCompletion
+    {
+    public:
+        virtual void rf_complete(utp::uint64 i_rid,
+                                 void const * i_argp) = 0;
+
+        virtual void rf_error(utp::uint64 i_rid,
+                              void const * i_argp,
+                              Exception const & i_exp) = 0;
+    };
+
+    /// Finish a refresh cycle via the non-blocking interface.
+    ///
+    virtual void bs_refresh_finish_async(utp::uint64 i_rid,
+                                         RefreshFinishCompletion & i_cmpl,
+                                         void const * i_argp)
+        throw(InternalError) = 0;
+
     /// Completion callback interface for async SignedHeadNode
     /// insertion.
     ///

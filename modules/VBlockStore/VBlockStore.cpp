@@ -196,19 +196,29 @@ VBlockStore::bs_block_put_async(void const * i_keydata,
 }
 
 void
-VBlockStore::bs_refresh_start(uint64 i_rid)
-    throw(InternalError,
-          NotUniqueError)
+VBlockStore::bs_refresh_start_async(uint64 i_rid,
+                                    RefreshStartCompletion & i_cmpl,
+                                    void const * i_argp)
+    throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_refresh_start unimplemented");
+    try
+    {
+        throwstream(InternalError, FILELINE
+                    << "VBlockStore::bs_refresh_start_async unimplemented");
+
+        i_cmpl.rs_complete(i_rid, i_argp);
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.rs_error(i_rid, i_argp, i_ex);
+    }
 }
 
 void
 VBlockStore::bs_refresh_block_async(uint64 i_rid,
                                     void const * i_keydata,
                                     size_t i_keysize,
-                                    BlockRefreshCompletion & i_cmpl,
+                                    RefreshBlockCompletion & i_cmpl,
                                     void const * i_argp)
     throw(InternalError,
           NotFoundError)
@@ -218,12 +228,22 @@ VBlockStore::bs_refresh_block_async(uint64 i_rid,
 }
         
 void
-VBlockStore::bs_refresh_finish(uint64 i_rid)
-    throw(InternalError,
-          NotFoundError)
+VBlockStore::bs_refresh_finish_async(uint64 i_rid,
+                                     RefreshFinishCompletion & i_cmpl,
+                                     void const * i_argp)
+    throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_refresh_finish unimplemented");
+    try
+    {
+        throwstream(InternalError, FILELINE
+                    << "VBlockStore::bs_refresh_finish_async unimplemented");
+
+        i_cmpl.rf_complete(i_rid, i_argp);
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.rf_error(i_rid, i_argp, i_ex);
+    }
 }
 
 void

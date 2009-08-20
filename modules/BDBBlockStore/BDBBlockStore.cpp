@@ -334,43 +334,53 @@ BDBBlockStore::bs_block_put_async(void const * i_keydata,
 }
 
 void
-BDBBlockStore::bs_refresh_start(uint64 i_rid)
-    throw(InternalError,
-          NotUniqueError)
+BDBBlockStore::bs_refresh_start_async(uint64 i_rid,
+                                RefreshStartCompletion & i_cmpl,
+                                void const * i_argp)
+    throw(InternalError)
 {
 	if (! m_db_opened) {
 		throwstream(InternalError, FILELINE
                 << "BDBBlockStore db not opened!");
 	}	
 
-	try {
+    try
+    {
+        try {
 		
-		Dbt rid_key((void *)&i_rid,sizeof(i_rid));
+            Dbt rid_key((void *)&i_rid,sizeof(i_rid));
 
-		int results = m_db_refresh_ids->exists(NULL,&rid_key,0);
-		if (results == 0) {
-			throwstream(NotUniqueError,
-		                "refresh id " << i_rid << " already exists!");
-		} else if (results != DB_NOTFOUND) { 
-		    throwstream(InternalError, FILELINE
-		            << "BDBBlockStore::bs_refresh_start: " << results << db_strerror(results));
-		}
+            int results = m_db_refresh_ids->exists(NULL,&rid_key,0);
+            if (results == 0) {
+                throwstream(NotUniqueError,
+                            "refresh id " << i_rid << " already exists!");
+            } else if (results != DB_NOTFOUND) { 
+                throwstream(InternalError, FILELINE
+                            << "BDBBlockStore::bs_refresh_start: " << results << db_strerror(results));
+            }
 
-		Dbt key((void *)&i_rid,sizeof(i_rid));
-		//data should be date
-		Dbt data((void *)&i_rid,sizeof(i_rid));
+            Dbt key((void *)&i_rid,sizeof(i_rid));
+            //data should be date
+            Dbt data((void *)&i_rid,sizeof(i_rid));
 
-		results = m_db_refresh_ids->put(NULL,&key,&data,DB_NOOVERWRITE);
-		if (results != 0) {
-			throwstream(InternalError, FILELINE
-		            << "BDBBlockStore::bs_refresh_start returned error " << results << db_strerror(results));
-		}
-	} catch (DbException e) {
-		throwstream(InternalError, FILELINE
-                << "BDBBlockStore::bs_refresh_start"
-                << ": error: " << ACE_OS::strerror(errno)); 
-	}
-	
+            results = m_db_refresh_ids->put(NULL,&key,&data,DB_NOOVERWRITE);
+            if (results != 0) {
+                throwstream(InternalError, FILELINE
+                            << "BDBBlockStore::bs_refresh_start returned error " << results << db_strerror(results));
+            }
+
+            i_cmpl.rs_complete(i_rid, i_argp);
+
+        } catch (DbException e) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore::bs_refresh_start"
+                        << ": error: " << ACE_OS::strerror(errno)); 
+        }
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.rs_error(i_rid, i_argp, i_ex);
+    }
 }
 
 #if 0
@@ -433,7 +443,7 @@ void
 BDBBlockStore::bs_refresh_block_async(uint64 i_rid,
                                       void const * i_keydata,
                                       size_t i_keysize,
-                                      BlockRefreshCompletion & i_cmpl,
+                                      RefreshBlockCompletion & i_cmpl,
                                       void const * i_argp)
     throw(InternalError,
           NotFoundError)
@@ -455,34 +465,41 @@ BDBBlockStore::bs_refresh_block_async(uint64 i_rid,
 	            << "BDBBlockStore::bs_refresh_blocks: " << results << db_strerror(results));
 	}
 	
-	i_cmpl.br_complete(i_keydata, i_keysize, i_argp);
+	i_cmpl.rb_complete(i_keydata, i_keysize, i_argp);
 
     //throwstream(InternalError, FILELINE << "Feature not implemented"); 
 }
         
 void
-BDBBlockStore::bs_refresh_finish(uint64 i_rid)
-    throw(InternalError,
-          NotFoundError)
+BDBBlockStore::bs_refresh_finish_async(uint64 i_rid,
+                                       RefreshFinishCompletion & i_cmpl,
+                                       void const * i_argp)
+    throw(InternalError)
 {
-	if (! m_db_opened) {
-		throwstream(InternalError, FILELINE
-                << "BDBBlockStore db not opened!");
-	}
+    try
+    {
+        if (! m_db_opened) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore db not opened!");
+        }
 
-	Dbt rid_key((void *)&i_rid,sizeof(i_rid));
+        Dbt rid_key((void *)&i_rid,sizeof(i_rid));
 
-	int results = m_db_refresh_ids->exists(NULL,&rid_key,0);
-	if (results == DB_NOTFOUND) {
-		throwstream(NotFoundError,
-	                "refresh id " << i_rid << " doesn't exist");
-	} else if (results != 0) {
-	    throwstream(InternalError, FILELINE
-	            << "BDBBlockStore::bs_refresh_blocks: " << results << db_strerror(results));
-	}
+        int results = m_db_refresh_ids->exists(NULL,&rid_key,0);
+        if (results == DB_NOTFOUND) {
+            throwstream(NotFoundError,
+                        "refresh id " << i_rid << " doesn't exist");
+        } else if (results != 0) {
+            throwstream(InternalError, FILELINE
+                        << "BDBBlockStore::bs_refresh_blocks: " << results << db_strerror(results));
+        }
 
-   // throwstream(InternalError, FILELINE
-   //	            << "BDBBlockStore::bs_refresh_finish unimplemented");
+        i_cmpl.rf_complete(i_rid, i_argp);
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.rf_error(i_rid, i_argp, i_ex);
+    }
 }
 
 void

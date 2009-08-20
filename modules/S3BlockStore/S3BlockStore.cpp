@@ -1098,88 +1098,98 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
 }
 
 void
-S3BlockStore::bs_refresh_start(uint64 i_rid)
-    throw(InternalError,
-          NotUniqueError)
+S3BlockStore::bs_refresh_start_async(uint64 i_rid,
+                                     RefreshStartCompletion & i_cmpl,
+                                     void const * i_argp)
+    throw(InternalError)
 {
-    string rname = ridname(i_rid);
-    string rpath = blockpath(rname);
+    try
+    {
+        string rname = ridname(i_rid);
+        string rpath = blockpath(rname);
  
-    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
+        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-    // Setup a bucket context.
-    S3BucketContext buck;
-    buck.bucketName = m_bucket_name.c_str();
-    buck.protocol = m_protocol;
-    buck.uriStyle = m_uri_style;
-    buck.accessKeyId = m_access_key_id.c_str();
-    buck.secretAccessKey = m_secret_access_key.c_str();
+        // Setup a bucket context.
+        S3BucketContext buck;
+        buck.bucketName = m_bucket_name.c_str();
+        buck.protocol = m_protocol;
+        buck.uriStyle = m_uri_style;
+        buck.accessKeyId = m_access_key_id.c_str();
+        buck.secretAccessKey = m_secret_access_key.c_str();
 
-    // Does the refresh ID already exist?
-    ResponseHandler rh;
-    S3_head_object(&buck,
-                   rpath.c_str(),
-                   NULL,
-                   &rsp_tramp,
-                   &rh);
-    S3Status st = rh.wait();
+        // Does the refresh ID already exist?
+        ResponseHandler rh;
+        S3_head_object(&buck,
+                       rpath.c_str(),
+                       NULL,
+                       &rsp_tramp,
+                       &rh);
+        S3Status st = rh.wait();
 
-    if (st == S3StatusOK)
-        throwstream(NotUniqueError,
-                    "refresh id " << i_rid << " already exists");
+        if (st == S3StatusOK)
+            throwstream(NotUniqueError,
+                        "refresh id " << i_rid << " already exists");
 
-    if (st != S3StatusHttpErrorNotFound)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+        if (st != S3StatusHttpErrorNotFound)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
 
-    // Create the refresh ID mark.
-    S3PutProperties pp;
-    ACE_OS::memset(&pp, '\0', sizeof(pp));
-    PutHandler ph((uint8 const *) NULL, 0);
-    S3_put_object(&buck,
-                  rpath.c_str(),
-                  0,
-                  &pp,
-                  NULL,
-                  &put_tramp,
-                  &ph);
-    st = ph.wait();
+        // Create the refresh ID mark.
+        S3PutProperties pp;
+        ACE_OS::memset(&pp, '\0', sizeof(pp));
+        PutHandler ph((uint8 const *) NULL, 0);
+        S3_put_object(&buck,
+                      rpath.c_str(),
+                      0,
+                      &pp,
+                      NULL,
+                      &put_tramp,
+                      &ph);
+        st = ph.wait();
 
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
 
-    // Execute a head on the refresh ID to get it's tstamp.
-    ResponseHandler rh2;
-    S3_head_object(&buck,
-                   rpath.c_str(),
-                   NULL,
-                   &rsp_tramp,
-                   &rh2);
-    st = rh2.wait();
+        // Execute a head on the refresh ID to get it's tstamp.
+        ResponseHandler rh2;
+        S3_head_object(&buck,
+                       rpath.c_str(),
+                       NULL,
+                       &rsp_tramp,
+                       &rh2);
+        st = rh2.wait();
 
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
     
-    if (!rh2.m_propsvalid)
-        throwstream(InternalError, FILELINE
-                    << "Rats, properties weren't valid!");
+        if (!rh2.m_propsvalid)
+            throwstream(InternalError, FILELINE
+                        << "Rats, properties weren't valid!");
 
-    time_t mtime = time_t(rh2.m_last_modified);
-    off_t size = 0;
+        time_t mtime = time_t(rh2.m_last_modified);
+        off_t size = 0;
 
-    // Create the refresh_id entry.
-    touch_entry(rpath, mtime, size);
+        // Create the refresh_id entry.
+        touch_entry(rpath, mtime, size);
+
+        i_cmpl.rs_complete(i_rid, i_argp);
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.rs_error(i_rid, i_argp, i_ex);
+    }
 }
 
 void
 S3BlockStore::bs_refresh_block_async(uint64 i_rid,
                                      void const * i_keydata,
                                      size_t i_keysize,
-                                     BlockRefreshCompletion & i_cmpl,
+                                     RefreshBlockCompletion & i_cmpl,
                                      void const * i_argp)
     throw(InternalError,
           NotFoundError)
@@ -1236,7 +1246,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
         case S3StatusErrorNoSuchKey:
             // Block is missing.
             guard.release();
-            i_cmpl.br_missing(i_keydata, i_keysize, i_argp);
+            i_cmpl.rb_missing(i_keydata, i_keysize, i_argp);
             return;
             
         case S3StatusOK:
@@ -1249,7 +1259,7 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
                 touch_entry(blkpath, mtime, size);
 
                 guard.release();
-                i_cmpl.br_complete(i_keydata, i_keysize, i_argp);
+                i_cmpl.rb_complete(i_keydata, i_keysize, i_argp);
                 return;
             }
 
@@ -1266,113 +1276,125 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
 }
         
 void
-S3BlockStore::bs_refresh_finish(uint64 i_rid)
-    throw(InternalError,
-          NotFoundError)
+S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
+                                      RefreshFinishCompletion & i_cmpl,
+                                      void const * i_argp)
+    throw(InternalError)
 {
-    string rname = ridname(i_rid);
-    string rpath = blockpath(rname);
-
-    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
-    // Setup a bucket context.
-    S3BucketContext buck;
-    buck.bucketName = m_bucket_name.c_str();
-    buck.protocol = m_protocol;
-    buck.uriStyle = m_uri_style;
-    buck.accessKeyId = m_access_key_id.c_str();
-    buck.secretAccessKey = m_secret_access_key.c_str();
-
-    EntryHandle reh = new Entry(rpath, 0, 0);
-    EntrySet::const_iterator pos = m_entries.find(reh);
-    if (pos == m_entries.end())
-        throwstream(NotFoundError,
-                    "refresh id " << i_rid << " not found");
-
-    // Update the MARKNAME file.
-    MD5 md5sum(&rpath[0], rpath.size());
-    S3PutProperties pp;
-    ACE_OS::memset(&pp, '\0', sizeof(pp));
-    pp.md5 = md5sum;
-    PutHandler ph((uint8 const *) &rpath[0], rpath.size());
-    S3_put_object(&buck,
-                  "MARKNAME",
-                  rpath.size(),
-                  &pp,
-                  NULL,
-                  &put_tramp,
-                  &ph);
-    S3Status st = ph.wait();
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
-
-    // Delete the old mark
-    if (!m_markname.empty())
+    try
     {
-        ResponseHandler rh2;
-        S3_delete_object(&buck,
-                         m_markname.c_str(),
-                         NULL,
-                         &rsp_tramp,
-                         &rh2);
-        st = rh2.wait();
+        string rname = ridname(i_rid);
+        string rpath = blockpath(rname);
+
+        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
+
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+        // Setup a bucket context.
+        S3BucketContext buck;
+        buck.bucketName = m_bucket_name.c_str();
+        buck.protocol = m_protocol;
+        buck.uriStyle = m_uri_style;
+        buck.accessKeyId = m_access_key_id.c_str();
+        buck.secretAccessKey = m_secret_access_key.c_str();
+
+        EntryHandle reh = new Entry(rpath, 0, 0);
+        EntrySet::const_iterator pos = m_entries.find(reh);
+        if (pos == m_entries.end())
+            throwstream(NotFoundError,
+                        "refresh id " << i_rid << " not found");
+
+        // Update the MARKNAME file.
+        MD5 md5sum(&rpath[0], rpath.size());
+        S3PutProperties pp;
+        ACE_OS::memset(&pp, '\0', sizeof(pp));
+        pp.md5 = md5sum;
+        PutHandler ph((uint8 const *) &rpath[0], rpath.size());
+        S3_put_object(&buck,
+                      "MARKNAME",
+                      rpath.size(),
+                      &pp,
+                      NULL,
+                      &put_tramp,
+                      &ph);
+        S3Status st = ph.wait();
         if (st != S3StatusOK)
             throwstream(InternalError, FILELINE
                         << "Unexpected S3 error: " << st);
 
-        // Remove the MARK entry.
-        EntryHandle meh = new Entry(m_markname, 0, 0);
-        pos = m_entries.find(meh);
-        if (pos == m_entries.end())
+        // Delete the old mark
+        if (!m_markname.empty())
         {
-            throwstream(InternalError, FILELINE
-                        << "missing mark: " << m_markname);
+            ResponseHandler rh2;
+            S3_delete_object(&buck,
+                             m_markname.c_str(),
+                             NULL,
+                             &rsp_tramp,
+                             &rh2);
+            st = rh2.wait();
+            if (st != S3StatusOK)
+                throwstream(InternalError, FILELINE
+                            << "Unexpected S3 error: " << st);
 
+            // Remove the MARK entry.
+            EntryHandle meh = new Entry(m_markname, 0, 0);
+            pos = m_entries.find(meh);
+            if (pos == m_entries.end())
+            {
+                throwstream(InternalError, FILELINE
+                            << "missing mark: " << m_markname);
+
+            }
+            else
+            {
+                // Found it.
+                meh = *pos;
+
+                // Erase it from the entries set.
+                m_entries.erase(pos);
+
+                // Remove from current location in LRU list.
+                m_lru.erase(meh->m_listpos);
+            }
         }
-        else
+
+        // Now we're using the new mark.
+        m_markname = rpath;
+
+        // Add up all the committed memory.
+        off_t committed = 0;
+        off_t uncommitted = 0;
+        bool saw_mark = false;
+        for (EntryList::const_iterator it = m_lru.begin();
+             it != m_lru.end();
+             ++it)
         {
-            // Found it.
-            meh = *pos;
+            EntryHandle const & eh = *it;
 
-            // Erase it from the entries set.
-            m_entries.erase(pos);
-
-            // Remove from current location in LRU list.
-            m_lru.erase(meh->m_listpos);
+            if (saw_mark)
+            {
+                uncommitted += eh->m_size;
+            }
+            else if (eh->m_name == markname())
+            {
+                saw_mark = true;
+                m_mark = eh;
+            }
+            else
+            {
+                committed += eh->m_size;
+            }
         }
+
+        m_committed = committed;
+        m_uncommitted = uncommitted;
+        
+        i_cmpl.rf_complete(i_rid, i_argp);
     }
-
-    // Now we're using the new mark.
-    m_markname = rpath;
-
-    // Add up all the committed memory.
-    off_t committed = 0;
-    off_t uncommitted = 0;
-    bool saw_mark = false;
-    for (EntryList::const_iterator it = m_lru.begin(); it != m_lru.end(); ++it)
+    catch (Exception const & i_ex)
     {
-        EntryHandle const & eh = *it;
-
-        if (saw_mark)
-        {
-            uncommitted += eh->m_size;
-        }
-        else if (eh->m_name == markname())
-        {
-            saw_mark = true;
-            m_mark = eh;
-        }
-        else
-        {
-            committed += eh->m_size;
-        }
+        i_cmpl.rf_error(i_rid, i_argp, i_ex);
     }
-
-    m_committed = committed;
-    m_uncommitted = uncommitted;
 }
 
 void

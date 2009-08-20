@@ -67,21 +67,23 @@ public:
         throw(utp::InternalError,
               utp::ValueError);
 
-    virtual void bs_refresh_start(utp::uint64 i_rid)
-        throw(utp::InternalError,
-              utp::NotUniqueError);
+    virtual void bs_refresh_start_async(utp::uint64 i_rid,
+                                        RefreshStartCompletion & i_cmpl,
+                                        void const * i_argp)
+        throw(utp::InternalError);
 
     virtual void bs_refresh_block_async(utp::uint64 i_rid,
                                         void const * i_keydata,
                                         size_t i_keysize,
-                                        BlockRefreshCompletion & i_cmpl,
+                                        RefreshBlockCompletion & i_cmpl,
                                         void const * i_argp)
         throw(utp::InternalError,
               utp::NotFoundError);
         
-    virtual void bs_refresh_finish(utp::uint64 i_rid)
-        throw(utp::InternalError,
-              utp::NotFoundError);
+    virtual void bs_refresh_finish_async(utp::uint64 i_rid,
+                                        RefreshFinishCompletion & i_cmpl,
+                                        void const * i_argp)
+        throw(utp::InternalError);
 
     virtual void bs_head_insert_async(utp::SignedHeadNode const & i_shn,
                                       SignedHeadInsertCompletion & i_cmpl,

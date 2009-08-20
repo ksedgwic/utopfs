@@ -566,49 +566,59 @@ FSBlockStore::bs_block_put_async(void const * i_keydata,
 }
 
 void
-FSBlockStore::bs_refresh_start(uint64 i_rid)
-    throw(InternalError,
-          NotUniqueError)
+FSBlockStore::bs_refresh_start_async(uint64 i_rid,
+                                     RefreshStartCompletion & i_cmpl,
+                                     void const * i_argp)
+    throw(InternalError)
 {
-    string rname = ridname(i_rid);
-    string rpath = blockpath(rname);
+    try
+    {
+        string rname = ridname(i_rid);
+        string rpath = blockpath(rname);
  
-    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
+        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+        ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    // Does the refresh ID already exist?
-    ACE_stat sb;
-    int rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv != -1)
-        throwstream(NotUniqueError,
-                    "refresh id " << i_rid << " already exists");
+        // Does the refresh ID already exist?
+        ACE_stat sb;
+        int rv = ACE_OS::stat(rpath.c_str(), &sb);
+        if (rv != -1)
+            throwstream(NotUniqueError,
+                        "refresh id " << i_rid << " already exists");
 
-    // Create the refresh id mark.
-    if (mknod(rpath.c_str(), S_IFREG, 0) != 0)
-        throwstream(InternalError, FILELINE
-                    << "mknod " << rpath << " failed: "
-                    << ACE_OS::strerror(errno));
+        // Create the refresh id mark.
+        if (mknod(rpath.c_str(), S_IFREG, 0) != 0)
+            throwstream(InternalError, FILELINE
+                        << "mknod " << rpath << " failed: "
+                        << ACE_OS::strerror(errno));
 
-    // Stat the file we just wrote so we can use the exact tstamp
-    // and size the filesystem sees.
-    rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv == -1)
-        throwstream(InternalError, FILELINE
-                    << "stat " << rpath << " failed: "
-                    << ACE_OS::strerror(errno));
-    time_t mtime = sb.st_mtime;
-    off_t size = sb.st_size;
+        // Stat the file we just wrote so we can use the exact tstamp
+        // and size the filesystem sees.
+        rv = ACE_OS::stat(rpath.c_str(), &sb);
+        if (rv == -1)
+            throwstream(InternalError, FILELINE
+                        << "stat " << rpath << " failed: "
+                        << ACE_OS::strerror(errno));
+        time_t mtime = sb.st_mtime;
+        off_t size = sb.st_size;
 
-    // Create the refresh_id entry.
-    touch_entry(rname, mtime, size);
+        // Create the refresh_id entry.
+        touch_entry(rname, mtime, size);
+
+        i_cmpl.rs_complete(i_rid, i_argp);
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.rs_error(i_rid, i_argp, i_ex);
+    }
 }
 
 void
 FSBlockStore::bs_refresh_block_async(uint64 i_rid,
                                      void const * i_keydata,
                                      size_t i_keysize,
-                                     BlockRefreshCompletion & i_cmpl,
+                                     RefreshBlockCompletion & i_cmpl,
                                      void const * i_argp)
     throw(InternalError,
           NotFoundError)
@@ -665,108 +675,121 @@ FSBlockStore::bs_refresh_block_async(uint64 i_rid,
     }
 
     if (ismissing)
-        i_cmpl.br_missing(i_keydata, i_keysize, i_argp);
+        i_cmpl.rb_missing(i_keydata, i_keysize, i_argp);
     else
-        i_cmpl.br_complete(i_keydata, i_keysize, i_argp);
+        i_cmpl.rb_complete(i_keydata, i_keysize, i_argp);
 }
         
 void
-FSBlockStore::bs_refresh_finish(uint64 i_rid)
-    throw(InternalError,
-          NotFoundError)
+FSBlockStore::bs_refresh_finish_async(uint64 i_rid,
+                                      RefreshFinishCompletion & i_cmpl,
+                                      void const * i_argp)
+    throw(InternalError)
 {
-    string rname = ridname(i_rid);
-    string rpath = blockpath(rname);
-
-    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    // Does the refresh ID exist?
-    ACE_stat sb;
-    int rv = ACE_OS::stat(rpath.c_str(), &sb);
-    if (rv != 0 || !S_ISREG(sb.st_mode))
-        throwstream(NotFoundError,
-                    "refresh id " << i_rid << " not found");
-
-    // Rename the refresh tag to the mark name.
-    string mname = markname();
-    string mpath = blockpath(mname);
-    if (rename(rpath.c_str(), mpath.c_str()) != 0)
-        throwstream(InternalError,
-                    "rename " << rpath << ' ' << mpath << " failed:"
-                    << ACE_OS::strerror(errno));
-
-    // Remove the MARK entry.
-    EntryHandle meh = new Entry(mname, 0, 0);
-    EntrySet::const_iterator pos = m_entries.find(meh);
-    if (pos == m_entries.end())
+    try
     {
-        // Not in the entry table yet, no action needed ...
-    }
-    else
-    {
-        // Found it.
-        meh = *pos;
+        string rname = ridname(i_rid);
+        string rpath = blockpath(rname);
 
-        // Erase it from the entries set.
-        m_entries.erase(pos);
+        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
 
-        // Remove from current location in LRU list.
-        m_lru.erase(meh->m_listpos);
-    }
+        ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    // Find the Refresh token.
-    EntryHandle reh = new Entry(rname, 0, 0);
-    pos = m_entries.find(reh);
-    if (pos == m_entries.end())
-    {
-        // Not in the entry table yet, very bad!
-        throwstream(InternalError, FILELINE << "Missing RID entry " << rname);
-    }
-    else
-    {
-        // Found it.
-        reh = *pos;
+        // Does the refresh ID exist?
+        ACE_stat sb;
+        int rv = ACE_OS::stat(rpath.c_str(), &sb);
+        if (rv != 0 || !S_ISREG(sb.st_mode))
+            throwstream(NotFoundError,
+                        "refresh id " << i_rid << " not found");
 
-        // Erase it from the entries set.
-        m_entries.erase(pos);
+        // Rename the refresh tag to the mark name.
+        string mname = markname();
+        string mpath = blockpath(mname);
+        if (rename(rpath.c_str(), mpath.c_str()) != 0)
+            throwstream(InternalError,
+                        "rename " << rpath << ' ' << mpath << " failed:"
+                        << ACE_OS::strerror(errno));
 
-        // Change it's name to the MARK.
-        reh->m_name = markname();
-
-        // Reinsert, leave in current spot in the LRU list with it's
-        // current tstamp.
-        //
-        m_entries.insert(reh);
-
-        m_mark = reh;
-    }
-
-    // Add up all the committed memory.
-    off_t committed = 0;
-    off_t uncommitted = 0;
-    bool saw_mark = false;
-    for (EntryList::const_iterator it = m_lru.begin(); it != m_lru.end(); ++it)
-    {
-        EntryHandle const & eh = *it;
-
-        if (saw_mark)
+        // Remove the MARK entry.
+        EntryHandle meh = new Entry(mname, 0, 0);
+        EntrySet::const_iterator pos = m_entries.find(meh);
+        if (pos == m_entries.end())
         {
-            uncommitted += eh->m_size;
-        }
-        else if (eh->m_name == markname())
-        {
-            saw_mark = true;
+            // Not in the entry table yet, no action needed ...
         }
         else
         {
-            committed += eh->m_size;
-        }
-    }
+            // Found it.
+            meh = *pos;
 
-    m_committed = committed;
-    m_uncommitted = uncommitted;
+            // Erase it from the entries set.
+            m_entries.erase(pos);
+
+            // Remove from current location in LRU list.
+            m_lru.erase(meh->m_listpos);
+        }
+
+        // Find the Refresh token.
+        EntryHandle reh = new Entry(rname, 0, 0);
+        pos = m_entries.find(reh);
+        if (pos == m_entries.end())
+        {
+            // Not in the entry table yet, very bad!
+            throwstream(InternalError, FILELINE
+                        << "Missing RID entry " << rname);
+        }
+        else
+        {
+            // Found it.
+            reh = *pos;
+
+            // Erase it from the entries set.
+            m_entries.erase(pos);
+
+            // Change it's name to the MARK.
+            reh->m_name = markname();
+
+            // Reinsert, leave in current spot in the LRU list with it's
+            // current tstamp.
+            //
+            m_entries.insert(reh);
+
+            m_mark = reh;
+        }
+
+        // Add up all the committed memory.
+        off_t committed = 0;
+        off_t uncommitted = 0;
+        bool saw_mark = false;
+        for (EntryList::const_iterator it = m_lru.begin();
+             it != m_lru.end();
+             ++it)
+        {
+            EntryHandle const & eh = *it;
+
+            if (saw_mark)
+            {
+                uncommitted += eh->m_size;
+            }
+            else if (eh->m_name == markname())
+            {
+                saw_mark = true;
+            }
+            else
+            {
+                committed += eh->m_size;
+            }
+        }
+
+        m_committed = committed;
+        m_uncommitted = uncommitted;
+
+        i_cmpl.rf_complete(i_rid, i_argp);
+    }
+    catch (Exception const & i_ex)
+    {
+        i_cmpl.rf_error(i_rid, i_argp, i_ex);
+    }
 }
 
 void

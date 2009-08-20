@@ -8,6 +8,7 @@ PYTESTS =	\
 			test_vbs_data_01.py \
 			test_vbs_data_02.py \
 			test_vbs_data_03.py \
+			test_vbs_refresh_01.py \
 			test_bs_unopened.py \
 			test_bs_basic_01.py \
 			test_bs_refresh_01.py \

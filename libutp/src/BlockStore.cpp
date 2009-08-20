@@ -101,18 +101,43 @@ public:
     }
 };
 
-class RefreshCompletion
-    : public BlockStore::BlockRefreshCompletion
+class BSRefreshStartCompletion
+    : public BlockStore::RefreshStartCompletion
     , public BlockingCompletion
 {
 public:
-    RefreshCompletion(size_t i_count,
-                      BlockStore::KeySeq & o_missing)
+    BSRefreshStartCompletion()
+    {}
+
+    virtual void rs_complete(uint64 i_rid,
+                             void const * i_argp)
+    {
+        done();
+    }
+
+    virtual void rs_error(uint64 i_rid,
+                          void const * i_argp,
+                          Exception const & i_ex)
+    {
+        m_except = i_ex.clone();
+        done();
+    }
+
+private:
+};
+
+class BSRefreshBlocksCompletion
+    : public BlockStore::RefreshBlockCompletion
+    , public BlockingCompletion
+{
+public:
+    BSRefreshBlocksCompletion(size_t i_count,
+                              BlockStore::KeySeq & o_missing)
         : m_count(i_count)
         , m_missing(o_missing)
     {}
 
-    virtual void br_complete(void const * i_keydata,
+    virtual void rb_complete(void const * i_keydata,
                              size_t i_keysize,
                              void const * i_argp)
     {
@@ -120,7 +145,7 @@ public:
             done();
     }
 
-    virtual void br_missing(void const * i_keydata,
+    virtual void rb_missing(void const * i_keydata,
                             size_t i_keysize,
                             void const * i_argp)
     {
@@ -133,6 +158,31 @@ public:
 private:
     size_t						m_count;
     BlockStore::KeySeq &		m_missing;
+};
+
+class BSRefreshFinishCompletion
+    : public BlockStore::RefreshFinishCompletion
+    , public BlockingCompletion
+{
+public:
+    BSRefreshFinishCompletion()
+    {}
+
+    virtual void rf_complete(uint64 i_rid,
+                             void const * i_argp)
+    {
+        done();
+    }
+
+    virtual void rf_error(uint64 i_rid,
+                          void const * i_argp,
+                          Exception const & i_ex)
+    {
+        m_except = i_ex.clone();
+        done();
+    }
+
+private:
 };
 
 class InsertCompletion
@@ -244,6 +294,25 @@ BlockStore::bs_block_put(void const * i_keydata,
 }
 
 void
+BlockStore::bs_refresh_start(uint64 i_rid)
+        throw(InternalError,
+              NotUniqueError)
+{
+    // Create our completion handler.
+    BSRefreshStartCompletion rsc;
+
+    // Initiate the asynchrounous refresh start
+    bs_refresh_start_async(i_rid, rsc, NULL);
+
+    // Wait for completion.
+    rsc.wait();
+
+    // If there was an exception, throw it.
+    if (rsc.is_error())
+        rsc.rethrow();
+}
+
+void
 BlockStore::bs_refresh_blocks(uint64 i_rid,
                               BlockStore::KeySeq const & i_keys,
                               BlockStore::KeySeq & o_missing)
@@ -251,19 +320,38 @@ BlockStore::bs_refresh_blocks(uint64 i_rid,
           NotFoundError)
 {
     // Create our completion handler.
-    RefreshCompletion rc(i_keys.size(), o_missing);
+    BSRefreshBlocksCompletion rbc(i_keys.size(), o_missing);
 
     // Initiate all the refreshes asynchronously.
     for (unsigned i = 0; i < i_keys.size(); ++i)
         bs_refresh_block_async(i_rid, &i_keys[i][0],
-                               i_keys[i].size(), rc, NULL);
+                               i_keys[i].size(), rbc, NULL);
 
     // Wait for completion.
-    rc.wait();
+    rbc.wait();
 
     // If there was an exception, throw it.
-    if (rc.is_error())
-        rc.rethrow();
+    if (rbc.is_error())
+        rbc.rethrow();
+}
+
+void
+BlockStore::bs_refresh_finish(uint64 i_rid)
+        throw(InternalError,
+              NotFoundError)
+{
+    // Create our completion handler.
+    BSRefreshFinishCompletion rfc;
+
+    // Initiate the asynchrounous refresh finish
+    bs_refresh_finish_async(i_rid, rfc, NULL);
+
+    // Wait for completion.
+    rfc.wait();
+
+    // If there was an exception, throw it.
+    if (rfc.is_error())
+        rfc.rethrow();
 }
 
 void
