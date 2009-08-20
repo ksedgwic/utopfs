@@ -179,17 +179,14 @@ VBlockStore::bs_block_put_async(void const * i_keydata,
                                                 i_keysize,
                                                 i_blkdata,
                                                 i_blksize,
-                                                i_cmpl,
+                                                &i_cmpl,
                                                 i_argp);
 
     LOG(lgr, 6, m_instname << ' ' << "bs_block_put_async " << *prh);
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
-        m_requests.insert(prh);
-    }
+    insert_request(prh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -257,6 +254,16 @@ VBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
 {
     throwstream(InternalError, FILELINE
                 << "VBlockStore::bs_head_furthest_async unimplemented");
+}
+
+void
+VBlockStore::insert_request(VBSRequestHandle const & i_rh)
+{
+    LOG(lgr, 6, m_instname << ' ' << "insert_request " << *i_rh);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+
+    m_requests.insert(i_rh);
 }
 
 void

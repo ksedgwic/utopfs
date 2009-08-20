@@ -50,12 +50,16 @@ public:
                          
 
 private:
+    typedef std::vector<VBSChildHandle>	VBSChildSeq;
+
     utp::OctetSeq							m_key;
     utp::OctetSeq							m_blk;
     void *									m_buffdata;
     size_t									m_buffsize;
     utp::BlockStore::BlockGetCompletion &	m_cmpl;
     void const *							m_argp;
+    size_t									m_retsize;
+    VBSChildSeq								m_needy;
 };
 
 } // namespace VBS

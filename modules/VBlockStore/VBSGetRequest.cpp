@@ -5,6 +5,7 @@
 #include "VBlockStore.h"
 #include "VBSChild.h"
 #include "VBSGetRequest.h"
+#include "VBSPutRequest.h"
 #include "vbslog.h"
 #include "VBSRequest.h"
 
@@ -54,6 +55,7 @@ VBSGetRequest::bg_complete(void const * i_keydata,
 
     bool do_complete = false;
     bool do_done = false;
+    VBSChildSeq needy;
 
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
@@ -61,8 +63,17 @@ VBSGetRequest::bg_complete(void const * i_keydata,
         // Are we the first successful completion?
         if (!m_succeeded)
         {
+            // Make sure the buffer size was OK.
+            if (i_blksize > m_blk.size())
+                throwstream(InternalError, FILELINE
+                            << "unexpected return of " << i_blksize
+                            << " bytes into buffer of size " << m_blk.size());
+
+            m_retsize = i_blksize;
+
             do_complete = true;
             m_succeeded = true;
+            needy.swap(m_needy);
         }
 
         // Are we the last completion?
@@ -79,12 +90,27 @@ VBSGetRequest::bg_complete(void const * i_keydata,
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
 
         // Copy the data into the parent buffer.
-        if (i_blksize > m_blk.size())
-            throwstream(InternalError, FILELINE
-                        << "unexpected copy of " << i_blksize
-                        << " bytes into buffer of size " << m_blk.size());
         ACE_OS::memcpy(m_buffdata, &m_blk[0], i_blksize);
+
         m_cmpl.bg_complete(&m_key[0], m_key.size(), m_argp, i_blksize);
+    }
+
+    // If there were any needy children, setup a put request for them.
+    if (!needy.empty())
+    {
+        VBSPutRequestHandle prh = new VBSPutRequest(m_vbs,
+                                                    needy.size(),
+                                                    &m_key[0],
+                                                    m_key.size(),
+                                                    &m_blk[0],
+                                                    m_retsize,
+                                                    NULL,
+                                                    NULL);
+
+        m_vbs.insert_request(prh);
+
+        for (unsigned ii = 0; ii < needy.size(); ++ii)
+            needy[ii]->enqueue_put(prh);
     }
 
     // This likely results in our destruction, do it last and
@@ -109,6 +135,7 @@ VBSGetRequest::bg_error(void const * i_keydata,
 
     bool do_complete = false;
     bool do_done = false;
+    bool do_xcopy = false;
 
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
@@ -123,6 +150,18 @@ VBSGetRequest::bg_error(void const * i_keydata,
             if (!m_succeeded)
                 do_complete = true;
         }
+
+        // We're needy, did someone else succeed?
+        if (m_succeeded)
+        {
+            // Yes, setup a put of the data to us below.
+            do_xcopy = true;
+        }
+        else
+        {
+            // Nope, just add ourselves to the needy list.
+            m_needy.push_back(cp);
+        }
     }
 
     // If we are the last child back with an exception we
@@ -132,6 +171,24 @@ VBSGetRequest::bg_error(void const * i_keydata,
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
         m_cmpl.bg_error(&m_key[0], m_key.size(), m_argp, i_exp);
+    }
+
+    // If we were needy and someone else found data make a cross-copy
+    // of the data.
+    if (do_xcopy)
+    {
+        VBSPutRequestHandle prh = new VBSPutRequest(m_vbs,
+                                                    1,
+                                                    &m_key[0],
+                                                    m_key.size(),
+                                                    &m_blk[0],
+                                                    m_retsize,
+                                                    NULL,
+                                                    NULL);
+
+        m_vbs.insert_request(prh);
+
+        cp->enqueue_put(prh);
     }
 
     // This likely results in our destruction, do it last and
@@ -152,7 +209,7 @@ VBSGetRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
     // Allocate our buffer now.
     m_blk.resize(m_buffsize);
 
-     i_bsh->bs_block_get_async(&m_key[0], m_key.size(),
+    i_bsh->bs_block_get_async(&m_key[0], m_key.size(),
                               &m_blk[0], m_blk.size(),
                               *this, i_cp);
 }

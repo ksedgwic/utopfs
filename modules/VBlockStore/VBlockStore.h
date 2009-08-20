@@ -106,6 +106,8 @@ public:
 
     // VBS Methods
 
+    void insert_request(VBSRequestHandle const & i_rh);
+
     void remove_request(VBSRequestHandle const & i_rh);
 
 protected:

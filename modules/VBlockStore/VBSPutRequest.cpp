@@ -19,7 +19,7 @@ VBSPutRequest::VBSPutRequest(VBlockStore & i_vbs,
                              size_t i_keysize,
                              void const * i_blkdata,
                              size_t i_blksize,
-                             BlockStore::BlockPutCompletion & i_cmpl,
+                             BlockStore::BlockPutCompletion * i_cmpl,
                              void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
     , m_key((uint8 const *) i_keydata, (uint8 const *) i_keydata + i_keysize)
@@ -27,7 +27,7 @@ VBSPutRequest::VBSPutRequest(VBlockStore & i_vbs,
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "PUT @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "PUT @" << (void *) this << " CTOR " << i_blksize);
 }
 
 VBSPutRequest::~VBSPutRequest()
@@ -72,10 +72,10 @@ VBSPutRequest::bp_complete(void const * i_keydata,
     // If we are the first child back with success we get
     // to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl.bp_complete(&m_key[0], m_key.size(), m_argp);
+        m_cmpl->bp_complete(&m_key[0], m_key.size(), m_argp);
     }
 
     // This likely results in our destruction, do it last and
@@ -119,10 +119,10 @@ VBSPutRequest::bp_error(void const * i_keydata,
     // If we are the last child back with an exception we
     // get to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl.bp_error(&m_key[0], m_key.size(), m_argp, i_exp);
+        m_cmpl->bp_error(&m_key[0], m_key.size(), m_argp, i_exp);
     }
 
     // This likely results in our destruction, do it last and

@@ -22,7 +22,7 @@ public:
                   size_t i_keysize,
                   void const * i_blkdata,
                   size_t i_blksize,
-                  utp::BlockStore::BlockPutCompletion & i_cmpl,
+                  utp::BlockStore::BlockPutCompletion * i_cmpl,
                   void const * i_argp);
 
     virtual ~VBSPutRequest();
@@ -51,7 +51,7 @@ public:
 private:
     utp::OctetSeq							m_key;
     utp::OctetSeq							m_blk;
-    utp::BlockStore::BlockPutCompletion &	m_cmpl;
+    utp::BlockStore::BlockPutCompletion *	m_cmpl;
     void const *							m_argp;
 };
 
