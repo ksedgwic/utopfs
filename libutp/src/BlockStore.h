@@ -78,6 +78,13 @@ public:
     virtual void bs_stat(Stat & o_stat)
         throw(InternalError) = 0;
 
+    /// Ensures blocks are persisted.
+    ///
+    /// @throw InternalError An non-recoverable error occurred.
+    ///
+    virtual void bs_sync()
+        throw(InternalError) = 0;
+
     /// Get a block via blocking interface.
     ///
     /// @note This interface is a base class implemented wrapper on
@@ -171,13 +178,6 @@ public:
     virtual void bs_refresh_finish(utp::uint64 i_rid)
         throw(InternalError,
               NotFoundError) = 0;
-
-    /// Ensures blocks are persisted.
-    ///
-    /// @throw InternalError An non-recoverable error occurred.
-    ///
-    virtual void bs_sync()
-        throw(InternalError) = 0;
 
     /// Insert a SignedHeadNode into the BlockStore.
     ///

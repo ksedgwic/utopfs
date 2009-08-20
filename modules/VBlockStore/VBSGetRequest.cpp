@@ -76,6 +76,8 @@ VBSGetRequest::bg_complete(void const * i_keydata,
     //
     if (do_complete)
     {
+        LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
+
         // Copy the data into the parent buffer.
         if (i_blksize > m_blk.size())
             throwstream(InternalError, FILELINE
@@ -89,7 +91,10 @@ VBSGetRequest::bg_complete(void const * i_keydata,
     // don't touch anything afterwards!
     //
     if (do_done)
+    {
+        LOG(lgr, 6, *this << ' ' << "DONE");
         done();
+    }
 }
 
 void
@@ -124,13 +129,19 @@ VBSGetRequest::bg_error(void const * i_keydata,
     // get to tell the parent ...
     //
     if (do_complete)
+    {
+        LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
         m_cmpl.bg_error(&m_key[0], m_key.size(), m_argp, i_exp);
+    }
 
     // This likely results in our destruction, do it last and
     // don't touch anything afterwards!
     //
     if (do_done)
+    {
+        LOG(lgr, 6, *this << ' ' << "DONE");
         done();
+    }
 }
 
 void

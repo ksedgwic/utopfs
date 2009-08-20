@@ -112,6 +112,14 @@ VBlockStore::bs_stat(Stat & o_stat)
 }
 
 void
+VBlockStore::bs_sync()
+    throw(InternalError)
+{
+    throwstream(InternalError, FILELINE
+                << "VBlockStore::bs_sync unimplemented");
+}
+
+void
 VBlockStore::bs_get_block_async(void const * i_keydata,
                                 size_t i_keysize,
                                 void * o_buffdata,
@@ -212,14 +220,6 @@ VBlockStore::bs_refresh_finish(uint64 i_rid)
 {
     throwstream(InternalError, FILELINE
                 << "VBlockStore::bs_refresh_finish unimplemented");
-}
-
-void
-VBlockStore::bs_sync()
-    throw(InternalError)
-{
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_sync unimplemented");
 }
 
 void

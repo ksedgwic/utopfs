@@ -73,13 +73,19 @@ VBSPutRequest::bp_complete(void const * i_keydata,
     // to tell the parent ...
     //
     if (do_complete)
+    {
+        LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
         m_cmpl.bp_complete(&m_key[0], m_key.size(), m_argp);
+    }
 
     // This likely results in our destruction, do it last and
     // don't touch anything afterwards!
     //
     if (do_done)
+    {
+        LOG(lgr, 6, *this << ' ' << "DONE");
         done();
+    }
 }
 
 void
@@ -114,13 +120,19 @@ VBSPutRequest::bp_error(void const * i_keydata,
     // get to tell the parent ...
     //
     if (do_complete)
+    {
+        LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
         m_cmpl.bp_error(&m_key[0], m_key.size(), m_argp, i_exp);
+    }
 
     // This likely results in our destruction, do it last and
     // don't touch anything afterwards!
     //
     if (do_done)
+    {
+        LOG(lgr, 6, *this << ' ' << "DONE");
         done();
+    }
 }
 
 void

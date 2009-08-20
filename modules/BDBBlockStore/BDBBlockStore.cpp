@@ -172,6 +172,20 @@ BDBBlockStore::bs_stat(Stat & o_stat)
                 << "BDBBlockStore::bs_stat unimplemented");
 }
 
+void
+BDBBlockStore::bs_sync()
+    throw(InternalError)
+{
+	if (! m_db_opened) {
+		throwstream(InternalError, FILELINE
+                << "BDBBlockStore db not opened!");
+	}
+
+	m_db->sync(0);
+	m_db_refresh_ids->sync(0);
+	m_db_refresh_entries->sync(0);
+}
+
 #if 0
 size_t
 BDBBlockStore::bs_get_block(void const * i_keydata,
@@ -469,20 +483,6 @@ BDBBlockStore::bs_refresh_finish(uint64 i_rid)
 
    // throwstream(InternalError, FILELINE
    //	            << "BDBBlockStore::bs_refresh_finish unimplemented");
-}
-
-void
-BDBBlockStore::bs_sync()
-    throw(InternalError)
-{
-	if (! m_db_opened) {
-		throwstream(InternalError, FILELINE
-                << "BDBBlockStore db not opened!");
-	}
-
-	m_db->sync(0);
-	m_db_refresh_ids->sync(0);
-	m_db_refresh_entries->sync(0);
 }
 
 void

@@ -381,6 +381,13 @@ FSBlockStore::bs_stat(Stat & o_stat)
 }
 
 void
+FSBlockStore::bs_sync()
+    throw(InternalError)
+{
+	//always synced to disk
+}
+
+void
 FSBlockStore::bs_get_block_async(void const * i_keydata,
                                  size_t i_keysize,
                                  void * o_buffdata,
@@ -760,13 +767,6 @@ FSBlockStore::bs_refresh_finish(uint64 i_rid)
 
     m_committed = committed;
     m_uncommitted = uncommitted;
-}
-
-void
-FSBlockStore::bs_sync()
-    throw(InternalError)
-{
-	//always synced to disk
 }
 
 void

@@ -51,6 +51,9 @@ public:
     virtual void bs_stat(Stat & o_stat)
         throw(utp::InternalError);
 
+    virtual void bs_sync()
+		throw(utp::InternalError);
+
     virtual void bs_get_block_async(void const * i_keydata,
                                     size_t i_keysize,
                                     void * o_outbuff,
@@ -84,9 +87,6 @@ public:
     virtual void bs_refresh_finish(utp::uint64 i_rid)
         throw(utp::InternalError,
               utp::NotFoundError);
-
-    virtual void bs_sync()
-		throw(utp::InternalError);
 
     virtual void bs_head_insert_async(utp::SignedHeadNode const & i_shn,
                                       SignedHeadInsertCompletion & i_cmpl,
