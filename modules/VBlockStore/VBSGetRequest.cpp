@@ -20,7 +20,7 @@ VBSGetRequest::VBSGetRequest(VBlockStore & i_vbs,
                              size_t i_keysize,
                              void * o_buffdata,
                              size_t i_buffsize,
-                             BlockStore::BlockGetCompletion & i_cmpl,
+                             BlockStore::BlockGetCompletion * i_cmpl,
                              void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
     , m_key((uint8 const *) i_keydata, (uint8 const *) i_keydata + i_keysize)
@@ -98,14 +98,15 @@ VBSGetRequest::bg_complete(void const * i_keydata,
     // If we are the first child back with success we get
     // to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
 
         // Copy the data into the parent buffer.
-        ACE_OS::memcpy(m_buffdata, &m_blk[0], i_blksize);
+        if (m_buffdata)
+            ACE_OS::memcpy(m_buffdata, &m_blk[0], i_blksize);
 
-        m_cmpl.bg_complete(&m_key[0], m_key.size(), m_argp, i_blksize);
+        m_cmpl->bg_complete(&m_key[0], m_key.size(), m_argp, i_blksize);
     }
 
     // If there were any needy children, setup a put request for them.
@@ -180,10 +181,10 @@ VBSGetRequest::bg_error(void const * i_keydata,
     // If we are the last child back with an exception we
     // get to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl.bg_error(&m_key[0], m_key.size(), m_argp, i_exp);
+        m_cmpl->bg_error(&m_key[0], m_key.size(), m_argp, i_exp);
     }
 
     // If we were needy and someone else found data make a cross-copy
@@ -212,6 +213,12 @@ VBSGetRequest::bg_error(void const * i_keydata,
         LOG(lgr, 6, *this << ' ' << "DONE");
         done();
     }
+}
+
+void
+VBSGetRequest::needy(VBSChildHandle const & i_needy)
+{
+    m_needy.push_back(i_needy);
 }
 
 } // namespace VBS

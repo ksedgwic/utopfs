@@ -146,7 +146,7 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotUniqueError The specified refresh id is already in use.
     ///
-    virtual void bs_refresh_start(utp::uint64 i_rid)
+    void bs_refresh_start(utp::uint64 i_rid)
         throw(InternalError,
               NotUniqueError);
 
@@ -183,7 +183,7 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified refresh id was not found.
     ///
-    virtual void bs_refresh_finish(utp::uint64 i_rid)
+    void bs_refresh_finish(utp::uint64 i_rid)
         throw(InternalError,
               NotFoundError);
 

@@ -6,8 +6,9 @@
 #include "VBSGetRequest.h"
 #include "vbslog.h"
 #include "VBSPutRequest.h"
-#include "VBSRefreshStartRequest.h"
 #include "VBSRefreshBlockRequest.h"
+#include "VBSRefreshFinishRequest.h"
+#include "VBSRefreshStartRequest.h"
 #include "VBSRequest.h"
 
 using namespace std;
@@ -145,7 +146,7 @@ VBlockStore::bs_block_get_async(void const * i_keydata,
                                                 i_keysize,
                                                 o_buffdata,
                                                 i_buffsize,
-                                                i_cmpl,
+                                                &i_cmpl,
                                                 i_argp);
 
      LOG(lgr, 6, m_instname << ' ' << "bs_block_get_async " << *grh);
@@ -262,17 +263,25 @@ VBlockStore::bs_refresh_finish_async(uint64 i_rid,
                                      void const * i_argp)
     throw(InternalError)
 {
-    try
-    {
-        throwstream(InternalError, FILELINE
-                    << "VBlockStore::bs_refresh_finish_async unimplemented");
+    // Create a request.
+    VBSRefreshFinishRequestHandle rrh =
+        new VBSRefreshFinishRequest(*this,
+                                    m_children.size(),
+                                    i_rid,
+                                    i_cmpl,
+                                    i_argp);
 
-        i_cmpl.rf_complete(i_rid, i_argp);
-    }
-    catch (Exception const & i_ex)
-    {
-        i_cmpl.rf_error(i_rid, i_argp, i_ex);
-    }
+    LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish_async " << *rrh);
+
+    // Insert this request in our request list.  We need to do this
+    // first in case the request completes synchrounously below.
+    insert_request(rrh);
+
+    // Enqueue the request w/ all of the kids.
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+        it->second->enqueue_refresh(rrh);
 }
 
 void

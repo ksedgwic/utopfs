@@ -22,7 +22,7 @@ public:
                   size_t i_keysize,
                   void * o_buffdata,
                   size_t i_buffsize,
-                  utp::BlockStore::BlockGetCompletion & i_cmpl,
+                  utp::BlockStore::BlockGetCompletion * i_cmpl,
                   void const * i_argp);
 
     virtual ~VBSGetRequest();
@@ -46,14 +46,16 @@ public:
                           void const * i_argp,
                           utp::Exception const & i_exp);
 
-private:
-    typedef std::vector<VBSChildHandle>	VBSChildSeq;
+    // VBSGetRequest
 
+    void needy(VBSChildHandle const & i_needy);
+
+private:
     utp::OctetSeq							m_key;
     utp::OctetSeq							m_blk;
     void *									m_buffdata;
     size_t									m_buffsize;
-    utp::BlockStore::BlockGetCompletion &	m_cmpl;
+    utp::BlockStore::BlockGetCompletion *	m_cmpl;
     void const *							m_argp;
     size_t									m_retsize;
     VBSChildSeq								m_needy;

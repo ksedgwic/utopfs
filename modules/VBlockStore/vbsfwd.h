@@ -34,6 +34,13 @@ class VBSRefreshBlockRequest;
 /// Handle to VBSRefreshBlockRequest object.
 typedef utp::RCPtr<VBSRefreshBlockRequest> VBSRefreshBlockRequestHandle;
 
+class VBSRefreshFinishRequest;
+/// Handle to VBSRefreshFinishRequest object.
+typedef utp::RCPtr<VBSRefreshFinishRequest> VBSRefreshFinishRequestHandle;
+
+/// Sequence of child handles.
+typedef std::vector<VBSChildHandle>	VBSChildSeq;
+
 } // end namespace VBS
 
 // Local Variables:
