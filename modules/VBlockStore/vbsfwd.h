@@ -38,6 +38,10 @@ class VBSRefreshFinishRequest;
 /// Handle to VBSRefreshFinishRequest object.
 typedef utp::RCPtr<VBSRefreshFinishRequest> VBSRefreshFinishRequestHandle;
 
+class VBSHeadInsertRequest;
+/// Handle to VBSHeadInsertRequest object.
+typedef utp::RCPtr<VBSHeadInsertRequest> VBSHeadInsertRequestHandle;
+
 /// Sequence of child handles.
 typedef std::vector<VBSChildHandle>	VBSChildSeq;
 

@@ -134,13 +134,13 @@ class Test_vbs_head_01:
 
     # Follow should return the node we inserted.
     seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.bs.bs_head_follow(seed)
+    shns = self.vbs.bs_head_follow(seed)
     assert lenhack(shns) == 1
     assert str(shns[0].rootref) == "rootref"
 
     # Furthest should return the node we inserted.
     seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.bs.bs_head_furthest(seed)
+    shns = self.vbs.bs_head_furthest(seed)
     assert lenhack(shns) == 1
     assert str(shns[0].rootref) == "rootref"
 

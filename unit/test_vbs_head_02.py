@@ -67,16 +67,21 @@ class Test_vbs_head_02:
                                    ("child1", "child2", "child3"))
 
     # Insert a single SHN.
-    node1 = utp.SignedHeadNode(("fsid", "node1", 0, time.time() * 1e6, 0, 0))
+    node1 = utp.SignedHeadNode(("fsid", "node1", 0,
+                                time.time() * 1e6, 0, 0))
     self.vbs.bs_head_insert(node1)
 
     # Insert a child SHN.
-    node2 = utp.SignedHeadNode(("fsid", "node2", "node1", time.time() * 1e6, 0, 0))
+    node2 = utp.SignedHeadNode(("fsid", "node2", "node1",
+                                time.time() * 1e6, 0, 0))
     self.vbs.bs_head_insert(node2)
 
     # Insert a new node into one child only.
-    node2 = utp.SignedHeadNode(("fsid", "node3", "node2", time.time() * 1e6, 0, 0))
+    node2 = utp.SignedHeadNode(("fsid", "node3", "node2",
+                                time.time() * 1e6, 0, 0))
     self.bs3.bs_head_insert(node2)
+
+    node0 = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
 
     # Follow w/ empty should return all nodes.
     shns = self.vbs.bs_head_follow(node0)

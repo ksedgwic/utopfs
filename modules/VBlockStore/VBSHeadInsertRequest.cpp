@@ -5,7 +5,7 @@
 #include "VBlockStore.h"
 #include "VBSChild.h"
 #include "vbslog.h"
-#include "VBSRefreshFinishRequest.h"
+#include "VBSHeadInsertRequest.h"
 #include "VBSRequest.h"
 
 using namespace std;
@@ -13,46 +13,45 @@ using namespace utp;
 
 namespace VBS {
 
-VBSRefreshFinishRequest::VBSRefreshFinishRequest(VBlockStore & i_vbs,
-                                               long i_outstanding,
-                                               uint64 i_rid,
-                                               RefreshFinishCompletion & i_cmpl,
-                                               void const * i_argp)
+VBSHeadInsertRequest::VBSHeadInsertRequest(VBlockStore & i_vbs,
+                                           long i_outstanding,
+                                           SignedHeadNode const & i_shn,
+                                           BlockStore::SignedHeadInsertCompletion * i_cmpl,
+                                           void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
-    , m_rid(i_rid)
+    , m_shn(i_shn)
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "RFRSH FINISH @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "SHN INSERT @" << (void *) this << " CTOR");
 }
 
-VBSRefreshFinishRequest::~VBSRefreshFinishRequest()
+VBSHeadInsertRequest::~VBSHeadInsertRequest()
 {
-    LOG(lgr, 6, "RFRSH FINISH @" << (void *) this << " DTOR");
+    LOG(lgr, 6, "SHN INSERT @" << (void *) this << " DTOR");
 }
 
 void
-VBSRefreshFinishRequest::stream_insert(std::ostream & ostrm) const
+VBSHeadInsertRequest::stream_insert(std::ostream & ostrm) const
 {
-    ostrm << "RFRSH FINISH @" << (void *) this;
+    ostrm << "SHN INSERT @" << (void *) this;
 }
 
 void
-VBSRefreshFinishRequest::process(VBSChild * i_cp,
-                                BlockStoreHandle const & i_bsh)
+VBSHeadInsertRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
 {
     LOG(lgr, 6, *this << " process");
 
-    i_bsh->bs_refresh_finish_async(m_rid, *this, i_cp);
+    i_bsh->bs_head_insert_async(m_shn, *this, i_cp);
 }
 
 void
-VBSRefreshFinishRequest::rf_complete(utp::uint64 i_rid,
-                                    void const * i_argp)
+VBSHeadInsertRequest::shi_complete(SignedHeadNode const & i_shn,
+                                   void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " rf_complete");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_complete");
 
     bool do_complete = false;
     bool do_done = false;
@@ -76,10 +75,10 @@ VBSRefreshFinishRequest::rf_complete(utp::uint64 i_rid,
     // If we are the first child back with success we get
     // to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl.rf_complete(m_rid, m_argp);
+        m_cmpl->shi_complete(m_shn, m_argp);
     }
 
     // This likely results in our destruction, do it last and
@@ -93,13 +92,13 @@ VBSRefreshFinishRequest::rf_complete(utp::uint64 i_rid,
 }
 
 void
-VBSRefreshFinishRequest::rf_error(utp::uint64 i_rid,
-                                 void const * i_argp,
-                                 Exception const & i_exp)
+VBSHeadInsertRequest::shi_error(SignedHeadNode const & i_shn,
+                                void const * i_argp,
+                                Exception const & i_exp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " rf_error");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_error");
 
     bool do_complete = false;
     bool do_done = false;
@@ -122,10 +121,10 @@ VBSRefreshFinishRequest::rf_error(utp::uint64 i_rid,
     // If we are the last child back with an exception we
     // get to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl.rf_error(m_rid, m_argp, i_exp);
+        m_cmpl->shi_error(m_shn, m_argp, i_exp);
     }
 
     // This likely results in our destruction, do it last and

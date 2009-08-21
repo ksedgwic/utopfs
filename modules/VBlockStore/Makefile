@@ -7,6 +7,7 @@ LIBSRC += 	\
 			VBSChild.cpp \
 			VBSFactory.cpp \
 			VBSGetRequest.cpp \
+			VBSHeadInsertRequest.cpp \
 			vbslog.cpp \
 			VBSPutRequest.cpp \
 			VBSRefreshBlockRequest.cpp \

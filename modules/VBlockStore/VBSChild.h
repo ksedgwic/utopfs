@@ -50,6 +50,8 @@ public:
 
     void enqueue_refresh(VBSRequestHandle const & i_rh);
 
+    void enqueue_headnode(VBSRequestHandle const & i_rh);
+
 protected:
     void process_requests();
 
@@ -63,6 +65,7 @@ private:
     std::deque<VBSGetRequestHandle>		m_getreqs;
     std::deque<VBSPutRequestHandle>		m_putreqs;
     std::deque<VBSRequestHandle>		m_refreqs;
+    std::deque<VBSRequestHandle>		m_shnreqs;
 };
 
 } // namespace VBS

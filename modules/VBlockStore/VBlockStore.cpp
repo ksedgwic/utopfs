@@ -4,6 +4,7 @@
 #include "VBlockStore.h"
 #include "VBSChild.h"
 #include "VBSGetRequest.h"
+#include "VBSHeadInsertRequest.h"
 #include "vbslog.h"
 #include "VBSPutRequest.h"
 #include "VBSRefreshBlockRequest.h"
@@ -290,8 +291,25 @@ VBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
                                   void const * i_argp)
     throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_head_insert_async unimplemented");
+    // Create a VBSHeadInsertRequest.
+    VBSHeadInsertRequestHandle hirh =
+        new VBSHeadInsertRequest(*this,
+                                 m_children.size(),
+                                 i_shn,
+                                 &i_cmpl,
+                                 i_argp);
+
+    LOG(lgr, 6, m_instname << ' ' << "bs_head_insert_async " << *hirh);
+
+    // Insert this request in our request list.  We need to do this
+    // first in case the request completes synchrounously below.
+    insert_request(hirh);
+
+    // Enqueue the request w/ all of the kids.
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+        it->second->enqueue_headnode(hirh);
 }
 
 void

@@ -109,12 +109,34 @@ VBSChild::enqueue_refresh(VBSRequestHandle const & i_rh)
 }
 
 void
+VBSChild::enqueue_headnode(VBSRequestHandle const & i_rh)
+{
+    LOG(lgr, 4, m_instname << ' ' << "enqueue_headnode " << *i_rh);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+
+    m_shnreqs.push_back(i_rh);
+
+    if (!m_notified)
+    {
+        m_reactor->notify(this);
+        m_notified = true;
+    }
+}
+
+void
 VBSChild::process_requests()
 {
     LOG(lgr, 4, m_instname << ' ' << "process_requests starting");
 
-    // NOTE - This request loop prioritizes gets over puts; I think
-    // this is on purpose ...
+    // NOTE - This loop handles requests in the following order:
+    //
+    // 1) Refresh requests
+    // 2) Signed HeadNode requests
+    // 3) Get requests
+    // 4) Put requests
+    //
+    // Maybe this is on purpose ...
     //
     while (true)
     {
@@ -127,7 +149,17 @@ VBSChild::process_requests()
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
-            if (!m_getreqs.empty())
+            if (!m_refreqs.empty())
+            {
+                rrh = m_refreqs.front();
+                m_refreqs.pop_front();
+            }
+            else if (!m_shnreqs.empty())
+            {
+                rrh = m_shnreqs.front();
+                m_shnreqs.pop_front();
+            }
+            else if (!m_getreqs.empty())
             {
                 grh = m_getreqs.front();
                 m_getreqs.pop_front();
@@ -136,11 +168,6 @@ VBSChild::process_requests()
             {
                 prh = m_putreqs.front();
                 m_putreqs.pop_front();
-            }
-            else if (!m_refreqs.empty())
-            {
-                rrh = m_refreqs.front();
-                m_refreqs.pop_front();
             }
             else
             {
