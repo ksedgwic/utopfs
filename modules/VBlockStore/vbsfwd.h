@@ -26,6 +26,14 @@ class VBSPutRequest;
 /// Handle to VBSPutRequest object.
 typedef utp::RCPtr<VBSPutRequest> VBSPutRequestHandle;
 
+class VBSRefreshStartRequest;
+/// Handle to VBSRefreshStartRequest object.
+typedef utp::RCPtr<VBSRefreshStartRequest> VBSRefreshStartRequestHandle;
+
+class VBSRefreshBlockRequest;
+/// Handle to VBSRefreshBlockRequest object.
+typedef utp::RCPtr<VBSRefreshBlockRequest> VBSRefreshBlockRequestHandle;
+
 } // end namespace VBS
 
 // Local Variables:

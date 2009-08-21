@@ -31,6 +31,9 @@ public:
 
     virtual void stream_insert(std::ostream & ostrm) const = 0;
 
+    virtual void process(VBSChild * i_cp,
+                         utp::BlockStoreHandle const & i_bsh) = 0;
+
     virtual void done();
 
 protected:

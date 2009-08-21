@@ -9,6 +9,8 @@ LIBSRC += 	\
 			VBSGetRequest.cpp \
 			vbslog.cpp \
 			VBSPutRequest.cpp \
+			VBSRefreshBlockRequest.cpp \
+			VBSRefreshStartRequest.cpp \
 			VBSRequest.cpp \
 			$(NULL)
 

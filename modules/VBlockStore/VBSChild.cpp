@@ -93,6 +93,22 @@ VBSChild::enqueue_put(VBSPutRequestHandle const & i_prh)
 }
 
 void
+VBSChild::enqueue_refresh(VBSRequestHandle const & i_rh)
+{
+    LOG(lgr, 4, m_instname << ' ' << "enqueue_refresh " << *i_rh);
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+
+    m_refreqs.push_back(i_rh);
+
+    if (!m_notified)
+    {
+        m_reactor->notify(this);
+        m_notified = true;
+    }
+}
+
+void
 VBSChild::process_requests()
 {
     LOG(lgr, 4, m_instname << ' ' << "process_requests starting");
@@ -107,6 +123,7 @@ VBSChild::process_requests()
         //
         VBSGetRequestHandle grh = NULL;
         VBSPutRequestHandle prh = NULL;
+        VBSRequestHandle rrh = NULL;
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
@@ -119,6 +136,11 @@ VBSChild::process_requests()
             {
                 prh = m_putreqs.front();
                 m_putreqs.pop_front();
+            }
+            else if (!m_refreqs.empty())
+            {
+                rrh = m_refreqs.front();
+                m_refreqs.pop_front();
             }
             else
             {
@@ -136,6 +158,10 @@ VBSChild::process_requests()
         else if (prh)
         {
             prh->process(this, m_bsh);
+        }
+        else if (rrh)
+        {
+            rrh->process(this, m_bsh);
         }
         else
         {

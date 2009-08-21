@@ -31,6 +31,9 @@ public:
 
     virtual void stream_insert(std::ostream & ostrm) const;
 
+    virtual void process(VBSChild * i_cp,
+                         utp::BlockStoreHandle const & i_bsh);
+
     // BlockGetCompletion
 
     virtual void bg_complete(void const * i_keydata,
@@ -42,12 +45,6 @@ public:
                           size_t i_keysize,
                           void const * i_argp,
                           utp::Exception const & i_exp);
-
-    // VBSGetRequest
-
-    virtual void process(VBSChild * i_cp,
-                         utp::BlockStoreHandle const & i_bsh);
-                         
 
 private:
     typedef std::vector<VBSChildHandle>	VBSChildSeq;

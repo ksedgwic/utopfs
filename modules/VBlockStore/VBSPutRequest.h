@@ -31,6 +31,9 @@ public:
 
     virtual void stream_insert(std::ostream & ostrm) const;
 
+    virtual void process(VBSChild * i_cp,
+                         utp::BlockStoreHandle const & i_bsh);
+                         
     // BlockPutCompletion
 
     virtual void bp_complete(void const * i_keydata,
@@ -41,12 +44,6 @@ public:
                           size_t i_keysize,
                           void const * i_argp,
                           utp::Exception const & i_exp);
-
-    // VBSPutRequest
-
-    virtual void process(VBSChild * i_cp,
-                         utp::BlockStoreHandle const & i_bsh);
-                         
 
 private:
     utp::OctetSeq							m_key;

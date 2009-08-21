@@ -5,7 +5,7 @@
 #include "VBlockStore.h"
 #include "VBSChild.h"
 #include "vbslog.h"
-#include "VBSPutRequest.h"
+#include "VBSRefreshBlockRequest.h"
 #include "VBSRequest.h"
 
 using namespace std;
@@ -13,52 +13,50 @@ using namespace utp;
 
 namespace VBS {
 
-VBSPutRequest::VBSPutRequest(VBlockStore & i_vbs,
-                             long i_outstanding,
-                             void const * i_keydata,
-                             size_t i_keysize,
-                             void const * i_blkdata,
-                             size_t i_blksize,
-                             BlockStore::BlockPutCompletion * i_cmpl,
-                             void const * i_argp)
+VBSRefreshBlockRequest::VBSRefreshBlockRequest(VBlockStore & i_vbs,
+                                               long i_outstanding,
+                                               uint64 i_rid,
+                                               void const * i_keydata,
+                                               size_t i_keysize,
+                                               RefreshBlockCompletion & i_cmpl,
+                                               void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
+    , m_rid(i_rid)
     , m_key((uint8 const *) i_keydata, (uint8 const *) i_keydata + i_keysize)
-    , m_blk((uint8 const *) i_blkdata, (uint8 const *) i_blkdata + i_blksize)
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "PUT @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "RFRSH @" << (void *) this << " CTOR");
 }
 
-VBSPutRequest::~VBSPutRequest()
+VBSRefreshBlockRequest::~VBSRefreshBlockRequest()
 {
-    LOG(lgr, 6, "PUT @" << (void *) this << " DTOR");
+    LOG(lgr, 6, "RFRSH @" << (void *) this << " DTOR");
 }
 
 void
-VBSPutRequest::stream_insert(std::ostream & ostrm) const
+VBSRefreshBlockRequest::stream_insert(std::ostream & ostrm) const
 {
-    ostrm << "PUT @" << (void *) this;
+    ostrm << "RFRSH @" << (void *) this;
 }
 
 void
-VBSPutRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
+VBSRefreshBlockRequest::process(VBSChild * i_cp,
+                                BlockStoreHandle const & i_bsh)
 {
     LOG(lgr, 6, *this << " process");
 
-    i_bsh->bs_block_put_async(&m_key[0], m_key.size(),
-                              &m_blk[0], m_blk.size(),
-                              *this, i_cp);
+    i_bsh->bs_refresh_block_async(m_rid, &m_key[0], m_key.size(), *this, i_cp);
 }
 
 void
-VBSPutRequest::bp_complete(void const * i_keydata,
-                           size_t i_keysize,
-                           void const * i_argp)
+VBSRefreshBlockRequest::rb_complete(void const * i_keydata,
+                                    size_t i_keysize,
+                                    void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " bp_complete");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " rb_complete");
 
     bool do_complete = false;
     bool do_done = false;
@@ -82,10 +80,10 @@ VBSPutRequest::bp_complete(void const * i_keydata,
     // If we are the first child back with success we get
     // to tell the parent ...
     //
-    if (do_complete && m_cmpl)
+    if (do_complete)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl->bp_complete(&m_key[0], m_key.size(), m_argp);
+        m_cmpl.rb_complete(i_keydata, i_keysize, m_argp);
     }
 
     // This likely results in our destruction, do it last and
@@ -99,14 +97,13 @@ VBSPutRequest::bp_complete(void const * i_keydata,
 }
 
 void
-VBSPutRequest::bp_error(void const * i_keydata,
-                        size_t i_keysize,
-                        void const * i_argp,
-                        Exception const & i_exp)
+VBSRefreshBlockRequest::rb_missing(void const * i_keydata,
+                                   size_t i_keysize,
+                                   void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " bp_error");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " rb_missing");
 
     bool do_complete = false;
     bool do_done = false;
@@ -129,10 +126,10 @@ VBSPutRequest::bp_error(void const * i_keydata,
     // If we are the last child back with an exception we
     // get to tell the parent ...
     //
-    if (do_complete && m_cmpl)
+    if (do_complete)
     {
-        LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl->bp_error(&m_key[0], m_key.size(), m_argp, i_exp);
+        LOG(lgr, 6, *this << ' ' << "UPCALL MISSING");
+        m_cmpl.rb_missing(i_keydata, i_keysize, m_argp);
     }
 
     // This likely results in our destruction, do it last and

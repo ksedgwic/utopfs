@@ -44,6 +44,19 @@ VBSGetRequest::stream_insert(std::ostream & ostrm) const
 }
 
 void
+VBSGetRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
+{
+    LOG(lgr, 6, *this << " process");
+
+    // Allocate our buffer now.
+    m_blk.resize(m_buffsize);
+
+    i_bsh->bs_block_get_async(&m_key[0], m_key.size(),
+                              &m_blk[0], m_blk.size(),
+                              *this, i_cp);
+}
+
+void
 VBSGetRequest::bg_complete(void const * i_keydata,
                            size_t i_keysize,
                            void const * i_argp,
@@ -199,19 +212,6 @@ VBSGetRequest::bg_error(void const * i_keydata,
         LOG(lgr, 6, *this << ' ' << "DONE");
         done();
     }
-}
-
-void
-VBSGetRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
-{
-    LOG(lgr, 6, *this << " process");
-
-    // Allocate our buffer now.
-    m_blk.resize(m_buffsize);
-
-    i_bsh->bs_block_get_async(&m_key[0], m_key.size(),
-                              &m_blk[0], m_blk.size(),
-                              *this, i_cp);
 }
 
 } // namespace VBS
