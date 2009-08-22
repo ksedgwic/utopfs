@@ -190,13 +190,13 @@ class InsertCompletion
     , public BlockingCompletion
 {
 public:
-    virtual void shi_complete(SignedHeadNode const & i_shn,
+    virtual void shi_complete(SignedHeadEdge const & i_she,
                               void const * i_argp)
     {
         done();
     }
 
-    virtual void shi_error(SignedHeadNode const & i_shn,
+    virtual void shi_error(SignedHeadEdge const & i_she,
                            void const * i_argp,
                            Exception const & i_exp)
     {
@@ -210,14 +210,14 @@ class HeadTraversalCompletion
     , public BlockingCompletion
 {
 public:
-    HeadTraversalCompletion(BlockStore::SignedHeadNodeSeq & o_nodes)
+    HeadTraversalCompletion(BlockStore::SignedHeadEdgeSeq & o_nodes)
         : m_nodes(o_nodes)
     {}
 
     virtual void sht_node(void const * i_argp,
-                          SignedHeadNode const & i_shn)
+                          SignedHeadEdge const & i_she)
     {
-        m_nodes.push_back(i_shn);
+        m_nodes.push_back(i_she);
     }
 
     virtual void sht_complete(void const * i_argp)
@@ -233,7 +233,7 @@ public:
     }
 
 private:
-    BlockStore::SignedHeadNodeSeq &		m_nodes;
+    BlockStore::SignedHeadEdgeSeq &		m_nodes;
 };
 
 } // end namespace
@@ -355,14 +355,14 @@ BlockStore::bs_refresh_finish(uint64 i_rid)
 }
 
 void
-BlockStore::bs_head_insert(SignedHeadNode const & i_shn)
+BlockStore::bs_head_insert(SignedHeadEdge const & i_she)
     throw(InternalError)
 {
     // Create our completion handler.
     InsertCompletion ic;
 
     // Initiate the asynchronous insert.
-    bs_head_insert_async(i_shn, ic, NULL);
+    bs_head_insert_async(i_she, ic, NULL);
 
     // Wait for completion.
     ic.wait();
@@ -373,8 +373,8 @@ BlockStore::bs_head_insert(SignedHeadNode const & i_shn)
 }
 
 void
-BlockStore::bs_head_follow(SignedHeadNode const & i_seed,
-                           SignedHeadNodeSeq & o_nodes)
+BlockStore::bs_head_follow(SignedHeadEdge const & i_seed,
+                           SignedHeadEdgeSeq & o_nodes)
     throw(InternalError,
           NotFoundError)
 {
@@ -393,8 +393,8 @@ BlockStore::bs_head_follow(SignedHeadNode const & i_seed,
 }
 
 void
-BlockStore::bs_head_furthest(SignedHeadNode const & i_seed,
-                             SignedHeadNodeSeq & o_nodes)
+BlockStore::bs_head_furthest(SignedHeadEdge const & i_seed,
+                             SignedHeadEdgeSeq & o_nodes)
     throw(InternalError,
           NotFoundError)
 {

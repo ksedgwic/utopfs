@@ -115,7 +115,7 @@ VBSChild::enqueue_headnode(VBSRequestHandle const & i_rh)
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
-    m_shnreqs.push_back(i_rh);
+    m_shereqs.push_back(i_rh);
 
     if (!m_notified)
     {
@@ -154,10 +154,10 @@ VBSChild::initiate_requests()
                 rrh = m_refreqs.front();
                 m_refreqs.pop_front();
             }
-            else if (!m_shnreqs.empty())
+            else if (!m_shereqs.empty())
             {
-                rrh = m_shnreqs.front();
-                m_shnreqs.pop_front();
+                rrh = m_shereqs.front();
+                m_shereqs.pop_front();
             }
             else if (!m_getreqs.empty())
             {

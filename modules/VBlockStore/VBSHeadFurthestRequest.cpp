@@ -15,26 +15,26 @@ namespace VBS {
 
 VBSHeadFurthestRequest::VBSHeadFurthestRequest(VBlockStore & i_vbs,
                                            long i_outstanding,
-                                           SignedHeadNode const & i_shn,
+                                           SignedHeadEdge const & i_she,
                                            BlockStore::SignedHeadTraverseFunc * i_cmpl,
                                            void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
-    , m_shn(i_shn)
+    , m_she(i_she)
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "SHN FURTHEST @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "FURTHEST @" << (void *) this << " CTOR");
 }
 
 VBSHeadFurthestRequest::~VBSHeadFurthestRequest()
 {
-    LOG(lgr, 6, "SHN FURTHEST @" << (void *) this << " DTOR");
+    LOG(lgr, 6, "FURTHEST @" << (void *) this << " DTOR");
 }
 
 void
 VBSHeadFurthestRequest::stream_insert(std::ostream & ostrm) const
 {
-    ostrm << "SHN FURTHEST @" << (void *) this;
+    ostrm << "FURTHEST @" << (void *) this;
 }
 
 void
@@ -43,12 +43,12 @@ VBSHeadFurthestRequest::initiate(VBSChild * i_cp,
 {
     LOG(lgr, 6, *this << " initiate");
 
-    i_bsh->bs_head_furthest_async(m_shn, *this, i_cp);
+    i_bsh->bs_head_furthest_async(m_she, *this, i_cp);
 }
 
 void
 VBSHeadFurthestRequest::sht_node(void const * i_argp,
-                                 SignedHeadNode const & i_shn)
+                                 SignedHeadEdge const & i_she)
 {
 }
 

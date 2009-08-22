@@ -124,17 +124,17 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_insert_async(utp::SignedHeadNode const & i_shn,
+    virtual void bs_head_insert_async(utp::SignedHeadEdge const & i_she,
                                       SignedHeadInsertCompletion & i_cmpl,
                                       void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_follow_async(utp::SignedHeadNode const & i_seed,
+    virtual void bs_head_follow_async(utp::SignedHeadEdge const & i_seed,
                                       SignedHeadTraverseFunc & i_func,
                                       void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_furthest_async(utp::SignedHeadNode const & i_seed,
+    virtual void bs_head_furthest_async(utp::SignedHeadEdge const & i_seed,
                                         SignedHeadTraverseFunc & i_func,
                                         void const * i_argp)
         throw(utp::InternalError);

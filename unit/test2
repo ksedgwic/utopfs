@@ -17,7 +17,7 @@ try:
                              "rootbs",
                              CONFIG.BSARGS(bspath))
 
-    node0 = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
     shns = bs.bs_head_furthest(node0)
     
     print shns

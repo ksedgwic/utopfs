@@ -58,15 +58,15 @@ operator<<(ostream & ostrm, NodeRef const & i_nr)
     return ostrm;
 }
 
-Edge::Edge(utp::SignedHeadNode const & i_shn)
-    : m_shn(i_shn)
+Edge::Edge(utp::SignedHeadEdge const & i_she)
+    : m_she(i_she)
 {
-    HeadNode hn;
-    if (!hn.ParseFromString(i_shn.headnode()))
-        throwstream(InternalError, FILELINE << "failed to parse headNode");
+    HeadEdge he;
+    if (!he.ParseFromString(i_she.headedge()))
+        throwstream(InternalError, FILELINE << "failed to parse headedge");
 
-    m_prev = make_pair(hn.fstag(), hn.prevref());
-    m_root = make_pair(hn.fstag(), hn.rootref());
+    m_prev = make_pair(he.fstag(), he.prevref());
+    m_root = make_pair(he.fstag(), he.rootref());
 }
 
 ostream &
@@ -331,18 +331,18 @@ FSBlockStore::bs_open(StringSeq const & i_args)
     m_committed = committed;
     m_uncommitted = uncommitted;
 
-    // Read all of the existing SignedHeadNodes
-    ifstream shnstrm(headspath().c_str());
+    // Read all of the existing SignedHeadEdges
+    ifstream shestrm(headspath().c_str());
     string linebuf;
-    while (getline(shnstrm, linebuf))
+    while (getline(shestrm, linebuf))
     {
-        SignedHeadNode shn;
+        SignedHeadEdge she;
         string data = Base64::decode(linebuf);
-        int ok = shn.ParseFromString(data);
+        int ok = she.ParseFromString(data);
         if (!ok)
             throwstream(InternalError, FILELINE
-                        << " SignedHeadNode deserialize failed");
-        insert_head(shn);
+                        << " SignedHeadEdge deserialize failed");
+        insert_head(she);
     }
     
     // Open the HEADS output stream.
@@ -806,32 +806,32 @@ FSBlockStore::bs_refresh_finish_async(uint64 i_rid,
 }
 
 void
-FSBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
+FSBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
                                    SignedHeadInsertCompletion & i_cmpl,
                                    void const * i_argp)
     throw(InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    insert_head(i_shn);
+    insert_head(i_she);
 
-    write_head(i_shn);
+    write_head(i_she);
 
-    i_cmpl.shi_complete(i_shn, i_argp);
+    i_cmpl.shi_complete(i_she, i_argp);
 }
 
 void
-FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
+FSBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
                                    SignedHeadTraverseFunc & i_func,
                                    void const * i_argp)
     throw(InternalError)
 {
-    LOG(lgr, 6, m_instname << ' ' << "follow " << i_shn);
+    LOG(lgr, 6, m_instname << ' ' << "follow " << i_she);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     // Obtain the seed from the seed edge.
-    Edge edge(i_shn);
+    Edge edge(i_she);
     NodeRef seed = edge.m_root;
 
     // Expand the seeds.
@@ -868,8 +868,8 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                 // We need to call the traverse function on the
                 // children as well since they follow the seed.
                 //
-                LOG(lgr, 6, m_instname << ' ' << "node " << it->second->m_shn);
-                i_func.sht_node(i_argp, it->second->m_shn);
+                LOG(lgr, 6, m_instname << ' ' << "node " << it->second->m_she);
+                i_func.sht_node(i_argp, it->second->m_she);
             }
         }
     }
@@ -899,8 +899,8 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                 kids.insert(kit->second->m_root);
 
                 // Call the traverse function on the kid.
-                LOG(lgr, 6, m_instname << ' ' << "node " << kit->second->m_shn);
-                i_func.sht_node(i_argp, kit->second->m_shn);
+                LOG(lgr, 6, m_instname << ' ' << "node " << kit->second->m_she);
+                i_func.sht_node(i_argp, kit->second->m_she);
             }
 
             // Were there kids?
@@ -924,17 +924,17 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
 }
 
 void
-FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
+FSBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
                                      SignedHeadTraverseFunc & i_func,
                                      void const * i_argp)
     throw(InternalError)
 {
-    LOG(lgr, 6, m_instname << ' ' << "furthest " << i_shn);
+    LOG(lgr, 6, m_instname << ' ' << "furthest " << i_she);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     // Obtain the seed from the seed edge.
-    Edge edge(i_shn);
+    Edge edge(i_she);
     NodeRef seed = edge.m_root;
 
     // Expand the seeds.
@@ -1022,8 +1022,8 @@ FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
 
         // We just use the first matching node ...
         
-        LOG(lgr, 6, m_instname << ' ' << "node " << pos->second->m_shn);
-        i_func.sht_node(i_argp, pos->second->m_shn);
+        LOG(lgr, 6, m_instname << ' ' << "node " << pos->second->m_she);
+        i_func.sht_node(i_argp, pos->second->m_she);
     }
 
     i_func.sht_complete(i_argp);
@@ -1127,11 +1127,11 @@ FSBlockStore::purge_uncommitted()
 }
 
 void
-FSBlockStore::insert_head(SignedHeadNode const & i_shn)
+FSBlockStore::insert_head(SignedHeadEdge const & i_she)
 {
     // IMPORTANT - We presume the mutex is held by the caller.
 
-    EdgeHandle eh = new Edge(i_shn);
+    EdgeHandle eh = new Edge(i_she);
 
     if (eh->m_prev == eh->m_root)
         throwstream(InternalError, FILELINE
@@ -1152,10 +1152,10 @@ FSBlockStore::insert_head(SignedHeadNode const & i_shn)
 }
 
 void
-FSBlockStore::write_head(SignedHeadNode const & i_shn)
+FSBlockStore::write_head(SignedHeadEdge const & i_she)
 {
     string linebuf;
-    i_shn.SerializeToString(&linebuf);
+    i_she.SerializeToString(&linebuf);
     m_headsstrm << Base64::encode(linebuf.data(), linebuf.size()) << endl;
 }
 

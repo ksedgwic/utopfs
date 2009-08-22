@@ -7,7 +7,7 @@ LIBSRC =	\
 			pybsstat.cpp \
 			pydirentryfunc.cpp \
 			pyfilesystem.cpp \
-			pyshn.cpp \
+			pyshe.cpp \
 			pystat.cpp \
 			pystatvfs.cpp \
 			pyutpinit.cpp \

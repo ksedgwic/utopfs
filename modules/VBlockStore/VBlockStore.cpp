@@ -286,7 +286,7 @@ VBlockStore::bs_refresh_finish_async(uint64 i_rid,
 }
 
 void
-VBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
+VBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
                                   SignedHeadInsertCompletion & i_cmpl,
                                   void const * i_argp)
     throw(InternalError)
@@ -295,7 +295,7 @@ VBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
     VBSHeadInsertRequestHandle hirh =
         new VBSHeadInsertRequest(*this,
                                  m_children.size(),
-                                 i_shn,
+                                 i_she,
                                  &i_cmpl,
                                  i_argp);
 
@@ -313,7 +313,7 @@ VBlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
 }
 
 void
-VBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
+VBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
                                   SignedHeadTraverseFunc & i_func,
                                   void const * i_argp)
     throw(InternalError)
@@ -323,7 +323,7 @@ VBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
 }
 
 void
-VBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
+VBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
                                     SignedHeadTraverseFunc & i_func,
                                     void const * i_argp)
     throw(InternalError)

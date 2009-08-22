@@ -1398,7 +1398,7 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
 }
 
 void
-S3BlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
+S3BlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
                                    SignedHeadInsertCompletion & i_cmpl,
                                    void const * i_argp)
     throw(InternalError)
@@ -1409,40 +1409,40 @@ S3BlockStore::bs_head_insert_async(SignedHeadNode const & i_shn,
     // graph store ...
     try
     {
-        HeadNode hn;
-        hn.ParseFromString(i_shn.headnode());
-        string const & key = hn.fstag();
+        HeadEdge he;
+        he.ParseFromString(i_she.headedge());
+        string const & key = he.fstag();
         string buf;
-        i_shn.SerializeToString(&buf);
+        i_she.SerializeToString(&buf);
         bs_block_put(key.data(), key.size(), buf.data(), buf.size());
-        i_cmpl.shi_complete(i_shn, i_argp);
+        i_cmpl.shi_complete(i_she, i_argp);
     }
     catch (Exception const & i_ex)
     {
-        i_cmpl.shi_error(i_shn, i_argp, i_ex);
+        i_cmpl.shi_error(i_she, i_argp, i_ex);
     }
 }
 
 void
-S3BlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
+S3BlockStore::bs_head_follow_async(SignedHeadEdge const & i_seed,
                                    SignedHeadTraverseFunc & i_func,
                                    void const * i_argp)
     throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
     // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headnode
+    // we used to do and needs to be replaced with a real headedge
     // graph store ...
     try
     {
-        HeadNode hn;
-        hn.ParseFromString(i_seed.headnode());
-        string const & key = hn.fstag();
+        HeadEdge he;
+        he.ParseFromString(i_seed.headedge());
+        string const & key = he.fstag();
         uint8 buf[8192];
         size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
-        SignedHeadNode shn;
-        shn.ParseFromArray(buf, sz);
-        i_func.sht_node(i_argp, shn);
+        SignedHeadEdge she;
+        she.ParseFromArray(buf, sz);
+        i_func.sht_node(i_argp, she);
         i_func.sht_complete(i_argp);
     }
     catch (Exception const & i_ex)
@@ -1452,25 +1452,25 @@ S3BlockStore::bs_head_follow_async(SignedHeadNode const & i_seed,
 }
 
 void
-S3BlockStore::bs_head_furthest_async(SignedHeadNode const & i_seed,
+S3BlockStore::bs_head_furthest_async(SignedHeadEdge const & i_seed,
                                      SignedHeadTraverseFunc & i_func,
                                      void const * i_argp)
     throw(InternalError)
 {
     // FIXME - This placeholder just uses the regular blockstore put
     // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headnode
+    // we used to do and needs to be replaced with a real headedge
     // graph store ...
     try
     {
-        HeadNode hn;
-        hn.ParseFromString(i_seed.headnode());
-        string const & key = hn.fstag();
+        HeadEdge he;
+        he.ParseFromString(i_seed.headedge());
+        string const & key = he.fstag();
         uint8 buf[8192];
         size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
-        SignedHeadNode shn;
-        shn.ParseFromArray(buf, sz);
-        i_func.sht_node(i_argp, shn);
+        SignedHeadEdge she;
+        she.ParseFromArray(buf, sz);
+        i_func.sht_node(i_argp, she);
         i_func.sht_complete(i_argp);
     }
     catch (Exception const & i_ex)

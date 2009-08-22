@@ -13,7 +13,7 @@
 #include "pybsstat.h"
 #include "pydirentryfunc.h"
 #include "pyfilesystem.h"
-#include "pyshn.h"
+#include "pyshe.h"
 #include "pystat.h"
 #include "pystatvfs.h"
 #include "pyutplog.h"
@@ -177,7 +177,7 @@ init_utp(void)
     m = Py_InitModule("_utp", module_methods);
 
     // Initialize sub-types which go in this module.
-    init_shn(m);
+    init_she(m);
 
     // Add some symbolic constants to the module.
     d = PyModule_GetDict(m);

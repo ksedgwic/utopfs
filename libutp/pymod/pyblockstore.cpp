@@ -6,7 +6,7 @@
 
 #include "pyblockstore.h"
 #include "pybsstat.h"
-#include "pyshn.h"
+#include "pyshe.h"
 #include "pyutpinit.h"
 
 using namespace utp;
@@ -285,18 +285,18 @@ BlockStore_bs_refresh_finish(BlockStoreObject *self, PyObject *args)
 static PyObject *
 BlockStore_bs_head_insert(BlockStoreObject *self, PyObject *args)
 {
-    PyObject * shnobj;
+    PyObject * sheobj;
     if (!PyArg_ParseTuple(args, "O!:bs_head_insert",
-                          &SignedHeadNodeType, &shnobj))
+                          &SignedHeadEdgeType, &sheobj))
         return NULL;
 
-    SignedHeadNode shn;
-    pyshn_asprotoshn(shnobj, shn);
+    SignedHeadEdge she;
+    pyshe_asprotoshe(sheobj, she);
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_head_insert(shn);
+        self->m_bsh->bs_head_insert(she);
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -306,73 +306,73 @@ BlockStore_bs_head_insert(BlockStoreObject *self, PyObject *args)
 static PyObject *
 BlockStore_bs_head_follow(BlockStoreObject *self, PyObject *args)
 {
-    PyObject * shnobj;
+    PyObject * sheobj;
     if (!PyArg_ParseTuple(args, "O!:bs_head_follow",
-                          &SignedHeadNodeType, &shnobj))
+                          &SignedHeadEdgeType, &sheobj))
         return NULL;
 
-    SignedHeadNode shn;
-    pyshn_asprotoshn(shnobj, shn);
+    SignedHeadEdge she;
+    pyshe_asprotoshe(sheobj, she);
 
-    BlockStore::SignedHeadNodeSeq shns;
+    BlockStore::SignedHeadEdgeSeq shes;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_head_follow(shn, shns);
+        self->m_bsh->bs_head_follow(she, shes);
     }
     PYUTP_CATCH_ALL;
 
-    // Translate the returned SignedHeadNodeSeq into a python list.
-    PyObject * shnsobj = PyList_New(shns.size());
-    for (unsigned i = 0; i < shns.size(); ++i)
+    // Translate the returned SignedHeadEdgeSeq into a python list.
+    PyObject * shesobj = PyList_New(shes.size());
+    for (unsigned i = 0; i < shes.size(); ++i)
     {
-        PyObject * so = pyshn_fromprotoshn(shns[i]);
+        PyObject * so = pyshe_fromprotoshe(shes[i]);
         if (!so)
         {
-            Py_DECREF(shnsobj);
+            Py_DECREF(shesobj);
             return NULL;
         }
-        PyList_SetItem(shnsobj, i, so);
+        PyList_SetItem(shesobj, i, so);
     }
 
-    return shnsobj;
+    return shesobj;
 }
 
 static PyObject *
 BlockStore_bs_head_furthest(BlockStoreObject *self, PyObject *args)
 {
-    PyObject * shnobj;
+    PyObject * sheobj;
     if (!PyArg_ParseTuple(args, "O!:bs_head_furthest",
-                          &SignedHeadNodeType, &shnobj))
+                          &SignedHeadEdgeType, &sheobj))
         return NULL;
 
-    SignedHeadNode shn;
-    pyshn_asprotoshn(shnobj, shn);
+    SignedHeadEdge she;
+    pyshe_asprotoshe(sheobj, she);
 
-    BlockStore::SignedHeadNodeSeq shns;
+    BlockStore::SignedHeadEdgeSeq shes;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_head_furthest(shn, shns);
+        self->m_bsh->bs_head_furthest(she, shes);
     }
     PYUTP_CATCH_ALL;
 
-    // Translate the returned SignedHeadNodeSeq into a python list.
-    PyObject * shnsobj = PyList_New(shns.size());
-    for (unsigned i = 0; i < shns.size(); ++i)
+    // Translate the returned SignedHeadEdgeSeq into a python list.
+    PyObject * shesobj = PyList_New(shes.size());
+    for (unsigned i = 0; i < shes.size(); ++i)
     {
-        PyObject * so = pyshn_fromprotoshn(shns[i]);
+        PyObject * so = pyshe_fromprotoshe(shes[i]);
         if (!so)
         {
-            Py_DECREF(shnsobj);
+            Py_DECREF(shesobj);
             return NULL;
         }
-        PyList_SetItem(shnsobj, i, so);
+        PyList_SetItem(shesobj, i, so);
     }
 
-    return shnsobj;
+    return shesobj;
 }
 
 static PyMethodDef BlockStore_methods[] = {

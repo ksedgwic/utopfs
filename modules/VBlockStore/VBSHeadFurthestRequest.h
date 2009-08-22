@@ -18,7 +18,7 @@ class VBS_EXP VBSHeadFurthestRequest
 public:
     VBSHeadFurthestRequest(VBlockStore & i_vbs,
                          long i_outstanding,
-                         utp::SignedHeadNode const & i_shn,
+                         utp::SignedHeadEdge const & i_she,
                          utp::BlockStore::SignedHeadTraverseFunc * i_cmpl,
                          void const * i_argp);
 
@@ -34,7 +34,7 @@ public:
     // SignedHeadTraverseFunc
 
     virtual void sht_node(void const * i_argp,
-                          utp::SignedHeadNode const & i_shn);
+                          utp::SignedHeadEdge const & i_she);
 
     virtual void sht_complete(void const * i_argp);
 
@@ -42,7 +42,7 @@ public:
                            utp::Exception const & i_exp);
 
 private:
-    utp::SignedHeadNode								m_shn;
+    utp::SignedHeadEdge								m_she;
     utp::BlockStore::SignedHeadTraverseFunc *		m_cmpl;
     void const *									m_argp;
 };

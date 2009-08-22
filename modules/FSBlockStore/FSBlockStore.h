@@ -65,9 +65,9 @@ struct FSBS_EXP Edge : public utp::RCObj
 {
     NodeRef					m_prev;
     NodeRef					m_root;
-    utp::SignedHeadNode		m_shn;
+    utp::SignedHeadEdge		m_she;
 
-    Edge(utp::SignedHeadNode const & i_shn);
+    Edge(utp::SignedHeadEdge const & i_she);
 };
 
 typedef utp::RCPtr<Edge> EdgeHandle;
@@ -145,17 +145,17 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_insert_async(utp::SignedHeadNode const & i_shn,
+    virtual void bs_head_insert_async(utp::SignedHeadEdge const & i_she,
                                       SignedHeadInsertCompletion & i_cmpl,
                                       void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_follow_async(utp::SignedHeadNode const & i_seed,
+    virtual void bs_head_follow_async(utp::SignedHeadEdge const & i_seed,
                                       SignedHeadTraverseFunc & i_func,
                                       void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_furthest_async(utp::SignedHeadNode const & i_seed,
+    virtual void bs_head_furthest_async(utp::SignedHeadEdge const & i_seed,
                                         SignedHeadTraverseFunc & i_func,
                                         void const * i_argp)
         throw(utp::InternalError);
@@ -177,9 +177,9 @@ protected:
 
     void purge_uncommitted();
 
-    void insert_head(utp::SignedHeadNode const & i_shn);
+    void insert_head(utp::SignedHeadEdge const & i_she);
 
-    void write_head(utp::SignedHeadNode const & i_shn);
+    void write_head(utp::SignedHeadEdge const & i_she);
 
 private:
     typedef std::set<EntryHandle, lessByName> EntrySet;

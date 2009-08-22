@@ -145,7 +145,7 @@ protected:
 
     BlockRef rootref();
 
-    void null_headnode();
+    void null_headedge();
     
 private:
     typedef std::map<std::string, FileNodeHandle>	NodeMap;
@@ -158,8 +158,8 @@ private:
 
     DirNodeHandle			m_rdh;
 
-    utp::SignedHeadNode		m_shn;
-    utp::HeadNode			m_hn;
+    utp::SignedHeadEdge		m_she;
+    utp::HeadEdge			m_he;
 };
 
 } // namespace UTFS

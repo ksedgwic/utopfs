@@ -50,8 +50,8 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
 
-    // Initialize the headnode.
-    null_headnode();
+    // Initialize the headedge.
+    null_headedge();
 
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
@@ -85,8 +85,8 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
     // Save the digest of the fsid.
     m_fsiddig = Digest(i_fsid.data(), i_fsid.size());
 
-    // Initialize the headnode.
-    null_headnode();
+    // Initialize the headedge.
+    null_headedge();
 
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
@@ -1013,53 +1013,53 @@ UTFileSystem::rootref(BlockRef const & i_blkref)
     m_ctxt.m_cipher.encrypt(iv, buffer, sizeof(buffer));
 
     // If the root reference hasn't changed, bail ...
-    if (m_hn.rootref() == string((char *) buffer, sizeof(buffer)))
+    if (m_he.rootref() == string((char *) buffer, sizeof(buffer)))
         return;
 
-    m_hn.set_fstag(m_fsiddig);
-    m_hn.set_prevref(m_hn.rootref());
-    m_hn.set_rootref(string((char *) buffer, sizeof(buffer)));
-    m_hn.set_tstamp(T64::now().usec());
+    m_he.set_fstag(m_fsiddig);
+    m_he.set_prevref(m_he.rootref());
+    m_he.set_rootref(string((char *) buffer, sizeof(buffer)));
+    m_he.set_tstamp(T64::now().usec());
 
-    // Serialize the HeadNode into the SignedHeadNode.
-    m_hn.SerializeToString(m_shn.mutable_headnode());
+    // Serialize the HeadEdge into the SignedHeadEdge.
+    m_he.SerializeToString(m_she.mutable_headedge());
 
     // FIXME - Set the keyid for real here!
     uint8 keyid[16];
     Random::fill(keyid, sizeof(keyid));
-    m_shn.set_keyid(keyid, sizeof(keyid));
+    m_she.set_keyid(keyid, sizeof(keyid));
 
     // FIXME - Set the signature for real here!
     uint8 sig[256];
     Random::fill(sig, sizeof(sig));
-    m_shn.set_signature(sig, sizeof(sig));
+    m_she.set_signature(sig, sizeof(sig));
 
-    m_ctxt.m_bsh->bs_head_insert(m_shn);
+    m_ctxt.m_bsh->bs_head_insert(m_she);
 }
 
 BlockRef
 UTFileSystem::rootref()
 {
-    BlockStore::SignedHeadNodeSeq shns;
-    m_ctxt.m_bsh->bs_head_furthest(m_shn, shns);
+    BlockStore::SignedHeadEdgeSeq shes;
+    m_ctxt.m_bsh->bs_head_furthest(m_she, shes);
 
     // We can only deal with a single head node yet.
-    if (shns.size() != 1)
+    if (shes.size() != 1)
         throwstream(InternalError, FILELINE
-                    << "can't cope w/ " << shns.size() << " head nodes");
+                    << "can't cope w/ " << shes.size() << " head nodes");
 
     // Store a copy of the new node.
-    m_shn = shns[0];
+    m_she = shes[0];
 
     // FIXME - Authenticate the signature here.
 
     // Unmarshal the signed head node.
-    m_hn.ParseFromString(m_shn.headnode());
+    m_he.ParseFromString(m_she.headedge());
 
     // Decrypt the root reference.
     uint8 iv[16];
     memset(iv, '\0', sizeof(iv));
-    string const & refstr = m_hn.rootref();
+    string const & refstr = m_he.rootref();
     m_ctxt.m_cipher.decrypt(iv, (uint8 *) &refstr[0], refstr.size());
 
     BlockRef blkref(refstr);
@@ -1070,16 +1070,16 @@ UTFileSystem::rootref()
 }
 
 void
-UTFileSystem::null_headnode()
+UTFileSystem::null_headedge()
 {
     // Serialize empty fields into the head node.
-    m_hn.set_fstag(m_fsiddig);
-    m_hn.set_rootref("");
-    m_hn.set_prevref("");
-    m_hn.set_tstamp(0);
+    m_he.set_fstag(m_fsiddig);
+    m_he.set_rootref("");
+    m_he.set_prevref("");
+    m_he.set_tstamp(0);
 
-    // Serialize the HeadNode into the SignedHeadNode.
-    m_hn.SerializeToString(m_shn.mutable_headnode());
+    // Serialize the HeadEdge into the SignedHeadEdge.
+    m_he.SerializeToString(m_she.mutable_headedge());
 }
 
 } // namespace UTFS

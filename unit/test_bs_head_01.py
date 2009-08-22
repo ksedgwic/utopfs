@@ -31,11 +31,11 @@ class Test_bs_head_01:
                                     CONFIG.BSARGS(self.bspath))
 
     # Furthest should generate NotFound on empty BS.
-    seed = utp.SignedHeadNode((0, 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge((0, 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
 
     # Furthest should generate NotFound on empty BS, even w/ fsid
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
 
     # Reopen the blockstore.
@@ -45,11 +45,11 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Furthest should generate NotFound on empty BS.
-    seed = utp.SignedHeadNode((0, 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge((0, 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
 
     # Furthest should generate NotFound on empty BS, even w/ fsid
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
 
     # Close the blockstore.
@@ -64,15 +64,15 @@ class Test_bs_head_01:
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
-    # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    # Insert a single SHE.
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.bs.bs_head_insert(node)
 
     # Furthest should return the node we inserted.
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.bs.bs_head_furthest(seed)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
+    shes = self.bs.bs_head_furthest(seed)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Reopen the blockstore.
     self.bs.bs_close()
@@ -81,10 +81,10 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Furthest should return the node we inserted.
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.bs.bs_head_furthest(seed)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
+    shes = self.bs.bs_head_furthest(seed)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Close the blockstore.
     self.bs.bs_close()
@@ -98,14 +98,14 @@ class Test_bs_head_01:
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
-    # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    # Insert a single SHE.
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.bs.bs_head_insert(node)
 
     # Furthest should return the node we inserted.
-    shns = self.bs.bs_head_furthest(node)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    shes = self.bs.bs_head_furthest(node)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Reopen the blockstore.
     self.bs.bs_close()
@@ -114,9 +114,9 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Furthest should return the node we inserted.
-    shns = self.bs.bs_head_furthest(node)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    shes = self.bs.bs_head_furthest(node)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Close the blockstore.
     self.bs.bs_close()
@@ -130,12 +130,12 @@ class Test_bs_head_01:
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
-    # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    # Insert a single SHE.
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.bs.bs_head_insert(node)
 
     # Furthest should miss w/ bad key.
-    miss = utp.SignedHeadNode(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
+    miss = utp.SignedHeadEdge(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, miss)
 
     # Reopen the blockstore.
@@ -145,7 +145,7 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Furthest should miss w/ bad key.
-    miss = utp.SignedHeadNode(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
+    miss = utp.SignedHeadEdge(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, miss)
 
     # Close the blockstore.
@@ -161,11 +161,11 @@ class Test_bs_head_01:
                                     CONFIG.BSARGS(self.bspath))
 
     # Follow should generate NotFound on empty BS.
-    seed = utp.SignedHeadNode((0, 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge((0, 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, seed)
 
     # Follow should generate NotFound on empty BS, even w/ fsid
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, seed)
 
     # Reopen the blockstore.
@@ -175,11 +175,11 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Follow should generate NotFound on empty BS.
-    seed = utp.SignedHeadNode((0, 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge((0, 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, seed)
 
     # Follow should generate NotFound on empty BS, even w/ fsid
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, seed)
 
     # Close the blockstore.
@@ -194,15 +194,15 @@ class Test_bs_head_01:
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
-    # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    # Insert a single SHE.
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.bs.bs_head_insert(node)
 
     # Follow should return the node we inserted.
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.bs.bs_head_follow(seed)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
+    shes = self.bs.bs_head_follow(seed)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Reopen the blockstore.
     self.bs.bs_close()
@@ -211,10 +211,10 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Follow should return the node we inserted.
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.bs.bs_head_follow(seed)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
+    shes = self.bs.bs_head_follow(seed)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Close the blockstore.
     self.bs.bs_close()
@@ -228,13 +228,13 @@ class Test_bs_head_01:
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
-    # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    # Insert a single SHE.
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.bs.bs_head_insert(node)
 
     # Follow should return the empty set
-    shns = self.bs.bs_head_follow(node)
-    assert lenhack(shns) == 0
+    shes = self.bs.bs_head_follow(node)
+    assert lenhack(shes) == 0
 
     # Reopen the blockstore.
     self.bs.bs_close()
@@ -243,8 +243,8 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Follow should return the empty set
-    shns = self.bs.bs_head_follow(node)
-    assert lenhack(shns) == 0
+    shes = self.bs.bs_head_follow(node)
+    assert lenhack(shes) == 0
 
     # Close the blockstore.
     self.bs.bs_close()
@@ -258,12 +258,12 @@ class Test_bs_head_01:
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
-    # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    # Insert a single SHE.
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.bs.bs_head_insert(node)
 
     # Follow should miss w/ bad key.
-    miss = utp.SignedHeadNode(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
+    miss = utp.SignedHeadEdge(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, miss)
 
     # Reopen the blockstore.
@@ -273,7 +273,7 @@ class Test_bs_head_01:
                                   CONFIG.BSARGS(self.bspath))
 
     # Follow should miss w/ bad key.
-    miss = utp.SignedHeadNode(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
+    miss = utp.SignedHeadEdge(("fsid", "notref", 0, time.time() * 1e6, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, miss)
 
     # Close the blockstore.

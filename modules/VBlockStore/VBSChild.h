@@ -65,7 +65,7 @@ private:
     std::deque<VBSGetRequestHandle>		m_getreqs;
     std::deque<VBSPutRequestHandle>		m_putreqs;
     std::deque<VBSRequestHandle>		m_refreqs;
-    std::deque<VBSRequestHandle>		m_shnreqs;
+    std::deque<VBSRequestHandle>		m_shereqs;
 };
 
 } // namespace VBS

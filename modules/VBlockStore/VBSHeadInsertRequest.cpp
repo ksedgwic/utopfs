@@ -15,26 +15,26 @@ namespace VBS {
 
 VBSHeadInsertRequest::VBSHeadInsertRequest(VBlockStore & i_vbs,
                                            long i_outstanding,
-                                           SignedHeadNode const & i_shn,
+                                           SignedHeadEdge const & i_she,
                                            BlockStore::SignedHeadInsertCompletion * i_cmpl,
                                            void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
-    , m_shn(i_shn)
+    , m_she(i_she)
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "SHN INSERT @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "INSERT @" << (void *) this << " CTOR");
 }
 
 VBSHeadInsertRequest::~VBSHeadInsertRequest()
 {
-    LOG(lgr, 6, "SHN INSERT @" << (void *) this << " DTOR");
+    LOG(lgr, 6, "INSERT @" << (void *) this << " DTOR");
 }
 
 void
 VBSHeadInsertRequest::stream_insert(std::ostream & ostrm) const
 {
-    ostrm << "SHN INSERT @" << (void *) this;
+    ostrm << "INSERT @" << (void *) this;
 }
 
 void
@@ -43,11 +43,11 @@ VBSHeadInsertRequest::initiate(VBSChild * i_cp,
 {
     LOG(lgr, 6, *this << " initiate");
 
-    i_bsh->bs_head_insert_async(m_shn, *this, i_cp);
+    i_bsh->bs_head_insert_async(m_she, *this, i_cp);
 }
 
 void
-VBSHeadInsertRequest::shi_complete(SignedHeadNode const & i_shn,
+VBSHeadInsertRequest::shi_complete(SignedHeadEdge const & i_she,
                                    void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
@@ -79,7 +79,7 @@ VBSHeadInsertRequest::shi_complete(SignedHeadNode const & i_shn,
     if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl->shi_complete(m_shn, m_argp);
+        m_cmpl->shi_complete(m_she, m_argp);
     }
 
     // This likely results in our destruction, do it last and
@@ -93,7 +93,7 @@ VBSHeadInsertRequest::shi_complete(SignedHeadNode const & i_shn,
 }
 
 void
-VBSHeadInsertRequest::shi_error(SignedHeadNode const & i_shn,
+VBSHeadInsertRequest::shi_error(SignedHeadEdge const & i_she,
                                 void const * i_argp,
                                 Exception const & i_exp)
 {
@@ -125,7 +125,7 @@ VBSHeadInsertRequest::shi_error(SignedHeadNode const & i_shn,
     if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl->shi_error(m_shn, m_argp, i_exp);
+        m_cmpl->shi_error(m_she, m_argp, i_exp);
     }
 
     // This likely results in our destruction, do it last and

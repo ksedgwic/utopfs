@@ -3,7 +3,7 @@ ROOTDIR = ../..
 include $(ROOTDIR)/config/define.mk
 
 PROTO +=	\
-			HeadNode.proto \
+			HeadEdge.proto \
 			$(NULL)
 
 LIBSRC =	\

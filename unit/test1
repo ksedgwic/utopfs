@@ -20,7 +20,7 @@ try:
                                CONFIG.BSARGS(bspath))
 
     # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     bs.bs_head_insert(node)
 
     bs.bs_close()

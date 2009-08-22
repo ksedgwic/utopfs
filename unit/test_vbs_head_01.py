@@ -67,19 +67,19 @@ class Test_vbs_head_01:
                                    ("child1", "child2", "child3"))
 
     # Furthest should generate NotFound on empty BS.
-    seed = utp.SignedHeadNode((0, 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge((0, 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
 
     # Furthest should generate NotFound on empty BS, even w/ fsid
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
 
     # Follow should generate NotFound on empty BS.
-    seed = utp.SignedHeadNode((0, 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge((0, 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, seed)
 
     # Follow should generate NotFound on empty BS, even w/ fsid
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
     py.test.raises(utp.NotFoundError, self.bs.bs_head_follow, seed)
 
     # Close for good.
@@ -129,20 +129,20 @@ class Test_vbs_head_01:
                                    ("child1", "child2", "child3"))
 
     # Insert a single SHN.
-    node = utp.SignedHeadNode(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
+    node = utp.SignedHeadEdge(("fsid", "rootref", 0, time.time() * 1e6, 0, 0))
     self.vbs.bs_head_insert(node)
 
     # Follow should return the node we inserted.
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.vbs.bs_head_follow(seed)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
+    shes = self.vbs.bs_head_follow(seed)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Furthest should return the node we inserted.
-    seed = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
-    shns = self.vbs.bs_head_furthest(seed)
-    assert lenhack(shns) == 1
-    assert str(shns[0].rootref) == "rootref"
+    seed = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
+    shes = self.vbs.bs_head_furthest(seed)
+    assert lenhack(shes) == 1
+    assert str(shes[0].rootref) == "rootref"
 
     # Close for good.
     self.vbs.bs_close()
@@ -167,7 +167,7 @@ class Test_vbs_head_01:
                                      CONFIG.BSARGS(bspath1))
 
     # Insert a node into this child only
-    node1 = utp.SignedHeadNode(("fsid", "node1", 0, time.time() * 1e6, 0, 0))
+    node1 = utp.SignedHeadEdge(("fsid", "node1", 0, time.time() * 1e6, 0, 0))
     self.bs1.bs_head_insert(node1)
 
     # Second child.
@@ -180,7 +180,7 @@ class Test_vbs_head_01:
                                      CONFIG.BSARGS(bspath2))
     
     # Insert a node into this child only
-    node2 = utp.SignedHeadNode(("fsid", "node2", 0, time.time() * 1e6, 0, 0))
+    node2 = utp.SignedHeadEdge(("fsid", "node2", 0, time.time() * 1e6, 0, 0))
     self.bs2.bs_head_insert(node2)
 
     # Third child.
@@ -193,7 +193,7 @@ class Test_vbs_head_01:
                                      CONFIG.BSARGS(bspath3))
 
     # Insert a node into this child only
-    node3 = utp.SignedHeadNode(("fsid", "node3", 0, time.time() * 1e6, 0, 0))
+    node3 = utp.SignedHeadEdge(("fsid", "node3", 0, time.time() * 1e6, 0, 0))
     self.bs3.bs_head_insert(node3)
 
     # Open the virtual block store.
@@ -202,21 +202,21 @@ class Test_vbs_head_01:
                                    "rootbs",
                                    ("child1", "child2", "child3"))
 
-    node0 = utp.SignedHeadNode(("fsid", 0, 0, 0, 0, 0))
+    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
 
     # Follow w/ empty should return all nodes.
-    shns = self.vbs.bs_head_follow(node0)
-    assert lenhack(shns) == 3
-    assert sorted((str(shns[0].rootref),
-                   str(shns[1].rootref),
-                   str(shns[2].rootref))) == ["node1", "node2", "node3"]
+    shes = self.vbs.bs_head_follow(node0)
+    assert lenhack(shes) == 3
+    assert sorted((str(shes[0].rootref),
+                   str(shes[1].rootref),
+                   str(shes[2].rootref))) == ["node1", "node2", "node3"]
 
     # Further w/ empty should return all nodes.
-    shns = self.vbs.bs_head_further(node0)
-    assert lenhack(shns) == 3
-    assert sorted((str(shns[0].rootref),
-                   str(shns[1].rootref),
-                   str(shns[2].rootref))) == ["node1", "node2", "node3"]
+    shes = self.vbs.bs_head_further(node0)
+    assert lenhack(shes) == 3
+    assert sorted((str(shes[0].rootref),
+                   str(shes[1].rootref),
+                   str(shes[2].rootref))) == ["node1", "node2", "node3"]
 
     # Close for good.
     self.vbs.bs_close()

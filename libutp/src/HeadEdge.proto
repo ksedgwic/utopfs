@@ -1,6 +1,6 @@
 package utp;
 
-message HeadNode
+message HeadEdge
 {
     required bytes fstag = 1;			// FileSystem tag (digest of fsid)
     required bytes rootref = 2;			// Encrypted Root Block Reference
@@ -8,14 +8,14 @@ message HeadNode
     required uint64 tstamp = 4;			// uSec Since Epoch
 }
 
-message SignedHeadNode
+message SignedHeadEdge
 {
-    required bytes headnode = 1;		// Marshaled HeadNode
+    required bytes headedge = 1;		// Marshaled HeadEdge
     required bytes keyid = 2;			// Key Identifier
     required bytes signature = 3;		// Digital Signature
 }
 
-message SignedHeadNodeVector
+message SignedHeadEdgeVector
 {
-    repeated SignedHeadNode shn = 1;
+    repeated SignedHeadEdge she = 1;
 }
