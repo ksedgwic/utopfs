@@ -35,12 +35,25 @@ operator<<(ostream & ostrm, NodeRef const & i_nr)
     string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
     string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
 
-    // Use the ends because tests vary on one end or the other ...
-    ostrm << pt1.substr(0, 3) << ':';
-    if (pt2.size() <= 5)
-        ostrm << pt2;
-    else
-        ostrm << pt2.substr(0, 2) << ".." << pt2.substr(pt2.size() - 2);
+    // Strip any trailing "====" off ...
+    pt1 = pt1.substr(0, pt1.find_first_of('='));
+    pt2 = pt2.substr(0, pt2.find_first_of('='));
+
+    string::size_type sz1 = pt1.size();
+    string::size_type sz2 = pt2.size();
+
+    // How many characters of the FSID and NODEID should we display?
+    static string::size_type const NFSID = 3;
+    static string::size_type const NNDID = 5;
+
+    // Use the right-justified substrings since the tests sometimes
+    // only differ in the right positions.  Real digest based refs
+    // will differ in all positions.
+    //
+    string::size_type off1 = sz1 > NFSID ? sz1 - NFSID : 0;
+    string::size_type off2 = sz2 > NNDID ? sz2 - NNDID : 0;
+
+    ostrm << pt1.substr(off1) << ':' << pt2.substr(off2);
 
     return ostrm;
 }
@@ -813,6 +826,8 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                                    void const * i_argp)
     throw(InternalError)
 {
+    LOG(lgr, 6, m_instname << ' ' << "follow " << i_shn);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     // Obtain the seed from the seed edge.
@@ -853,6 +868,7 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                 // We need to call the traverse function on the
                 // children as well since they follow the seed.
                 //
+                LOG(lgr, 6, m_instname << ' ' << "node " << it->second->m_shn);
                 i_func.sht_node(i_argp, it->second->m_shn);
             }
         }
@@ -883,6 +899,7 @@ FSBlockStore::bs_head_follow_async(SignedHeadNode const & i_shn,
                 kids.insert(kit->second->m_root);
 
                 // Call the traverse function on the kid.
+                LOG(lgr, 6, m_instname << ' ' << "node " << kit->second->m_shn);
                 i_func.sht_node(i_argp, kit->second->m_shn);
             }
 
@@ -912,6 +929,8 @@ FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
                                      void const * i_argp)
     throw(InternalError)
 {
+    LOG(lgr, 6, m_instname << ' ' << "furthest " << i_shn);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     // Obtain the seed from the seed edge.
@@ -1003,6 +1022,7 @@ FSBlockStore::bs_head_furthest_async(SignedHeadNode const & i_shn,
 
         // We just use the first matching node ...
         
+        LOG(lgr, 6, m_instname << ' ' << "node " << pos->second->m_shn);
         i_func.sht_node(i_argp, pos->second->m_shn);
     }
 

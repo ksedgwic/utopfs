@@ -20,6 +20,7 @@ PYTESTS =	\
 			test_bs_head_01.py \
 			test_bs_head_02.py \
 			test_bs_head_03.py \
+			test_bs_head_04.py \
 			test_fs_mkfs.py \
 			test_fs_persist_01.py \
 			test_fs_persist_02.py \

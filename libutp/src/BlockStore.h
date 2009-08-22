@@ -229,6 +229,11 @@ public:
     ///       the nonblocking interface.  Implementing classes do not
     ///       need to implement this ...
     ///
+    /// @note The prev fields of the returned nodes should generally
+    ///       not be considered.  If multiple edges terminate at a
+    ///       given node (merged branch) one of the merge edges will
+    ///       be arbitrarily chosen ...
+    ///
     /// @param[in] i_shn The SignedHeadNode to start at.
     /// @param[out] o_nodes Collection to hold returned nodes.
     ///
