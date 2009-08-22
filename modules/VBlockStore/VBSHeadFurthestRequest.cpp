@@ -5,7 +5,7 @@
 #include "VBlockStore.h"
 #include "VBSChild.h"
 #include "vbslog.h"
-#include "VBSRefreshFinishRequest.h"
+#include "VBSHeadFurthestRequest.h"
 #include "VBSRequest.h"
 
 using namespace std;
@@ -13,46 +13,51 @@ using namespace utp;
 
 namespace VBS {
 
-VBSRefreshFinishRequest::VBSRefreshFinishRequest(VBlockStore & i_vbs,
-                                               long i_outstanding,
-                                               uint64 i_rid,
-                                               RefreshFinishCompletion & i_cmpl,
-                                               void const * i_argp)
+VBSHeadFurthestRequest::VBSHeadFurthestRequest(VBlockStore & i_vbs,
+                                           long i_outstanding,
+                                           SignedHeadNode const & i_shn,
+                                           BlockStore::SignedHeadTraverseFunc * i_cmpl,
+                                           void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
-    , m_rid(i_rid)
+    , m_shn(i_shn)
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "RFRSH FINISH @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "SHN FURTHEST @" << (void *) this << " CTOR");
 }
 
-VBSRefreshFinishRequest::~VBSRefreshFinishRequest()
+VBSHeadFurthestRequest::~VBSHeadFurthestRequest()
 {
-    LOG(lgr, 6, "RFRSH FINISH @" << (void *) this << " DTOR");
+    LOG(lgr, 6, "SHN FURTHEST @" << (void *) this << " DTOR");
 }
 
 void
-VBSRefreshFinishRequest::stream_insert(std::ostream & ostrm) const
+VBSHeadFurthestRequest::stream_insert(std::ostream & ostrm) const
 {
-    ostrm << "RFRSH FINISH @" << (void *) this;
+    ostrm << "SHN FURTHEST @" << (void *) this;
 }
 
 void
-VBSRefreshFinishRequest::initiate(VBSChild * i_cp,
-                                  BlockStoreHandle const & i_bsh)
+VBSHeadFurthestRequest::initiate(VBSChild * i_cp,
+                                 BlockStoreHandle const & i_bsh)
 {
     LOG(lgr, 6, *this << " initiate");
 
-    i_bsh->bs_refresh_finish_async(m_rid, *this, i_cp);
+    i_bsh->bs_head_furthest_async(m_shn, *this, i_cp);
 }
 
 void
-VBSRefreshFinishRequest::rf_complete(utp::uint64 i_rid,
-                                    void const * i_argp)
+VBSHeadFurthestRequest::sht_node(void const * i_argp,
+                                 SignedHeadNode const & i_shn)
+{
+}
+
+void
+VBSHeadFurthestRequest::sht_complete(void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " rf_complete");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_complete");
 
     bool do_complete = false;
     bool do_done = false;
@@ -76,10 +81,10 @@ VBSRefreshFinishRequest::rf_complete(utp::uint64 i_rid,
     // If we are the first child back with success we get
     // to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl.rf_complete(m_rid, m_argp);
+        m_cmpl->sht_complete(m_argp);
     }
 
     // This likely results in our destruction, do it last and
@@ -93,13 +98,12 @@ VBSRefreshFinishRequest::rf_complete(utp::uint64 i_rid,
 }
 
 void
-VBSRefreshFinishRequest::rf_error(utp::uint64 i_rid,
-                                 void const * i_argp,
-                                 Exception const & i_exp)
+VBSHeadFurthestRequest::sht_error(void const * i_argp,
+                                  utp::Exception const & i_exp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " rf_error");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_error");
 
     bool do_complete = false;
     bool do_done = false;
@@ -122,10 +126,10 @@ VBSRefreshFinishRequest::rf_error(utp::uint64 i_rid,
     // If we are the last child back with an exception we
     // get to tell the parent ...
     //
-    if (do_complete)
+    if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl.rf_error(m_rid, m_argp, i_exp);
+        m_cmpl->sht_error(m_argp, i_exp);
     }
 
     // This likely results in our destruction, do it last and

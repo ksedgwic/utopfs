@@ -30,8 +30,8 @@ public:
 
     virtual void stream_insert(std::ostream & ostrm) const;
 
-    virtual void process(VBSChild * i_cp,
-                         utp::BlockStoreHandle const & i_bsh);
+    virtual void initiate(VBSChild * i_cp,
+                          utp::BlockStoreHandle const & i_bsh);
                          
     // RefreshStartCompletion
 

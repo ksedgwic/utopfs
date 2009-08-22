@@ -42,9 +42,10 @@ VBSPutRequest::stream_insert(std::ostream & ostrm) const
 }
 
 void
-VBSPutRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
+VBSPutRequest::initiate(VBSChild * i_cp,
+                        BlockStoreHandle const & i_bsh)
 {
-    LOG(lgr, 6, *this << " process");
+    LOG(lgr, 6, *this << " initiate");
 
     i_bsh->bs_block_put_async(&m_key[0], m_key.size(),
                               &m_blk[0], m_blk.size(),

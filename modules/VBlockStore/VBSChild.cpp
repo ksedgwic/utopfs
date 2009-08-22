@@ -55,7 +55,7 @@ VBSChild::remove_reference()
 int
 VBSChild::handle_exception(ACE_HANDLE fd)
 {
-    process_requests();
+    initiate_requests();
     
     return 0;
 }
@@ -125,9 +125,9 @@ VBSChild::enqueue_headnode(VBSRequestHandle const & i_rh)
 }
 
 void
-VBSChild::process_requests()
+VBSChild::initiate_requests()
 {
-    LOG(lgr, 4, m_instname << ' ' << "process_requests starting");
+    LOG(lgr, 4, m_instname << ' ' << "initiate_requests starting");
 
     // NOTE - This loop handles requests in the following order:
     //
@@ -180,15 +180,15 @@ VBSChild::process_requests()
         //
         if (grh)
         {
-            grh->process(this, m_bsh);
+            grh->initiate(this, m_bsh);
         }
         else if (prh)
         {
-            prh->process(this, m_bsh);
+            prh->initiate(this, m_bsh);
         }
         else if (rrh)
         {
-            rrh->process(this, m_bsh);
+            rrh->initiate(this, m_bsh);
         }
         else
         {
@@ -197,7 +197,7 @@ VBSChild::process_requests()
         }
     }
 
-    LOG(lgr, 4, m_instname << ' ' << "process_requests finished");
+    LOG(lgr, 4, m_instname << ' ' << "initiate_requests finished");
 }
 
 } // namespace VBS

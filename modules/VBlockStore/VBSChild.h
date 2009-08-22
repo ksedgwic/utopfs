@@ -53,7 +53,7 @@ public:
     void enqueue_headnode(VBSRequestHandle const & i_rh);
 
 protected:
-    void process_requests();
+    void initiate_requests();
 
 private:
     std::string							m_instname;

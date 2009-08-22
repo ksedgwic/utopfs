@@ -1,8 +1,8 @@
-#ifndef VBSHeadInsertRequest_h__
-#define VBSHeadInsertRequest_h__
+#ifndef VBSHeadFurthestRequest_h__
+#define VBSHeadFurthestRequest_h__
 
-/// @file VBSHeadInsertRequest.h
-/// Virtual BlockStore HeadInsert Request
+/// @file VBSHeadFurthestRequest.h
+/// Virtual BlockStore HeadFurthest Request
 
 #include "VBSRequest.h"
 
@@ -11,18 +11,18 @@
 
 namespace VBS {
 
-class VBS_EXP VBSHeadInsertRequest
+class VBS_EXP VBSHeadFurthestRequest
     : public VBSRequest
-    , public utp::BlockStore::SignedHeadInsertCompletion
+    , public utp::BlockStore::SignedHeadTraverseFunc
 {
 public:
-    VBSHeadInsertRequest(VBlockStore & i_vbs,
+    VBSHeadFurthestRequest(VBlockStore & i_vbs,
                          long i_outstanding,
                          utp::SignedHeadNode const & i_shn,
-                         utp::BlockStore::SignedHeadInsertCompletion * i_cmpl,
+                         utp::BlockStore::SignedHeadTraverseFunc * i_cmpl,
                          void const * i_argp);
 
-    virtual ~VBSHeadInsertRequest();
+    virtual ~VBSHeadFurthestRequest();
 
     // VBSRequest
 
@@ -31,18 +31,19 @@ public:
     virtual void initiate(VBSChild * i_cp,
                           utp::BlockStoreHandle const & i_bsh);
                          
-    // SignedHeadInsertCompletion
+    // SignedHeadTraverseFunc
 
-    virtual void shi_complete(utp::SignedHeadNode const & i_shn,
-                              void const * i_argp);
+    virtual void sht_node(void const * i_argp,
+                          utp::SignedHeadNode const & i_shn);
 
-    virtual void shi_error(utp::SignedHeadNode const & i_shn,
-                           void const * i_argp,
+    virtual void sht_complete(void const * i_argp);
+
+    virtual void sht_error(void const * i_argp,
                            utp::Exception const & i_exp);
 
 private:
     utp::SignedHeadNode								m_shn;
-    utp::BlockStore::SignedHeadInsertCompletion *	m_cmpl;
+    utp::BlockStore::SignedHeadTraverseFunc *		m_cmpl;
     void const *									m_argp;
 };
 
@@ -55,4 +56,4 @@ private:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // VBSHeadInsertRequest_h__
+#endif // VBSHeadFurthestRequest_h__

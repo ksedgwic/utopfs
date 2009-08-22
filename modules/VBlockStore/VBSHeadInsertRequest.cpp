@@ -38,9 +38,10 @@ VBSHeadInsertRequest::stream_insert(std::ostream & ostrm) const
 }
 
 void
-VBSHeadInsertRequest::process(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
+VBSHeadInsertRequest::initiate(VBSChild * i_cp,
+                               BlockStoreHandle const & i_bsh)
 {
-    LOG(lgr, 6, *this << " process");
+    LOG(lgr, 6, *this << " initiate");
 
     i_bsh->bs_head_insert_async(m_shn, *this, i_cp);
 }
