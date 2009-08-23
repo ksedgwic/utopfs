@@ -14,6 +14,7 @@
 #include "utpfwd.h"
 
 #include "BlockStore.h"
+#include "LameHeadNodeGraph.h"
 #include "RC.h"
 
 #include "fsbsexp.h"
@@ -50,26 +51,6 @@ struct lessByTstamp {
         return i_a->m_tstamp < i_b->m_tstamp;
     }
 };
-
-// Helpful for debugging.
-std::ostream & operator<<(std::ostream & ostrm, utp::HeadNode const & i_nr);
-
-// A Edge represents a connection between two nodes.  They're
-// reference counted so they can be held in multiple collections.
-//
-struct FSBS_EXP Edge : public utp::RCObj
-{
-    utp::HeadNode			m_prev;
-    utp::HeadNode			m_root;
-    utp::SignedHeadEdge		m_she;
-
-    Edge(utp::SignedHeadEdge const & i_she);
-};
-
-typedef utp::RCPtr<Edge> EdgeHandle;
-
-// Helpful for debugging.
-std::ostream & operator<<(std::ostream & ostrm, Edge const & i_e);
 
 // The Filesystem-based BlockStore.
 //
@@ -173,36 +154,30 @@ protected:
 
     void purge_uncommitted();
 
-    void insert_head(utp::SignedHeadEdge const & i_she);
-
     void write_head(utp::SignedHeadEdge const & i_she);
 
 private:
     typedef std::set<EntryHandle, lessByName> EntrySet;
     typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
-    typedef std::multimap<utp::HeadNode, EdgeHandle> EdgeMap;
-    typedef std::set<utp::HeadNode> HeadNodeSet;
 
-    std::string			m_instname;
+    std::string				m_instname;
 
-    off_t				m_size;			// Total Size in Bytes
-    off_t				m_committed;	// Committed Bytes (must be saved)
-    off_t				m_uncommitted;	// Uncommitted Bytes (reclaimable)
-    std::string			m_rootpath;
-    std::string			m_blockspath;
+    off_t					m_size;			// Total Size in Bytes
+    off_t					m_committed;	// Committed Bytes (must be saved)
+    off_t					m_uncommitted;	// Uncommitted Bytes (reclaimable)
+    std::string				m_rootpath;
+    std::string				m_blockspath;
 
-    std::ofstream		m_headsstrm;
+    std::ofstream			m_headsstrm;
 
-    ACE_Thread_Mutex	m_fsbsmutex;
+    ACE_Thread_Mutex		m_fsbsmutex;
 
-    EntrySet			m_entries;
-    EntryList			m_lru;			// front=newest, back=oldest
+    EntrySet				m_entries;
+    EntryList				m_lru;			// front=newest, back=oldest
 
-    EntryHandle			m_mark;
+    EntryHandle				m_mark;
 
-    EdgeMap				m_prevmap;
-    EdgeMap				m_rootmap;
-    HeadNodeSet			m_roots;		// Roots of the graph
+    utp::LameHeadNodeGraph	m_lhng;
 };
 
 } // namespace FSBS

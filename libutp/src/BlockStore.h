@@ -4,6 +4,7 @@
 /// @file BlockStore.h
 /// Abstract BlockStore Interface.
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,9 @@ typedef std::pair<std::string, std::string> HeadNode;
 
 /// Sequence of HeadNode objects.
 typedef std::vector<HeadNode> HeadNodeSeq;
+
+/// Set of HeadNode objects.
+typedef std::set<utp::HeadNode> HeadNodeSet;
 
 class UTP_EXP BlockStore : public virtual RCObj
 {

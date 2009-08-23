@@ -29,53 +29,6 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
     return i_a->m_tstamp < i_b->m_tstamp;
 }
 
-ostream &
-operator<<(ostream & ostrm, HeadNode const & i_nr)
-{
-    string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
-    string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
-
-    // Strip any trailing "====" off ...
-    pt1 = pt1.substr(0, pt1.find_first_of('='));
-    pt2 = pt2.substr(0, pt2.find_first_of('='));
-
-    string::size_type sz1 = pt1.size();
-    string::size_type sz2 = pt2.size();
-
-    // How many characters of the FSID and NODEID should we display?
-    static string::size_type const NFSID = 3;
-    static string::size_type const NNDID = 5;
-
-    // Use the right-justified substrings since the tests sometimes
-    // only differ in the right positions.  Real digest based refs
-    // will differ in all positions.
-    //
-    string::size_type off1 = sz1 > NFSID ? sz1 - NFSID : 0;
-    string::size_type off2 = sz2 > NNDID ? sz2 - NNDID : 0;
-
-    ostrm << pt1.substr(off1) << ':' << pt2.substr(off2);
-
-    return ostrm;
-}
-
-Edge::Edge(utp::SignedHeadEdge const & i_she)
-    : m_she(i_she)
-{
-    HeadEdge he;
-    if (!he.ParseFromString(i_she.headedge()))
-        throwstream(InternalError, FILELINE << "failed to parse headedge");
-
-    m_prev = make_pair(he.fstag(), he.prevref());
-    m_root = make_pair(he.fstag(), he.rootref());
-}
-
-ostream &
-operator<<(ostream & ostrm, Edge const & i_e)
-{
-    ostrm << i_e.m_prev << " -> " << i_e.m_root;
-    return ostrm;
-}
-
 void
 FSBlockStore::destroy(StringSeq const & i_args)
 {
@@ -342,7 +295,7 @@ FSBlockStore::bs_open(StringSeq const & i_args)
         if (!ok)
             throwstream(InternalError, FILELINE
                         << " SignedHeadEdge deserialize failed");
-        insert_head(she);
+        m_lhng.insert_head(she);
     }
     
     // Open the HEADS output stream.
@@ -813,11 +766,13 @@ FSBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
 {
     LOG(lgr, 6, m_instname << ' ' << "insert " << i_she);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    insert_head(i_she);
+        write_head(i_she);
+    }
 
-    write_head(i_she);
+    m_lhng.insert_head(i_she);
 
     i_cmpl.hei_complete(i_she, i_argp);
 }
@@ -830,97 +785,7 @@ FSBlockStore::bs_head_follow_async(HeadNode const & i_hn,
 {
     LOG(lgr, 6, m_instname << ' ' << "follow " << i_hn);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    HeadNode const & seed = i_hn;
-
-    // Expand the seeds.
-    HeadNodeSet seeds;
-    if (seed.second.size() == 0)
-    {
-        // There was no reference, we should use all roots w/ the same fstag.
-        for (HeadNodeSet::const_iterator it = m_roots.lower_bound(seed);
-             it != m_roots.end() && it->first == seed.first;
-             ++it)
-        {
-            HeadNode nr = *it;
-            seeds.insert(nr);
-        }
-    }
-    else
-    {
-        // Yes, see if we can find the seed in the rootmap
-        EdgeMap::const_iterator pos = m_rootmap.find(seed);
-        if (pos != m_rootmap.end())
-        {
-            // It's here, we can start with it.
-            seeds.insert(pos->first);
-        }
-        else
-        {
-            // Can we find children of this node instead?
-            EdgeMap::const_iterator it = m_prevmap.lower_bound(seed);
-            EdgeMap::const_iterator end = m_prevmap.upper_bound(seed);
-            for (; it != end; ++it)
-            {
-                seeds.insert(it->second->m_root);
-
-                // We need to call the traverse function on the
-                // children as well since they follow the seed.
-                //
-                LOG(lgr, 6, m_instname << ' ' << "edge " << it->second->m_she);
-                i_func.het_edge(i_argp, it->second->m_she);
-            }
-        }
-    }
-
-    // If our seeds collection is empty, we are out of luck.
-    if (seeds.empty())
-        i_func.het_error(i_argp, NotFoundError("no starting seed found"));
-
-    // Replace elements of the seed set w/ their children.
-    bool done ;
-    do
-    {
-        // Start optimistically
-        done = true;
-
-        // Find a seed with children.
-        for (HeadNodeSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
-        {
-            HeadNode nr = *it;
-
-            // Find all the children of this seed.
-            HeadNodeSet kids;
-            EdgeMap::iterator kit = m_prevmap.lower_bound(nr);
-            EdgeMap::iterator end = m_prevmap.upper_bound(nr);
-            for (; kit != end; ++kit)
-            {
-                kids.insert(kit->second->m_root);
-
-                // Call the traverse function on the kid.
-                LOG(lgr, 6, m_instname << ' ' << "edge " << kit->second->m_she);
-                i_func.het_edge(i_argp, kit->second->m_she);
-            }
-
-            // Were there kids?
-            if (!kids.empty())
-            {
-                // Remove the parent from the set.
-                seeds.erase(nr);
-
-                // Insert the kids instead.
-                seeds.insert(kids.begin(), kids.end());
-
-                // Start over, we're not done.
-                done = false;
-                break;
-            }
-        }
-    }
-    while (!done);
-
-    i_func.het_complete(i_argp);
+    m_lhng.head_follow_async(i_hn, i_func, i_argp);
 }
 
 void
@@ -931,100 +796,7 @@ FSBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
 {
     LOG(lgr, 6, m_instname << ' ' << "furthest " << i_hn);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
-
-    HeadNode const & seed = i_hn;
-
-    // Expand the seeds.
-    HeadNodeSet seeds;
-    if (seed.second.size() == 0)
-    {
-        // There was no reference, we should use all roots w/ the same fstag.
-        for (HeadNodeSet::const_iterator it = m_roots.lower_bound(seed);
-             it != m_roots.end() && it->first == seed.first;
-             ++it)
-        {
-            HeadNode nr = *it;
-            seeds.insert(nr);
-        }
-    }
-    else
-    {
-        // Yes, see if we can find the seed in the rootmap
-        EdgeMap::const_iterator pos = m_rootmap.find(seed);
-        if (pos != m_rootmap.end())
-        {
-            // It's here, we can start with it.
-            seeds.insert(pos->first);
-        }
-        else
-        {
-            // Can we find children of this node instead?
-            EdgeMap::const_iterator it = m_prevmap.lower_bound(seed);
-            EdgeMap::const_iterator end = m_prevmap.upper_bound(seed);
-            for (; it != end; ++it)
-                seeds.insert(it->second->m_root);
-        }
-    }
-
-    // If our seeds collection is empty, we are out of luck.
-    if (seeds.empty())
-        i_func.hnt_error(i_argp, NotFoundError("no starting seed found"));
-
-    // Replace elements of the seed set w/ their children.
-    bool done ;
-    do
-    {
-        // Start optimistically
-        done = true;
-
-        // Find a seed with children.
-        for (HeadNodeSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
-        {
-            HeadNode nr = *it;
-
-            // Find all the children of this seed.
-            HeadNodeSet kids;
-            EdgeMap::iterator kit = m_prevmap.lower_bound(nr);
-            EdgeMap::iterator end = m_prevmap.upper_bound(nr);
-            for (; kit != end; ++kit)
-            {
-                LOG(lgr, 8, m_instname << ' ' << "adding kid " << *kit->second);
-                kids.insert(kit->second->m_root);
-            }
-
-            // Were there kids?
-            if (!kids.empty())
-            {
-                // Remove the parent from the set.
-                LOG(lgr, 8, m_instname << ' ' << "removing parent " << nr);
-                seeds.erase(nr);
-
-                // Insert the kids instead.
-                seeds.insert(kids.begin(), kids.end());
-
-                // Start over, we're not done.
-                done = false;
-                break;
-            }
-        }
-    }
-    while (!done);
-
-    // Call the traversal function on each remaining node.
-    for (HeadNodeSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
-    {
-        EdgeMap::const_iterator pos = m_rootmap.find(*it);
-        if (pos == m_rootmap.end())
-            throwstream(InternalError, FILELINE << "missing rootmap entry");
-
-        // We just use the first matching node ...
-        
-        LOG(lgr, 6, m_instname << ' ' << "node " << pos->second->m_root);
-        i_func.hnt_node(i_argp, pos->second->m_root);
-    }
-
-    i_func.hnt_complete(i_argp);
+    m_lhng.head_furthest_async(i_hn, i_func, i_argp);
 }
 
 string 
@@ -1122,31 +894,6 @@ FSBlockStore::purge_uncommitted()
 
     // Update the accounting.
     m_uncommitted -= eh->m_size;
-}
-
-void
-FSBlockStore::insert_head(SignedHeadEdge const & i_she)
-{
-    // IMPORTANT - We presume the mutex is held by the caller.
-
-    EdgeHandle eh = new Edge(i_she);
-
-    if (eh->m_prev == eh->m_root)
-        throwstream(InternalError, FILELINE
-                    << "we'd really rather not have self-loops");
-
-    m_prevmap.insert(make_pair(eh->m_prev, eh));
-
-    m_rootmap.insert(make_pair(eh->m_root, eh));
-
-    // Remove any nodes which we preceede from the root set.
-    m_roots.erase(eh->m_root);
-
-    // Are we in the root set so far?  If our previous node
-    // hasn't been seen we insert ourselves ...
-    //
-    if (m_rootmap.find(eh->m_prev) == m_rootmap.end())
-        m_roots.insert(eh->m_prev);
 }
 
 void

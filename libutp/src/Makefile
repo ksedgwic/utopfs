@@ -17,6 +17,7 @@ LIBSRC =	\
 			FileSystem.cpp \
 			FileSystemFactory.cpp \
 			FormatterBase.cpp \
+			LameHeadNodeGraph.cpp \
 			Log.cpp \
 			LogField.cpp \
 			LoggerBase.cpp \
