@@ -17,13 +17,19 @@
 
 namespace utp {
 
+/// HeadNode reference (binary fstag, binary encrypted root BlockRef)
+typedef std::pair<std::string, std::string> HeadNode;
+
+/// Sequence of HeadNode objects.
+typedef std::vector<HeadNode> HeadNodeSeq;
+
 class UTP_EXP BlockStore : public virtual RCObj
 {
 public:
     /// Sequence of keys.
     typedef std::vector<OctetSeq> KeySeq;
 
-    /// Sequence of Signed Head Nodes
+    /// Sequence of Signed Head Edges
     typedef std::deque<SignedHeadEdge> SignedHeadEdgeSeq;
 
     /// Destructor
@@ -200,48 +206,41 @@ public:
     void bs_head_insert(SignedHeadEdge const & i_she)
         throw(InternalError);
 
-    /// Return all nodes which follow a node.
+    /// Return all edges which follow a node.
     ///
-    /// If the rootref field of the seed node is empty all nodes will
-    /// be traversed.
-    /// 
+    /// If the seed node is empty all nodes will be traversed.
+    ///
     /// @note This interface is a base class implemented wrapper on
     ///       the nonblocking interface.  Implementing classes do not
     ///       need to implement this ...
     ///
-    /// @param[in] i_she The SignedHeadEdge to start at.
-    /// @param[out] o_nodes Collection to hold returned nodes.
+    /// @param[in] i_hn The seed head node.
+    /// @param[out] o_edges Collection to hold returned edges.
     ///
     /// @throw InternalError An non-recoverable error occurred.
-    /// @throw NotFoundError No nodes were found.
+    /// @throw NotFoundError No edges were found.
     ///
-    void bs_head_follow(SignedHeadEdge const & i_seed,
-                        SignedHeadEdgeSeq & o_nodes)
+    void bs_head_follow(HeadNode const & i_hn,
+                        SignedHeadEdgeSeq & o_edges)
         throw(InternalError,
               NotFoundError);
 
-    /// Return only the extreme heads which follow a node.
+    /// Return only the extreme nodes which follow a node.
     ///
-    /// If the rootref field of the seed node is empty all extreme
-    /// heads will be traversed.
+    /// If the seed node is empty all extreme heads will be traversed.
     /// 
     /// @note This interface is a base class implemented wrapper on
     ///       the nonblocking interface.  Implementing classes do not
     ///       need to implement this ...
     ///
-    /// @note The prev fields of the returned nodes should generally
-    ///       not be considered.  If multiple edges terminate at a
-    ///       given node (merged branch) one of the merge edges will
-    ///       be arbitrarily chosen ...
-    ///
-    /// @param[in] i_she The SignedHeadEdge to start at.
+    /// @param[in] i_hn The seed head node.
     /// @param[out] o_nodes Collection to hold returned nodes.
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError No nodes were found.
     ///
-    void bs_head_furthest(SignedHeadEdge const & i_seed,
-                          SignedHeadEdgeSeq & o_nodes)
+    void bs_head_furthest(HeadNode const & i_hn,
+                          HeadNodeSeq & o_nodes)
         throw(InternalError,
               NotFoundError);
 
@@ -377,13 +376,13 @@ public:
     /// Completion callback interface for async SignedHeadEdge
     /// insertion.
     ///
-    class SignedHeadInsertCompletion
+    class HeadEdgeInsertCompletion
     {
     public:
-        virtual void shi_complete(SignedHeadEdge const & i_she,
+        virtual void hei_complete(SignedHeadEdge const & i_she,
                                   void const * i_argp) = 0;
 
-        virtual void shi_error(SignedHeadEdge const & i_she,
+        virtual void hei_error(SignedHeadEdge const & i_she,
                                void const * i_argp,
                                Exception const & i_exp) = 0;
     };
@@ -396,25 +395,24 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     ///
     virtual void bs_head_insert_async(SignedHeadEdge const & i_she,
-                                      SignedHeadInsertCompletion & i_cmpl,
+                                      HeadEdgeInsertCompletion & i_cmpl,
                                       void const * i_argp)
         throw(InternalError) = 0;
 
-    /// Callback interface for SignedHeadEdge follow and furthest
-    /// traversals.
+    /// Callback interface for the follow tarversal.
     ///
-    class SignedHeadTraverseFunc
+    class HeadEdgeTraverseFunc
     {
     public:
-        // Called on each node in the traversal.
-        virtual void sht_node(void const * i_argp,
+        // Called on each edge in the traversal.
+        virtual void het_edge(void const * i_argp,
                               SignedHeadEdge const & i_she) = 0;
 
         // Called when the traversal is complete.
-        virtual void sht_complete(void const * i_argp) = 0;
+        virtual void het_complete(void const * i_argp) = 0;
 
         // Called instead if there is an error.
-        virtual void sht_error(void const * i_argp,
+        virtual void het_error(void const * i_argp,
                                Exception const & i_exp) = 0;
     };
 
@@ -425,10 +423,27 @@ public:
     /// 
     /// @throw InternalError An non-recoverable error occurred.
     ///
-    virtual void bs_head_follow_async(SignedHeadEdge const & i_seed,
-                                      SignedHeadTraverseFunc & i_func,
+    virtual void bs_head_follow_async(HeadNode const & i_hn,
+                                      HeadEdgeTraverseFunc & i_func,
                                       void const * i_argp)
         throw(InternalError) = 0;
+
+    /// Callback interface for the furthest traversal.
+    ///
+    class HeadNodeTraverseFunc
+    {
+    public:
+        // Called on each node in the traversal.
+        virtual void hnt_node(void const * i_argp,
+                              HeadNode const & i_hn) = 0;
+
+        // Called when the traversal is complete.
+        virtual void hnt_complete(void const * i_argp) = 0;
+
+        // Called instead if there is an error.
+        virtual void hnt_error(void const * i_argp,
+                               Exception const & i_exp) = 0;
+    };
 
     /// Traverse only the extreme heads which follow a node.
     ///
@@ -437,8 +452,8 @@ public:
     /// 
     /// @throw InternalError An non-recoverable error occurred.
     ///
-    virtual void bs_head_furthest_async(SignedHeadEdge const & i_seed,
-                                        SignedHeadTraverseFunc & i_func,
+    virtual void bs_head_furthest_async(HeadNode const & i_hn,
+                                        HeadNodeTraverseFunc & i_func,
                                         void const * i_argp)
         throw(InternalError) = 0;
 };

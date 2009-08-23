@@ -186,17 +186,17 @@ private:
 };
 
 class InsertCompletion
-    : public BlockStore::SignedHeadInsertCompletion
+    : public BlockStore::HeadEdgeInsertCompletion
     , public BlockingCompletion
 {
 public:
-    virtual void shi_complete(SignedHeadEdge const & i_she,
+    virtual void hei_complete(SignedHeadEdge const & i_she,
                               void const * i_argp)
     {
         done();
     }
 
-    virtual void shi_error(SignedHeadEdge const & i_she,
+    virtual void hei_error(SignedHeadEdge const & i_she,
                            void const * i_argp,
                            Exception const & i_exp)
     {
@@ -205,27 +205,27 @@ public:
     }
 };
 
-class HeadTraversalCompletion
-    : public BlockStore::SignedHeadTraverseFunc
+class EdgeTraversalCompletion
+    : public BlockStore::HeadEdgeTraverseFunc
     , public BlockingCompletion
 {
 public:
-    HeadTraversalCompletion(BlockStore::SignedHeadEdgeSeq & o_nodes)
-        : m_nodes(o_nodes)
+    EdgeTraversalCompletion(BlockStore::SignedHeadEdgeSeq & o_edges)
+        : m_edges(o_edges)
     {}
 
-    virtual void sht_node(void const * i_argp,
+    virtual void het_edge(void const * i_argp,
                           SignedHeadEdge const & i_she)
     {
-        m_nodes.push_back(i_she);
+        m_edges.push_back(i_she);
     }
 
-    virtual void sht_complete(void const * i_argp)
+    virtual void het_complete(void const * i_argp)
     {
         done();
     }
 
-    virtual void sht_error(void const * i_argp,
+    virtual void het_error(void const * i_argp,
                            Exception const & i_exp)
     {
         m_except = i_exp.clone();
@@ -233,7 +233,38 @@ public:
     }
 
 private:
-    BlockStore::SignedHeadEdgeSeq &		m_nodes;
+    BlockStore::SignedHeadEdgeSeq &		m_edges;
+};
+
+class NodeTraversalCompletion
+    : public BlockStore::HeadNodeTraverseFunc
+    , public BlockingCompletion
+{
+public:
+    NodeTraversalCompletion(HeadNodeSeq & o_nodes)
+        : m_nodes(o_nodes)
+    {}
+
+    virtual void hnt_node(void const * i_argp,
+                          HeadNode const & i_hn)
+    {
+        m_nodes.push_back(i_hn);
+    }
+
+    virtual void hnt_complete(void const * i_argp)
+    {
+        done();
+    }
+
+    virtual void hnt_error(void const * i_argp,
+                           Exception const & i_exp)
+    {
+        m_except = i_exp.clone();
+        done();
+    }
+
+private:
+    HeadNodeSeq &		m_nodes;
 };
 
 } // end namespace
@@ -373,43 +404,43 @@ BlockStore::bs_head_insert(SignedHeadEdge const & i_she)
 }
 
 void
-BlockStore::bs_head_follow(SignedHeadEdge const & i_seed,
-                           SignedHeadEdgeSeq & o_nodes)
+BlockStore::bs_head_follow(HeadNode const & i_hn,
+                           SignedHeadEdgeSeq & o_edges)
     throw(InternalError,
           NotFoundError)
 {
     // Create our completion handler.
-    HeadTraversalCompletion htc(o_nodes);
+    EdgeTraversalCompletion etc(o_edges);
 
     // Initiate the asynchronous insert.
-    bs_head_follow_async(i_seed, htc, NULL);
+    bs_head_follow_async(i_hn, etc, NULL);
 
     // Wait for completion.
-    htc.wait();
+    etc.wait();
 
     // If there was an exception, throw it.
-    if (htc.is_error())
-        htc.rethrow();
+    if (etc.is_error())
+        etc.rethrow();
 }
 
 void
-BlockStore::bs_head_furthest(SignedHeadEdge const & i_seed,
-                             SignedHeadEdgeSeq & o_nodes)
+BlockStore::bs_head_furthest(HeadNode const & i_hn,
+                             HeadNodeSeq & o_nodes)
     throw(InternalError,
           NotFoundError)
 {
     // Create our completion handler.
-    HeadTraversalCompletion htc(o_nodes);
+    NodeTraversalCompletion ntc(o_nodes);
 
     // Initiate the asynchronous insert.
-    bs_head_furthest_async(i_seed, htc, NULL);
+    bs_head_furthest_async(i_hn, ntc, NULL);
 
     // Wait for completion.
-    htc.wait();
+    ntc.wait();
 
     // If there was an exception, throw it.
-    if (htc.is_error())
-        htc.rethrow();
+    if (ntc.is_error())
+        ntc.rethrow();
 }
 
 } // end namespace utp

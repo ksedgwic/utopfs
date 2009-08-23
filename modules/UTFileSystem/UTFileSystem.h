@@ -145,21 +145,18 @@ protected:
 
     BlockRef rootref();
 
-    void null_headedge();
-    
 private:
     typedef std::map<std::string, FileNodeHandle>	NodeMap;
 
-    utp::Digest				m_fsiddig;
+    utp::Digest					m_fsiddig;
 
-    ACE_Thread_Mutex		m_utfsmutex;
+    ACE_Thread_Mutex			m_utfsmutex;
 
-    Context					m_ctxt;
+    Context						m_ctxt;
 
-    DirNodeHandle			m_rdh;
+    DirNodeHandle				m_rdh;
 
-    utp::SignedHeadEdge		m_she;
-    utp::HeadEdge			m_he;
+    utp::HeadNode				m_hn;
 };
 
 } // namespace UTFS

@@ -30,7 +30,7 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
 }
 
 ostream &
-operator<<(ostream & ostrm, NodeRef const & i_nr)
+operator<<(ostream & ostrm, HeadNode const & i_nr)
 {
     string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
     string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
@@ -807,43 +807,43 @@ FSBlockStore::bs_refresh_finish_async(uint64 i_rid,
 
 void
 FSBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
-                                   SignedHeadInsertCompletion & i_cmpl,
+                                   HeadEdgeInsertCompletion & i_cmpl,
                                    void const * i_argp)
     throw(InternalError)
 {
+    LOG(lgr, 6, m_instname << ' ' << "insert " << i_she);
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
     insert_head(i_she);
 
     write_head(i_she);
 
-    i_cmpl.shi_complete(i_she, i_argp);
+    i_cmpl.hei_complete(i_she, i_argp);
 }
 
 void
-FSBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
-                                   SignedHeadTraverseFunc & i_func,
+FSBlockStore::bs_head_follow_async(HeadNode const & i_hn,
+                                   HeadEdgeTraverseFunc & i_func,
                                    void const * i_argp)
     throw(InternalError)
 {
-    LOG(lgr, 6, m_instname << ' ' << "follow " << i_she);
+    LOG(lgr, 6, m_instname << ' ' << "follow " << i_hn);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    // Obtain the seed from the seed edge.
-    Edge edge(i_she);
-    NodeRef seed = edge.m_root;
+    HeadNode const & seed = i_hn;
 
     // Expand the seeds.
-    NodeRefSet seeds;
+    HeadNodeSet seeds;
     if (seed.second.size() == 0)
     {
         // There was no reference, we should use all roots w/ the same fstag.
-        for (NodeRefSet::const_iterator it = m_roots.lower_bound(seed);
+        for (HeadNodeSet::const_iterator it = m_roots.lower_bound(seed);
              it != m_roots.end() && it->first == seed.first;
              ++it)
         {
-            NodeRef nr = *it;
+            HeadNode nr = *it;
             seeds.insert(nr);
         }
     }
@@ -868,15 +868,15 @@ FSBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
                 // We need to call the traverse function on the
                 // children as well since they follow the seed.
                 //
-                LOG(lgr, 6, m_instname << ' ' << "node " << it->second->m_she);
-                i_func.sht_node(i_argp, it->second->m_she);
+                LOG(lgr, 6, m_instname << ' ' << "edge " << it->second->m_she);
+                i_func.het_edge(i_argp, it->second->m_she);
             }
         }
     }
 
     // If our seeds collection is empty, we are out of luck.
     if (seeds.empty())
-        i_func.sht_error(i_argp, NotFoundError("no starting seed found"));
+        i_func.het_error(i_argp, NotFoundError("no starting seed found"));
 
     // Replace elements of the seed set w/ their children.
     bool done ;
@@ -886,12 +886,12 @@ FSBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
         done = true;
 
         // Find a seed with children.
-        for (NodeRefSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
+        for (HeadNodeSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
         {
-            NodeRef nr = *it;
+            HeadNode nr = *it;
 
             // Find all the children of this seed.
-            NodeRefSet kids;
+            HeadNodeSet kids;
             EdgeMap::iterator kit = m_prevmap.lower_bound(nr);
             EdgeMap::iterator end = m_prevmap.upper_bound(nr);
             for (; kit != end; ++kit)
@@ -899,8 +899,8 @@ FSBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
                 kids.insert(kit->second->m_root);
 
                 // Call the traverse function on the kid.
-                LOG(lgr, 6, m_instname << ' ' << "node " << kit->second->m_she);
-                i_func.sht_node(i_argp, kit->second->m_she);
+                LOG(lgr, 6, m_instname << ' ' << "edge " << kit->second->m_she);
+                i_func.het_edge(i_argp, kit->second->m_she);
             }
 
             // Were there kids?
@@ -920,33 +920,31 @@ FSBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
     }
     while (!done);
 
-    i_func.sht_complete(i_argp);
+    i_func.het_complete(i_argp);
 }
 
 void
-FSBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
-                                     SignedHeadTraverseFunc & i_func,
+FSBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
+                                     HeadNodeTraverseFunc & i_func,
                                      void const * i_argp)
     throw(InternalError)
 {
-    LOG(lgr, 6, m_instname << ' ' << "furthest " << i_she);
+    LOG(lgr, 6, m_instname << ' ' << "furthest " << i_hn);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
-    // Obtain the seed from the seed edge.
-    Edge edge(i_she);
-    NodeRef seed = edge.m_root;
+    HeadNode const & seed = i_hn;
 
     // Expand the seeds.
-    NodeRefSet seeds;
+    HeadNodeSet seeds;
     if (seed.second.size() == 0)
     {
         // There was no reference, we should use all roots w/ the same fstag.
-        for (NodeRefSet::const_iterator it = m_roots.lower_bound(seed);
+        for (HeadNodeSet::const_iterator it = m_roots.lower_bound(seed);
              it != m_roots.end() && it->first == seed.first;
              ++it)
         {
-            NodeRef nr = *it;
+            HeadNode nr = *it;
             seeds.insert(nr);
         }
     }
@@ -971,7 +969,7 @@ FSBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
 
     // If our seeds collection is empty, we are out of luck.
     if (seeds.empty())
-        i_func.sht_error(i_argp, NotFoundError("no starting seed found"));
+        i_func.hnt_error(i_argp, NotFoundError("no starting seed found"));
 
     // Replace elements of the seed set w/ their children.
     bool done ;
@@ -981,12 +979,12 @@ FSBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
         done = true;
 
         // Find a seed with children.
-        for (NodeRefSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
+        for (HeadNodeSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
         {
-            NodeRef nr = *it;
+            HeadNode nr = *it;
 
             // Find all the children of this seed.
-            NodeRefSet kids;
+            HeadNodeSet kids;
             EdgeMap::iterator kit = m_prevmap.lower_bound(nr);
             EdgeMap::iterator end = m_prevmap.upper_bound(nr);
             for (; kit != end; ++kit)
@@ -1014,7 +1012,7 @@ FSBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
     while (!done);
 
     // Call the traversal function on each remaining node.
-    for (NodeRefSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
+    for (HeadNodeSet::iterator it = seeds.begin(); it != seeds.end(); ++it)
     {
         EdgeMap::const_iterator pos = m_rootmap.find(*it);
         if (pos == m_rootmap.end())
@@ -1022,11 +1020,11 @@ FSBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
 
         // We just use the first matching node ...
         
-        LOG(lgr, 6, m_instname << ' ' << "node " << pos->second->m_she);
-        i_func.sht_node(i_argp, pos->second->m_she);
+        LOG(lgr, 6, m_instname << ' ' << "node " << pos->second->m_root);
+        i_func.hnt_node(i_argp, pos->second->m_root);
     }
 
-    i_func.sht_complete(i_argp);
+    i_func.hnt_complete(i_argp);
 }
 
 string 

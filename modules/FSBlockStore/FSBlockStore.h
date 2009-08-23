@@ -51,20 +51,16 @@ struct lessByTstamp {
     }
 };
 
-// A NodeRef consists of a filesystem tag and the rootref.
-//
-typedef std::pair<std::string, std::string> NodeRef;
-
 // Helpful for debugging.
-std::ostream & operator<<(std::ostream & ostrm, NodeRef const & i_nr);
+std::ostream & operator<<(std::ostream & ostrm, utp::HeadNode const & i_nr);
 
 // A Edge represents a connection between two nodes.  They're
 // reference counted so they can be held in multiple collections.
 //
 struct FSBS_EXP Edge : public utp::RCObj
 {
-    NodeRef					m_prev;
-    NodeRef					m_root;
+    utp::HeadNode			m_prev;
+    utp::HeadNode			m_root;
     utp::SignedHeadEdge		m_she;
 
     Edge(utp::SignedHeadEdge const & i_she);
@@ -145,18 +141,18 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_insert_async(utp::SignedHeadEdge const & i_she,
-                                      SignedHeadInsertCompletion & i_cmpl,
+    virtual void bs_head_insert_async(utp::SignedHeadEdge const & i_shn,
+                                      HeadEdgeInsertCompletion & i_cmpl,
                                       void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_follow_async(utp::SignedHeadEdge const & i_seed,
-                                      SignedHeadTraverseFunc & i_func,
+    virtual void bs_head_follow_async(utp::HeadNode const & i_hn,
+                                      HeadEdgeTraverseFunc & i_func,
                                       void const * i_argp)
         throw(utp::InternalError);
 
-    virtual void bs_head_furthest_async(utp::SignedHeadEdge const & i_seed,
-                                        SignedHeadTraverseFunc & i_func,
+    virtual void bs_head_furthest_async(utp::HeadNode const & i_hn,
+                                        HeadNodeTraverseFunc & i_func,
                                         void const * i_argp)
         throw(utp::InternalError);
 
@@ -184,8 +180,8 @@ protected:
 private:
     typedef std::set<EntryHandle, lessByName> EntrySet;
     typedef std::multiset<EntryHandle, lessByTstamp> EntryTimeSet;
-    typedef std::multimap<NodeRef, EdgeHandle> EdgeMap;
-    typedef std::set<NodeRef> NodeRefSet;
+    typedef std::multimap<utp::HeadNode, EdgeHandle> EdgeMap;
+    typedef std::set<utp::HeadNode> HeadNodeSet;
 
     std::string			m_instname;
 
@@ -206,7 +202,7 @@ private:
 
     EdgeMap				m_prevmap;
     EdgeMap				m_rootmap;
-    NodeRefSet			m_roots;		// Roots of the graph
+    HeadNodeSet			m_roots;		// Roots of the graph
 };
 
 } // namespace FSBS

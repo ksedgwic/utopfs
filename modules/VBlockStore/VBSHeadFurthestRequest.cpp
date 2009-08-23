@@ -14,12 +14,12 @@ using namespace utp;
 namespace VBS {
 
 VBSHeadFurthestRequest::VBSHeadFurthestRequest(VBlockStore & i_vbs,
-                                           long i_outstanding,
-                                           SignedHeadEdge const & i_she,
-                                           BlockStore::SignedHeadTraverseFunc * i_cmpl,
-                                           void const * i_argp)
+                                               long i_outstanding,
+                                               HeadNode const & i_hn,
+                                               BlockStore::HeadNodeTraverseFunc * i_cmpl,
+                                               void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
-    , m_she(i_she)
+    , m_hn(i_hn)
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
@@ -43,17 +43,17 @@ VBSHeadFurthestRequest::initiate(VBSChild * i_cp,
 {
     LOG(lgr, 6, *this << " initiate");
 
-    i_bsh->bs_head_furthest_async(m_she, *this, i_cp);
+    i_bsh->bs_head_furthest_async(m_hn, *this, i_cp);
 }
 
 void
-VBSHeadFurthestRequest::sht_node(void const * i_argp,
-                                 SignedHeadEdge const & i_she)
+VBSHeadFurthestRequest::hnt_node(void const * i_argp,
+                                 HeadNode const & i_hn)
 {
 }
 
 void
-VBSHeadFurthestRequest::sht_complete(void const * i_argp)
+VBSHeadFurthestRequest::hnt_complete(void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
@@ -84,7 +84,7 @@ VBSHeadFurthestRequest::sht_complete(void const * i_argp)
     if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl->sht_complete(m_argp);
+        m_cmpl->hnt_complete(m_argp);
     }
 
     // This likely results in our destruction, do it last and
@@ -98,7 +98,7 @@ VBSHeadFurthestRequest::sht_complete(void const * i_argp)
 }
 
 void
-VBSHeadFurthestRequest::sht_error(void const * i_argp,
+VBSHeadFurthestRequest::hnt_error(void const * i_argp,
                                   utp::Exception const & i_exp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
@@ -129,7 +129,7 @@ VBSHeadFurthestRequest::sht_error(void const * i_argp,
     if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl->sht_error(m_argp, i_exp);
+        m_cmpl->hnt_error(m_argp, i_exp);
     }
 
     // This likely results in our destruction, do it last and

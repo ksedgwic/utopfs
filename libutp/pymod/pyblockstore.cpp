@@ -9,6 +9,7 @@
 #include "pyshe.h"
 #include "pyutpinit.h"
 
+using namespace std;
 using namespace utp;
 
 namespace utp {
@@ -306,20 +307,52 @@ BlockStore_bs_head_insert(BlockStoreObject *self, PyObject *args)
 static PyObject *
 BlockStore_bs_head_follow(BlockStoreObject *self, PyObject *args)
 {
-    PyObject * sheobj;
-    if (!PyArg_ParseTuple(args, "O!:bs_head_follow",
-                          &SignedHeadEdgeType, &sheobj))
+    PyObject * hnobj;
+    if (!PyArg_ParseTuple(args, "O!:bs_head_follow", &PyTuple_Type, &hnobj))
         return NULL;
 
-    SignedHeadEdge she;
-    pyshe_asprotoshe(sheobj, she);
+    if (PyTuple_Size(hnobj) != 2)
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "BlockStore::bs_head_follow "
+                        "arg must be tuplea of two buffers");
+            return NULL;
+    }
+    PyObject * tagbuf = PyTuple_GetItem(hnobj, 0);
+    if (!PyBuffer_Check(tagbuf))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "BlockStore::bs_head_follow "
+                        "arg must be tuple of two buffers");
+        return NULL;
+    }
+    char const * tagptr;
+    Py_ssize_t taglen;
+    if (PyObject_AsReadBuffer(tagbuf, (void const **) &tagptr, &taglen))
+        return NULL;
+
+    PyObject * refbuf = PyTuple_GetItem(hnobj, 1);
+    if (!PyBuffer_Check(refbuf))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "BlockStore::bs_head_follow "
+                        "arg must be tuple of two buffers");
+        return NULL;
+    }
+    char const * refptr;
+    Py_ssize_t reflen;
+    if (PyObject_AsReadBuffer(refbuf, (void const **) &refptr, &reflen))
+        return NULL;
+
+    HeadNode hn = make_pair(string(tagptr, tagptr + taglen),
+                            string(refptr, refptr + reflen));
 
     BlockStore::SignedHeadEdgeSeq shes;
-
+    
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_head_follow(she, shes);
+        self->m_bsh->bs_head_follow(hn, shes);
     }
     PYUTP_CATCH_ALL;
 
@@ -342,37 +375,108 @@ BlockStore_bs_head_follow(BlockStoreObject *self, PyObject *args)
 static PyObject *
 BlockStore_bs_head_furthest(BlockStoreObject *self, PyObject *args)
 {
-    PyObject * sheobj;
-    if (!PyArg_ParseTuple(args, "O!:bs_head_furthest",
-                          &SignedHeadEdgeType, &sheobj))
+    PyObject * hnobj;
+    if (!PyArg_ParseTuple(args, "O!:bs_head_furthest", &PyTuple_Type, &hnobj))
         return NULL;
 
-    SignedHeadEdge she;
-    pyshe_asprotoshe(sheobj, she);
+    if (PyTuple_Size(hnobj) != 2)
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "BlockStore::bs_head_furthest "
+                        "arg must be tuplea of two buffers");
+            return NULL;
+    }
+    PyObject * tagbuf = PyTuple_GetItem(hnobj, 0);
+    if (!PyBuffer_Check(tagbuf))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "BlockStore::bs_head_furthest "
+                        "arg must be tuple of two buffers");
+        return NULL;
+    }
+    char const * tagptr;
+    Py_ssize_t taglen;
+    if (PyObject_AsReadBuffer(tagbuf, (void const **) &tagptr, &taglen))
+        return NULL;
 
-    BlockStore::SignedHeadEdgeSeq shes;
+    PyObject * refbuf = PyTuple_GetItem(hnobj, 1);
+    if (!PyBuffer_Check(refbuf))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "BlockStore::bs_head_furthest "
+                        "arg must be tuple of two buffers");
+        return NULL;
+    }
+    char const * refptr;
+    Py_ssize_t reflen;
+    if (PyObject_AsReadBuffer(refbuf, (void const **) &refptr, &reflen))
+        return NULL;
+
+    HeadNode hn = make_pair(string(tagptr, tagptr + taglen),
+                            string(refptr, refptr + reflen));
+
+    HeadNodeSeq hns;
 
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;
-        self->m_bsh->bs_head_furthest(she, shes);
+        self->m_bsh->bs_head_furthest(hn, hns);
     }
     PYUTP_CATCH_ALL;
 
-    // Translate the returned SignedHeadEdgeSeq into a python list.
-    PyObject * shesobj = PyList_New(shes.size());
-    for (unsigned i = 0; i < shes.size(); ++i)
+    // Translate the returned HeadNodeSeq into a python list.
+    PyObject * hnsobj = PyList_New(hns.size());
+    for (unsigned i = 0; i < hns.size(); ++i)
     {
-        PyObject * so = pyshe_fromprotoshe(shes[i]);
-        if (!so)
+        void * optr;
+        Py_ssize_t olen;
+
+        PyObject * tagobj = PyBuffer_New(hns[i].first.size());
+        if (!tagobj)
         {
-            Py_DECREF(shesobj);
+            Py_DECREF(hnsobj);
             return NULL;
         }
-        PyList_SetItem(shesobj, i, so);
+        if (PyObject_AsWriteBuffer(tagobj, &optr, &olen))
+        {
+            Py_DECREF(tagobj);
+            Py_DECREF(hnsobj);
+            return NULL;
+        }
+        memcpy(optr, hns[i].first.data(),
+               min(hns[i].first.size(), size_t(olen)));
+
+        PyObject * refobj = PyBuffer_New(hns[i].second.size());
+        if (!refobj)
+        {
+            Py_DECREF(tagobj);
+            Py_DECREF(hnsobj);
+            return NULL;
+        }
+        if (PyObject_AsWriteBuffer(refobj, &optr, &olen))
+        {
+            Py_DECREF(refobj);
+            Py_DECREF(tagobj);
+            Py_DECREF(hnsobj);
+            return NULL;
+        }
+        memcpy(optr, hns[i].second.data(),
+               min(hns[i].second.size(), size_t(olen)));
+
+        PyObject * tup = PyTuple_New(2);
+        if (!tup)
+        {
+            Py_DECREF(refobj);
+            Py_DECREF(tagobj);
+            Py_DECREF(hnsobj);
+            return NULL;
+        }
+        PyTuple_SetItem(tup, 0, tagobj);
+        PyTuple_SetItem(tup, 1, refobj);
+        PyList_SetItem(hnsobj, i, tup);
     }
 
-    return shesobj;
+    return hnsobj;
 }
 
 static PyMethodDef BlockStore_methods[] = {

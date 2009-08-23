@@ -13,13 +13,13 @@ namespace VBS {
 
 class VBS_EXP VBSHeadInsertRequest
     : public VBSRequest
-    , public utp::BlockStore::SignedHeadInsertCompletion
+    , public utp::BlockStore::HeadEdgeInsertCompletion
 {
 public:
     VBSHeadInsertRequest(VBlockStore & i_vbs,
                          long i_outstanding,
                          utp::SignedHeadEdge const & i_she,
-                         utp::BlockStore::SignedHeadInsertCompletion * i_cmpl,
+                         utp::BlockStore::HeadEdgeInsertCompletion * i_cmpl,
                          void const * i_argp);
 
     virtual ~VBSHeadInsertRequest();
@@ -33,16 +33,16 @@ public:
                          
     // SignedHeadInsertCompletion
 
-    virtual void shi_complete(utp::SignedHeadEdge const & i_she,
+    virtual void hei_complete(utp::SignedHeadEdge const & i_she,
                               void const * i_argp);
 
-    virtual void shi_error(utp::SignedHeadEdge const & i_she,
+    virtual void hei_error(utp::SignedHeadEdge const & i_she,
                            void const * i_argp,
                            utp::Exception const & i_exp);
 
 private:
     utp::SignedHeadEdge								m_she;
-    utp::BlockStore::SignedHeadInsertCompletion *	m_cmpl;
+    utp::BlockStore::HeadEdgeInsertCompletion *		m_cmpl;
     void const *									m_argp;
 };
 

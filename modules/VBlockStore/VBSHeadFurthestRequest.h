@@ -13,14 +13,14 @@ namespace VBS {
 
 class VBS_EXP VBSHeadFurthestRequest
     : public VBSRequest
-    , public utp::BlockStore::SignedHeadTraverseFunc
+    , public utp::BlockStore::HeadNodeTraverseFunc
 {
 public:
     VBSHeadFurthestRequest(VBlockStore & i_vbs,
-                         long i_outstanding,
-                         utp::SignedHeadEdge const & i_she,
-                         utp::BlockStore::SignedHeadTraverseFunc * i_cmpl,
-                         void const * i_argp);
+                           long i_outstanding,
+                           utp::HeadNode const & i_hn,
+                           utp::BlockStore::HeadNodeTraverseFunc * i_cmpl,
+                           void const * i_argp);
 
     virtual ~VBSHeadFurthestRequest();
 
@@ -33,17 +33,17 @@ public:
                          
     // SignedHeadTraverseFunc
 
-    virtual void sht_node(void const * i_argp,
-                          utp::SignedHeadEdge const & i_she);
+    virtual void hnt_node(void const * i_argp,
+                          utp::HeadNode const & i_hn);
 
-    virtual void sht_complete(void const * i_argp);
+    virtual void hnt_complete(void const * i_argp);
 
-    virtual void sht_error(void const * i_argp,
+    virtual void hnt_error(void const * i_argp,
                            utp::Exception const & i_exp);
 
 private:
-    utp::SignedHeadEdge								m_she;
-    utp::BlockStore::SignedHeadTraverseFunc *		m_cmpl;
+    utp::HeadNode									m_hn;
+    utp::BlockStore::HeadNodeTraverseFunc *			m_cmpl;
     void const *									m_argp;
 };
 

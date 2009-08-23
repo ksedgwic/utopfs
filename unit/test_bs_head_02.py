@@ -40,34 +40,36 @@ class Test_bs_head_02:
     self.bs.bs_head_insert(node2)
 
     # Furthest w/ empty should return the second node we inserted.
-    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
-    shes = self.bs.bs_head_furthest(node0)
+    seed0 = (buffer("fsid"), buffer(""))
+    shes = self.bs.bs_head_furthest(seed0)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes[0] == (buffer("fsid"), buffer("node2"))
 
     # Furthest w/ first should return the second node we inserted.
-    shes = self.bs.bs_head_furthest(node1)
+    seed1 = (buffer("fsid"), buffer("node1"))
+    shes = self.bs.bs_head_furthest(seed1)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes[0] == (buffer("fsid"), buffer("node2"))
 
     # Furthest w/ last should return the second node we inserted.
-    shes = self.bs.bs_head_furthest(node2)
+    seed2 = (buffer("fsid"), buffer("node2"))
+    shes = self.bs.bs_head_furthest(seed2)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes[0] == (buffer("fsid"), buffer("node2"))
 
     # Follow w/ empty should return both nodes.
-    shes = self.bs.bs_head_follow(node0)
+    shes = self.bs.bs_head_follow(seed0)
     assert lenhack(shes) == 2
     assert str(shes[0].rootref) == "node1"
     assert str(shes[1].rootref) == "node2"
 
     # Follow w/ first should return the second node.
-    shes = self.bs.bs_head_follow(node1)
+    shes = self.bs.bs_head_follow(seed1)
     assert lenhack(shes) == 1
     assert str(shes[0].rootref) == "node2"
 
     # Follow w/ last should return nothing.
-    shes = self.bs.bs_head_follow(node2)
+    shes = self.bs.bs_head_follow(seed2)
     assert lenhack(shes) == 0
 
     # Reopen the blockstore.
@@ -77,34 +79,36 @@ class Test_bs_head_02:
                                   CONFIG.BSARGS(self.bspath))
 
     # Furthest w/ empty should return the second node we inserted.
-    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
-    shes = self.bs.bs_head_furthest(node0)
+    seed0 = (buffer("fsid"), buffer(""))
+    shes = self.bs.bs_head_furthest(seed0)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes[0] == (buffer("fsid"), buffer("node2"))
 
     # Furthest w/ first should return the second node we inserted.
-    shes = self.bs.bs_head_furthest(node1)
+    seed1 = (buffer("fsid"), buffer("node1"))
+    shes = self.bs.bs_head_furthest(seed1)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes[0] == (buffer("fsid"), buffer("node2"))
 
     # Furthest w/ last should return the second node we inserted.
-    shes = self.bs.bs_head_furthest(node2)
+    seed2 = (buffer("fsid"), buffer("node2"))
+    shes = self.bs.bs_head_furthest(seed2)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes[0] == (buffer("fsid"), buffer("node2"))
 
     # Follow w/ empty should return both nodes.
-    shes = self.bs.bs_head_follow(node0)
+    shes = self.bs.bs_head_follow(seed0)
     assert lenhack(shes) == 2
     assert str(shes[0].rootref) == "node1"
     assert str(shes[1].rootref) == "node2"
 
     # Follow w/ first should return the second node.
-    shes = self.bs.bs_head_follow(node1)
+    shes = self.bs.bs_head_follow(seed1)
     assert lenhack(shes) == 1
     assert str(shes[0].rootref) == "node2"
 
     # Follow w/ last should return nothing.
-    shes = self.bs.bs_head_follow(node2)
+    shes = self.bs.bs_head_follow(seed2)
     assert lenhack(shes) == 0
 
     # Close the blockstore.

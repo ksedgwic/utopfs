@@ -45,40 +45,42 @@ class Test_bs_head_03:
     self.bs.bs_head_insert(node3)
 
     # Furthest w/ empty should return the two branch heads.
-    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
-    shes = self.bs.bs_head_furthest(node0)
+    seed0 = (buffer("fsid"), buffer(""))
+    shes = self.bs.bs_head_furthest(seed0)
     assert lenhack(shes) == 2
-    assert sorted((str(shes[0].rootref),
-                   str(shes[1].rootref))) == ["node2", "node3"]
+    assert sorted(shes) == [ (buffer("fsid"), buffer("node2")),
+                             (buffer("fsid"), buffer("node3")), ]
 
     # Furthest w/ first should return the two branch heads.
-    shes = self.bs.bs_head_furthest(node1)
+    seed1 = (buffer("fsid"), buffer("node1"))
+    shes = self.bs.bs_head_furthest(seed1)
     assert lenhack(shes) == 2
-    assert sorted((str(shes[0].rootref),
-                   str(shes[1].rootref))) == ["node2", "node3"]
+    assert sorted(shes) == [ (buffer("fsid"), buffer("node2")),
+                             (buffer("fsid"), buffer("node3")), ]
 
     # Furthest w/ one branch should return that branch.
-    shes = self.bs.bs_head_furthest(node2)
+    seed2 = (buffer("fsid"), buffer("node2"))
+    shes = self.bs.bs_head_furthest(seed2)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes == [ (buffer("fsid"), buffer("node2")), ]
 
     # Follow w/ empty should return all nodes.
-    shes = self.bs.bs_head_follow(node0)
+    shes = self.bs.bs_head_follow(seed0)
     assert lenhack(shes) == 3
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),
                    str(shes[2].rootref))) == ["node1", "node2", "node3"]
 
     # Follow w/ first should return all nodes except the starting.
-    shes = self.bs.bs_head_follow(node1)
+    shes = self.bs.bs_head_follow(seed1)
     assert lenhack(shes) == 2
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref))) == ["node2", "node3"]
 
-    # Follow w/ branch should return that branch only.
-    shes = self.bs.bs_head_furthest(node3)
-    assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    # Follow w/ branch head should return nothing.
+    seed3 = (buffer("fsid"), buffer("node3"))
+    shes = self.bs.bs_head_follow(seed3)
+    assert lenhack(shes) == 0
 
     # Reopen the blockstore.
     self.bs.bs_close()
@@ -86,41 +88,44 @@ class Test_bs_head_03:
                                   "rootbs",
                                   CONFIG.BSARGS(self.bspath))
 
+
     # Furthest w/ empty should return the two branch heads.
-    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
-    shes = self.bs.bs_head_furthest(node0)
+    seed0 = (buffer("fsid"), buffer(""))
+    shes = self.bs.bs_head_furthest(seed0)
     assert lenhack(shes) == 2
-    assert sorted((str(shes[0].rootref),
-                   str(shes[1].rootref))) == ["node2", "node3"]
+    assert sorted(shes) == [ (buffer("fsid"), buffer("node2")),
+                             (buffer("fsid"), buffer("node3")), ]
 
     # Furthest w/ first should return the two branch heads.
-    shes = self.bs.bs_head_furthest(node1)
+    seed1 = (buffer("fsid"), buffer("node1"))
+    shes = self.bs.bs_head_furthest(seed1)
     assert lenhack(shes) == 2
-    assert sorted((str(shes[0].rootref),
-                   str(shes[1].rootref))) == ["node2", "node3"]
+    assert sorted(shes) == [ (buffer("fsid"), buffer("node2")),
+                             (buffer("fsid"), buffer("node3")), ]
 
     # Furthest w/ one branch should return that branch.
-    shes = self.bs.bs_head_furthest(node2)
+    seed2 = (buffer("fsid"), buffer("node2"))
+    shes = self.bs.bs_head_furthest(seed2)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node2"
+    assert shes == [(buffer("fsid"), buffer("node2")), ]
 
     # Follow w/ empty should return all nodes.
-    shes = self.bs.bs_head_follow(node0)
+    shes = self.bs.bs_head_follow(seed0)
     assert lenhack(shes) == 3
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),
                    str(shes[2].rootref))) == ["node1", "node2", "node3"]
 
     # Follow w/ first should return all nodes except the starting.
-    shes = self.bs.bs_head_follow(node1)
+    shes = self.bs.bs_head_follow(seed1)
     assert lenhack(shes) == 2
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref))) == ["node2", "node3"]
 
-    # Follow w/ branch should return that branch only.
-    shes = self.bs.bs_head_furthest(node3)
-    assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    # Follow w/ branch head should return nothing.
+    seed3 = (buffer("fsid"), buffer("node3"))
+    shes = self.bs.bs_head_follow(seed3)
+    assert lenhack(shes) == 0
 
     # Close the blockstore.
     self.bs.bs_close()

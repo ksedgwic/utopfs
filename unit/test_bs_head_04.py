@@ -55,23 +55,25 @@ class Test_bs_head_04:
     self.bs.bs_head_insert(node3b)
 
     # Furthest w/ empty should return the the merge head.
-    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
-    shes = self.bs.bs_head_furthest(node0)
+    seed0 = (buffer("fsid"), buffer(""))
+    shes = self.bs.bs_head_furthest(seed0)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Furthest w/ first should return the merge head.
-    shes = self.bs.bs_head_furthest(node1)
+    seed1 = (buffer("fsid"), buffer("node1"))
+    shes = self.bs.bs_head_furthest(seed1)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Furthest w/ one branch should return the merge head.
-    shes = self.bs.bs_head_furthest(node2a)
+    seed2a = (buffer("fsid"), buffer("node2a"))
+    shes = self.bs.bs_head_furthest(seed2a)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Follow w/ empty should return all nodes.
-    shes = self.bs.bs_head_follow(node0)
+    shes = self.bs.bs_head_follow(seed0)
     assert lenhack(shes) == 5
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),
@@ -82,7 +84,7 @@ class Test_bs_head_04:
                                               "node3",  "node3"]
 
     # Follow w/ first should return all nodes except the starting.
-    shes = self.bs.bs_head_follow(node1)
+    shes = self.bs.bs_head_follow(seed1)
     assert lenhack(shes) == 4
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),
@@ -91,7 +93,8 @@ class Test_bs_head_04:
                                               "node3",  "node3"]
 
     # Follow w/ branch should return that branch only.
-    shes = self.bs.bs_head_follow(node2b)
+    seed2b = (buffer("fsid"), buffer("node2b"))
+    shes = self.bs.bs_head_follow(seed2b)
     assert lenhack(shes) == 1
     assert str(shes[0].rootref) == "node3"
     assert str(shes[0].prevref) == "node2b"
@@ -103,23 +106,22 @@ class Test_bs_head_04:
                                   CONFIG.BSARGS(self.bspath))
 
     # Furthest w/ empty should return the the merge head.
-    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
-    shes = self.bs.bs_head_furthest(node0)
+    shes = self.bs.bs_head_furthest(seed0)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Furthest w/ first should return the merge head.
-    shes = self.bs.bs_head_furthest(node1)
+    shes = self.bs.bs_head_furthest(seed1)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Furthest w/ one branch should return the merge head.
-    shes = self.bs.bs_head_furthest(node2b)
+    shes = self.bs.bs_head_furthest(seed2b)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "node3"
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Follow w/ empty should return all nodes.
-    shes = self.bs.bs_head_follow(node0)
+    shes = self.bs.bs_head_follow(seed0)
     assert lenhack(shes) == 5
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),
@@ -130,7 +132,7 @@ class Test_bs_head_04:
                                               "node3",  "node3"]
 
     # Follow w/ first should return all nodes except the starting.
-    shes = self.bs.bs_head_follow(node1)
+    shes = self.bs.bs_head_follow(seed1)
     assert lenhack(shes) == 4
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),
@@ -139,7 +141,7 @@ class Test_bs_head_04:
                                               "node3",  "node3"]
 
     # Follow w/ branch should return that branch only.
-    shes = self.bs.bs_head_follow(node2a)
+    shes = self.bs.bs_head_follow(seed2a)
     assert lenhack(shes) == 1
     assert str(shes[0].rootref) == "node3"
     assert str(shes[0].prevref) == "node2a"

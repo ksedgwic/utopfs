@@ -287,7 +287,7 @@ VBlockStore::bs_refresh_finish_async(uint64 i_rid,
 
 void
 VBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
-                                  SignedHeadInsertCompletion & i_cmpl,
+                                  HeadEdgeInsertCompletion & i_cmpl,
                                   void const * i_argp)
     throw(InternalError)
 {
@@ -313,8 +313,8 @@ VBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
 }
 
 void
-VBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
-                                  SignedHeadTraverseFunc & i_func,
+VBlockStore::bs_head_follow_async(HeadNode const & i_hn,
+                                  HeadEdgeTraverseFunc & i_func,
                                   void const * i_argp)
     throw(InternalError)
 {
@@ -323,8 +323,8 @@ VBlockStore::bs_head_follow_async(SignedHeadEdge const & i_she,
 }
 
 void
-VBlockStore::bs_head_furthest_async(SignedHeadEdge const & i_she,
-                                    SignedHeadTraverseFunc & i_func,
+VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
+                                    HeadNodeTraverseFunc & i_func,
                                     void const * i_argp)
     throw(InternalError)
 {

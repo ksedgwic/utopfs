@@ -16,7 +16,7 @@ namespace VBS {
 VBSHeadInsertRequest::VBSHeadInsertRequest(VBlockStore & i_vbs,
                                            long i_outstanding,
                                            SignedHeadEdge const & i_she,
-                                           BlockStore::SignedHeadInsertCompletion * i_cmpl,
+                                           BlockStore::HeadEdgeInsertCompletion * i_cmpl,
                                            void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
     , m_she(i_she)
@@ -47,12 +47,12 @@ VBSHeadInsertRequest::initiate(VBSChild * i_cp,
 }
 
 void
-VBSHeadInsertRequest::shi_complete(SignedHeadEdge const & i_she,
+VBSHeadInsertRequest::hei_complete(SignedHeadEdge const & i_she,
                                    void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_complete");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " hei_complete");
 
     bool do_complete = false;
     bool do_done = false;
@@ -79,7 +79,7 @@ VBSHeadInsertRequest::shi_complete(SignedHeadEdge const & i_she,
     if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl->shi_complete(m_she, m_argp);
+        m_cmpl->hei_complete(m_she, m_argp);
     }
 
     // This likely results in our destruction, do it last and
@@ -93,13 +93,13 @@ VBSHeadInsertRequest::shi_complete(SignedHeadEdge const & i_she,
 }
 
 void
-VBSHeadInsertRequest::shi_error(SignedHeadEdge const & i_she,
+VBSHeadInsertRequest::hei_error(SignedHeadEdge const & i_she,
                                 void const * i_argp,
                                 Exception const & i_exp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_error");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " hei_error");
 
     bool do_complete = false;
     bool do_done = false;
@@ -125,7 +125,7 @@ VBSHeadInsertRequest::shi_error(SignedHeadEdge const & i_she,
     if (do_complete && m_cmpl)
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl->shi_error(m_she, m_argp, i_exp);
+        m_cmpl->hei_error(m_she, m_argp, i_exp);
     }
 
     // This likely results in our destruction, do it last and

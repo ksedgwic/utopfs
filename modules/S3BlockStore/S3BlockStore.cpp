@@ -1399,7 +1399,7 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
 
 void
 S3BlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
-                                   SignedHeadInsertCompletion & i_cmpl,
+                                   HeadEdgeInsertCompletion & i_cmpl,
                                    void const * i_argp)
     throw(InternalError)
 {
@@ -1415,17 +1415,17 @@ S3BlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
         string buf;
         i_she.SerializeToString(&buf);
         bs_block_put(key.data(), key.size(), buf.data(), buf.size());
-        i_cmpl.shi_complete(i_she, i_argp);
+        i_cmpl.hei_complete(i_she, i_argp);
     }
     catch (Exception const & i_ex)
     {
-        i_cmpl.shi_error(i_she, i_argp, i_ex);
+        i_cmpl.hei_error(i_she, i_argp, i_ex);
     }
 }
 
 void
-S3BlockStore::bs_head_follow_async(SignedHeadEdge const & i_seed,
-                                   SignedHeadTraverseFunc & i_func,
+S3BlockStore::bs_head_follow_async(HeadNode const & i_hn,
+                                   HeadEdgeTraverseFunc & i_func,
                                    void const * i_argp)
     throw(InternalError)
 {
@@ -1435,25 +1435,23 @@ S3BlockStore::bs_head_follow_async(SignedHeadEdge const & i_seed,
     // graph store ...
     try
     {
-        HeadEdge he;
-        he.ParseFromString(i_seed.headedge());
-        string const & key = he.fstag();
+        string const & key = i_hn.first;
         uint8 buf[8192];
         size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadEdge she;
         she.ParseFromArray(buf, sz);
-        i_func.sht_node(i_argp, she);
-        i_func.sht_complete(i_argp);
+        i_func.het_edge(i_argp, she);
+        i_func.het_complete(i_argp);
     }
     catch (Exception const & i_ex)
     {
-        i_func.sht_error(i_argp, i_ex);
+        i_func.het_error(i_argp, i_ex);
     }
 }
 
 void
-S3BlockStore::bs_head_furthest_async(SignedHeadEdge const & i_seed,
-                                     SignedHeadTraverseFunc & i_func,
+S3BlockStore::bs_head_furthest_async(HeadNode const & i_hn,
+                                     HeadNodeTraverseFunc & i_func,
                                      void const * i_argp)
     throw(InternalError)
 {
@@ -1463,19 +1461,20 @@ S3BlockStore::bs_head_furthest_async(SignedHeadEdge const & i_seed,
     // graph store ...
     try
     {
-        HeadEdge he;
-        he.ParseFromString(i_seed.headedge());
-        string const & key = he.fstag();
+        string const & key = i_hn.first;
         uint8 buf[8192];
         size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
         SignedHeadEdge she;
         she.ParseFromArray(buf, sz);
-        i_func.sht_node(i_argp, she);
-        i_func.sht_complete(i_argp);
+        HeadEdge he;
+        he.ParseFromString(she.headedge());
+        HeadNode hn = make_pair(he.fstag(), string());
+        i_func.hnt_node(i_argp, hn);
+        i_func.hnt_complete(i_argp);
     }
     catch (Exception const & i_ex)
     {
-        i_func.sht_error(i_argp, i_ex);
+        i_func.hnt_error(i_argp, i_ex);
     }
         
 }
