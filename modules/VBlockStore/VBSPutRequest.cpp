@@ -13,7 +13,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSPutRequest::VBSPutRequest(VBlockStore & i_vbs,
+VBSPutRequest::VBSPutRequest(VBSRequestHolder & i_vbs,
                              long i_outstanding,
                              void const * i_keydata,
                              size_t i_keysize,

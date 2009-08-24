@@ -193,7 +193,7 @@ VBlockStore::bs_block_put_async(void const * i_keydata,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    insert_request(prh);
+    rh_insert(prh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -220,7 +220,7 @@ VBlockStore::bs_refresh_start_async(uint64 i_rid,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    insert_request(rrh);
+    rh_insert(rrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -252,7 +252,7 @@ VBlockStore::bs_refresh_block_async(uint64 i_rid,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    insert_request(rrh);
+    rh_insert(rrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -279,7 +279,7 @@ VBlockStore::bs_refresh_finish_async(uint64 i_rid,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    insert_request(rrh);
+    rh_insert(rrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -306,7 +306,7 @@ VBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    insert_request(hirh);
+    rh_insert(hirh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -333,7 +333,7 @@ VBlockStore::bs_head_follow_async(HeadNode const & i_hn,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    insert_request(hfrh);
+    rh_insert(hfrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -360,7 +360,7 @@ VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    insert_request(hfrh);
+    rh_insert(hfrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -370,9 +370,9 @@ VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
 }
 
 void
-VBlockStore::insert_request(VBSRequestHandle const & i_rh)
+VBlockStore::rh_insert(VBSRequestHandle const & i_rh)
 {
-    LOG(lgr, 6, m_instname << ' ' << "insert_request " << *i_rh);
+    LOG(lgr, 6, m_instname << ' ' << "rh_insert " << *i_rh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
 
@@ -380,9 +380,9 @@ VBlockStore::insert_request(VBSRequestHandle const & i_rh)
 }
 
 void
-VBlockStore::remove_request(VBSRequestHandle const & i_rh)
+VBlockStore::rh_remove(VBSRequestHandle const & i_rh)
 {
-    LOG(lgr, 6, m_instname << ' ' << "remove_request " << *i_rh);
+    LOG(lgr, 6, m_instname << ' ' << "rh_remove " << *i_rh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
 

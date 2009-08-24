@@ -16,6 +16,7 @@
 #include "BlockStore.h"
 #include "RC.h"
 
+#include "VBSRequestHolder.h"
 #include "vbsexp.h"
 #include "vbsfwd.h"
 
@@ -23,7 +24,9 @@ namespace VBS {
 
 // The Virtual BlockStore.
 //
-class VBS_EXP VBlockStore : public utp::BlockStore
+class VBS_EXP VBlockStore 
+    : public utp::BlockStore
+    , public VBSRequestHolder
 {
 public:
     static void destroy(utp::StringSeq const & i_args);
@@ -106,11 +109,11 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
-    // VBS Methods
+    // VBSRequestHolder Methods
 
-    void insert_request(VBSRequestHandle const & i_rh);
+    virtual void rh_insert(VBSRequestHandle const & i_rh);
 
-    void remove_request(VBSRequestHandle const & i_rh);
+    virtual void rh_remove(VBSRequestHandle const & i_rh);
 
 protected:
 

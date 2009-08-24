@@ -14,7 +14,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSRefreshBlockRequest::VBSRefreshBlockRequest(VBlockStore & i_vbs,
+VBSRefreshBlockRequest::VBSRefreshBlockRequest(VBSRequestHolder & i_vbs,
                                                long i_outstanding,
                                                uint64 i_rid,
                                                void const * i_keydata,
@@ -109,7 +109,7 @@ VBSRefreshBlockRequest::rb_complete(void const * i_keydata,
         for (unsigned ii = 0; ii < needy.size(); ++ii)
             grh->needy(needy[ii]);
 
-        m_vbs.insert_request(grh);
+        m_vbs.rh_insert(grh);
 
         cp->enqueue_get(grh);
     }
@@ -194,7 +194,7 @@ VBSRefreshBlockRequest::rb_missing(void const * i_keydata,
 
         grh->needy(cp);
 
-        m_vbs.insert_request(grh);
+        m_vbs.rh_insert(grh);
 
         hadit->enqueue_get(grh);
     }

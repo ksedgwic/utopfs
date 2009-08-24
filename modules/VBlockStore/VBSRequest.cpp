@@ -11,7 +11,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSRequest::VBSRequest(VBlockStore & i_vbs, long i_outstanding)
+VBSRequest::VBSRequest(VBSRequestHolder & i_vbs, long i_outstanding)
     : m_vbs(i_vbs)
     , m_succeeded(false)
     , m_outstanding(i_outstanding)
@@ -33,7 +33,7 @@ void
 VBSRequest::done()
 {
     // Remove this request from the VBS.
-    m_vbs.remove_request(this);
+    m_vbs.rh_remove(this);
 }
 
 ostream & operator<<(ostream & ostrm, VBSRequest const & i_req)

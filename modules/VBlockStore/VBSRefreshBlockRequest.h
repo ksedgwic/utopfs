@@ -18,7 +18,7 @@ class VBS_EXP VBSRefreshBlockRequest
     , public utp::BlockStore::RefreshBlockCompletion
 {
 public:
-    VBSRefreshBlockRequest(VBlockStore & i_vbs,
+    VBSRefreshBlockRequest(VBSRequestHolder & i_vbs,
                            long i_outstanding,
                            utp::uint64 i_rid,
                            void const * i_keydata,

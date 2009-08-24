@@ -18,7 +18,7 @@ class VBS_EXP VBSRefreshStartRequest
     , public utp::BlockStore::RefreshStartCompletion
 {
 public:
-    VBSRefreshStartRequest(VBlockStore & i_vbs,
+    VBSRefreshStartRequest(VBSRequestHolder & i_vbs,
                            long i_outstanding,
                            utp::uint64 i_rid,
                            utp::BlockStore::RefreshStartCompletion & i_cmpl,

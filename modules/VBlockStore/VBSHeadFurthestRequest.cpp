@@ -24,6 +24,7 @@ VBSHeadFurthestRequest::VBSHeadFurthestRequest(VBlockStore & i_vbs,
     , m_hn(i_hn)
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
+    , m_firsttry(true)
 {
     LOG(lgr, 6, "FURTHEST @" << (void *) this << " CTOR");
 }
@@ -127,6 +128,7 @@ VBSHeadFurthestRequest::complete()
         // Compute the intersection of all children's sets of
         // furthest nodes (the set all children have).
         //
+        size_t nchild = m_cnsm.size(); // How many kids had sets?
         ChildNodeSetMap::const_iterator it = m_cnsm.begin();
         HeadNodeSeq inter(it->second.begin(), it->second.end());
         for (++it; it!= m_cnsm.end(); ++it)
@@ -140,6 +142,7 @@ VBSHeadFurthestRequest::complete()
         }
 
         // For each of the children, compute the unique nodes.
+        bool nodiff = true;
         for (it = m_cnsm.begin(); it != m_cnsm.end(); ++it)
         {
             HeadNodeSeq diff;
@@ -149,25 +152,59 @@ VBSHeadFurthestRequest::complete()
                            back_inserter(diff));
             if (!diff.empty())
             {
+                nodiff = false;
+
                 LOG(lgr, 6, "CHILD " << it->first->instname()
                     << " HAS UNIQUE NODES:");
                 for (unsigned ii = 0; ii < diff.size(); ++ii)
                 {
                     utp::HeadNode const & hn = diff[ii];
                     LOG(lgr, 6, hn);
+
+#warning "FIXME"
+#if 0
+                    // We really only need to send the follow to the
+                    // other children, and we really only need to
+                    // insert in this child.
+                    VBSHeadFillRequestHandle hfrh =
+                        new VBSHeadFillRequest(*this,
+                                               nchild - 1,
+                                               hn,
+                                               NULL,
+                                               NULL,
+                                               it->first);
+
+                    {
+                        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
+                        m_subreqs.insert(hfrh);
+                    }
+
+                    // Loop over all the other kids queuing this
+                    // fill requests.
+                    //
+                    for (ChildNodeSetMap::const_iterator it2 = m_cnsm.begin();
+                         it2 != m_cnsm.end();
+                         ++it2)
+                    {
+                        if (it2->first != it->first)
+                            it2->first->enqueue_headnode(hfrh);
+                    }
+#endif
                 }
             }
         }
 
-        // FIXME - Sometimes we aren't done here ...
-        if (m_cmpl)
+        if (nodiff)
         {
-            LOG(lgr, 6, *this << ' ' << "UPCALL BOGUS GOOD");
-            for (unsigned ii = 0; ii < inter.size(); ++ii)
-                m_cmpl->hnt_node(m_argp, inter[ii]);
-            m_cmpl->hnt_complete(m_argp);
+            if (m_cmpl)
+            {
+                LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
+                for (unsigned ii = 0; ii < inter.size(); ++ii)
+                    m_cmpl->hnt_node(m_argp, inter[ii]);
+                m_cmpl->hnt_complete(m_argp);
+            }
+            do_done = true;
         }
-        do_done = true;
     }
 
     // This likely results in our destruction, do it last and

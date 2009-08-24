@@ -14,7 +14,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSGetRequest::VBSGetRequest(VBlockStore & i_vbs,
+VBSGetRequest::VBSGetRequest(VBSRequestHolder & i_vbs,
                              long i_outstanding,
                              void const * i_keydata,
                              size_t i_keysize,
@@ -121,7 +121,7 @@ VBSGetRequest::bg_complete(void const * i_keydata,
                                                     NULL,
                                                     NULL);
 
-        m_vbs.insert_request(prh);
+        m_vbs.rh_insert(prh);
 
         for (unsigned ii = 0; ii < needy.size(); ++ii)
             needy[ii]->enqueue_put(prh);
@@ -200,7 +200,7 @@ VBSGetRequest::bg_error(void const * i_keydata,
                                                     NULL,
                                                     NULL);
 
-        m_vbs.insert_request(prh);
+        m_vbs.rh_insert(prh);
 
         cp->enqueue_put(prh);
     }

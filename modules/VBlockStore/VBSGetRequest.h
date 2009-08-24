@@ -16,7 +16,7 @@ class VBS_EXP VBSGetRequest
     , public utp::BlockStore::BlockGetCompletion
 {
 public:
-    VBSGetRequest(VBlockStore & i_vbs,
+    VBSGetRequest(VBSRequestHolder & i_vbs,
                   long i_outstanding,
                   void const * i_keydata,
                   size_t i_keysize,

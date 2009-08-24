@@ -13,11 +13,11 @@ using namespace utp;
 
 namespace VBS {
 
-VBSRefreshFinishRequest::VBSRefreshFinishRequest(VBlockStore & i_vbs,
-                                               long i_outstanding,
-                                               uint64 i_rid,
-                                               RefreshFinishCompletion & i_cmpl,
-                                               void const * i_argp)
+VBSRefreshFinishRequest::VBSRefreshFinishRequest(VBSRequestHolder & i_vbs,
+                                                 long i_outstanding,
+                                                 uint64 i_rid,
+                                                 RefreshFinishCompletion & i_cmpl,
+                                                 void const * i_argp)
     : VBSRequest(i_vbs, i_outstanding)
     , m_rid(i_rid)
     , m_cmpl(i_cmpl)

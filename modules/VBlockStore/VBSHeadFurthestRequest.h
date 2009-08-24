@@ -46,12 +46,16 @@ protected:
 
 private:
     typedef std::map<VBSChild *, utp::HeadNodeSet> ChildNodeSetMap;
+    typedef std::set<VBSRequestHandle> VBSRequestSet;
 
-    utp::HeadNode									m_hn;
-    utp::BlockStore::HeadNodeTraverseFunc *			m_cmpl;
-    void const *									m_argp;
+    utp::HeadNode								m_hn;
+    utp::BlockStore::HeadNodeTraverseFunc *		m_cmpl;
+    void const *								m_argp;
 
-    ChildNodeSetMap									m_cnsm;
+    ChildNodeSetMap								m_cnsm;
+
+    bool										m_firsttry;
+    VBSRequestSet								m_subreqs;
 };
 
 } // namespace VBS
