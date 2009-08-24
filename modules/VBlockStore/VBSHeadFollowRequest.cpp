@@ -15,7 +15,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSHeadFollowRequest::VBSHeadFollowRequest(VBlockStore & i_vbs,
+VBSHeadFollowRequest::VBSHeadFollowRequest(VBSRequestHolder & i_vbs,
                                            long i_outstanding,
                                            HeadNode const & i_hn,
                                            BlockStore::HeadEdgeTraverseFunc * i_cmpl,
@@ -43,7 +43,7 @@ void
 VBSHeadFollowRequest::initiate(VBSChild * i_cp,
                                BlockStoreHandle const & i_bsh)
 {
-    LOG(lgr, 6, *this << " initiate");
+    LOG(lgr, 6, *this << " initiate " << i_cp->instname());
 
     i_bsh->bs_head_follow_async(m_hn, *this, i_cp);
 }

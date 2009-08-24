@@ -1,7 +1,7 @@
-#ifndef VBSHeadFurthestRequest_h__
-#define VBSHeadFurthestRequest_h__
+#ifndef VBSHeadFurthestSubReq_h__
+#define VBSHeadFurthestSubReq_h__
 
-/// @file VBSHeadFurthestRequest.h
+/// @file VBSHeadFurthestSubReq.h
 /// Virtual BlockStore HeadFurthest Request
 
 #include "VBSRequest.h"
@@ -11,18 +11,20 @@
 
 namespace VBS {
 
-class VBS_EXP VBSHeadFurthestRequest
+class VBS_EXP VBSHeadFurthestSubReq
     : public VBSRequest
     , public utp::BlockStore::HeadNodeTraverseFunc
 {
 public:
-    VBSHeadFurthestRequest(VBlockStore & i_vbs,
-                           long i_outstanding,
-                           utp::HeadNode const & i_hn,
-                           utp::BlockStore::HeadNodeTraverseFunc * i_cmpl,
-                           void const * i_argp);
+    typedef std::map<VBSChild *, utp::HeadNodeSet> ChildNodeSetMap;
 
-    virtual ~VBSHeadFurthestRequest();
+    VBSHeadFurthestSubReq(VBSRequestHolder & i_vbs,
+                          long i_outstanding,
+                          utp::HeadNode const & i_hn,
+                          utp::BlockStore::HeadNodeTraverseFunc * i_cmpl,
+                          void const * i_argp);
+
+    virtual ~VBSHeadFurthestSubReq();
 
     // VBSRequest
 
@@ -41,21 +43,25 @@ public:
     virtual void hnt_error(void const * i_argp,
                            utp::Exception const & i_exp);
 
+    // VBSHeadFurthestSubReq
+
+    // All of the nodes that all clients have in common.
+    utp::HeadNodeSeq const & common() const { return m_cmnnodes; }
+
+    // Any unique nodes that children have.
+    ChildNodeSetMap const & unique() const { return m_unqnodes; }
+
 protected:
     void complete();
 
 private:
-    typedef std::map<VBSChild *, utp::HeadNodeSet> ChildNodeSetMap;
-    typedef std::set<VBSRequestHandle> VBSRequestSet;
-
     utp::HeadNode								m_hn;
     utp::BlockStore::HeadNodeTraverseFunc *		m_cmpl;
     void const *								m_argp;
 
     ChildNodeSetMap								m_cnsm;
-
-    bool										m_firsttry;
-    VBSRequestSet								m_subreqs;
+    utp::HeadNodeSeq							m_cmnnodes;
+    ChildNodeSetMap								m_unqnodes;
 };
 
 } // namespace VBS
@@ -67,4 +73,4 @@ private:
 // c-file-offsets: ((comment-intro . 0))
 // End:
 
-#endif // VBSHeadFurthestRequest_h__
+#endif // VBSHeadFurthestSubReq_h__

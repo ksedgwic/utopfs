@@ -41,7 +41,7 @@ void
 VBSRefreshStartRequest::initiate(VBSChild * i_cp,
                                  BlockStoreHandle const & i_bsh)
 {
-    LOG(lgr, 6, *this << " initiate");
+    LOG(lgr, 6, *this << " initiate " << i_cp->instname());
 
     i_bsh->bs_refresh_start_async(m_rid, *this, i_cp);
 }

@@ -16,7 +16,7 @@ class VBS_EXP VBSHeadInsertRequest
     , public utp::BlockStore::HeadEdgeInsertCompletion
 {
 public:
-    VBSHeadInsertRequest(VBlockStore & i_vbs,
+    VBSHeadInsertRequest(VBSRequestHolder & i_vbs,
                          long i_outstanding,
                          utp::SignedHeadEdge const & i_she,
                          utp::BlockStore::HeadEdgeInsertCompletion * i_cmpl,

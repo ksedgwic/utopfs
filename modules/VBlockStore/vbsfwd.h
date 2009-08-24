@@ -3,6 +3,8 @@
 
 /// @file vbsfwd.h
 
+#include <vector>
+
 #include "Log.h"
 #include "RC.h"
 
@@ -14,9 +16,15 @@ class VBSChild;
 /// Handle to VBSChild object.
 typedef utp::RCPtr<VBSChild> VBSChildHandle;
 
+/// Map of named children.
+typedef std::map<std::string, VBSChildHandle> VBSChildMap;
+
 class VBSRequest;
 /// Handle to VBSRequest object.
 typedef utp::RCPtr<VBSRequest> VBSRequestHandle;
+
+/// A set of unique requests.
+typedef std::set<VBSRequestHandle> VBSRequestSet;
 
 class VBSGetRequest;
 /// Handle to VBSGetRequest object.
@@ -38,17 +46,21 @@ class VBSRefreshFinishRequest;
 /// Handle to VBSRefreshFinishRequest object.
 typedef utp::RCPtr<VBSRefreshFinishRequest> VBSRefreshFinishRequestHandle;
 
-class VBSHeadFollowRequest;
-/// Handle to VBSHeadFollowRequest object.
-typedef utp::RCPtr<VBSHeadFollowRequest> VBSHeadFollowRequestHandle;
-
-class VBSHeadFurthestRequest;
-/// Handle to VBSHeadFurthestRequest object.
-typedef utp::RCPtr<VBSHeadFurthestRequest> VBSHeadFurthestRequestHandle;
-
 class VBSHeadInsertRequest;
 /// Handle to VBSHeadInsertRequest object.
 typedef utp::RCPtr<VBSHeadInsertRequest> VBSHeadInsertRequestHandle;
+
+class VBSHeadFurthestTopReq;
+/// Handle to VBSHeadFurthestTopReq object.
+typedef utp::RCPtr<VBSHeadFurthestTopReq> VBSHeadFurthestTopReqHandle;
+
+class VBSHeadFurthestSubReq;
+/// Handle to VBSHeadFurthestSubReq object.
+typedef utp::RCPtr<VBSHeadFurthestSubReq> VBSHeadFurthestSubReqHandle;
+
+class VBSHeadFollowRequest;
+/// Handle to VBSHeadFollowRequest object.
+typedef utp::RCPtr<VBSHeadFollowRequest> VBSHeadFollowRequestHandle;
 
 /// Sequence of child handles.
 typedef std::vector<VBSChildHandle>	VBSChildSeq;

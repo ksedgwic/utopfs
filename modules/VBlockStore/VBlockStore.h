@@ -118,9 +118,6 @@ public:
 protected:
 
 private:
-    typedef std::map<std::string, VBSChildHandle> VBSChildMap;
-    typedef std::set<VBSRequestHandle> VBSRequestSet;
-
     std::string					m_instname;
     VBSChildMap					m_children;
 

@@ -33,6 +33,8 @@ class Test_vbs_head_01:
 
 
   def test_on_empty(self):
+    print "test_on_empty starting"
+
     # First child.
     bspath1 = "vbs_head_01_c1"
     CONFIG.unmap_bs("child1")
@@ -94,7 +96,12 @@ class Test_vbs_head_01:
     CONFIG.remove_bs(bspath2)
     CONFIG.remove_bs(bspath1)
 
+    print "test_on_empty finished"
+
   def test_on_single(self):
+
+    print "test_on_single starting"
+
     # First child.
     bspath1 = "vbs_head_01_c1"
     CONFIG.unmap_bs("child1")
@@ -156,7 +163,12 @@ class Test_vbs_head_01:
     CONFIG.remove_bs(bspath2)
     CONFIG.remove_bs(bspath1)
 
+    print "test_on_single finished"
+
   def test_on_independent(self):
+
+    print "test_on_independent starting"
+
     # First child.
     bspath1 = "vbs_head_01_c1"
     CONFIG.unmap_bs("child1")
@@ -229,3 +241,5 @@ class Test_vbs_head_01:
     self.bs1 = None
     CONFIG.remove_bs(bspath2)
     CONFIG.remove_bs(bspath1)
+
+    print "test_on_independent finished"

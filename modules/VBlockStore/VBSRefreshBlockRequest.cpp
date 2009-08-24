@@ -45,7 +45,7 @@ void
 VBSRefreshBlockRequest::initiate(VBSChild * i_cp,
                                  BlockStoreHandle const & i_bsh)
 {
-    LOG(lgr, 6, *this << " initiate");
+    LOG(lgr, 6, *this << " initiate " << i_cp->instname());
 
     i_bsh->bs_refresh_block_async(m_rid, &m_key[0], m_key.size(), *this, i_cp);
 }

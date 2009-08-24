@@ -8,7 +8,8 @@ LIBSRC += 	\
 			VBSFactory.cpp \
 			VBSGetRequest.cpp \
 			VBSHeadFollowRequest.cpp \
-			VBSHeadFurthestRequest.cpp \
+			VBSHeadFurthestSubReq.cpp \
+			VBSHeadFurthestTopReq.cpp \
 			VBSHeadInsertRequest.cpp \
 			vbslog.cpp \
 			VBSPutRequest.cpp \

@@ -46,7 +46,7 @@ VBSGetRequest::stream_insert(std::ostream & ostrm) const
 void
 VBSGetRequest::initiate(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
 {
-    LOG(lgr, 6, *this << " initiate");
+    LOG(lgr, 6, *this << " initiate " << i_cp->instname());
 
     // Allocate our buffer now.
     m_blk.resize(m_buffsize);

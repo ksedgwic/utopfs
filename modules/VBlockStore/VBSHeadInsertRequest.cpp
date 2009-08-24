@@ -13,7 +13,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSHeadInsertRequest::VBSHeadInsertRequest(VBlockStore & i_vbs,
+VBSHeadInsertRequest::VBSHeadInsertRequest(VBSRequestHolder & i_vbs,
                                            long i_outstanding,
                                            SignedHeadEdge const & i_she,
                                            BlockStore::HeadEdgeInsertCompletion * i_cmpl,
@@ -41,7 +41,7 @@ void
 VBSHeadInsertRequest::initiate(VBSChild * i_cp,
                                BlockStoreHandle const & i_bsh)
 {
-    LOG(lgr, 6, *this << " initiate");
+    LOG(lgr, 6, *this << " initiate " << i_cp->instname());
 
     i_bsh->bs_head_insert_async(m_she, *this, i_cp);
 }

@@ -6,7 +6,7 @@
 #include "VBSChild.h"
 #include "VBSGetRequest.h"
 #include "VBSHeadFollowRequest.h"
-#include "VBSHeadFurthestRequest.h"
+#include "VBSHeadFurthestTopReq.h"
 #include "VBSHeadInsertRequest.h"
 #include "vbslog.h"
 #include "VBSPutRequest.h"
@@ -37,6 +37,7 @@ VBlockStore::VBlockStore(string const & i_instname)
 
 VBlockStore::~VBlockStore()
 {
+    LOG(lgr, 4, m_instname << ' ' << "DTOR");
 }
 
 string const &
@@ -74,6 +75,13 @@ void
 VBlockStore::bs_close()
     throw(InternalError)
 {
+    LOG(lgr, 4, m_instname << ' ' << "bs_close");
+
+    // We have to wait here until all requests are finished, otherwise
+    // blamo ...
+    //
+    bs_sync();
+
     // Unregister this instance.
     try
     {
@@ -96,6 +104,8 @@ void
 VBlockStore::bs_stat(Stat & o_stat)
     throw(InternalError)
 {
+    LOG(lgr, 4, m_instname << ' ' << "bs_stat");
+
     // For now we presume that the stat call doesn't block and we just
     // call all of the children directly ...
 
@@ -124,6 +134,8 @@ void
 VBlockStore::bs_sync()
     throw(InternalError)
 {
+    LOG(lgr, 4, m_instname << ' ' << "bs_sync starting");
+
     ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
 
     while (!m_requests.empty())
@@ -131,6 +143,8 @@ VBlockStore::bs_sync()
         m_waiting = true;
         m_vbscond.wait();
     }
+
+    LOG(lgr, 4, m_instname << ' ' << "bs_sync finished");
 }
 
 void
@@ -348,25 +362,23 @@ VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
                                     void const * i_argp)
     throw(InternalError)
 {
-    // Create a VBSHeadFurthestRequest.
-    VBSHeadFurthestRequestHandle hfrh =
-        new VBSHeadFurthestRequest(*this,
-                                   m_children.size(),
-                                   i_hn,
-                                   &i_func,
-                                   i_argp);
+    // Create a VBSHeadFurthestTopReq.
+    VBSHeadFurthestTopReqHandle hftrh =
+        new VBSHeadFurthestTopReq(*this,
+                                  m_children.size(),
+                                  i_hn,
+                                  &i_func,
+                                  i_argp,
+                                  m_children);
 
-    LOG(lgr, 6, m_instname << ' ' << "bs_head_further_async " << *hfrh);
+    LOG(lgr, 6, m_instname << ' ' << "bs_head_further_async " << *hftrh);
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(hfrh);
+    rh_insert(hftrh);
 
-    // Enqueue the request w/ all of the kids.
-    for (VBSChildMap::const_iterator it = m_children.begin();
-         it != m_children.end();
-         ++it)
-        it->second->enqueue_headnode(hfrh);
+    // This request type issues subrequests to the children ...
+    hftrh->init();
 }
 
 void
