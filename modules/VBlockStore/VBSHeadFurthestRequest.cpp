@@ -163,6 +163,8 @@ VBSHeadFurthestRequest::complete()
         if (m_cmpl)
         {
             LOG(lgr, 6, *this << ' ' << "UPCALL BOGUS GOOD");
+            for (unsigned ii = 0; ii < inter.size(); ++ii)
+                m_cmpl->hnt_node(m_argp, inter[ii]);
             m_cmpl->hnt_complete(m_argp);
         }
         do_done = true;

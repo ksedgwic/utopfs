@@ -142,7 +142,7 @@ class Test_vbs_head_01:
     seed = (buffer("fsid"), buffer(""))
     shes = self.vbs.bs_head_furthest(seed)
     assert lenhack(shes) == 1
-    assert str(shes[0].rootref) == "rootref"
+    assert shes[0] == (buffer("fsid"), buffer("rootref"))
 
     # Close for good.
     self.vbs.bs_close()
