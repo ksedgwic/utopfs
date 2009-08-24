@@ -24,9 +24,6 @@
 
 namespace utp {
 
-// Helpful for debugging.
-std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_nr);
-
 // A Edge represents a connection between two nodes.  They're
 // reference counted so they can be held in multiple collections.
 //
@@ -37,6 +34,8 @@ struct UTP_EXP LameEdge : public RCObj
     SignedHeadEdge		m_she;
 
     LameEdge(SignedHeadEdge const & i_she);
+
+    bool operator<(LameEdge const & i_o) const;
 };
 
 typedef RCPtr<LameEdge> LameEdgeHandle;

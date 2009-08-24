@@ -1,5 +1,7 @@
 #include <iostream>
+#include <string>
 
+#include "BlockStore.h"
 #include "Log.h"
 
 #include "VBlockStore.h"
@@ -50,6 +52,9 @@ void
 VBSHeadFurthestRequest::hnt_node(void const * i_argp,
                                  HeadNode const & i_hn)
 {
+    VBSChild * cp = (VBSChild *) i_argp;
+
+    m_cnsm[cp].insert(i_hn);
 }
 
 void
@@ -57,44 +62,23 @@ VBSHeadFurthestRequest::hnt_complete(void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_complete");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " hnt_complete");
+
+    // Unlike the other completion callbacks this one is not
+    // complete until all of the children have checked in.
 
     bool do_complete = false;
-    bool do_done = false;
-
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
-
-        // Are we the first successful completion?
-        if (!m_succeeded)
-        {
-            do_complete = true;
-            m_succeeded = true;
-        }
 
         // Are we the last completion?
         --m_outstanding;
         if (m_outstanding == 0)
-            do_done = true;
+            do_complete = true;
     }
 
-    // If we are the first child back with success we get
-    // to tell the parent ...
-    //
-    if (do_complete && m_cmpl)
-    {
-        LOG(lgr, 6, *this << ' ' << "UPCALL GOOD");
-        m_cmpl->hnt_complete(m_argp);
-    }
-
-    // This likely results in our destruction, do it last and
-    // don't touch anything afterwards!
-    //
-    if (do_done)
-    {
-        LOG(lgr, 6, *this << ' ' << "DONE");
-        done();
-    }
+    if (do_complete)
+        complete();
 }
 
 void
@@ -103,11 +87,12 @@ VBSHeadFurthestRequest::hnt_error(void const * i_argp,
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " shi_error");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " hnt_error");
+
+    // Unlike the other completion callbacks this one is not
+    // complete until all of the children have checked in.
 
     bool do_complete = false;
-    bool do_done = false;
-
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
 
@@ -115,21 +100,72 @@ VBSHeadFurthestRequest::hnt_error(void const * i_argp,
         --m_outstanding;
         if (m_outstanding == 0)
         {
-            do_done = true;
-
-            // If no other child succeeded send our status.
-            if (!m_succeeded)
-                do_complete = true;
+            do_complete = true;
         }
     }
 
-    // If we are the last child back with an exception we
-    // get to tell the parent ...
-    //
-    if (do_complete && m_cmpl)
+    if (do_complete)
+        complete();
+}
+
+void
+VBSHeadFurthestRequest::complete()
+{
+    bool do_done = false;
+
+    if (m_cnsm.empty())
     {
         LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
-        m_cmpl->hnt_error(m_argp, i_exp);
+        if (m_cmpl)
+            m_cmpl->hnt_error(m_argp,
+                              NotFoundError("no starting seed found"));
+
+        do_done = true;
+    }
+    else
+    {
+        // Compute the intersection of all children's sets of
+        // furthest nodes (the set all children have).
+        //
+        ChildNodeSetMap::const_iterator it = m_cnsm.begin();
+        HeadNodeSeq inter(it->second.begin(), it->second.end());
+        for (++it; it!= m_cnsm.end(); ++it)
+        {
+            HeadNodeSeq i0(it->second.begin(), it->second.end());
+            HeadNodeSeq i1;
+            set_intersection(i0.begin(), i0.end(),
+                             inter.begin(), inter.end(),
+                             back_inserter(i1));
+            inter = i1;
+        }
+
+        // For each of the children, compute the unique nodes.
+        for (it = m_cnsm.begin(); it != m_cnsm.end(); ++it)
+        {
+            HeadNodeSeq diff;
+            HeadNodeSet const & hns = it->second;
+            set_difference(hns.begin(), hns.end(),
+                           inter.begin(), inter.end(),
+                           back_inserter(diff));
+            if (!diff.empty())
+            {
+                LOG(lgr, 6, "CHILD " << it->first->instname()
+                    << " HAS UNIQUE NODES:");
+                for (unsigned ii = 0; ii < diff.size(); ++ii)
+                {
+                    utp::HeadNode const & hn = diff[ii];
+                    LOG(lgr, 6, hn);
+                }
+            }
+        }
+
+        // FIXME - Sometimes we aren't done here ...
+        if (m_cmpl)
+        {
+            LOG(lgr, 6, *this << ' ' << "UPCALL BOGUS GOOD");
+            m_cmpl->hnt_complete(m_argp);
+        }
+        do_done = true;
     }
 
     // This likely results in our destruction, do it last and

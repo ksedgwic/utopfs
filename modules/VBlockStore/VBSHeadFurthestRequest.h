@@ -31,7 +31,7 @@ public:
     virtual void initiate(VBSChild * i_cp,
                           utp::BlockStoreHandle const & i_bsh);
                          
-    // SignedHeadTraverseFunc
+    // HeadNodeTraverseFunc
 
     virtual void hnt_node(void const * i_argp,
                           utp::HeadNode const & i_hn);
@@ -41,10 +41,17 @@ public:
     virtual void hnt_error(void const * i_argp,
                            utp::Exception const & i_exp);
 
+protected:
+    void complete();
+
 private:
+    typedef std::map<VBSChild *, utp::HeadNodeSet> ChildNodeSetMap;
+
     utp::HeadNode									m_hn;
     utp::BlockStore::HeadNodeTraverseFunc *			m_cmpl;
     void const *									m_argp;
+
+    ChildNodeSetMap									m_cnsm;
 };
 
 } // namespace VBS

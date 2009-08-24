@@ -77,25 +77,23 @@ class Test_vbs_head_02:
     self.vbs.bs_head_insert(node2)
 
     # Insert a new node into one child only.
-    node2 = utp.SignedHeadEdge(("fsid", "node3", "node2",
+    node3 = utp.SignedHeadEdge(("fsid", "node3", "node2",
                                 time.time() * 1e6, 0, 0))
-    self.bs3.bs_head_insert(node2)
+    self.bs3.bs_head_insert(node3)
 
-    node0 = utp.SignedHeadEdge(("fsid", 0, 0, 0, 0, 0))
+    seed0 = (buffer("fsid"), buffer(""))
 
     # Follow w/ empty should return all nodes.
-    shes = self.vbs.bs_head_follow(node0)
+    shes = self.vbs.bs_head_follow(seed0)
     assert lenhack(shes) == 3
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),
                    str(shes[2].rootref))) == ["node1", "node2", "node3"]
 
-    # Further w/ empty should return all nodes.
-    shes = self.vbs.bs_head_further(node0)
-    assert lenhack(shes) == 3
-    assert sorted((str(shes[0].rootref),
-                   str(shes[1].rootref),
-                   str(shes[2].rootref))) == ["node1", "node2", "node3"]
+    # Further w/ empty should return the top node.
+    shes = self.vbs.bs_head_furthest(seed0)
+    assert lenhack(shes) == 1
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Close and reopen without the special child.
     self.vbs.bs_close()
@@ -119,12 +117,10 @@ class Test_vbs_head_02:
                    str(shes[1].rootref),
                    str(shes[2].rootref))) == ["node1", "node2", "node3"]
 
-    # Further w/ empty should return all nodes.
-    shes = self.vbs.bs_head_further(node0)
-    assert lenhack(shes) == 3
-    assert sorted((str(shes[0].rootref),
-                   str(shes[1].rootref),
-                   str(shes[2].rootref))) == ["node1", "node2", "node3"]
+    # Further w/ empty should return the top node.
+    shes = self.vbs.bs_head_furthest(seed0)
+    assert lenhack(shes) == 1
+    assert shes[0] == (buffer("fsid"), buffer("node3"))
 
     # Close for good.
     self.vbs.bs_close()

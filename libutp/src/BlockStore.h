@@ -4,6 +4,7 @@
 /// @file BlockStore.h
 /// Abstract BlockStore Interface.
 
+#include <iosfwd>
 #include <set>
 #include <string>
 #include <vector>
@@ -25,7 +26,7 @@ typedef std::pair<std::string, std::string> HeadNode;
 typedef std::vector<HeadNode> HeadNodeSeq;
 
 /// Set of HeadNode objects.
-typedef std::set<utp::HeadNode> HeadNodeSet;
+typedef std::set<HeadNode> HeadNodeSet;
 
 class UTP_EXP BlockStore : public virtual RCObj
 {
@@ -420,9 +421,9 @@ public:
                                Exception const & i_exp) = 0;
     };
 
-    /// Traverse all nodes which follow a node.
+    /// Traverse all edges which follow a node.
     ///
-    /// If the rootref field of the seed node is empty all nodes will
+    /// If the rootref field of the seed node is empty all edges will
     /// be traversed.
     /// 
     /// @throw InternalError An non-recoverable error occurred.
@@ -461,6 +462,9 @@ public:
                                         void const * i_argp)
         throw(InternalError) = 0;
 };
+
+// Helpful for debugging.
+std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_nr);
 
 } // end namespace utp
 

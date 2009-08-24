@@ -127,6 +127,10 @@ private:
     VBSRequestSet				m_requests;
 };
 
+// FIXME - Why can't I use the one in utp::BlockStore?
+// Helpful for debugging.
+std::ostream & operator<<(std::ostream & ostrm, utp::HeadNode const & i_nr);
+
 } // namespace VBS
 
 // Local Variables:

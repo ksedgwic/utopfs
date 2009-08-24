@@ -1,7 +1,6 @@
 #include <deque>
 #include <iostream>
 
-#include "Base32.h"
 #include "LameHeadNodeGraph.h"
 #include "utplog.h"
 
@@ -12,35 +11,6 @@ namespace utp {
 
 typedef std::deque<LameEdgeHandle> LameEdgeSeq;
 
-ostream &
-operator<<(ostream & ostrm, HeadNode const & i_nr)
-{
-    string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
-    string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
-
-    // Strip any trailing "====" off ...
-    pt1 = pt1.substr(0, pt1.find_first_of('='));
-    pt2 = pt2.substr(0, pt2.find_first_of('='));
-
-    string::size_type sz1 = pt1.size();
-    string::size_type sz2 = pt2.size();
-
-    // How many characters of the FSID and NODEID should we display?
-    static string::size_type const NFSID = 3;
-    static string::size_type const NNDID = 5;
-
-    // Use the right-justified substrings since the tests sometimes
-    // only differ in the right positions.  Real digest based refs
-    // will differ in all positions.
-    //
-    string::size_type off1 = sz1 > NFSID ? sz1 - NFSID : 0;
-    string::size_type off2 = sz2 > NNDID ? sz2 - NNDID : 0;
-
-    ostrm << pt1.substr(off1) << ':' << pt2.substr(off2);
-
-    return ostrm;
-}
-
 LameEdge::LameEdge(utp::SignedHeadEdge const & i_she)
     : m_she(i_she)
 {
@@ -50,6 +20,14 @@ LameEdge::LameEdge(utp::SignedHeadEdge const & i_she)
 
     m_prev = make_pair(he.fstag(), he.prevref());
     m_root = make_pair(he.fstag(), he.rootref());
+}
+
+bool
+LameEdge::operator<(LameEdge const & i_o) const
+{
+    return m_root != i_o.m_root ?
+        m_root < i_o.m_root :
+        m_prev < i_o.m_prev;
 }
 
 ostream &

@@ -1,9 +1,12 @@
+#include "Base32.h"
 #include "Log.h"
 #include "BlockStoreFactory.h"
 
 #include "VBlockStore.h"
 #include "VBSChild.h"
 #include "VBSGetRequest.h"
+#include "VBSHeadFollowRequest.h"
+#include "VBSHeadFurthestRequest.h"
 #include "VBSHeadInsertRequest.h"
 #include "vbslog.h"
 #include "VBSPutRequest.h"
@@ -318,8 +321,25 @@ VBlockStore::bs_head_follow_async(HeadNode const & i_hn,
                                   void const * i_argp)
     throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_head_follow_async unimplemented");
+    // Create a VBSHeadFollowRequest.
+    VBSHeadFollowRequestHandle hfrh =
+        new VBSHeadFollowRequest(*this,
+                                 m_children.size(),
+                                 i_hn,
+                                 &i_func,
+                                 i_argp);
+
+    LOG(lgr, 6, m_instname << ' ' << "bs_head_follow_async " << *hfrh);
+
+    // Insert this request in our request list.  We need to do this
+    // first in case the request completes synchrounously below.
+    insert_request(hfrh);
+
+    // Enqueue the request w/ all of the kids.
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+        it->second->enqueue_headnode(hfrh);
 }
 
 void
@@ -328,8 +348,25 @@ VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
                                     void const * i_argp)
     throw(InternalError)
 {
-    throwstream(InternalError, FILELINE
-                << "VBlockStore::bs_head_furthest_async unimplemented");
+    // Create a VBSHeadFurthestRequest.
+    VBSHeadFurthestRequestHandle hfrh =
+        new VBSHeadFurthestRequest(*this,
+                                   m_children.size(),
+                                   i_hn,
+                                   &i_func,
+                                   i_argp);
+
+    LOG(lgr, 6, m_instname << ' ' << "bs_head_further_async " << *hfrh);
+
+    // Insert this request in our request list.  We need to do this
+    // first in case the request completes synchrounously below.
+    insert_request(hfrh);
+
+    // Enqueue the request w/ all of the kids.
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+        it->second->enqueue_headnode(hfrh);
 }
 
 void
@@ -361,6 +398,36 @@ VBlockStore::remove_request(VBSRequestHandle const & i_rh)
         m_vbscond.broadcast();
         m_waiting = false;
     }
+}
+
+// FIXME - Why do I have to copy this here from BlockStore.cpp?
+ostream &
+operator<<(ostream & ostrm, HeadNode const & i_nr)
+{
+    string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
+    string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
+
+    // Strip any trailing "====" off ...
+    pt1 = pt1.substr(0, pt1.find_first_of('='));
+    pt2 = pt2.substr(0, pt2.find_first_of('='));
+
+    string::size_type sz1 = pt1.size();
+    string::size_type sz2 = pt2.size();
+
+    // How many characters of the FSID and NODEID should we display?
+    static string::size_type const NFSID = 3;
+    static string::size_type const NNDID = 5;
+
+    // Use the right-justified substrings since the tests sometimes
+    // only differ in the right positions.  Real digest based refs
+    // will differ in all positions.
+    //
+    string::size_type off1 = sz1 > NFSID ? sz1 - NFSID : 0;
+    string::size_type off2 = sz2 > NNDID ? sz2 - NNDID : 0;
+
+    ostrm << pt1.substr(off1) << ':' << pt2.substr(off2);
+
+    return ostrm;
 }
 
 } // namespace VBS
