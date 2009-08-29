@@ -122,6 +122,8 @@ class Test_vbs_head_02:
     assert lenhack(shes) == 1
     assert shes[0] == (buffer("fsid"), buffer("node3"))
 
+    self.vbs.bs_sync()
+
     # Close for good.
     self.vbs.bs_close()
     self.vbs = None

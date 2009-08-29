@@ -84,6 +84,8 @@ class Test_vbs_head_01:
     seed = (buffer("fsid"), buffer(""))
     py.test.raises(utp.NotFoundError, self.vbs.bs_head_follow, seed)
 
+    self.vbs.bs_sync()
+
     print "Close for good."
     self.vbs.bs_close()
     self.vbs = None
@@ -150,6 +152,8 @@ class Test_vbs_head_01:
     shes = self.vbs.bs_head_furthest(seed)
     assert lenhack(shes) == 1
     assert shes[0] == (buffer("fsid"), buffer("rootref"))
+
+    self.vbs.bs_sync()
 
     # Close for good.
     self.vbs.bs_close()
@@ -229,6 +233,8 @@ class Test_vbs_head_01:
     assert sorted(shes) == [ (buffer("fsid"), buffer("node1")),
                              (buffer("fsid"), buffer("node2")),
                              (buffer("fsid"), buffer("node3")), ]
+
+    self.vbs.bs_sync()
 
     # Close for good.
     self.vbs.bs_close()
