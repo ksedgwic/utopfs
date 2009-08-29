@@ -68,23 +68,23 @@ class Test_vbs_head_01:
                                    "rootbs",
                                    ("child1", "child2", "child3"))
 
-    # Furthest should generate NotFound on empty BS.
+    print "Furthest should generate NotFound on empty BS."
     seed = (buffer(""), buffer(""))
     py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
 
-    # Furthest should generate NotFound on empty BS, even w/ fsid
+    print "Furthest should generate NotFound on empty BS, even w/ fsid"
     seed = (buffer("fsid"), buffer(""))
     py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
 
-    # Follow should generate NotFound on empty BS.
+    print "Follow should generate NotFound on empty BS."
     seed = (buffer(""), buffer(""))
     py.test.raises(utp.NotFoundError, self.vbs.bs_head_follow, seed)
 
-    # Follow should generate NotFound on empty BS, even w/ fsid
+    print "Follow should generate NotFound on empty BS, even w/ fsid"
     seed = (buffer("fsid"), buffer(""))
     py.test.raises(utp.NotFoundError, self.vbs.bs_head_follow, seed)
 
-    # Close for good.
+    print "Close for good."
     self.vbs.bs_close()
     self.vbs = None
     self.bs3.bs_close()

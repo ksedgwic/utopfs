@@ -16,8 +16,6 @@ class VBS_EXP VBSHeadFurthestSubReq
     , public utp::BlockStore::HeadNodeTraverseFunc
 {
 public:
-    typedef std::map<VBSChild *, utp::HeadNodeSet> ChildNodeSetMap;
-
     VBSHeadFurthestSubReq(VBSRequestHolder & i_vbs,
                           long i_outstanding,
                           utp::HeadNode const & i_hn,

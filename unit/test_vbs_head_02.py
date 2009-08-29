@@ -111,7 +111,7 @@ class Test_vbs_head_02:
                                    ("child1", "child2"))
 
     # Follow w/ empty should return all nodes.
-    shes = self.vbs.bs_head_follow(node0)
+    shes = self.vbs.bs_head_follow(seed0)
     assert lenhack(shes) == 3
     assert sorted((str(shes[0].rootref),
                    str(shes[1].rootref),

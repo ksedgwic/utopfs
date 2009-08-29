@@ -13,8 +13,9 @@ namespace VBS {
 
 class VBS_EXP VBSHeadFurthestTopReq
     : public VBSRequest
-    , public VBSRequestHolder
     , public utp::BlockStore::HeadNodeTraverseFunc
+    , public utp::BlockStore::HeadEdgeTraverseFunc
+    
 {
 public:
     VBSHeadFurthestTopReq(VBSRequestHolder & i_vbs,
@@ -32,12 +33,16 @@ public:
 
     virtual void initiate(VBSChild * i_cp,
                           utp::BlockStoreHandle const & i_bsh);
-                         
-    // VBSRequestHolder Methods
 
-    virtual void rh_insert(VBSRequestHandle const & i_rh);
+    // HeadEdgeTraverseFunc
 
-    virtual void rh_remove(VBSRequestHandle const & i_rh);
+    virtual void het_edge(void const * i_argp,
+                          utp::SignedHeadEdge const & i_she);
+
+    virtual void het_complete(void const * i_argp);
+
+    virtual void het_error(void const * i_argp,
+                           utp::Exception const & i_exp);
 
     // HeadNodeTraverseFunc
 
@@ -51,7 +56,20 @@ public:
 
     // VBSHeadFurthestTopReq
 
+    // Initiates a furthest pass to see if there are unique answers.
     void init();
+
+    // Initiates a directed follow-fill to fast-forward unique answers.
+    void directed_follow_fill();
+
+    // Initiates a second furthest pass to see if follow-fill worked.
+    void second_check();
+
+    // Initiates a full follow-fill to copy everything.
+    void full_follow_fill();
+
+    // Initiates final furthest pass to see of full-follow-fill worked.
+    void last_check();
 
 protected:
 
@@ -62,10 +80,10 @@ private:
 
     VBSChildMap const &							m_children;
 
-    ACE_Thread_Mutex							m_hftrmutex;
-    VBSRequestSet								m_subreqs;
-
     VBSHeadFurthestSubReqHandle					m_subfurther;
+
+    bool										m_lasttry;
+    utp::AtomicLong								m_ffout;
 };
 
 } // namespace VBS

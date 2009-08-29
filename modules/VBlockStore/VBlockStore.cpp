@@ -371,7 +371,7 @@ VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
                                   i_argp,
                                   m_children);
 
-    LOG(lgr, 6, m_instname << ' ' << "bs_head_further_async " << *hftrh);
+    LOG(lgr, 6, m_instname << ' ' << "bs_head_furthest_async " << *hftrh);
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.

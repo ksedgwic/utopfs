@@ -52,6 +52,10 @@ void
 VBSHeadFollowRequest::het_edge(void const * i_argp,
                                SignedHeadEdge const & i_she)
 {
+    VBSChild * cp = (VBSChild *) i_argp;
+
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " het_edge " << i_she);
+
     LameEdgeHandle leh = new LameEdge(i_she);
 
     m_edges.insert(leh);
@@ -62,7 +66,7 @@ VBSHeadFollowRequest::het_complete(void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " hnt_complete");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " het_complete");
 
     m_succeeded = true;
 
@@ -89,7 +93,7 @@ VBSHeadFollowRequest::het_error(void const * i_argp,
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " hnt_error");
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " het_error");
 
     // Unlike the other completion callbacks this one is not
     // complete until all of the children have checked in.
@@ -118,6 +122,8 @@ VBSHeadFollowRequest::complete()
         if (m_cmpl)
         {
             LOG(lgr, 6, *this << ' ' << "UPCALL ERROR");
+
+            // Is this the right return exception?  Seems wrong ...
             m_cmpl->het_error(m_argp,
                               NotFoundError("no starting seed found"));
         }

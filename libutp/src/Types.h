@@ -1,6 +1,9 @@
 #ifndef utp_Types_h__
 #define utp_Types_h__
 
+#include <ace/Atomic_Op.h>
+#include <ace/Thread_Mutex.h>
+
 #include <vector>
 #include <string>
 
@@ -18,6 +21,8 @@ typedef unsigned long long	uint64;
 typedef std::vector<uint8> OctetSeq;
 
 typedef std::vector<std::string> StringSeq;
+
+typedef ACE_Atomic_Op<ACE_Thread_Mutex, long> AtomicLong;
 
 } // end namespace utp
 

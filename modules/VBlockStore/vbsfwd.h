@@ -19,6 +19,9 @@ typedef utp::RCPtr<VBSChild> VBSChildHandle;
 /// Map of named children.
 typedef std::map<std::string, VBSChildHandle> VBSChildMap;
 
+/// Map of children to HeadNode sets.
+typedef std::map<VBSChild *, utp::HeadNodeSet> ChildNodeSetMap;
+
 class VBSRequest;
 /// Handle to VBSRequest object.
 typedef utp::RCPtr<VBSRequest> VBSRequestHandle;
