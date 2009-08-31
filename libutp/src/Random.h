@@ -3,11 +3,14 @@
 
 #include <iosfwd>
 
+#include "utpexp.h"
+#include "utpfwd.h"
+
 #include "Types.h"
 
 namespace utp {
 
-class Random
+class UTP_EXP Random
 {
 public:
     /// Fill memory with random bytes.

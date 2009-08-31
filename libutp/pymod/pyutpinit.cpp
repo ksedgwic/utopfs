@@ -168,10 +168,15 @@ init_utp(void)
     // Initialize sub-types in their own modules.
     init_BlockStore();
     init_bsstat();
+#ifndef WIN32
     init_FileSystem();
+#endif
     init_PyDirEntryFunc();
     init_stat();
+
+#ifndef WIN32
     init_statvfs();
+#endif
 
     // Create the module and add the functions.
     m = Py_InitModule("_utp", module_methods);

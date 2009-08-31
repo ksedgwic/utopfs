@@ -3,11 +3,14 @@
 
 #include <string>
 
+#include "utpexp.h"
+#include "utpfwd.h"
+
 #include "Types.h"
 
 namespace utp {
 
-class Base32
+class UTP_EXP Base32
 {
 public:
     static std::string const encode(void const * i_data, size_t i_size);

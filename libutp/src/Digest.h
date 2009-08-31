@@ -4,11 +4,14 @@
 #include <iosfwd>
 #include <string>
 
+#include "utpexp.h"
+#include "utpfwd.h"
+
 #include "Types.h"
 
 namespace utp {
 
-class Digest
+class UTP_EXP Digest
 {
 public:
     /// Default constructor.

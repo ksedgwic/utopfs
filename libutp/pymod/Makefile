@@ -6,14 +6,18 @@ LIBSRC =	\
 			pyblockstore.cpp \
 			pybsstat.cpp \
 			pydirentryfunc.cpp \
-			pyfilesystem.cpp \
 			pyshe.cpp \
 			pystat.cpp \
-			pystatvfs.cpp \
 			pyutpinit.cpp \
 			pyutplog.cpp \
 			statemap.cpp \
 			$(NULL)
+
+ifneq (WIN32,$(SYSNAME))
+LIBSRC +=	pyfilesystem.cpp \
+			pystatvfs.cpp \
+			$(NULL)
+endif
 
 MODSO =		_utp
 
@@ -25,6 +29,7 @@ include $(ROOTDIR)/config/depend.mk
 include $(ROOTDIR)/libutp/src/export.mk
 
 # External Package Dependencies
+include $(ROOTDIR)/config/extdep/protobuf.mk
 include $(ROOTDIR)/config/extdep/python.mk
 include $(ROOTDIR)/config/extdep/ACE.mk
 

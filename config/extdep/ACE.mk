@@ -53,12 +53,12 @@ ifeq ($(SYSNAME),WIN32)
 ifdef ACE_ROOT
 ACEROOT =		$(shell cygpath -m $(ACE_ROOT))
 else
-ACEROOT =		c:/ACE_wrappers
+ACEROOT =		$(shell cygpath -m $(ABSDIST))
 endif
 ifeq ($(BUILD),DEBUG)
 LIBSFX3 = 		d
 endif
-INCS +=			-I$(ACEROOT)
+INCS +=			-I$(ACEROOT)/include
 LIBS +=			$(ACEROOT)/lib/ace$(LIBSFX3).lib \
 				$(ACEROOT)/lib/ACEXML_Parser$(LIBSFX3).lib \
 				$(ACEROOT)/lib/ACEXML$(LIBSFX3).lib \

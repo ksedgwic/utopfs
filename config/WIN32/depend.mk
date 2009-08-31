@@ -5,10 +5,16 @@
 $(BLTLIBSO):	$(BLTLIBOBJ) $(BLTGENOBJ)
 	@$(CHKDIR)
 	$(SOCMD) -OUT:$@ -IMPLIB:$(@:%.dll=%.lib) $(SOFLAGS) $(LDFLAGS) $(BLTLIBOBJ) $(BLTGENOBJ) $(LIBS)
+ifdef MANIFEST_EMBED
+	$(SOCMT) $(SOCMTFLAGS) $(@:%=%.manifest) $(SOCMTOUT) $@;#2
+endif
 
 $(BLTMODSO):	$(BLTLIBOBJ) $(BLTGENOBJ)
 	@$(CHKDIR)
 	$(SOCMD) -OUT:$@ -IMPLIB:$(@:%.dll=%.lib) $(SOFLAGS) $(LDFLAGS) $(BLTLIBOBJ) $(BLTGENOBJ) $(LIBS)
+ifdef MANIFEST_EMBED
+	$(SOCMT) $(SOCMTFLAGS) $(@:%.dll=%.manifest) $(SOCMTOUTPUTRESOURCE):$@;2
+endif
 
 $(BLTPRGEXE):	$(BLTPRGOBJ) $(BLTGENOBJ)
 	@$(CHKDIR)

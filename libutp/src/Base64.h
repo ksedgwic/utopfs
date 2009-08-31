@@ -3,12 +3,15 @@
 
 #include <string>
 
+#include "utpexp.h"
+#include "utpfwd.h"
+
 #include "Types.h"
 
 namespace utp {
 #include <string>
 
-class Base64
+class UTP_EXP Base64
 {
 public:
     static std::string encode(void const * i_ptr, size_t i_len);

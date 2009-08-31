@@ -18,9 +18,13 @@ namespace utp {
 Exception::Exception(Exception const & i_ex)
     : m_buffer(i_ex.m_buffer)
     , m_details(i_ex.m_details)
+#if defined(LINUX)
     , m_btsize(i_ex.m_btsize)
+#endif
 {
+#if defined(LINUX)
     ACE_OS::memcpy(m_btdata, i_ex.m_btdata, NFRAMES * sizeof(void *));
+#endif
 }
 
 Exception::~Exception() throw()

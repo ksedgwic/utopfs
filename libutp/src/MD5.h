@@ -4,11 +4,14 @@
 #include <iosfwd>
 #include <string>
 
+#include "utpexp.h"
+#include "utpfwd.h"
+
 #include "Types.h"
 
 namespace utp {
 
-class MD5
+class UTP_EXP MD5
 {
 public:
     /// Compute digest from range of memory.

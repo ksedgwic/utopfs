@@ -32,6 +32,11 @@
 #   endif
 #endif
 
+#if defined(WIN32)
+// C++ Exception Specification ignored, MSVC doesn't support it yet
+#pragma warning(disable:4290)
+#endif
+
 // Local Variables:
 // mode: C++
 // tab-width: 4

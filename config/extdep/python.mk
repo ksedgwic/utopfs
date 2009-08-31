@@ -7,14 +7,14 @@ LIBS +=		$(shell python-config --ldflags)
 endif
 
 ifeq (,$(filter-out WIN32, $(SYSNAME)))
-PYTROOT =	c:/Python-2.5
-INCS +=		-I$(PYTROOT)/include -I$(PYTROOT)/PC
+PYTROOT =	$(shell cygpath -m $(ABSDIST))
+INCS +=		-I$(PYTROOT)/include/python
 ifeq ($(BUILD),DEBUG)
-LIBS +=		$(PYTROOT)/PCbuild/python25_d.lib
+LIBS +=		$(PYTROOT)/lib/python25_d.lib
 else
-LIBS +=		$(PYTROOT)/PCbuild/python25.lib
+LIBS +=		$(PYTROOT)/lib/python25.lib
 endif
-ENVLDLIBPATH +=	$(shell cygpath ${PYTROOT}/PCbuild)
+ENVLDLIBPATH +=	$(shell cygpath ${PYTROOT})
 endif
 
 # Local Variables:

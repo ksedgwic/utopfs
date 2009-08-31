@@ -7,6 +7,14 @@ LIBS +=		$(shell pkg-config --libs openssl)
 endif
 
 ifeq (,$(filter-out WIN32, $(SYSNAME)))
+OPENSSLROOT =	$(shell cygpath -m $(ABSDIST))
+
+INCS +=	-I$(OPENSSLROOT)/include
+
+LIBS +=	$(OPENSSLROOT)/lib/libeay32.lib \
+		$(OPENSSLROOT)/lib/ssleay32.lib	\
+		$(NULL)
+
 # Need OpenSSL stuff here.
 endif
 

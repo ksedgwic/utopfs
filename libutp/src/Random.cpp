@@ -1,3 +1,5 @@
+#include <ace/OS_NS_string.h> //include ACE header just to include windows.h from ace first rather then make openssl to include it.
+
 #include <openssl/rand.h>
 
 #include "Except.h"

@@ -3,11 +3,14 @@
 
 #include <openssl/aes.h>
 
+#include "utpexp.h"
+#include "utpfwd.h"
+
 #include "Types.h"
 
 namespace utp {
 
-class StreamCipher
+class UTP_EXP StreamCipher
 {
 public:
     /// Default constructor.

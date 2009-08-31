@@ -80,6 +80,10 @@ static PyStructSequence_Field stat_result_fields[] = {
 	{0}
 };
 
+#ifdef WIN32
+char *PyStructSequence_UnnamedField = "unnamed field";  
+#endif
+
 static PyStructSequence_Desc stat_result_desc = {
 	(char *) "stat_result", /* name */
 	stat_result__doc__, /* doc */

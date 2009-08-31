@@ -3,11 +3,14 @@
 
 #include <openssl/aes.h>
 
+#include "utpexp.h"
+#include "utpfwd.h"
+
 #include "Types.h"
 
 namespace utp {
 
-class BlockCipher
+class UTP_EXP BlockCipher
 {
 public:
     /// Default constructor.
