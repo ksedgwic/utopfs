@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <fstream>
 #include <cassert>
 
 #include <ace/Reactor.h>
@@ -28,6 +29,7 @@
 #include "FileSystemFactory.h"
 #include "FileSystem.h"
 #include "Log.h"
+#include "Assembly.h"
 
 #include "fuselog.h"
 
@@ -134,17 +136,13 @@ struct utopfs
     string argv0;
     bool foreground;
     string lclconf;
-    string bsid;
     int loglevel;
     string logpath;
     string path;
-    string fsid;
-    string passphrase;
     double syncsecs;
     uint64_t size;
     string mntpath;
-    BlockStoreHandle bsh;
-    FileSystemHandle fsh;
+    Assembly * assembly;
     Controller * control;
     ThreadPool * thrpool;
 };
@@ -225,7 +223,7 @@ utopfs_init(struct fuse_conn_info * i_conn)
     // NOTE - We wish we could do a lot of this stuff in the mainline
     // but much of it needs to be done after we daemonize ...
 
-    struct fuse_context * fctxtp = fuse_get_context();
+    // struct fuse_context * fctxtp = fuse_get_context();
 
     // Set the log path and log level via env variables.
     ostringstream ostrm;
@@ -254,6 +252,28 @@ utopfs_init(struct fuse_conn_info * i_conn)
     // Start the thread pool.
     utopfs.thrpool = new ThreadPool(ACE_Reactor::instance(), 1);
 
+    // Create the assembly of blockstores and filesystem.
+    try
+    {
+        ifstream cfgstrm(utopfs.path.c_str());
+        utopfs.assembly = new Assembly(cfgstrm);
+
+        // Start the controller.
+        string controlpath = utopfs.mntpath + "/.utopfs/control";
+        utopfs.control = new Controller(utopfs.assembly->bsh(),
+                                        utopfs.assembly->fsh(),
+                                        controlpath,
+                                        utopfs.syncsecs);
+        utopfs.control->init();
+    }
+    catch (utp::Exception const & ex)
+    {
+        fatal(ex.what());
+    }
+
+    return NULL;
+
+#if 0
     // Perform the mount.
     try
     {
@@ -316,6 +336,7 @@ utopfs_init(struct fuse_conn_info * i_conn)
     }
 
     return NULL;
+#endif
 }
 
 static void
@@ -324,7 +345,7 @@ utopfs_destroy(void * ptr)
     try
     {
         // Flush the filesystem to the blockstore.
-        utopfs.fsh->fs_sync();
+        utopfs.assembly->fsh()->fs_sync();
 
         // Cleanup the control interface.
         utopfs.control->term();
@@ -341,7 +362,7 @@ utopfs_getattr(char const * i_path,
 {
     try
     {
-        return utopfs.fsh->fs_getattr(i_path, stbuf);
+        return utopfs.assembly->fsh()->fs_getattr(i_path, stbuf);
     }
     catch (utp::Exception const & ex)
     {
@@ -356,7 +377,7 @@ utopfs_readlink(char const * i_path,
 {
     try
     {
-        return utopfs.fsh->fs_readlink(i_path, o_obuf, i_size);
+        return utopfs.assembly->fsh()->fs_readlink(i_path, o_obuf, i_size);
     }
     catch (utp::Exception const & ex)
     {
@@ -371,11 +392,11 @@ utopfs_mknod(char const * i_path, mode_t i_mode, dev_t i_dev)
     {
         struct fuse_context * fctxtp = fuse_get_context();
 
-        return utopfs.fsh->fs_mknod(i_path,
-                                    i_mode,
-                                    i_dev,
-                                    mapuid(fctxtp->uid),
-                                    mapgid(fctxtp->gid));
+        return utopfs.assembly->fsh()->fs_mknod(i_path,
+                                                i_mode,
+                                                i_dev,
+                                                mapuid(fctxtp->uid),
+                                                mapgid(fctxtp->gid));
     }
     catch (utp::Exception const & ex)
     {
@@ -390,10 +411,10 @@ utopfs_mkdir(char const * i_path, mode_t i_mode)
     {
         struct fuse_context * fctxtp = fuse_get_context();
 
-        return utopfs.fsh->fs_mkdir(i_path,
-                                    i_mode,
-                                    mapuid(fctxtp->uid),
-                                    mapgid(fctxtp->gid));
+        return utopfs.assembly->fsh()->fs_mkdir(i_path,
+                                                i_mode,
+                                                mapuid(fctxtp->uid),
+                                                mapgid(fctxtp->gid));
     }
     catch (utp::Exception const & ex)
     {
@@ -406,7 +427,7 @@ utopfs_unlink(char const * i_path)
 {
     try
     {
-        return utopfs.fsh->fs_unlink(i_path);
+        return utopfs.assembly->fsh()->fs_unlink(i_path);
     }
     catch (utp::Exception const & ex)
     {
@@ -419,7 +440,7 @@ utopfs_rmdir(char const * i_path)
 {
     try
     {
-        return utopfs.fsh->fs_rmdir(i_path);
+        return utopfs.assembly->fsh()->fs_rmdir(i_path);
     }
     catch (utp::Exception const & ex)
     {
@@ -432,7 +453,7 @@ utopfs_symlink(char const * i_opath, char const * i_npath)
 {
     try
     {
-        return utopfs.fsh->fs_symlink(i_opath, i_npath);
+        return utopfs.assembly->fsh()->fs_symlink(i_opath, i_npath);
     }
     catch (utp::Exception const & ex)
     {
@@ -445,7 +466,7 @@ utopfs_rename(char const * i_opath, char const * i_npath)
 {
     try
     {
-        return utopfs.fsh->fs_rename(i_opath, i_npath);
+        return utopfs.assembly->fsh()->fs_rename(i_opath, i_npath);
     }
     catch (utp::Exception const & ex)
     {
@@ -458,7 +479,7 @@ utopfs_link(char const * i_opath, char const * i_npath)
 {
     try
     {
-        return utopfs.fsh->fs_link(i_opath, i_npath);
+        return utopfs.assembly->fsh()->fs_link(i_opath, i_npath);
     }
     catch (utp::Exception const & ex)
     {
@@ -471,7 +492,7 @@ utopfs_chmod(char const * i_path, mode_t i_mode)
 {
     try
     {
-        return utopfs.fsh->fs_chmod(i_path, i_mode);
+        return utopfs.assembly->fsh()->fs_chmod(i_path, i_mode);
     }
     catch (utp::Exception const & ex)
     {
@@ -484,7 +505,7 @@ utopfs_truncate(char const * i_path, off_t i_size)
 {
     try
     {
-        return utopfs.fsh->fs_truncate(i_path, i_size);
+        return utopfs.assembly->fsh()->fs_truncate(i_path, i_size);
     }
     catch (utp::Exception const & ex)
     {
@@ -497,7 +518,7 @@ utopfs_open(char const * i_path, struct fuse_file_info *fi)
 {
     try
     {
-        return utopfs.fsh->fs_open(i_path, fi->flags);
+        return utopfs.assembly->fsh()->fs_open(i_path, fi->flags);
     }
     catch (utp::Exception const & ex)
     {
@@ -514,7 +535,7 @@ utopfs_read(char const * i_path,
 {
     try
     {
-        return utopfs.fsh->fs_read(i_path, buf, size, offset);
+        return utopfs.assembly->fsh()->fs_read(i_path, buf, size, offset);
     }
     catch (utp::Exception const & ex)
     {
@@ -531,7 +552,7 @@ utopfs_write(char const * i_path,
 {
     try
     {
-        return utopfs.fsh->fs_write(i_path, buf, size, offset);
+        return utopfs.assembly->fsh()->fs_write(i_path, buf, size, offset);
     }
     catch (utp::Exception const & ex)
     {
@@ -545,7 +566,7 @@ utopfs_statfs(char const * i_path,
 {
     try
     {
-        return utopfs.fsh->fs_statfs(statptr);
+        return utopfs.assembly->fsh()->fs_statfs(statptr);
     }
     catch (utp::Exception const & ex)
     {
@@ -563,7 +584,7 @@ utopfs_readdir(char const * i_path,
     try
     {
         MyDirEntryFunc mdef(buf, filler);
-        return utopfs.fsh->fs_readdir(i_path, offset, mdef);
+        return utopfs.assembly->fsh()->fs_readdir(i_path, offset, mdef);
     }
     catch (utp::Exception const & ex)
     {
@@ -577,7 +598,7 @@ utopfs_access(char const * i_path,
 {
     try
     {
-        return utopfs.fsh->fs_access(i_path, i_mode);
+        return utopfs.assembly->fsh()->fs_access(i_path, i_mode);
     }
     catch (utp::Exception const & ex)
     {
@@ -590,7 +611,7 @@ utopfs_utimens(char const * i_path, struct timespec const i_tv[2])
 {
     try
     {
-        return utopfs.fsh->fs_utime(i_path, i_tv[0], i_tv[1]);
+        return utopfs.assembly->fsh()->fs_utime(i_path, i_tv[0], i_tv[1]);
     }
     catch (utp::Exception const & ex)
     {
@@ -607,28 +628,21 @@ static const char *utop_opts[] = {
 };
 
 enum {
-    KEY_BSID,
     KEY_LOGLEVEL,
     KEY_LOGPATH,
     KEY_MKFS,
-    KEY_FSID,
-    KEY_PASSPHRASE,
 	KEY_HELP,
 	KEY_VERSION,
 	KEY_SYNCSECS,
 	KEY_FOREGROUND,
-	KEY_CONFIGFILE,
 };
 
 #define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
 
 static struct fuse_opt utopfs_opts[] = {
-	FUSE_OPT_KEY("-B ",            KEY_BSID),
 	FUSE_OPT_KEY("-l ",            KEY_LOGLEVEL),
 	FUSE_OPT_KEY("-L ",            KEY_LOGPATH),
 	FUSE_OPT_KEY("-M ",            KEY_MKFS),
-	FUSE_OPT_KEY("-F ",            KEY_FSID),
-	FUSE_OPT_KEY("-P ",            KEY_PASSPHRASE),
 	FUSE_OPT_KEY("-V",             KEY_VERSION),
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("-S ",            KEY_SYNCSECS),
@@ -674,10 +688,6 @@ static int utopfs_opt_proc(void * data,
 
 	switch (key)
     {
-    case KEY_BSID:
-        utopfs.bsid = &arg[2];
-        return 0;
-
     case KEY_LOGLEVEL:
         utopfs.loglevel = atoi(&arg[2]);
         return 0;
@@ -688,14 +698,6 @@ static int utopfs_opt_proc(void * data,
 
     case KEY_MKFS:
         utopfs.size = atoll(&arg[2]);
-        return 0;
-
-    case KEY_FSID:
-        utopfs.fsid = &arg[2];
-        return 0;
-
-    case KEY_PASSPHRASE:
-        utopfs.passphrase = &arg[2];
         return 0;
 
     case KEY_SYNCSECS:
@@ -726,7 +728,6 @@ static int utopfs_opt_proc(void * data,
 
 	case KEY_HELP:
 	case KEY_VERSION:
-	case KEY_CONFIGFILE:
 		return 1;
 
 	default:
@@ -742,7 +743,6 @@ main(int argc, char ** argv)
     utopfs.argv0 = argv[0];
     utopfs.foreground = false;
     utopfs.lclconf = LCLCONF;
-    utopfs.bsid = "FSBS";
     utopfs.logpath = "utopfs.log";
     utopfs.loglevel = -1;
     utopfs.size = 0;
@@ -758,16 +758,11 @@ main(int argc, char ** argv)
     // When we are daemonized our path is changed to '/'.  If the
     // blockstore path is relative convert it to absolute ...
     //
-    // If we are using the S3BS then we don't want to convert it.
-    //
-    if (utopfs.bsid != "S3BS")
+    if (utopfs.path[0] != '/')
     {
-        if (utopfs.path[0] != '/')
-        {
-            char cwdbuf[MAXPATHLEN];
-            string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
-            utopfs.path = cwd + '/' + utopfs.path;
-        }
+        char cwdbuf[MAXPATHLEN];
+        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+        utopfs.path = cwd + '/' + utopfs.path;
     }
 
     // Convert LCLCONF path to absolute.
