@@ -47,8 +47,10 @@ class Test_vbs_head_03:
     self.fs = utp.FileSystem.mkfs(CONFIG.FSTYPE, self.bs1, "", "",
                                   CONFIG.UNAME, CONFIG.GNAME, CONFIG.FSARGS)
 
-    print "Remount the filesystem."
+    print "Unmount the filesystem."
     self.fs.fs_umount()
+
+    print "Remount the filesystem."
     self.fs = utp.FileSystem.mount(CONFIG.FSTYPE, self.bs1, "", "",
                                    CONFIG.FSARGS)
 

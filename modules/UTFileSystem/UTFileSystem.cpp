@@ -60,7 +60,9 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
     m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
 
     m_rdh = new RootDirNode(i_uname, i_gname);
-    
+
+    m_rbr.clear();
+
     rootref(m_rdh->bn_flush(m_ctxt));
 }
 
@@ -84,6 +86,7 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 
     // Initialize the headnode.
     m_hn = make_pair(m_fsiddig, string());
+    LOG(lgr, 6, "initializing headnode to " << mkstring(m_hn));
 
     // Use part of the digest of the passphrase as the key.
     Digest dig(i_passphrase.data(), i_passphrase.size());
@@ -96,13 +99,17 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 
     try
     {
+        LOG(lgr, 6, "before it's " << mkstring(m_hn));
         m_rdh = new RootDirNode(m_ctxt, rootref());
+        LOG(lgr, 6, "after it's " << mkstring(m_hn));
     }
     catch (utp::NotFoundError const & ex)
     {
         // Root directory not found.
         throwstream(NotFoundError, "filesystem root block not found");
     }
+
+    LOG(lgr, 6, "headnode set to " << mkstring(m_hn));
 }
 
 void
@@ -1000,7 +1007,14 @@ UTFileSystem::fs_sync()
 void
 UTFileSystem::rootref(BlockRef const & i_blkref)
 {
-    LOG(lgr, 6, "rootref set " << i_blkref);
+    LOG(lgr, 6, "rootref set " << m_rbr << " -> " << i_blkref);
+
+    // If this block reference is the same as the last ignore it.
+    if (i_blkref == m_rbr)
+    {
+        LOG(lgr, 6, "ignoring unchanged rootref");
+        return;
+    }
 
     // Encrypt the root reference.
     uint8 iv[16];
@@ -1011,10 +1025,6 @@ UTFileSystem::rootref(BlockRef const & i_blkref)
 
     HeadNode hn =
         make_pair(m_fsiddig, string((char *) buffer, sizeof(buffer)));
-
-    // If the root reference hasn't changed, bail ...
-    if (hn == m_hn)
-        return;
 
     HeadEdge he;
     he.set_fstag(m_fsiddig);
@@ -1041,6 +1051,9 @@ UTFileSystem::rootref(BlockRef const & i_blkref)
 
     // Update the headnode
     m_hn = hn;
+    m_rbr = i_blkref;
+
+    LOG(lgr, 6, "headnode updated to " << mkstring(m_hn));
 }
 
 BlockRef
@@ -1058,18 +1071,19 @@ UTFileSystem::rootref()
 
     // Store a copy of the new head reference.
     m_hn = hns[0];
+    LOG(lgr, 6, "found headnode " << mkstring(m_hn));
 
     // Decrypt the root reference.
     uint8 iv[16];
     memset(iv, '\0', sizeof(iv));
-    string const & refstr = m_hn.second;
+    string refstr = m_hn.second;
     m_ctxt.m_cipher.decrypt(iv, (uint8 *) &refstr[0], refstr.size());
 
-    BlockRef blkref(refstr);
+    m_rbr = BlockRef(refstr);
 
-    LOG(lgr, 6, "rootref get " << blkref);
+    LOG(lgr, 6, "rootref get " << m_rbr);
 
-    return blkref;
+    return m_rbr;
 }
 
 } // namespace UTFS

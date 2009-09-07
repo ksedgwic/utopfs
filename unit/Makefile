@@ -12,6 +12,7 @@ PYTESTS =	\
 			test_vbs_head_01.py \
 			test_vbs_head_02.py \
 			test_vbs_head_03.py \
+			test_vbs_head_04.py \
 			test_bs_unopened.py \
 			test_bs_basic_01.py \
 			test_bs_refresh_01.py \

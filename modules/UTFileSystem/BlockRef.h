@@ -48,6 +48,13 @@ public:
         return utp::OctetSeq(m_ref, m_ref + 32);
     }
 
+    /// Equality operator.
+    ///
+    bool operator==(BlockRef const & i_o) const
+    {
+        return memcmp(m_ref, i_o.m_ref, sizeof(m_ref)) == 0;
+    }
+
     /// Nil predicate.
     bool operator!() const;
 
