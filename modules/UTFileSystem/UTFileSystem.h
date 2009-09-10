@@ -12,6 +12,7 @@
 #include "utpfwd.h"
 
 #include "BlockCipher.h"
+#include "BlockRef.h"
 #include "Digest.h"
 #include "FileSystem.h"
 
@@ -157,6 +158,8 @@ private:
     DirNodeHandle				m_rdh;
 
     utp::HeadNode				m_hn;
+
+    BlockRef					m_rbr;
 };
 
 } // namespace UTFS

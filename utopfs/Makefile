@@ -21,6 +21,10 @@ SCRIPTS =	\
 
 CFG =		\
 			utopfs.conf \
+			utopfs.cfg \
+			utopfs0.cfg \
+			utopfs1.cfg \
+			utopfs2.cfg \
 			$(NULL)
 
 include $(ROOTDIR)/config/depend.mk

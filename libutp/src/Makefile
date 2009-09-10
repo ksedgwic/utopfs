@@ -3,10 +3,12 @@ ROOTDIR = ../..
 include $(ROOTDIR)/config/define.mk
 
 PROTO +=	\
+			Assembly.proto \
 			HeadEdge.proto \
 			$(NULL)
 
 LIBSRC =	\
+			Assembly.cpp \
 			Base32.cpp \
 			Base64.cpp \
 			BlockCipher.cpp \

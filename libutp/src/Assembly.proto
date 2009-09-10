@@ -1,0 +1,27 @@
+package utp;
+
+message BlockStoreConfig
+{
+    required string name = 1;
+    required string type = 2;
+
+    repeated string arg = 10;
+}
+
+message FileSystemConfig
+{
+    required string type = 1;
+    required string bsname = 2;
+    required string fsid = 3;
+    required string passphrase = 4;
+    required string uname = 5;
+    required string gname = 6;
+
+    repeated string arg = 10;
+}
+
+message AssemblyConfig
+{
+    repeated BlockStoreConfig blockstore = 1;
+    required FileSystemConfig filesystem = 2;
+}

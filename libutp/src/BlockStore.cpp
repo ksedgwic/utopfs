@@ -274,10 +274,16 @@ private:
 namespace utp {
 
 ostream &
-operator<<(ostream & ostrm, HeadNode const & i_nr)
+operator<<(ostream & ostrm, HeadNode const & i_hn)
 {
-    string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
-    string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
+    ostrm << mkstring(i_hn);
+    return ostrm;
+}
+
+string mkstring(HeadNode const & i_hn)
+{
+    string pt1 = Base32::encode(i_hn.first.data(), i_hn.first.size());
+    string pt2 = Base32::encode(i_hn.second.data(), i_hn.second.size());
 
     // Strip any trailing "====" off ...
     pt1 = pt1.substr(0, pt1.find_first_of('='));
@@ -297,9 +303,7 @@ operator<<(ostream & ostrm, HeadNode const & i_nr)
     string::size_type off1 = sz1 > NFSID ? sz1 - NFSID : 0;
     string::size_type off2 = sz2 > NNDID ? sz2 - NNDID : 0;
 
-    ostrm << pt1.substr(off1) << ':' << pt2.substr(off2);
-
-    return ostrm;
+    return pt1.substr(off1) + ':' + pt2.substr(off2);
 }
 
 BlockStore::~BlockStore()

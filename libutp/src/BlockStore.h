@@ -28,6 +28,12 @@ typedef std::vector<HeadNode> HeadNodeSeq;
 /// Set of HeadNode objects.
 typedef std::set<HeadNode> HeadNodeSet;
 
+// Helpful for debugging.
+std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_hn);
+
+// Crutch for some namespace complexities.
+std::string mkstring(HeadNode const & i_hn);
+
 class UTP_EXP BlockStore : public virtual RCObj
 {
 public:
@@ -462,9 +468,6 @@ public:
                                         void const * i_argp)
         throw(InternalError) = 0;
 };
-
-// Helpful for debugging.
-std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_nr);
 
 } // end namespace utp
 

@@ -1,0 +1,23 @@
+#!/bin/env python
+
+import os
+import sys
+import time
+
+import utp
+import utp.BlockStore
+
+try:
+    bstype = sys.argv[1]
+    path = sys.argv[2]
+    size = int(sys.argv[3])
+
+    bs = utp.BlockStore.create(bstype, "tmp", size, (path,))
+
+except utp.Error, ex:
+    print ex[0]['what']
+
+except:
+    print "Unexpected error:", sys.exc_info()[0]
+    raise
+
