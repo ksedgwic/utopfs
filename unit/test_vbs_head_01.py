@@ -68,13 +68,27 @@ class Test_vbs_head_01:
                                    "rootbs",
                                    ("child1", "child2", "child3"))
 
-    print "Furthest should generate NotFound on empty BS."
-    seed = (buffer(""), buffer(""))
-    py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
+    # NOTE - We used to generate NotFound on empty BS, but this
+    # was changed to return an empty set instead.  See comment
+    # in LameHeadNodeGraph::head_furthest_async for more info.
+    #
+    # print "Furthest should generate NotFound on empty BS."
+    # seed = (buffer(""), buffer(""))
+    # py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
+    # 
+    # print "Furthest should generate NotFound on empty BS, even w/ fsid"
+    # seed = (buffer("fsid"), buffer(""))
+    # py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
 
-    print "Furthest should generate NotFound on empty BS, even w/ fsid"
+    print "Furthest should generate empty on empty BS."
+    seed = (buffer(""), buffer(""))
+    shes = self.vbs.bs_head_furthest(seed)
+    assert lenhack(shes) == 0
+
+    print "Furthest should generate empty on empty BS, even w/ fsid"
     seed = (buffer("fsid"), buffer(""))
-    py.test.raises(utp.NotFoundError, self.vbs.bs_head_furthest, seed)
+    shes = self.vbs.bs_head_furthest(seed)
+    assert lenhack(shes) == 0
 
     print "Follow should generate NotFound on empty BS."
     seed = (buffer(""), buffer(""))

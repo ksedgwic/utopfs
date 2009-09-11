@@ -1062,6 +1062,10 @@ UTFileSystem::rootref()
     HeadNodeSeq hns;
     m_ctxt.m_bsh->bs_head_furthest(m_hn, hns);
 
+    // If we didn't find any head nodes through NotFoundError
+    if (hns.empty())
+        throwstream(NotFoundError, "didn't find specified filesystem");
+
     // We can only deal with a single head node yet.
     if (hns.size() != 1)
         throwstream(InternalError, FILELINE

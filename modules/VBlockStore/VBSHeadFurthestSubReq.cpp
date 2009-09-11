@@ -62,10 +62,13 @@ VBSHeadFurthestSubReq::hnt_complete(void const * i_argp)
 {
     VBSChild * cp = (VBSChild *) i_argp;
 
-    LOG(lgr, 6, *this << ' ' << cp->instname() << " hnt_complete");
-
     // Unlike the other completion callbacks this one is not
     // complete until all of the children have checked in.
+
+    // Make sure that each child has at least an empty set.
+    size_t sz = m_cnsm[cp].size();
+    LOG(lgr, 6, *this << ' ' << cp->instname() << " hnt_complete with "
+        << sz << " nodes");
 
     bool do_complete = false;
     {

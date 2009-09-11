@@ -30,13 +30,27 @@ class Test_bs_head_01:
                                     CONFIG.BSSIZE,
                                     CONFIG.BSARGS(self.bspath))
 
-    # Furthest should generate NotFound on empty BS.
-    seed = (buffer(""), buffer(""))
-    py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
+    # NOTE - We used to generate NotFound on empty BS, but this
+    # was changed to return an empty set instead.  See comment
+    # in LameHeadNodeGraph::head_furthest_async for more info.
+    #
+    # # Furthest should generate NotFound on empty BS.
+    # seed = (buffer(""), buffer(""))
+    # py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
+    # 
+    # # Furthest should generate NotFound on empty BS, even w/ fsid
+    # seed = (buffer("fsid"), buffer(""))
+    # py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
 
-    # Furthest should generate NotFound on empty BS, even w/ fsid
+    # Furthest should generate empty set on empty BS.
+    seed = (buffer(""), buffer(""))
+    shes = self.bs.bs_head_furthest(seed)
+    assert lenhack(shes) == 0
+     
+    # Furthest should generate empty set on empty BS, even w/ fsid
     seed = (buffer("fsid"), buffer(""))
-    py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
+    shes = self.bs.bs_head_furthest(seed)
+    assert lenhack(shes) == 0
 
     # Reopen the blockstore.
     self.bs.bs_close()
@@ -44,13 +58,27 @@ class Test_bs_head_01:
                                   "rootbs",
                                   CONFIG.BSARGS(self.bspath))
 
+    # NOTE - We used to generate NotFound on empty BS, but this
+    # was changed to return an empty set instead.  See comment
+    # in LameHeadNodeGraph::head_furthest_async for more info.
+    #
+    # # Furthest should generate NotFound on empty BS.
+    # seed = (buffer(""), buffer(""))
+    # py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
+    # 
+    # # Furthest should generate NotFound on empty BS, even w/ fsid
+    # seed = (buffer("fsid"), buffer(""))
+    # py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
+
     # Furthest should generate NotFound on empty BS.
     seed = (buffer(""), buffer(""))
-    py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
-
+    shes = self.bs.bs_head_furthest(seed)
+    assert lenhack(shes) == 0
+    
     # Furthest should generate NotFound on empty BS, even w/ fsid
     seed = (buffer("fsid"), buffer(""))
-    py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, seed)
+    shes = self.bs.bs_head_furthest(seed)
+    assert lenhack(shes) == 0
 
     # Close the blockstore.
     self.bs.bs_close()
@@ -137,7 +165,8 @@ class Test_bs_head_01:
 
     # Furthest should miss w/ bad key.
     miss = (buffer("fsid"), buffer("notref"))
-    py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, miss)
+    shes = self.bs.bs_head_furthest(miss)
+    assert lenhack(shes) == 0
 
     # Reopen the blockstore.
     self.bs.bs_close()
@@ -147,7 +176,8 @@ class Test_bs_head_01:
 
     # Furthest should miss w/ bad key.
     miss = (buffer("fsid"), buffer("notref"))
-    py.test.raises(utp.NotFoundError, self.bs.bs_head_furthest, miss)
+    shes = self.bs.bs_head_furthest(miss)
+    assert lenhack(shes) == 0
 
     # Close the blockstore.
     self.bs.bs_close()
