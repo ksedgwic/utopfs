@@ -48,8 +48,11 @@ VBSGetRequest::initiate(VBSChild * i_cp, BlockStoreHandle const & i_bsh)
 {
     LOG(lgr, 6, *this << " initiate " << i_cp->instname());
 
-    // Allocate our buffer now.
-    m_blk.resize(m_buffsize);
+    {
+        // Allocate our buffer now.
+        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
+        m_blk.resize(m_buffsize);
+    }
 
     i_bsh->bs_block_get_async(&m_key[0], m_key.size(),
                               &m_blk[0], m_blk.size(),
