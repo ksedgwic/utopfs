@@ -1,7 +1,5 @@
 #include <errno.h>
 #include <fcntl.h>
-#include <grp.h>
-#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,36 +35,6 @@ using namespace std;
 using namespace utp;
 
 namespace {
-
-string mapuid(uid_t uid)
-{
-    struct passwd pw;
-    struct passwd * pwp;
-    char buf[1024];
-    int rv = getpwuid_r(uid, &pw, buf, sizeof(buf), &pwp);
-    if (rv)
-        throwstream(InternalError, FILELINE
-                    << "getpwuid_r failed: " << strerror(rv));
-    if (!pwp)
-        throwstream(InternalError, FILELINE << "no password entry found");
-
-    return pwp->pw_name;
-}
-
-string mapgid(gid_t gid)
-{
-    struct group gr;
-    struct group * grp;
-    char buf[1024];
-    int rv = getgrgid_r(gid, &gr, buf, sizeof(buf), &grp);
-    if (rv)
-        throwstream(InternalError, FILELINE
-                    << "getgrgid_r failed: " << strerror(rv));
-    if (!grp)
-        throwstream(InternalError, FILELINE << "no group entry found");
-
-    return grp->gr_name;
-}
 
 class ThreadPool : public ACE_Task_Base
 {
@@ -292,6 +260,9 @@ utopfs_init(struct fuse_conn_info * i_conn)
             bsargs.push_back(string("--bucket=") + utopfs.path);
         }
 
+        string uname = FileSystemFactory::mapuid(fctxtp->uid);
+        string gname = FileSystemFactory::mapgid(fctxtp->gid);
+
         if (utopfs.size)
         {
             utopfs.bsh = BlockStoreFactory::create("rootbs",
@@ -304,8 +275,8 @@ utopfs_init(struct fuse_conn_info * i_conn)
                                                  utopfs.bsh,
                                                  utopfs.fsid,
                                                  utopfs.passphrase,
-                                                 mapuid(fctxtp->uid),
-                                                 mapgid(fctxtp->gid),
+                                                 uname,
+                                                 gname,
                                                  fsargs);
         }
         else
@@ -392,11 +363,11 @@ utopfs_mknod(char const * i_path, mode_t i_mode, dev_t i_dev)
     {
         struct fuse_context * fctxtp = fuse_get_context();
 
-        return utopfs.assembly->fsh()->fs_mknod(i_path,
-                                                i_mode,
-                                                i_dev,
-                                                mapuid(fctxtp->uid),
-                                                mapgid(fctxtp->gid));
+        string uname = FileSystemFactory::mapuid(fctxtp->uid);
+        string gname = FileSystemFactory::mapgid(fctxtp->gid);
+
+        return utopfs.assembly->fsh()->fs_mknod(i_path, i_mode, i_dev,
+                                                uname, gname);
     }
     catch (utp::Exception const & ex)
     {
@@ -411,10 +382,10 @@ utopfs_mkdir(char const * i_path, mode_t i_mode)
     {
         struct fuse_context * fctxtp = fuse_get_context();
 
-        return utopfs.assembly->fsh()->fs_mkdir(i_path,
-                                                i_mode,
-                                                mapuid(fctxtp->uid),
-                                                mapgid(fctxtp->gid));
+        string uname = FileSystemFactory::mapuid(fctxtp->uid);
+        string gname = FileSystemFactory::mapgid(fctxtp->gid);
+
+        return utopfs.assembly->fsh()->fs_mkdir(i_path, i_mode, uname, gname);
     }
     catch (utp::Exception const & ex)
     {

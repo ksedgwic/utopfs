@@ -77,7 +77,8 @@ public:
 
     virtual void bs_open(utp::StringSeq const & i_args)
         throw(utp::InternalError,
-              utp::NotFoundError);
+              utp::NotFoundError,
+              utp::ValueError);
 
     virtual void bs_close()
         throw(utp::InternalError);

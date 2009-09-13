@@ -56,7 +56,8 @@ VBSFactory::bsf_create(string const & i_instname,
                        size_t i_size,
                        StringSeq const & i_args)
     throw(InternalError,
-          NotUniqueError)
+          NotUniqueError,
+          ValueError)
 {
     BlockStoreHandle bsh = new VBS::VBlockStore(i_instname);
     bsh->bs_create(i_size, i_args);
@@ -67,7 +68,8 @@ BlockStoreHandle
 VBSFactory::bsf_open(string const & i_instname,
                      StringSeq const & i_args)
     throw(InternalError,
-          NotFoundError)
+          NotFoundError,
+          ValueError)
 {
     BlockStoreHandle bsh = new VBS::VBlockStore(i_instname);
     bsh->bs_open(i_args);
@@ -77,7 +79,8 @@ VBSFactory::bsf_open(string const & i_instname,
 void
 VBSFactory::bsf_destroy(StringSeq const & i_args)
     throw(InternalError,
-          NotFoundError)
+          NotFoundError,
+          ValueError)
 {
     VBS::VBlockStore::destroy(i_args);
 }
