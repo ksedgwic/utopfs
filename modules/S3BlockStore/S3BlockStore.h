@@ -15,6 +15,7 @@
 #include "utpfwd.h"
 
 #include "BlockStore.h"
+#include "LameHeadNodeGraph.h"
 #include "RC.h"
 
 #include "s3bsexp.h"
@@ -140,6 +141,10 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
+    static std::string blockpath(std::string const & i_entry = "");
+    
+    static std::string edgepath(std::string const & i_entry = "");
+
 protected:
     static void parse_params(utp::StringSeq const & i_args,
                              S3Protocol & o_protocol,
@@ -156,39 +161,43 @@ protected:
 
     std::string markname() const { return m_markname; }
 
-    std::string blockpath(std::string const & i_entry) const;
-
     void touch_entry(std::string const & i_entry,
                      time_t i_tstamp,
                      off_t i_size);
 
     void purge_uncommitted();
 
+    void write_head(utp::SignedHeadEdge const & i_she);
+
 private:
-    static bool		    c_s3inited;
+    static bool		    	c_s3inited;
 
-    std::string			m_instname;
+    std::string				m_instname;
 
-    S3Protocol			m_protocol;
-    S3UriStyle			m_uri_style;
-    std::string			m_access_key_id;
-    std::string			m_secret_access_key;
-    std::string			m_bucket_name;
+    S3Protocol				m_protocol;
+    S3UriStyle				m_uri_style;
+    std::string				m_access_key_id;
+    std::string				m_secret_access_key;
+    std::string				m_bucket_name;
 
-    off_t				m_size;			// Total Size in Bytes
-    off_t				m_committed;	// Committed Bytes (must be saved)
-    off_t				m_uncommitted;	// Uncommitted Bytes (reclaimable)
+    off_t					m_size;			// Total Size in Bytes
+    off_t					m_committed;	// Committed Bytes (must be saved)
+    off_t					m_uncommitted;	// Uncommitted Bytes (reclaimable)
 
-    std::string			m_blockspath;
+    ACE_Thread_Mutex		m_s3bsmutex;
 
-    ACE_Thread_Mutex	m_s3bsmutex;
+    EntrySet				m_entries;
+    EntryList				m_lru;		// front=newest, back=oldest
 
-    EntrySet			m_entries;
-    EntryList			m_lru;		// front=newest, back=oldest
+    std::string				m_markname;
+    EntryHandle				m_mark;
 
-    std::string			m_markname;
-    EntryHandle			m_mark;
+    utp::LameHeadNodeGraph	m_lhng;
 };
+
+// FIXME - Why can't I use the one in utp::BlockStore?
+// Helpful for debugging.
+std::ostream & operator<<(std::ostream & ostrm, utp::HeadNode const & i_nr);
 
 } // namespace S3BS
 

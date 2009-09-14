@@ -8,10 +8,12 @@
 #include <ace/Dirent.h>
 #include <ace/os_include/os_byteswap.h>
 
-#include "Log.h"
 #include "Base32.h"
-#include "MD5.h"
+#include "Base64.h"
 #include "BlockStoreFactory.h"
+#include "Digest.h"
+#include "Log.h"
+#include "MD5.h"
 
 #include "S3BlockStore.h"
 #include "s3bslog.h"
@@ -355,18 +357,30 @@ S3BlockStore::destroy(StringSeq const & i_args)
     do
     {
         KeyListHandler klh(keys);
-        S3_list_bucket(&buck,
-                       NULL,
-                       marker.empty() ? NULL : marker.c_str(),
-                       NULL,
-                       INT_MAX,
-                       NULL,
-                       &lst_tramp,
-                       &klh);
-        st = klh.wait();
-        if (st != S3StatusOK)
-            throwstream(InternalError, FILELINE
-                        << "Unexpected S3 error: " << st);
+
+        for (unsigned i = 0; i < MAX_RETRIES; ++i)
+        {
+            if (i == MAX_RETRIES)
+                throwstream(InternalError, FILELINE
+                            << "too many retries");
+
+            S3_list_bucket(&buck,
+                           NULL,
+                           marker.empty() ? NULL : marker.c_str(),
+                           NULL,
+                           INT_MAX,
+                           NULL,
+                           &lst_tramp,
+                           &klh);
+            st = klh.wait();
+            if (st == S3StatusOK)
+                break;
+
+            // Sigh ... these we retry a few times ...
+            LOG(lgr, 4, "list_keys " << bucket_name
+                << " ERROR: " << st << " RETRYING");
+        }
+
         istrunc = klh.m_istrunc;
         marker = klh.m_last_seen;
     }
@@ -450,7 +464,6 @@ S3BlockStore::S3BlockStore(std::string const & i_instname)
     , m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
-    , m_blockspath("BLOCKS")
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");
 }
@@ -648,7 +661,7 @@ public:
             mtime -= (7 * 60 * 60);
 
             // We only want to traverse items in BLOCKS/
-            if (entry.substr(0, 7) != "BLOCKS/")
+            if (entry.substr(0, 7) != S3BlockStore::blockpath())
                 continue;
 
             LOG(lgr, 7, "entry " << entry);
@@ -671,6 +684,55 @@ public:
 private:
     S3BlockStore::EntrySet &			m_entries;
     S3BlockStore::EntryTimeSet &		m_ets;
+};
+
+class EdgeListHandler : public ListHandler
+{
+public:
+    EdgeListHandler(StringSeq & o_edgekeys)
+        : m_istrunc(false)
+        , m_edgekeys(o_edgekeys)
+    {}
+
+    virtual S3Status lh_item(int i_istrunc,
+                             char const * i_next_marker,
+                             int i_contents_count,
+                             S3ListBucketContent const * i_contents,
+                             int i_common_prefixes_count,
+                             char const ** i_common_prefixes)
+    {
+        m_istrunc = i_istrunc;
+
+        if (i_common_prefixes_count)
+            throwstream(InternalError, FILELINE
+                        << "common prefixes make me sad");
+
+        for (int i = 0; i < i_contents_count; ++i)
+        {
+            S3ListBucketContent const * cp = &i_contents[i];
+
+            string key = cp->key;
+
+            // We only want to traverse items in EDGES/
+            if (key.substr(0, 6) != "EDGES/")
+                continue;
+
+            LOG(lgr, 7, "edge " << key);
+
+            m_edgekeys.push_back(key);
+        }
+
+        m_last_seen = i_contents_count ?
+            i_contents[i_contents_count-1].key : "";
+
+        return S3StatusOK;
+    }
+
+    bool					m_istrunc;
+    string					m_last_seen;
+    
+private:
+    StringSeq &				m_edgekeys;
 };
 
 void
@@ -833,6 +895,78 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     m_committed = committed;
     m_uncommitted = uncommitted;
+
+    // Read all of the SignedHeadEdges.
+
+    // Accumulate a list of all the signed edges
+    StringSeq edgekeys;
+    marker = "";
+    istrunc = false;
+    do
+    {
+        EdgeListHandler elh(edgekeys);
+        S3_list_bucket(&buck,
+                       NULL,
+                       marker.empty() ? NULL : marker.c_str(),
+                       NULL,
+                       INT_MAX,
+                       NULL,
+                       &lst_tramp,
+                       &elh);
+        st = elh.wait();
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+        istrunc = elh.m_istrunc;
+        marker = elh.m_last_seen;
+    }
+    while (istrunc);
+
+    // Read all of the signed edges and insert.
+    for (StringSeq::const_iterator it = edgekeys.begin();
+         it != edgekeys.end();
+         ++it)
+    {
+        string const & edgekey = *it;
+
+        S3GetConditions gc;
+        gc.ifModifiedSince = -1;
+        gc.ifNotModifiedSince = -1;
+        gc.ifMatchETag = NULL;
+        gc.ifNotMatchETag = NULL;
+
+        uint8 buffer[8192];
+
+        GetHandler gh(buffer, sizeof(buffer));
+
+        S3_get_object(&buck,
+                      edgekey.c_str(),
+                      &gc,
+                      0,
+                      0,
+                      NULL,
+                      &get_tramp,
+                      &gh);
+
+        S3Status st = gh.wait();
+
+        if (st == S3StatusErrorNoSuchKey)
+            throwstream(NotFoundError,
+                        "edge \"" << edgekey << "\" not found");
+
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+
+        string encoded((char const *) buffer, gh.size());
+        string data = Base64::decode(encoded);
+        SignedHeadEdge she;
+        int ok = she.ParseFromString(data);
+        if (!ok)
+            throwstream(InternalError, FILELINE
+                        << " SignedHeadEdge deserialize failed");
+        m_lhng.insert_head(she);
+    }
 }
 
 void
@@ -1404,24 +1538,17 @@ S3BlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
                                    void const * i_argp)
     throw(InternalError)
 {
-    // FIXME - This placeholder just uses the regular blockstore put
-    // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headnode
-    // graph store ...
-    try
+    LOG(lgr, 6, m_instname << ' ' << "insert " << i_she);
+
     {
-        HeadEdge he;
-        he.ParseFromString(i_she.headedge());
-        string const & key = he.fstag();
-        string buf;
-        i_she.SerializeToString(&buf);
-        bs_block_put(key.data(), key.size(), buf.data(), buf.size());
-        i_cmpl.hei_complete(i_she, i_argp);
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+        write_head(i_she);
     }
-    catch (Exception const & i_ex)
-    {
-        i_cmpl.hei_error(i_she, i_argp, i_ex);
-    }
+
+    m_lhng.insert_head(i_she);
+
+    i_cmpl.hei_complete(i_she, i_argp);
 }
 
 void
@@ -1430,24 +1557,9 @@ S3BlockStore::bs_head_follow_async(HeadNode const & i_hn,
                                    void const * i_argp)
     throw(InternalError)
 {
-    // FIXME - This placeholder just uses the regular blockstore put
-    // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headedge
-    // graph store ...
-    try
-    {
-        string const & key = i_hn.first;
-        uint8 buf[8192];
-        size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
-        SignedHeadEdge she;
-        she.ParseFromArray(buf, sz);
-        i_func.het_edge(i_argp, she);
-        i_func.het_complete(i_argp);
-    }
-    catch (Exception const & i_ex)
-    {
-        i_func.het_error(i_argp, i_ex);
-    }
+    LOG(lgr, 6, m_instname << ' ' << "follow " << i_hn);
+
+    m_lhng.head_follow_async(i_hn, i_func, i_argp);
 }
 
 void
@@ -1456,29 +1568,22 @@ S3BlockStore::bs_head_furthest_async(HeadNode const & i_hn,
                                      void const * i_argp)
     throw(InternalError)
 {
-    // FIXME - This placeholder just uses the regular blockstore put
-    // and get operations to store a single head node.  This is what
-    // we used to do and needs to be replaced with a real headedge
-    // graph store ...
-    try
-    {
-        string const & key = i_hn.first;
-        uint8 buf[8192];
-        size_t sz = bs_block_get(key.data(), key.size(), buf, sizeof(buf));
-        SignedHeadEdge she;
-        she.ParseFromArray(buf, sz);
-        HeadEdge he;
-        he.ParseFromString(she.headedge());
-        HeadNode hn = make_pair(he.fstag(), string());
-        i_func.hnt_node(i_argp, hn);
-        i_func.hnt_complete(i_argp);
-    }
-    catch (Exception const & i_ex)
-    {
-        i_func.hnt_error(i_argp, i_ex);
-    }
-        
+    LOG(lgr, 6, m_instname << ' ' << "furthest " << i_hn);
+
+    m_lhng.head_furthest_async(i_hn, i_func, i_argp);
 }
+
+string 
+S3BlockStore::blockpath(string const & i_entry)
+{
+    return string("BLOCKS/") + i_entry;
+}                                
+
+string 
+S3BlockStore::edgepath(string const & i_edge)
+{
+    return string("EDGES/") + i_edge;
+}                                
 
 void
 S3BlockStore::parse_params(StringSeq const & i_args,
@@ -1553,12 +1658,6 @@ S3BlockStore::ridname(uint64 i_rid) const
     ostringstream ostrm;
     ostrm << "RID-" << i_rid;
     return ostrm.str();
-}                                
-
-string 
-S3BlockStore::blockpath(string const & i_entry) const
-{
-    return m_blockspath + '/' + i_entry;
 }                                
 
 void
@@ -1643,6 +1742,91 @@ S3BlockStore::purge_uncommitted()
 
     // Update the accounting.
     m_uncommitted -= eh->m_size;
+}
+
+void
+S3BlockStore::write_head(SignedHeadEdge const & i_she)
+{
+    string linebuf;
+    i_she.SerializeToString(&linebuf);
+    string encbuf = Base64::encode(linebuf.data(), linebuf.size());
+
+    // Make up a unique name.
+    Digest namedig(encbuf.data(), encbuf.size());
+    string namestr = Base64::encode(namedig.data(), namedig.size());
+    string edgekey = edgepath(namestr.substr(0, 10));
+
+    LOG(lgr, 6, m_instname << ' ' << "write_head " << edgekey);
+
+    // Generate the S3 checksum.
+    MD5 md5sum(encbuf.data(), encbuf.size());
+    S3PutProperties pp;
+    ACE_OS::memset(&pp, '\0', sizeof(pp));
+    pp.md5 = md5sum;
+
+    // Setup a bucket context.
+    S3BucketContext buck;
+    buck.bucketName = m_bucket_name.c_str();
+    buck.protocol = m_protocol;
+    buck.uriStyle = m_uri_style;
+    buck.accessKeyId = m_access_key_id.c_str();
+    buck.secretAccessKey = m_secret_access_key.c_str();
+
+    for (unsigned i = 0; i <= MAX_RETRIES; ++i)
+    {
+        PutHandler ph((uint8 const *) encbuf.data(), encbuf.size());
+        S3_put_object(&buck,
+                      edgekey.c_str(),
+                      encbuf.size(),
+                      &pp,
+                      NULL,
+                      &put_tramp,
+                      &ph);
+        S3Status st = ph.wait();
+        switch (st)
+        {
+        case S3StatusOK:
+            return;
+
+        default:
+            // Sigh ... these we retry a few times ...
+            LOG(lgr, 4, m_instname << ' ' << "write_head " << m_bucket_name
+                << " ERROR: " << st << " RETRYING");
+            break;
+        }
+    }
+
+    throwstream(InternalError, FILELINE << "too many retries");
+}
+
+// FIXME - Why do I have to copy this here from BlockStore.cpp?
+ostream &
+operator<<(ostream & ostrm, HeadNode const & i_nr)
+{
+    string pt1 = Base32::encode(i_nr.first.data(), i_nr.first.size());
+    string pt2 = Base32::encode(i_nr.second.data(), i_nr.second.size());
+
+    // Strip any trailing "====" off ...
+    pt1 = pt1.substr(0, pt1.find_first_of('='));
+    pt2 = pt2.substr(0, pt2.find_first_of('='));
+
+    string::size_type sz1 = pt1.size();
+    string::size_type sz2 = pt2.size();
+
+    // How many characters of the FSID and NODEID should we display?
+    static string::size_type const NFSID = 3;
+    static string::size_type const NNDID = 5;
+
+    // Use the right-justified substrings since the tests sometimes
+    // only differ in the right positions.  Real digest based refs
+    // will differ in all positions.
+    //
+    string::size_type off1 = sz1 > NFSID ? sz1 - NFSID : 0;
+    string::size_type off2 = sz2 > NNDID ? sz2 - NNDID : 0;
+
+    ostrm << pt1.substr(off1) << ':' << pt2.substr(off2);
+
+    return ostrm;
 }
 
 } // namespace S3BS

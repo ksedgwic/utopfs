@@ -17,6 +17,7 @@ class Test_vbs_head_01:
   def setup_class(self):
     self.bs1 = None
     self.bs2 = None
+    self.bs3 = None
     self.vbs = None
     pass
 
@@ -24,6 +25,9 @@ class Test_vbs_head_01:
     if self.vbs:
       self.vbs.bs_close()
       self.vbs = None
+    if self.bs3:
+      self.bs3.bs_close()
+      self.bs3 = None
     if self.bs2:
       self.bs2.bs_close()
       self.bs2 = None
