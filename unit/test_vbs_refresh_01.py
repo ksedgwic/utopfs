@@ -198,5 +198,6 @@ class Test_vbs_refresh_01:
     self.bs2 = None
     self.bs1.bs_close()
     self.bs1 = None
+    CONFIG.remove_bs(bspath3)
     CONFIG.remove_bs(bspath2)
     CONFIG.remove_bs(bspath1)
