@@ -6,14 +6,21 @@ $(BLTLIBSO):	$(BLTLIBOBJ) $(BLTGENOBJ)
 	@$(CHKDIR)
 	$(SOCMD) -OUT:$@ -IMPLIB:$(@:%.dll=%.lib) $(SOFLAGS) $(LDFLAGS) $(BLTLIBOBJ) $(BLTGENOBJ) $(LIBS)
 ifdef MANIFEST_EMBED
-	$(SOCMT) $(SOCMTFLAGS) $(@:%=%.manifest) $(SOCMTOUT) $@;#2
+	$(SOCMT) $(SOCMTFLAGS) $(@:%.dll=%.dll.manifest) "$(SOCMTOUTPUTRESOURCE):$@;2"
 endif
 
 $(BLTMODSO):	$(BLTLIBOBJ) $(BLTGENOBJ)
 	@$(CHKDIR)
 	$(SOCMD) -OUT:$@ -IMPLIB:$(@:%.dll=%.lib) $(SOFLAGS) $(LDFLAGS) $(BLTLIBOBJ) $(BLTGENOBJ) $(LIBS)
 ifdef MANIFEST_EMBED
-	$(SOCMT) $(SOCMTFLAGS) $(@:%.dll=%.manifest) $(SOCMTOUTPUTRESOURCE):$@;2
+	$(SOCMT) $(SOCMTFLAGS) $(@:%.dll=%.dll.manifest) "$(SOCMTOUTPUTRESOURCE):$@;2"
+endif
+
+$(BLTMODSOPYD):	$(BLTLIBOBJ) $(BLTGENOBJ)
+	@$(CHKDIR)
+	$(SOCMD) -OUT:$@ -IMPLIB:$(@:%.pyd=%.lib) $(SOFLAGS) $(LDFLAGS) $(BLTLIBOBJ) $(BLTGENOBJ) $(LIBS)
+ifdef MANIFEST_EMBED
+	$(SOCMT) $(SOCMTFLAGS) $(@:%.pyd=%.pyd.manifest) "$(SOCMTOUTPUTRESOURCE):$@;2"
 endif
 
 $(BLTPRGEXE):	$(BLTPRGOBJ) $(BLTGENOBJ)

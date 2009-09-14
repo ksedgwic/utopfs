@@ -14,12 +14,16 @@ LIBSRC =	\
 			$(NULL)
 
 ifneq (WIN32,$(SYSNAME))
-LIBSRC +=	pyfilesystem.cpp \
-			pystatvfs.cpp \
-			$(NULL)
+LIBSRC +=   pyfilesystem.cpp \
+            pystatvfs.cpp \
+            $(NULL)
 endif
 
+ifneq (WIN32,$(SYSNAME))
 MODSO =		_utp
+else
+MODSOPYD =	_utp
+endif
 
 DEFS +=		-DPYUTP_IMPL
 
