@@ -11,6 +11,7 @@
 
 #include "BlockStore.h"
 #include "Except.h"
+#include "FileSystem.h"
 #include "RC.h"
 #include "Types.h"
 
@@ -38,6 +39,12 @@ public:
                                   std::string const & i_fsid,
                                   std::string const & i_pass,
                                   StringSeq const & i_args);
+
+    // Helper function to map uid to string (mkfs wants string).
+    static std::string mapuid(uid_t i_uid);
+
+    // Helper function to map gid to string (mkfs wants string).
+    static std::string mapgid(gid_t i_gid);
 
     virtual ~FileSystemFactory();
 

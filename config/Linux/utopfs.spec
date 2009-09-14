@@ -111,6 +111,7 @@ $RPM_BUILD_ROOT%{_bindir}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/utopfs
 install \
   utopfs/Linux.INSTCFG/utopfs.conf \
+  utpcmd/Linux.INSTCFG/utp.conf \
 $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/utopfs
 
 %clean
@@ -153,6 +154,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %dir %{_sysconfdir}/sysconfig/utopfs
 %config(noreplace) %{_sysconfdir}/sysconfig/utopfs/utopfs.conf
+%config(noreplace) %{_sysconfdir}/sysconfig/utopfs/utp.conf
 
 %doc README.txt
 

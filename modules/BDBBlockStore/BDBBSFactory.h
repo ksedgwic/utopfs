@@ -41,16 +41,19 @@ public:
                                              size_t i_size,
                                              utp::StringSeq const & i_args)
         throw(utp::InternalError,
-              utp::NotUniqueError);
+              utp::NotUniqueError,
+              utp::ValueError);
 
     virtual utp::BlockStoreHandle bsf_open(std::string const & i_instname,
                                            utp::StringSeq const & i_args)
         throw(utp::InternalError,
-              utp::NotFoundError);
+              utp::NotFoundError,
+              utp::ValueError);
 
     virtual void bsf_destroy(utp::StringSeq const & i_args)
         throw(utp::InternalError,
-              utp::NotFoundError);
+              utp::NotFoundError,
+              utp::ValueError);
 
 protected:
 };

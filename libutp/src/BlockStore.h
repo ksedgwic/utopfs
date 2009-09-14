@@ -70,10 +70,12 @@ public:
     ///
     /// @throw InternalError An non-recoverable error occurred.
     /// @throw NotFoundError The specified blockstore was not found.
+    /// @throw ValueError One of the arguments is out of range.
     ///
     virtual void bs_open(StringSeq const & i_args)
         throw(InternalError,
-              NotFoundError) = 0;
+              NotFoundError,
+              ValueError) = 0;
 
     /// Close a block store.
     ///

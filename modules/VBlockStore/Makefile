@@ -29,9 +29,10 @@ DEFS +=		-DACE_BUILD_SVC_DLL
 
 include $(ROOTDIR)/config/depend.mk
 
-# dependencies
+# Dependencies
 include $(ROOTDIR)/libutp/src/export.mk
 
+# External Package Dependencies
 include $(ROOTDIR)/config/extdep/ACE.mk
 
 # Local Variables:

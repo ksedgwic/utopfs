@@ -23,6 +23,10 @@ MODSO =		_utp
 
 DEFS +=		-DPYUTP_IMPL
 
+ifneq (WIN32,$(SYSNAME))
+CPPFLAGS +=	-fno-strict-aliasing
+endif
+
 include $(ROOTDIR)/config/depend.mk
 
 # Dependencies

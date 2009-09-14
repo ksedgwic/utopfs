@@ -676,7 +676,8 @@ private:
 void
 S3BlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
-          NotFoundError)
+          NotFoundError,
+          ValueError)
 {
     setup_params(i_args);
 

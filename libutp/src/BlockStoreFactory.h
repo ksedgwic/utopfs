@@ -9,6 +9,7 @@
 #include "utpexp.h"
 #include "utpfwd.h"
 
+#include "BlockStore.h"
 #include "Except.h"
 #include "RC.h"
 #include "Types.h"
@@ -39,7 +40,8 @@ public:
                                    StringSeq const & i_args)
         throw(InternalError,
               NotFoundError,
-              NotUniqueError);
+              NotUniqueError,
+              ValueError);
 
     /// Open existing blockstore.
     ///
@@ -56,7 +58,8 @@ public:
                                  StringSeq const & i_args)
         throw(InternalError,
               NotFoundError,
-              NotUniqueError);
+              NotUniqueError,
+              ValueError);
 
     /// Lookup open blockstore.
     ///
@@ -96,8 +99,8 @@ public:
     static void destroy(std::string const & i_name,
                         StringSeq const & i_args)
         throw(InternalError,
-              ValueError,
-              NotFoundError);
+              NotFoundError,
+              ValueError);
 
     virtual ~BlockStoreFactory();
 
@@ -105,16 +108,19 @@ public:
                                         size_t i_size,
                                         StringSeq const & i_args)
         throw(InternalError,
-              NotUniqueError) = 0;
+              NotUniqueError,
+              ValueError) = 0;
 
     virtual BlockStoreHandle bsf_open(std::string const & i_instname,
                                       StringSeq const & i_args)
         throw(InternalError,
-              NotFoundError) = 0;
+              NotFoundError,
+              ValueError) = 0;
 
     virtual void bsf_destroy(StringSeq const & i_args)
         throw(InternalError,
-              NotFoundError) = 0;
+              NotFoundError,
+              ValueError) = 0;
 };
 
 } // end namespace utp

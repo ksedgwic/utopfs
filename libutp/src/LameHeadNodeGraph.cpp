@@ -270,6 +270,24 @@ LameHeadNodeGraph::head_furthest_async(HeadNode const & i_hn,
         }
     }
 
+    // NOTE - Originally it seemed better to return NotFound when none
+    // where found.  In hindsight this appears to not be a good choice
+    // since an empty blockstore will not participate in the
+    // follow-fills if they return an exception in the first check.
+    //
+    // For now call complete w/ no hnt_node calls instead ...
+    //
+    // We'll reserve the hnt_error call for when we can't
+    // participate (ie we're not available).
+    //
+#if 1
+    for (LameEdgeSeq::const_iterator it = found.begin();
+         it != found.end();
+         ++it)
+        i_func.hnt_node(i_argp, (*it)->m_root);
+
+    i_func.hnt_complete(i_argp);
+#else
     // Now, with the lock no longer held make all of the completion
     // callbacks.
     //
@@ -286,6 +304,7 @@ LameHeadNodeGraph::head_furthest_async(HeadNode const & i_hn,
 
         i_func.hnt_complete(i_argp);
     }
+#endif
 }
 
 void

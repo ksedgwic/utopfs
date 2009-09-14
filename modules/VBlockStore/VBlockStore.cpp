@@ -59,7 +59,8 @@ VBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 void
 VBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
-          NotFoundError)
+          NotFoundError,
+          ValueError)
 {
     LOG(lgr, 4, m_instname << ' ' << "bs_open");
 

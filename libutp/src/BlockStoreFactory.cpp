@@ -50,7 +50,8 @@ BlockStoreFactory::create(string const & i_factname,
                           StringSeq const & i_args)
     throw(InternalError,
           NotFoundError,
-          NotUniqueError)
+          NotUniqueError,
+          ValueError)
 {
     LOG(lgr, 4, "create"
         << ' ' << i_factname
@@ -101,7 +102,8 @@ BlockStoreFactory::open(string const & i_factname,
                         StringSeq const & i_args)
     throw(InternalError,
           NotFoundError,
-          NotUniqueError)
+          NotUniqueError,
+          ValueError)
 {
     LOG(lgr, 4, "open"
         << ' ' << i_factname
@@ -184,8 +186,8 @@ BlockStoreFactory::unmap(string const & i_instname)
 void
 BlockStoreFactory::destroy(string const & i_name, StringSeq const & i_args)
     throw(InternalError,
-          ValueError,
-          NotFoundError)
+          NotFoundError,
+          ValueError)
 {
     LOG(lgr, 4, "destroy " << i_name);
 
