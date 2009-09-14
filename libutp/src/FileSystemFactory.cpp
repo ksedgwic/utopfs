@@ -1,7 +1,10 @@
 #include <map>
 
+#if !defined(WIN32)
 #include <grp.h>
 #include <pwd.h>
+#endif
+
 #include <sys/types.h>
 
 #include "Log.h"
@@ -69,6 +72,7 @@ FileSystemFactory::mount(string const & i_name,
     return pos->second->fsf_mount(i_bsh, i_fsid, i_pass, i_args);
 }
 
+#if !defined (WIN32)
 string
 FileSystemFactory::mapuid(uid_t uid)
 {
@@ -100,7 +104,7 @@ FileSystemFactory::mapgid(gid_t gid)
 
     return grp->gr_name;
 }
-
+#endif
 FileSystemFactory::~FileSystemFactory()
 {
 }

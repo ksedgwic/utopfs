@@ -34,18 +34,18 @@ VSTUDIO	= $(subst \Common7\IDE,,$(shell regtool get "\HKLM\Software\Microsoft\Vi
 endif
 
 ifdef VSTUDIO
-VSINSTALLDIR 	:= $(VSTUDIO)
-VCINSTALLDIR 	:= $(VSTUDIO)\VC
-FrameworkDir 	:= $(WINDIRW)\Microsoft.NET\Framework
+VSINSTALLDIR 	    := $(VSTUDIO)
+VCINSTALLDIR 	    := $(VSTUDIO)\VC
+FrameworkDir 	    := $(WINDIRW)\Microsoft.NET\Framework
 
 # framework values are just taken from vs 2009, need to do more work to support earlier versions
-FrameworkVersion := v2.0.50727
-Framework35Version := v3.5
+FrameworkVersion    := v2.0.50727
+Framework35Version  := v3.5
 
-DevEnvDir	:= $(VSTUDIO)Common7\IDE
+DevEnvDir	        := $(VSTUDIO)Common7\IDE
 
-CPPCMDPATH	= $(shell cygpath $(subst \,\\,$(VSTUDIO)))
-VSTUDIOU 	= $(shell cygpath -m $(subst \,\\,$(VSTUDIO)))
+CPPCMDPATH	    = $(shell cygpath $(subst \,\\,$(VSTUDIO)))
+VSTUDIOU 	    = $(shell cygpath -m $(subst \,\\,$(VSTUDIO)))
 
 PLATFORM_SDKW	= $(shell regtool get "\HKCU\Software\Microsoft\Microsoft SDKs\Windows\CurrentInstallFolder")
 ifndef PLATFORM_SDKW
@@ -54,19 +54,18 @@ endif
 PLATFORM_SDKU	= $(shell cygpath $(subst \,\\,$(PLATFORM_SDKW)))
 PLATFORM_SDKUW	= $(shell cygpath -m $(subst \,\\,$(PLATFORM_SDKW)))
 
-PATH		:= $(CPPCMDPATH)Common7/IDE:$(CPPCMDPATH)VC/bin:$(CPPCMDPATH)Common7/Tools:$(WINDIRU)/Microsoft.NET/Framework/v3.5:$(WINDIRU)/Microsoft.NET/Framework/v2.0.50727:$(CPPCMDPATH)VC/VCPackages:$(PLATFORM_SDKU)bin:${PATH}
+PATH		    := $(CPPCMDPATH)Common7/IDE:$(CPPCMDPATH)VC/bin:$(CPPCMDPATH)Common7/Tools:$(WINDIRU)/Microsoft.NET/Framework/v3.5:$(WINDIRU)/Microsoft.NET/Framework/v2.0.50727:$(CPPCMDPATH)VC/VCPackages:$(PLATFORM_SDKU)bin:${PATH}
 
-BASEINCLUDE	= -I"$(VSTUDIO)VC\atlmfc\include" -I"$(VSTUDIO)VC/include" -I"$(PLATFORM_SDKW)include"
+BASEINCLUDE	    = -I"$(VSTUDIO)VC\atlmfc\include" -I"$(VSTUDIO)VC/include" -I"$(PLATFORM_SDKW)include"
 
-BASELIB		:= -L $(VSTUDIO)VC\ATLMFC\LIB -L$(VSTUDIO)VC\LIB -L$(PLATFORM_SDKW)LIB
+BASELIB		    := -L $(VSTUDIO)VC\ATLMFC\LIB -L$(VSTUDIO)VC\LIB -L$(PLATFORM_SDKW)LIB
+LIBPATH 	    := 	-LIBPATH:"$(WINDIRW)\Microsoft.NET\Framework\v3.5" -LIBPATH:"$(WINDIRW)\Microsoft.NET\Framework\v2.0.50727" \
+			        -LIBPATH:"$(VSTUDIO)VC\ATLMFC\LIB" -LIBPATH:"$(VSTUDIO)VC\LIB" -LIBPATH:"$(PLATFORM_SDKW)LIB"
 
-LIBPATH 	:= 	-LIBPATH:"$(WINDIRW)\Microsoft.NET\Framework\v3.5" -LIBPATH:"$(WINDIRW)\Microsoft.NET\Framework\v2.0.50727" \
-			-LIBPATH:"$(VSTUDIO)VC\ATLMFC\LIB" -LIBPATH:"$(VSTUDIO)VC\LIB" -LIBPATH:"$(PLATFORM_SDKW)LIB"
-
-#MANIFEST_EMBED	= 1
-SOCMT			= mt
-SOCMTFLAGS		= -manifest
-SOCMTOUTPUTRESOURCE	= -outputresource
+#MANIFEST_EMBED	        = 1
+SOCMT			        = mt
+SOCMTFLAGS		        = -manifest
+SOCMTOUTPUTRESOURCE	    = -outputresource
 SOC_MANIFEST_BASENAME	= __VC.Debug
 
 endif

@@ -2,6 +2,8 @@
 #include <sstream>
 #include <string>
 
+#include <ace/OS_NS_sys_stat.h>
+#include <ace/OS_NS_fcntl.h>
 #include <ace/Dirent.h>
 
 #include "Base32.h"
@@ -16,6 +18,41 @@ using namespace std;
 using namespace utp;
 
 namespace FSBS {
+
+#if defined(WIN32)
+
+#define S_ISDIR(stmode)  \
+    ((stmode & S_IFMT ) == S_IFDIR)
+
+#define S_ISREG(stmode)  \
+    ((stmode & S_IFMT ) == S_IFREG)
+
+// This function is for temporary use only, it ignores seconds
+// parameter and sets current time. This should be replaced
+// when high resolution timer is implemented.
+// TODO:implement high resolution time on windows.
+
+int utimes(const char *filename, const struct timeval times[2])
+{
+    ACE_HANDLE fh = ACE_OS::open(filename, O_RDWR | O_CREAT, S_IRUSR);
+
+    if (fh == ACE_INVALID_HANDLE)
+    {
+        LOG(lgr, 4, "utimes " << "trouble opening file to touch" << ' ' << filename);
+        return -1;
+    }
+
+    FILETIME nowft;
+    GetSystemTimeAsFileTime (&nowft);
+
+    //SetFileTime function returns zero if fails and non zero of succeeds.
+    int ret = !SetFileTime(fh, (LPFILETIME) NULL, &nowft, &nowft);
+
+    ACE_OS::close(fh);
+    return ret;
+}
+
+#endif
 
 bool
 lessByKey(EntryHandle const & i_a, EntryHandle const & i_b)
@@ -70,11 +107,11 @@ FSBlockStore::destroy(StringSeq const & i_args)
                     << sizepath << "\" not file");
 
     // Unlink the SIZE file
-    unlink(sizepath.c_str());
+    ACE_OS::unlink(sizepath.c_str());
 
     // Unlink the HEADS file
     string headspath = path + "/HEADS";
-    unlink(headspath.c_str());
+    ACE_OS::unlink(headspath.c_str());
 
     // Read all of the existing blocks.
     string blockspath = path + "/BLOCKS";
@@ -93,14 +130,14 @@ FSBlockStore::destroy(StringSeq const & i_args)
 
         // Remove the block.
         string blkpath = blockspath + '/' + entry;
-        unlink(blkpath.c_str());
+        ACE_OS::unlink(blkpath.c_str());
     }
 
     // Remove the blocks subdir.
-    rmdir(blockspath.c_str());
+    ACE_OS::rmdir(blockspath.c_str());
 
     // Remove the path.
-    if (rmdir(path.c_str()))
+    if (ACE_OS::rmdir(path.c_str()))
         throwstream(InternalError, FILELINE
                     << "FSBlockStore::destroy failed: "
                     << ACE_OS::strerror(errno));
@@ -156,14 +193,14 @@ FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 
     // Make the parent directory.
     m_rootpath = path;
-    if (mkdir(m_rootpath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
+    if (ACE_OS::mkdir(m_rootpath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
         throwstream(InternalError, FILELINE
                     << "mkdir " << m_rootpath << "failed: "
                     << ACE_OS::strerror(errno));
 
     // Make the BLOCKS subdir.
     m_blockspath = m_rootpath + "/BLOCKS";
-    if (mkdir(m_blockspath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
+    if (ACE_OS::mkdir(m_blockspath.c_str(), S_IRUSR | S_IWUSR | S_IXUSR) != 0)
         throwstream(InternalError, FILELINE
                     << "mkdir " << m_blockspath << "failed: "
                     << ACE_OS::strerror(errno));
@@ -185,12 +222,8 @@ FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 void
 FSBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
-          NotFoundError,
-          ValueError)
+          NotFoundError)
 {
-    if (i_args.empty())
-        throwstream(ValueError, "missing blockstore path argument");
-
     string const & path = i_args[0];
 
     LOG(lgr, 4, m_instname << ' ' << "bs_open " << path);
@@ -404,14 +437,14 @@ void
                             << "data " << statbuff.st_size);
             }
 
-            int fd = open(blkpath.c_str(), O_RDONLY, S_IRUSR);
-            bytes_read = read(fd, o_buffdata, i_buffsize);
-            close(fd);
+            ACE_HANDLE fh = ACE_OS::open(blkpath.c_str(), O_RDONLY, S_IRUSR);
+            bytes_read = ACE_OS::read(fh, o_buffdata, i_buffsize);
+            ACE_OS::close(fh);
 
             if (bytes_read == -1) {
                 throwstream(InternalError, FILELINE
                             << "FSBlockStore::bs_get_block: read failed: "
-                            << strerror(errno));
+                            << ACE_OS::strerror(errno));
             }
 
         
@@ -487,16 +520,16 @@ FSBlockStore::bs_block_put_async(void const * i_keydata,
                    m_uncommitted - prevcommited > m_size)
                 purge_uncommitted();
 
-            int fd = open(blkpath.c_str(),
+            ACE_HANDLE fh = ACE_OS::open(blkpath.c_str(),
                           O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
-            if (fd == -1)
+            if (fh == ACE_INVALID_HANDLE)
                 throwstream(InternalError, FILELINE
                             << "FSBlockStore::bs_block_put: open failed on "
-                            << blkpath << ": " << strerror(errno));
+                            << blkpath << ": " << ACE_OS::strerror(errno));
     
-            int bytes_written = write(fd, i_blkdata, i_blksize);
+            int bytes_written = ACE_OS::write(fh, i_blkdata, i_blksize);
             int write_errno = errno;
-            close(fd);
+            ACE_OS::close(fh);
             if (bytes_written == -1)
                 throwstream(InternalError, FILELINE
                             << "write of " << blkpath << " failed: "
@@ -558,10 +591,14 @@ FSBlockStore::bs_refresh_start_async(uint64 i_rid,
                         "refresh id " << i_rid << " already exists");
 
         // Create the refresh id mark.
-        if (mknod(rpath.c_str(), S_IFREG, 0) != 0)
+        ACE_HANDLE fh = ACE_OS::open(rpath.c_str(), O_RDWR | O_CREAT, S_IRUSR);
+
+        if (fh == ACE_INVALID_HANDLE)
             throwstream(InternalError, FILELINE
                         << "mknod " << rpath << " failed: "
                         << ACE_OS::strerror(errno));
+
+        ACE_OS::close(fh);
 
         // Stat the file we just wrote so we can use the exact tstamp
         // and size the filesystem sees.
@@ -675,7 +712,7 @@ FSBlockStore::bs_refresh_finish_async(uint64 i_rid,
         // Rename the refresh tag to the mark name.
         string mname = markname();
         string mpath = blockpath(mname);
-        if (rename(rpath.c_str(), mpath.c_str()) != 0)
+        if (ACE_OS::rename(rpath.c_str(), mpath.c_str()) != 0)
             throwstream(InternalError,
                         "rename " << rpath << ' ' << mpath << " failed:"
                         << ACE_OS::strerror(errno));
@@ -891,7 +928,7 @@ FSBlockStore::purge_uncommitted()
 
     // Remove from storage.
     string blkpath = blockpath(eh->m_name);
-    if (unlink(blkpath.c_str()) != 0)
+    if (ACE_OS::unlink(blkpath.c_str()) != 0)
         throwstream(InternalError, FILELINE
                     << "unlink " << blkpath << " failed: "
                     << ACE_OS::strerror(errno));

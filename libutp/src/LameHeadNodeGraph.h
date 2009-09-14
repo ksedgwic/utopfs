@@ -41,6 +41,7 @@ struct UTP_EXP LameEdge : public RCObj
 typedef RCPtr<LameEdge> LameEdgeHandle;
 
 // Helpful for debugging.
+UTP_EXP
 std::ostream & operator<<(std::ostream & ostrm, LameEdge const & i_e);
 
 class UTP_EXP LameHeadNodeGraph

@@ -29,6 +29,7 @@ typedef std::vector<HeadNode> HeadNodeSeq;
 typedef std::set<HeadNode> HeadNodeSet;
 
 // Helpful for debugging.
+UTP_EXP
 std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_hn);
 
 // Crutch for some namespace complexities.

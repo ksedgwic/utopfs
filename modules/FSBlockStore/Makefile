@@ -21,6 +21,7 @@ include $(ROOTDIR)/config/depend.mk
 include $(ROOTDIR)/libutp/src/export.mk
 
 include $(ROOTDIR)/config/extdep/ACE.mk
+include $(ROOTDIR)/config/extdep/protobuf.mk
 
 # Local Variables:
 # mode: Makefile
