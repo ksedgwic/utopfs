@@ -222,8 +222,12 @@ FSBlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 void
 FSBlockStore::bs_open(StringSeq const & i_args)
     throw(InternalError,
-          NotFoundError)
+          NotFoundError,
+          ValueError)
 {
+    if (i_args.empty())
+        throwstream(ValueError, "missing blockstore path argument");
+
     string const & path = i_args[0];
 
     LOG(lgr, 4, m_instname << ' ' << "bs_open " << path);
