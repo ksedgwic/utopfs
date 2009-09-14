@@ -178,8 +178,19 @@ parse_args(int & argc, char ** & argv)
             break;
 
         case '?':
-            fatal("unrecognized option: \"" << argv[getopt.opt_ind()-1] << '"'
-                  << endl << usage());
+            switch (g_cmd)
+            {
+            case CMD_MKBS:
+            case CMD_RMBS:
+            case CMD_MKFS:
+                // Presume this option is for the modules.
+                g_cmdargs.push_back(argv[getopt.opt_ind()-1]);
+                break;
+            default:
+                fatal("unrecognized option: \"" << argv[getopt.opt_ind()-1] << '"'
+                      << endl << usage());
+            }
+            break;
 
         case ':':	// Missing required argument.
             fatal("missing argument to \"" << getopt.last_option() << "\""
