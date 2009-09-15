@@ -9,10 +9,14 @@
 # Read: It's an error if both or neither required options exist.
 %{?_with_opt: %{?_without_opt: %{error: both _with_opt and _without_opt}}}
 
+%if %{?_with_opt:0}%{!?_with_opt:1}
+%define OPTTAG .O0
+%endif
+
 Summary: utopfs filesystem
 Name: utopfs
 Version: 0.3.devel
-Release: 1%{?dist}
+Release: 1%{?OPTTAG}%{?dist}
 License: Something
 Group: System Environment/Base
 URL: http://www.utopfs.com/
