@@ -27,6 +27,8 @@ string			g_argv0;
 string			g_cmdstr;
 unsigned		g_cmd = CMD_NONE;
 StringSeq		g_cmdargs;
+int				g_loglevel = -1;
+string			g_logpath = "";
 string			g_bstype;
 uint64			g_bssize;
 string			g_fsid;
@@ -47,6 +49,8 @@ usage()
           << endl
           << "  generic options:" << endl
           << "    --help                     display usage and exit" << endl
+          << "    --logpath=<path>           sets log file path" << endl
+          << "    --loglevel=<level>         sets logging level" << endl
           << endl
           << "  commands:" << endl
           << "    mkbs                       Create Blockstore" << endl
@@ -75,6 +79,8 @@ parse_args(int & argc, char ** & argv)
 {
     ACE_Get_Opt getopt(argc, argv, "-:");
     getopt.long_option("help", ACE_Get_Opt::NO_ARG);
+    getopt.long_option("loglevel", ACE_Get_Opt::ARG_REQUIRED);
+    getopt.long_option("logpath", ACE_Get_Opt::ARG_REQUIRED);
     getopt.long_option("bstype", ACE_Get_Opt::ARG_REQUIRED);
     getopt.long_option("bssize", ACE_Get_Opt::ARG_REQUIRED);
     getopt.long_option("fsid", ACE_Get_Opt::ARG_REQUIRED);
@@ -94,6 +100,17 @@ parse_args(int & argc, char ** & argv)
                 {
                     cerr << usage() << endl;
                     exit(0);
+                }
+                else if (lopt == "loglevel")
+                {
+                    g_loglevel = strtoul(getopt.opt_arg(), &endp, 0);
+                    if (*endp != NULL)
+                        fatal("invalid --loglevel value \""
+                              << getopt.opt_arg() << "\"");
+                }
+                else if (lopt == "logpath")
+                {
+                    g_logpath = getopt.opt_arg();
                 }
                 else if (lopt == "bssize")
                 {
@@ -365,6 +382,19 @@ do_mkfs()
 static void
 init_modules()
 {
+    // Set the log path and log level via env variables.
+    ostringstream ostrm;
+    ostrm << g_loglevel;
+    if (g_logpath.empty())
+    {
+        ACE_OS::setenv("UTOPFS_LOG_CONSLEVEL", ostrm.str().c_str(), 1);
+    }
+    else
+    {
+        ACE_OS::setenv("UTOPFS_LOG_FILELEVEL", ostrm.str().c_str(), 1);
+        ACE_OS::setenv("UTOPFS_LOG_FILEPATH", g_logpath.c_str(), 1);
+    }
+
     ACE_stat statbuf;
 
     // Build a synthetic command line.

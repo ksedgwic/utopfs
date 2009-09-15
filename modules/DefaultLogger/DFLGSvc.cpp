@@ -80,6 +80,12 @@ DFLGSvc::init(int argc, char * argv[])
     char * filepathenv = ACE_OS::getenv("UTOPFS_LOG_FILEPATH");
     if (filepathenv && *filepathenv)
         filepath = filepathenv;
+    char * conslevelenv = ACE_OS::getenv("UTOPFS_LOG_CONSLEVEL");
+    if (conslevelenv && *conslevelenv)
+    {
+        consenable = true;
+        conslevel = atoi(conslevelenv);
+    }
     
 #if 0
     PMapHandle ns = Config::getInstance()->getNS("");
