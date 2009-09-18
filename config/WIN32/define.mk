@@ -84,7 +84,7 @@ LDCMD = link
 ifeq ($(BUILD),DEBUG)
 CPPFLAGS = -Od -Z7 -MDd -W3 -nologo -GF -GR -GT -EHsc
 else
-CPPFLAGS = -O2 -Ot -Z7 -MD -W3 -nologo -GF -GR -GT -G7 -EHsc -arch:SSE2 
+CPPFLAGS = -O2 -Ot -Z7 -MD -W3 -nologo -GF -GR -GT -EHsc -arch:SSE2 
 endif
 
 #RMFILESCMD = del /Q
@@ -119,6 +119,8 @@ DEFS +=			-DWIN32 -DWINNT -D_REENTRANT
 INCS += 		$(BASEINCLUDE) -I. -I$(GENDIR)
 
 LIBS += 		gdi32.lib Advapi32.lib User32.lib
+
+DBGSFX =
 
 ## Should this be generic?
 # # BLTMODOPTSO =	$(MODSO:%=$(LIBDIR)/%$(SOEXT))

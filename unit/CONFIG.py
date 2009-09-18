@@ -1,14 +1,20 @@
 import os
-import pwd
-import grp
+import os
+if os.name != 'nt':
+    import pwd
+    import grp
 import shutil
 import string
 
 import utp
 
 # Who shall we test as?
-UNAME = pwd.getpwuid(os.geteuid()).pw_name
-GNAME = grp.getgrgid(os.getegid()).gr_name
+if os.name != 'nt':
+    UNAME = pwd.getpwuid(os.geteuid()).pw_name
+    GNAME = grp.getgrgid(os.getegid()).gr_name
+else:
+    UNAME = 'dummy'
+    GNAME = 'dummy'
 
 # Which BlockStore module should we use?
 

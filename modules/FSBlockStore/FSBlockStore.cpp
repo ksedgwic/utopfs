@@ -27,14 +27,14 @@ namespace FSBS {
 #define S_ISREG(stmode)  \
     ((stmode & S_IFMT ) == S_IFREG)
 
-// This function is for temporary use only, it ignores seconds
-// parameter and sets current time. This should be replaced
+// This function is for temporary use only, it ignores second
+// parameter and sets current time only. This should be replaced
 // when high resolution timer is implemented.
 // TODO:implement high resolution time on windows.
 
 int utimes(const char *filename, const struct timeval times[2])
 {
-    ACE_HANDLE fh = ACE_OS::open(filename, O_RDWR | O_CREAT, S_IRUSR);
+    ACE_HANDLE fh = ACE_OS::open(filename, O_RDWR | O_CREAT);
 
     if (fh == ACE_INVALID_HANDLE)
     {
@@ -96,7 +96,7 @@ FSBlockStore::destroy(StringSeq const & i_args)
 
     // Make sure the size file exists.
     string sizepath = path + "/SIZE";
-    if (ACE_OS::stat(sizepath.c_str(), &sb) != 0)
+    if (ACE_OS::stat(sizepath.c_str(), &sb))
         throwstream(NotFoundError,
                     "FSBlockStore::destroy: size file \""
                     << sizepath << "\" does not exist");
@@ -107,11 +107,18 @@ FSBlockStore::destroy(StringSeq const & i_args)
                     << sizepath << "\" not file");
 
     // Unlink the SIZE file
-    ACE_OS::unlink(sizepath.c_str());
+    if (ACE_OS::unlink(sizepath.c_str()))
+        throwstream(InternalError, FILELINE
+                    << "unlinking file " << sizepath.c_str() << " failed: "
+                    << ACE_OS::strerror(errno));
 
     // Unlink the HEADS file
     string headspath = path + "/HEADS";
-    ACE_OS::unlink(headspath.c_str());
+    if (ACE_OS::unlink(headspath.c_str()))
+        throwstream(InternalError, FILELINE
+                    << "unlinking file " << headspath.c_str() << " failed: "
+                    << ACE_OS::strerror(errno));
+
 
     // Read all of the existing blocks.
     string blockspath = path + "/BLOCKS";
@@ -130,11 +137,18 @@ FSBlockStore::destroy(StringSeq const & i_args)
 
         // Remove the block.
         string blkpath = blockspath + '/' + entry;
-        ACE_OS::unlink(blkpath.c_str());
+        if (ACE_OS::unlink(blkpath.c_str()))
+            throwstream(InternalError, FILELINE
+                    << "unlinking file " << blkpath.c_str() << " failed: "
+                    << ACE_OS::strerror(errno));
+
     }
 
     // Remove the blocks subdir.
-    ACE_OS::rmdir(blockspath.c_str());
+    if (ACE_OS::rmdir(blockspath.c_str()))
+        throwstream(InternalError, FILELINE
+                    << "FSBlockStore::destroy failed: "
+                    << ACE_OS::strerror(errno));
 
     // Remove the path.
     if (ACE_OS::rmdir(path.c_str()))
@@ -441,7 +455,13 @@ void
                             << "data " << statbuff.st_size);
             }
 
-            ACE_HANDLE fh = ACE_OS::open(blkpath.c_str(), O_RDONLY, S_IRUSR);
+#if defined (WIN32)
+// Specifies no sharing flags.
+            int perms = ACE_DEFAULT_OPEN_PERMS;
+#else
+            int perms = S_IRUSR;
+#endif
+            ACE_HANDLE fh = ACE_OS::open(blkpath.c_str(), O_RDONLY, perms);
             bytes_read = ACE_OS::read(fh, o_buffdata, i_buffsize);
             ACE_OS::close(fh);
 
@@ -524,8 +544,15 @@ FSBlockStore::bs_block_put_async(void const * i_keydata,
                    m_uncommitted - prevcommited > m_size)
                 purge_uncommitted();
 
+#if defined (WIN32)
+// Specifies no sharing flags.
+            int perms = ACE_DEFAULT_OPEN_PERMS;
+#else
+            int perms = S_IRUSR | S_IWUSR;
+#endif
+
             ACE_HANDLE fh = ACE_OS::open(blkpath.c_str(),
-                          O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);    
+                          O_CREAT | O_TRUNC | O_WRONLY, perms);    
             if (fh == ACE_INVALID_HANDLE)
                 throwstream(InternalError, FILELINE
                             << "FSBlockStore::bs_block_put: open failed on "
@@ -594,8 +621,15 @@ FSBlockStore::bs_refresh_start_async(uint64 i_rid,
             throwstream(NotUniqueError,
                         "refresh id " << i_rid << " already exists");
 
+#if defined (WIN32)
+// Specifies no sharing flags.
+            int perms = ACE_DEFAULT_OPEN_PERMS;
+#else
+            int perms = S_IRUSR;
+#endif
+
         // Create the refresh id mark.
-        ACE_HANDLE fh = ACE_OS::open(rpath.c_str(), O_RDWR | O_CREAT, S_IRUSR);
+        ACE_HANDLE fh = ACE_OS::open(rpath.c_str(), O_RDWR | O_CREAT, perms);
 
         if (fh == ACE_INVALID_HANDLE)
             throwstream(InternalError, FILELINE
@@ -854,7 +888,7 @@ string
 FSBlockStore::ridname(uint64 i_rid) const
 {
     ostringstream ostrm;
-    ostrm << "RID:" << i_rid;
+    ostrm << "RID-" << i_rid;
     return ostrm.str();
 }                                
 

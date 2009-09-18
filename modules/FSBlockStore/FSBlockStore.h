@@ -40,14 +40,14 @@ typedef utp::RCPtr<Entry> EntryHandle;
 
 // Comparison functor by name.
 struct lessByName {
-    bool operator()(EntryHandle const & i_a, EntryHandle const & i_b) {
+    bool operator()(EntryHandle const & i_a, EntryHandle const & i_b) const {
         return i_a->m_name < i_b->m_name;
     }
 };
 
 // Comparison functor by tstamp.
 struct lessByTstamp {
-    bool operator()(EntryHandle const & i_a, EntryHandle const & i_b) {
+    bool operator()(EntryHandle const & i_a, EntryHandle const & i_b) const {
         return i_a->m_tstamp < i_b->m_tstamp;
     }
 };

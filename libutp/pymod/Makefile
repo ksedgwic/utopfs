@@ -22,7 +22,11 @@ endif
 ifneq (WIN32,$(SYSNAME))
 MODSO =		_utp
 else
+ifeq ($(BUILD),DEBUG)
+MODSOPYD =	_utp_d
+else
 MODSOPYD =	_utp
+endif
 endif
 
 DEFS +=		-DPYUTP_IMPL
