@@ -383,6 +383,13 @@ VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
 }
 
 void
+VBlockStore::bs_get_stats(StatSet & o_ss) const
+    throw(InternalError)
+{
+    // FIXME - Add some stats here.
+}
+
+void
 VBlockStore::rh_insert(VBSRequestHandle const & i_rh)
 {
     LOG(lgr, 6, m_instname << ' ' << "rh_insert " << *i_rh);

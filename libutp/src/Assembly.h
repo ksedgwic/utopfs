@@ -9,6 +9,7 @@
 #include <iosfwd>
 
 #include "Assembly.pb.h"
+#include "Stats.pb.h"
 
 #include "utpfwd.h"
 #include "utpexp.h"
@@ -25,6 +26,9 @@ public:
     BlockStoreHandle const & bsh() const { return m_bsh; }
 
     FileSystemHandle const & fsh() const { return m_fsh; }
+
+    void get_stats(StatSet & o_ss) const
+        throw(InternalError);
 
     void export_config(std::ostream & i_ostrm) const;
 

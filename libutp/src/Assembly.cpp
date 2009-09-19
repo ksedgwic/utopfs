@@ -53,53 +53,19 @@ Assembly::Assembly(istream & i_cfgstrm)
                                      fscfg.fsid(),
                                      fscfg.passphrase(),
                                      fsargs);
-
-#if 0
-    // FIXME - This all bogus bootstrapping config ...
-    {
-        BlockStoreConfig * bscfg = m_asscfg.add_blockstore();
-        bscfg->set_name("local");
-        bscfg->set_type("FSBS");
-        bscfg->add_arg("local.bs");
-    }
-
-    {
-        BlockStoreConfig * bscfg = m_asscfg.add_blockstore();
-        bscfg->set_name("other");
-        bscfg->set_type("FSBS");
-        bscfg->add_arg("other.bs");
-    }
-
-    {
-        BlockStoreConfig * bscfg = m_asscfg.add_blockstore();
-        bscfg->set_name("remote");
-        bscfg->set_type("S3BS");
-        bscfg->add_arg("--s3-access-key-id=xyzzy");
-        bscfg->add_arg("--s3-secret-access-key=blorkblorkblork");
-        bscfg->add_arg("--bucket=ksedgwic-utopfs-bs1");
-    }
-
-    {
-        BlockStoreConfig * bscfg = m_asscfg.add_blockstore();
-        bscfg->set_name("rootbs");
-        bscfg->set_type("VBS");
-        bscfg->add_arg("local");
-        bscfg->add_arg("other");
-        bscfg->add_arg("remote");
-    }
-
-    FileSystemConfig * fscfg = m_asscfg.mutable_filesystem();
-    fscfg->set_bsname("rootbs");
-    fscfg->set_fsid("MyFileSystem");
-    fscfg->set_passphrase("xyzzy");
-    fscfg->set_uname("ksedgwic");
-    fscfg->set_gname("ksedgwic");
-#endif
 }
 
 Assembly::~Assembly()
 {
     LOG(lgr, 4, "DTOR");
+}
+
+void
+Assembly::get_stats(StatSet & o_ss) const
+    throw(InternalError)
+{
+    m_bsh->bs_get_stats(o_ss);
+    m_fsh->fs_get_stats(o_ss);
 }
 
 void

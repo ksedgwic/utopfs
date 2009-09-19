@@ -138,6 +138,9 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
+    virtual void bs_get_stats(utp::StatSet & o_ss) const
+        throw(utp::InternalError);
+
 protected:
     std::string entryname(void const * i_keydata, size_t i_keysize) const;
 

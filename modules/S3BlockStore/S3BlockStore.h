@@ -141,6 +141,9 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
+    virtual void bs_get_stats(utp::StatSet & o_ss) const
+        throw(utp::InternalError);
+
     static std::string blockpath(std::string const & i_entry = "");
     
     static std::string edgepath(std::string const & i_entry = "");

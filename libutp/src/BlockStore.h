@@ -13,6 +13,8 @@
 #include "utpfwd.h"
 
 #include "HeadEdge.pb.h"
+#include "Stats.pb.h"
+
 #include "Except.h"
 #include "RC.h"
 #include "Types.h"
@@ -469,6 +471,11 @@ public:
     virtual void bs_head_furthest_async(HeadNode const & i_hn,
                                         HeadNodeTraverseFunc & i_func,
                                         void const * i_argp)
+        throw(InternalError) = 0;
+
+    /// Fetch statistics
+    ///
+    virtual void bs_get_stats(StatSet & o_ss) const
         throw(InternalError) = 0;
 };
 

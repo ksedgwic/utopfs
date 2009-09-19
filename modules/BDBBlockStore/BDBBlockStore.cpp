@@ -588,6 +588,13 @@ BDBBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
         
 }
 
+void
+BDBBlockStore::bs_get_stats(StatSet & o_ss) const
+    throw(utp::InternalError)
+{
+    // FIXME - Add some stats here.
+}
+
 string 
 BDBBlockStore::get_full_path(void const * i_keydata,
                                 size_t i_keysize) 

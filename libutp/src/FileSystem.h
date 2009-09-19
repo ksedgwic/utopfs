@@ -13,6 +13,8 @@
 #include "utpexp.h"
 #include "utpfwd.h"
 
+#include "Stats.pb.h"
+
 #include "Except.h"
 #include "RC.h"
 #include "T64.h"
@@ -355,6 +357,11 @@ public:
     virtual void fs_sync()
         throw (utp::InternalError,
                utp::NoSpaceError) = 0;
+
+    /// Fetch statistics
+    ///
+    virtual void fs_get_stats(StatSet & o_ss) const
+        throw(InternalError) = 0;
 };
 
 } // end namespace utp

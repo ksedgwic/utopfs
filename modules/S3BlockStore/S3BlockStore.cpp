@@ -1573,6 +1573,13 @@ S3BlockStore::bs_head_furthest_async(HeadNode const & i_hn,
     m_lhng.head_furthest_async(i_hn, i_func, i_argp);
 }
 
+void
+S3BlockStore::bs_get_stats(StatSet & o_ss) const
+    throw(InternalError)
+{
+    // FIXME - Add some stats here.
+}
+
 string 
 S3BlockStore::blockpath(string const & i_entry)
 {

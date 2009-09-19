@@ -110,6 +110,9 @@ public:
                                         void const * i_argp)
         throw(utp::InternalError);
 
+    virtual void bs_get_stats(utp::StatSet & o_ss) const
+        throw(utp::InternalError);
+
     // VBSRequestHolder Methods
 
     virtual void rh_insert(VBSRequestHandle const & i_rh);

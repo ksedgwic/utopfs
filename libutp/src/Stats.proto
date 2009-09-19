@@ -1,0 +1,33 @@
+package utp;
+
+message StatValue
+{
+    optional int64		ival = 1;
+    optional double		dval = 2;;
+}
+
+enum StatFormatType
+{
+    SF_VALUE		= 1;	// Display value.
+    SF_DELTA		= 2;	// Display delta from last value.
+}
+
+message StatFormat
+{
+    required string			fmtstr = 1;
+    required StatFormatType	fmttype = 2;
+}
+
+message StatRec
+{
+    required string			name = 1;
+    required StatValue		value = 2;
+    repeated StatFormat		format = 3;
+}
+
+message StatSet
+{
+    required string			name = 1;
+    optional StatSet		subset = 2;
+    repeated StatRec		rec = 3;
+}

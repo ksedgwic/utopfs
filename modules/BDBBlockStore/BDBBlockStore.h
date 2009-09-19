@@ -10,8 +10,6 @@
 #include "BlockStore.h"
 #include "bdbbsexp.h"
 
-
-
 class Db;
 class DbEnv;
 
@@ -99,6 +97,9 @@ public:
     virtual void bs_head_furthest_async(utp::HeadNode const & i_hn,
                                         HeadNodeTraverseFunc & i_func,
                                         void const * i_argp)
+        throw(utp::InternalError);
+
+    virtual void bs_get_stats(utp::StatSet & o_ss) const
         throw(utp::InternalError);
 
 protected:

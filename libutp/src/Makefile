@@ -5,6 +5,7 @@ include $(ROOTDIR)/config/define.mk
 PROTO +=	\
 			Assembly.proto \
 			HeadEdge.proto \
+			Stats.proto \
 			$(NULL)
 
 LIBSRC =	\

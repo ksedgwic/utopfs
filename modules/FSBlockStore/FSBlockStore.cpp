@@ -878,6 +878,13 @@ FSBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
     m_lhng.head_furthest_async(i_hn, i_func, i_argp);
 }
 
+void
+FSBlockStore::bs_get_stats(StatSet & o_ss) const
+    throw(InternalError)
+{
+    // FIXME - Add some stats here.
+}
+
 string 
 FSBlockStore::entryname(void const * i_keydata, size_t i_keysize) const
 {

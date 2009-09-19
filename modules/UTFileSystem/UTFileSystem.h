@@ -141,6 +141,9 @@ public:
         throw (utp::InternalError,
                utp::NoSpaceError);
 
+    virtual void fs_get_stats(utp::StatSet & o_ss) const
+        throw(utp::InternalError);
+
 protected:
     void rootref(BlockRef const & i_blkref);
 

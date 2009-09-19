@@ -1005,6 +1005,13 @@ UTFileSystem::fs_sync()
 }
 
 void
+UTFileSystem::fs_get_stats(StatSet & o_ss) const
+    throw(InternalError)
+{
+    // FIXME - Add some stats here.
+}
+
+void
 UTFileSystem::rootref(BlockRef const & i_blkref)
 {
     LOG(lgr, 6, "rootref set " << m_rbr << " -> " << i_blkref);
