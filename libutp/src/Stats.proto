@@ -28,6 +28,6 @@ message StatRec
 message StatSet
 {
     required string			name = 1;
-    optional StatSet		subset = 2;
+    repeated StatSet		subset = 2;
     repeated StatRec		rec = 3;
 }

@@ -106,6 +106,8 @@ struct utopfs
     string lclconf;
     int loglevel;
     string logpath;
+    string statspath;
+    double statssecs;
     string path;
     double syncsecs;
     uint64_t size;
@@ -229,9 +231,10 @@ utopfs_init(struct fuse_conn_info * i_conn)
 
         // Start the controller.
         string controlpath = utopfs.mntpath + "/.utopfs/control";
-        utopfs.control = new Controller(utopfs.assembly->bsh(),
-                                        utopfs.assembly->fsh(),
+        utopfs.control = new Controller(utopfs.assembly,
                                         controlpath,
+                                        utopfs.statspath,
+                                        utopfs.statssecs,
                                         utopfs.syncsecs);
         utopfs.control->init();
     }
@@ -241,74 +244,6 @@ utopfs_init(struct fuse_conn_info * i_conn)
     }
 
     return NULL;
-
-#if 0
-    // Perform the mount.
-    try
-    {
-        StringSeq bsargs;
-        if (utopfs.bsid != "S3BS")
-        {
-            bsargs.push_back(utopfs.path);
-        }
-        else
-        {
-            char * key_id = getenv("S3_ACCESS_KEY_ID");
-            char * secret = getenv("S3_SECRET_ACCESS_KEY");
-
-            bsargs.push_back(string("--s3-access-key-id=") + key_id);
-            bsargs.push_back(string("--s3-secret-access-key=") + secret);
-            bsargs.push_back(string("--bucket=") + utopfs.path);
-        }
-
-        string uname = FileSystemFactory::mapuid(fctxtp->uid);
-        string gname = FileSystemFactory::mapgid(fctxtp->gid);
-
-        if (utopfs.size)
-        {
-            utopfs.bsh = BlockStoreFactory::create("rootbs",
-                                                   utopfs.bsid,
-                                                   utopfs.size,
-                                                   bsargs);
-
-            StringSeq fsargs;
-            utopfs.fsh = FileSystemFactory::mkfs("UTFS",
-                                                 utopfs.bsh,
-                                                 utopfs.fsid,
-                                                 utopfs.passphrase,
-                                                 uname,
-                                                 gname,
-                                                 fsargs);
-        }
-        else
-        {
-            utopfs.bsh = BlockStoreFactory::open("rootbs",
-                                                 utopfs.bsid,
-                                                 bsargs);
-
-            StringSeq fsargs;
-            utopfs.fsh = FileSystemFactory::mount("UTFS",
-                                                  utopfs.bsh,
-                                                  utopfs.fsid,
-                                                  utopfs.passphrase,
-                                                  fsargs);
-        }
-
-        // Start the controller.
-        string controlpath = utopfs.mntpath + "/.utopfs/control";
-        utopfs.control = new Controller(utopfs.bsh,
-                                        utopfs.fsh,
-                                        controlpath,
-                                        utopfs.syncsecs);
-        utopfs.control->init();
-    }
-    catch (utp::Exception const & ex)
-    {
-        fatal(ex.what());
-    }
-
-    return NULL;
-#endif
 }
 
 static void
@@ -602,6 +537,8 @@ static const char *utop_opts[] = {
 enum {
     KEY_LOGLEVEL,
     KEY_LOGPATH,
+    KEY_STATSPATH,
+    KEY_STATSSECS,
     KEY_MKFS,
 	KEY_HELP,
 	KEY_VERSION,
@@ -612,18 +549,20 @@ enum {
 #define CPP_FUSE_OPT_END	{ NULL, 0, 0 }
 
 static struct fuse_opt utopfs_opts[] = {
-	FUSE_OPT_KEY("-l ",            KEY_LOGLEVEL),
-	FUSE_OPT_KEY("-L ",            KEY_LOGPATH),
-	FUSE_OPT_KEY("-M ",            KEY_MKFS),
-	FUSE_OPT_KEY("-V",             KEY_VERSION),
-	FUSE_OPT_KEY("--version",      KEY_VERSION),
-	FUSE_OPT_KEY("-S ",            KEY_SYNCSECS),
-	FUSE_OPT_KEY("--syncsecs ",    KEY_SYNCSECS),
-	FUSE_OPT_KEY("-h",             KEY_HELP),
-	FUSE_OPT_KEY("--help",         KEY_HELP),
-	FUSE_OPT_KEY("debug",          KEY_FOREGROUND),
-	FUSE_OPT_KEY("-d",             KEY_FOREGROUND),
-	FUSE_OPT_KEY("-f",             KEY_FOREGROUND),
+	FUSE_OPT_KEY("-l ",				KEY_LOGLEVEL),
+	FUSE_OPT_KEY("-L ",				KEY_LOGPATH),
+	FUSE_OPT_KEY("--statspath ",	KEY_STATSPATH),
+	FUSE_OPT_KEY("--statssecs ",	KEY_STATSSECS),
+	FUSE_OPT_KEY("-M ",				KEY_MKFS),
+	FUSE_OPT_KEY("-V",				KEY_VERSION),
+	FUSE_OPT_KEY("--version",		KEY_VERSION),
+	FUSE_OPT_KEY("-S ",				KEY_SYNCSECS),
+	FUSE_OPT_KEY("--syncsecs ",		KEY_SYNCSECS),
+	FUSE_OPT_KEY("-h",				KEY_HELP),
+	FUSE_OPT_KEY("--help",			KEY_HELP),
+	FUSE_OPT_KEY("debug",			KEY_FOREGROUND),
+	FUSE_OPT_KEY("-d",				KEY_FOREGROUND),
+	FUSE_OPT_KEY("-f",				KEY_FOREGROUND),
 	CPP_FUSE_OPT_END
 };
 
@@ -666,6 +605,14 @@ static int utopfs_opt_proc(void * data,
 
     case KEY_LOGPATH:
         utopfs.logpath = &arg[2];
+        return 0;
+
+    case KEY_STATSPATH:
+        utopfs.statspath = &arg[2];
+        return 0;
+
+    case KEY_STATSSECS:
+        utopfs.statssecs = atof(&arg[2]);
         return 0;
 
     case KEY_MKFS:
@@ -716,6 +663,8 @@ main(int argc, char ** argv)
     utopfs.foreground = false;
     utopfs.lclconf = LCLCONF;
     utopfs.logpath = "utopfs.log";
+    utopfs.statspath = "utopfs_stats.log";
+    utopfs.statssecs = 5.0;
     utopfs.loglevel = -1;
     utopfs.size = 0;
     utopfs.syncsecs = 10.0;
@@ -751,6 +700,14 @@ main(int argc, char ** argv)
         char cwdbuf[MAXPATHLEN];
         string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
         utopfs.logpath = cwd + '/' + utopfs.logpath;
+    }
+
+    // Convert the stats path to absolute.
+    if (utopfs.statspath[0] != '/')
+    {
+        char cwdbuf[MAXPATHLEN];
+        string cwd = getcwd(cwdbuf, sizeof(cwdbuf));
+        utopfs.statspath = cwd + '/' + utopfs.statspath;
     }
 
     // Convert the mount path to absolute.

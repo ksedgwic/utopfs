@@ -122,13 +122,13 @@ public:
 protected:
 
 private:
-    std::string					m_instname;
-    VBSChildMap					m_children;
+    std::string						m_instname;
+    VBSChildMap						m_children;
 
-    ACE_Thread_Mutex			m_vbsmutex;
-    ACE_Condition_Thread_Mutex	m_vbscond;
-    bool						m_waiting;
-    VBSRequestSet				m_requests;
+    mutable ACE_Thread_Mutex		m_vbsmutex;
+    ACE_Condition_Thread_Mutex		m_vbscond;
+    bool							m_waiting;
+    VBSRequestSet					m_requests;
 };
 
 // FIXME - Why can't I use the one in utp::BlockStore?

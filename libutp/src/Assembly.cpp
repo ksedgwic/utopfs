@@ -64,8 +64,17 @@ void
 Assembly::get_stats(StatSet & o_ss) const
     throw(InternalError)
 {
-    m_bsh->bs_get_stats(o_ss);
-    m_fsh->fs_get_stats(o_ss);
+    o_ss.set_name("");
+
+    {
+        StatSet * ssp = o_ss.add_subset();
+        m_bsh->bs_get_stats(*ssp);
+    }
+
+    {
+        StatSet * ssp = o_ss.add_subset();
+        m_fsh->fs_get_stats(*ssp);
+    }
 }
 
 void

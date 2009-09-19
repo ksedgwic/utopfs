@@ -386,7 +386,38 @@ void
 VBlockStore::bs_get_stats(StatSet & o_ss) const
     throw(InternalError)
 {
-    // FIXME - Add some stats here.
+    // Fill the name field in.
+    o_ss.set_name(m_instname);
+
+    // Accumulate some stats across the request queue.
+    size_t nreqs = 0;
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+        for (VBSRequestSet::const_iterator it = m_requests.begin();
+             it != m_requests.end();
+             ++it)
+        {
+            ++nreqs;
+        }
+    }
+
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nreqs");
+        srp->mutable_value()->set_ival(nreqs);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%lld");
+        sfp->set_fmttype(SF_VALUE);
+    }
+
+    // Add a Stats subset for each of our children and fill.
+    for (VBSChildMap::const_iterator it = m_children.begin();
+         it != m_children.end();
+         ++it)
+    {
+        StatSet * ssp = o_ss.add_subset();
+        it->second->bs()->bs_get_stats(*ssp);
+    }
 }
 
 void

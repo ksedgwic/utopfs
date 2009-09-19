@@ -1,5 +1,9 @@
 
-Implement real S3BS bs_head_{insert,follow,further}.
+Fix the README directions for installed demo use.
+
+Fix the dev tree execution of the utp cmd in the utopfs WORCFG dir.
+
+Fix the README directions for some sort of dev tree execution.
 
 ----------------------------------------------------------------
 

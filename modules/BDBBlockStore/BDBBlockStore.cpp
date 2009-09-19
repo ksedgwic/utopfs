@@ -592,6 +592,8 @@ void
 BDBBlockStore::bs_get_stats(StatSet & o_ss) const
     throw(utp::InternalError)
 {
+    o_ss.set_name(m_instname);
+    
     // FIXME - Add some stats here.
 }
 

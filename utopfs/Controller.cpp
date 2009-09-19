@@ -1,7 +1,10 @@
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
 #include <ace/Reactor.h>
+
+#include "Stats.pb.h"
 
 #include "Except.h"
 #include "BlockStore.h"
@@ -15,14 +18,18 @@
 using namespace std;
 using namespace utp;
 
-Controller::Controller(BlockStoreHandle const & i_bsh,
-                       FileSystemHandle const & i_fsh,
+Controller::Controller(Assembly * i_ap,
                        string const & i_controlpath,
+                       string const & i_statspath,
+                       double i_statssecs,
                        double i_syncsecs)
     : m_opened(false)
-    , m_bsh(i_bsh)
-    , m_fsh(i_fsh)
+    , m_ap(i_ap)
+    , m_bsh(i_ap->bsh())
+    , m_fsh(i_ap->fsh())
     , m_controlpath(i_controlpath)
+    , m_statspath(i_statspath)
+    , m_statssecs(i_statssecs)
     , m_syncsecs(i_syncsecs)
     , m_reactor(ACE_Reactor::instance())
 {
@@ -67,6 +74,9 @@ Controller::handle_close(ACE_HANDLE i_handle, ACE_Reactor_Mask i_mask)
 {
     LOG(lgr, 4, "handle_close");
 
+    // Cancel any timers.
+    m_reactor->cancel_timer(this);
+
     if (m_acceptor.get_handle() != ACE_INVALID_HANDLE)
     {
         m_reactor->remove_handler(this, ACCEPT_MASK | DONT_CALL);
@@ -80,15 +90,27 @@ int
 Controller::handle_timeout(ACE_Time_Value const & current_time,
                            void const * act)
 {
-    LOG(lgr, 4, "handle_timeout");
+    long which = (long) act;
 
-    // The first time through we open our control socket.  Subsequent
-    // calls perform periodic duties.
+    LOG(lgr, 4, "handle_timeout " << which);
 
-    if (!m_opened)
-        open();
-    else
-        periodic();
+    switch (which)
+    {
+    case 0:
+        // Sync timeout
+        // The first time through we open our control socket.  Subsequent
+        // calls perform periodic duties.
+        if (!m_opened)
+            do_open();
+        else
+            do_sync();
+        break;
+
+    case 1:
+        // Stats timeout
+        do_stats();
+        break;
+    }
 
     return 0;
 }
@@ -105,13 +127,33 @@ Controller::init()
     // event and init then?
     //
     ACE_Time_Value initdelay(2, 0);
-    ACE_Time_Value period;
-    period.set(m_syncsecs);
-    m_reactor->schedule_timer(this, NULL, initdelay, period);
+
+    // Register the sync timeouts.
+    {
+        ACE_Time_Value period;
+        period.set(m_syncsecs);
+        m_reactor->schedule_timer(this, (void *) 0, initdelay, period);
+    }
+
+    // Register the stats timeouts.
+    {
+        ACE_Time_Value period;
+        period.set(m_statssecs);
+        m_reactor->schedule_timer(this, (void *) 1, initdelay, period);
+    }
 }
 
 void
-Controller::open()
+Controller::term()
+{
+    m_reactor->cancel_timer(this, DONT_CALL);
+
+    // Remove the control socket.
+    unlink(m_sockpath.c_str());
+}
+
+void
+Controller::do_open()
 {
     LOG(lgr, 4, "open");
 
@@ -140,16 +182,7 @@ Controller::open()
 }
 
 void
-Controller::term()
-{
-    m_reactor->cancel_timer(this, DONT_CALL);
-
-    // Remove the control socket.
-    unlink(m_sockpath.c_str());
-}
-
-void
-Controller::periodic()
+Controller::do_sync()
 {
     try
     {
@@ -161,7 +194,80 @@ Controller::periodic()
     }
     catch (std::exception const & ex)
     {
-        LOG(lgr, 1, "exception in periodic: " << ex.what());
+        LOG(lgr, 1, "exception in do_sync: " << ex.what());
+    }
+}
+
+void
+Controller::do_stats() const
+{
+    try
+    {
+        StatSet ss;
+        m_ap->get_stats(ss);
+
+        // Open the stats log.
+        ofstream ostrm(m_statspath.c_str(), ios_base::app);
+        ostrm << T64::now();
+        format_stats(ostrm, "", ss);
+        ostrm << endl;
+    }
+    catch (std::exception const & ex)
+    {
+        LOG(lgr, 1, "exception in do_stats: " << ex.what());
+    }
+}
+
+void
+Controller::format_stats(ostream & i_ostrm,
+                         string const & i_prefix,
+                         StatSet const & i_ss) const
+{
+    string pfx =
+        i_prefix.empty() ? i_ss.name() : i_prefix + '.' + i_ss.name();
+
+    for (int ii = 0; ii < i_ss.rec_size(); ++ii)
+    {
+        StatRec const & sr = i_ss.rec(ii);
+        StatValue const & sv = sr.value();
+        for (int jj = 0; jj < sr.format_size(); ++jj)
+        {
+            char buffer[256];
+            StatFormat const & sf = sr.format(jj);
+
+            switch (sf.fmttype())
+            {
+            case SF_VALUE:
+                if (sv.has_ival())
+                {
+                    snprintf(buffer,
+                             sizeof(buffer),
+                             sf.fmtstr().c_str(),
+                             sv.ival());
+                }
+                else if (sv.has_dval())
+                {
+                    snprintf(buffer,
+                             sizeof(buffer),
+                             sf.fmtstr().c_str(),
+                             sv.dval());
+                }
+                break;
+
+            case SF_DELTA:
+                buffer[0] = '\0';
+                break;
+            }
+
+
+            i_ostrm << ' ' << pfx << '.' << sr.name() << '=' << buffer;
+        }
+    }
+
+    for (int ii = 0; ii < i_ss.subset_size(); ++ii)
+    {
+        StatSet const & ss = i_ss.subset(ii);
+        format_stats(i_ostrm, pfx, ss);
     }
 }
 

@@ -1577,6 +1577,8 @@ void
 S3BlockStore::bs_get_stats(StatSet & o_ss) const
     throw(InternalError)
 {
+    o_ss.set_name(m_instname);
+
     // FIXME - Add some stats here.
 }
 
