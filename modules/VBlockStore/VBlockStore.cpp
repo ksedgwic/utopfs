@@ -404,9 +404,9 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
     {
         StatRec * srp = o_ss.add_rec();
         srp->set_name("nreqs");
-        srp->mutable_value()->set_ival(nreqs);
+        srp->set_value(nreqs);
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%lld");
+        sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_VALUE);
     }
 

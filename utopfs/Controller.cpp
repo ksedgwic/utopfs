@@ -229,36 +229,28 @@ Controller::format_stats(ostream & i_ostrm,
     for (int ii = 0; ii < i_ss.rec_size(); ++ii)
     {
         StatRec const & sr = i_ss.rec(ii);
-        StatValue const & sv = sr.value();
+        int64 const & val = sr.value();
         for (int jj = 0; jj < sr.format_size(); ++jj)
         {
             char buffer[256];
             StatFormat const & sf = sr.format(jj);
+            double factor = sf.has_factor() ? sf.factor() : 1.0;
+
+            double wval;
 
             switch (sf.fmttype())
             {
             case SF_VALUE:
-                if (sv.has_ival())
-                {
-                    snprintf(buffer,
-                             sizeof(buffer),
-                             sf.fmtstr().c_str(),
-                             sv.ival());
-                }
-                else if (sv.has_dval())
-                {
-                    snprintf(buffer,
-                             sizeof(buffer),
-                             sf.fmtstr().c_str(),
-                             sv.dval());
-                }
+                wval = double(val) * factor;
                 break;
 
             case SF_DELTA:
-                buffer[0] = '\0';
+                throwstream(InternalError, FILELINE
+                            << "SF_DELTA unimplemented");
                 break;
             }
 
+            snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
 
             i_ostrm << ' ' << pfx << '.' << sr.name() << '=' << buffer;
         }
