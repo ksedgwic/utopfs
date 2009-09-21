@@ -61,7 +61,7 @@ struct statvfs {
 
 #else
 #include <sys/statvfs.h>
-typedef stat   statstb;
+#define statstb stat
 #endif
 
 #include <string>
