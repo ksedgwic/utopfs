@@ -131,6 +131,12 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
 {
     long val = (long) i_argp;
 
+    // Take the reference out of the member variable; it gets
+    // used by subroutines we call ...
+    //
+    VBSHeadFurthestSubReqHandle subfurther = m_subfurther;
+    m_subfurther = NULL;
+
     LOG(lgr, 6, "hnt_complete " << val);
 
     bool is_done = false;
@@ -141,23 +147,20 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
         // This was the initial "survey" further request.  Did we get
         // an answer that is immediately useful?
         //
-        if (m_subfurther->unique().empty())
+        if (subfurther->unique().empty())
         {
             if (m_cmpl)
             {
                 LOG(lgr, 6, *this << ' ' << "INITIAL FURTHEST GOOD");
 
                 // Yes, there are no unique child answers.
-                HeadNodeSeq const & hns = m_subfurther->common();
+                HeadNodeSeq const & hns = subfurther->common();
                 for (unsigned ii = 0; ii < hns.size(); ++ii)
                     m_cmpl->hnt_node(m_argp, hns[ii]);
 
                 m_cmpl->hnt_complete(m_argp);
             }
             is_done = true;
-
-            // Release our ref to this.
-            m_subfurther = NULL;
         }
         else
         {
@@ -166,12 +169,9 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
             //
             LOG(lgr, 6, *this << ' ' << "RESOLVING UNIQUE CHILDREN");
 
-            directed_follow_fill();
+            directed_follow_fill(subfurther);
 
             is_done = false;
-
-            // Release our ref to this.
-            m_subfurther = NULL;
         }
         break;
 
@@ -179,23 +179,20 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
         // This was the second "survey" further request.  Did
         // the directed follow-fill anneal the unique nodes?
         //
-        if (m_subfurther->unique().empty())
+        if (subfurther->unique().empty())
         {
             if (m_cmpl)
             {
                 LOG(lgr, 6, *this << ' ' << "DIRECTED FOLLOWFILL WORKED");
 
                 // Yes, there are no unique child answers.
-                HeadNodeSeq const & hns = m_subfurther->common();
+                HeadNodeSeq const & hns = subfurther->common();
                 for (unsigned ii = 0; ii < hns.size(); ++ii)
                     m_cmpl->hnt_node(m_argp, hns[ii]);
 
                 m_cmpl->hnt_complete(m_argp);
             }
             is_done = true;
-
-            // Release our ref to this.
-            m_subfurther = NULL;
         }
         else
         {
@@ -207,9 +204,6 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
             full_follow_fill();
 
             is_done = false;
-
-            // Release our ref to this.
-            m_subfurther = NULL;
         }
         break;
 
@@ -219,23 +213,20 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
         // Something is very wrong if it doesn't work since
         // all head nodes are copied.
         //
-        if (m_subfurther->unique().empty())
+        if (subfurther->unique().empty())
         {
             if (m_cmpl)
             {
                 LOG(lgr, 6, *this << ' ' << "FULL FOLLOWFILL WORKED");
 
                 // Yes, there are no unique child answers.
-                HeadNodeSeq const & hns = m_subfurther->common();
+                HeadNodeSeq const & hns = subfurther->common();
                 for (unsigned ii = 0; ii < hns.size(); ++ii)
                     m_cmpl->hnt_node(m_argp, hns[ii]);
 
                 m_cmpl->hnt_complete(m_argp);
             }
             is_done = true;
-
-            // Release our ref to this.
-            m_subfurther = NULL;
         }
         else
         {
@@ -308,7 +299,8 @@ VBSHeadFurthestTopReq::init()
 }
 
 void
-VBSHeadFurthestTopReq::directed_follow_fill()
+VBSHeadFurthestTopReq::directed_follow_fill
+					(VBSHeadFurthestSubReqHandle const & i_srh)
 {
     // Our initial survey showed that some of the children have unique
     // further values.
@@ -324,7 +316,7 @@ VBSHeadFurthestTopReq::directed_follow_fill()
     // Each FollowFill is submitted to all other children.
     size_t ncp = m_children.size() - 1;
 
-    ChildNodeSetMap const & unq = m_subfurther->unique();
+    ChildNodeSetMap const & unq = i_srh->unique();
     for (ChildNodeSetMap::const_iterator it = unq.begin();
          it != unq.end();
          ++it)

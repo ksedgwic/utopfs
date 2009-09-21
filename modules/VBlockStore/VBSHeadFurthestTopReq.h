@@ -60,7 +60,7 @@ public:
     void init();
 
     // Initiates a directed follow-fill to fast-forward unique answers.
-    void directed_follow_fill();
+    void directed_follow_fill(VBSHeadFurthestSubReqHandle const & i_srh);
 
     // Initiates a second furthest pass to see if follow-fill worked.
     void second_check();
