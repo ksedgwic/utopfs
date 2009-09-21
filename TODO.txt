@@ -1,3 +1,8 @@
+Make S3BS pending gets be cancelled when local BS finds.
+
+Make S3BS "refresh only".
+
+Make S3BS async w/ multiple outstanding requests.
 
 Fix the README directions for installed demo use.
 
