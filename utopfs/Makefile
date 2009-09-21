@@ -3,10 +3,11 @@ ROOTDIR = ..
 include $(ROOTDIR)/config/define.mk
 
 PRGSRC += 	\
-			utopfs.cpp \
-			fuselog.cpp \
 			Controller.cpp \
 			ControlService.cpp \
+			fuselog.cpp \
+			StatsLogger.cpp \
+			utopfs.cpp \
 			$(NULL)
 
 PRGEXE = 	utopfs

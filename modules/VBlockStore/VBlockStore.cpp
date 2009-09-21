@@ -416,6 +416,11 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
          ++it)
     {
         StatSet * ssp = o_ss.add_subset();
+
+        // Per-child stats from the VBS itself.
+        it->second->get_stats(*ssp);
+
+        // Child blockstore itself.
         it->second->bs()->bs_get_stats(*ssp);
     }
 }

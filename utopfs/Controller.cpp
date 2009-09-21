@@ -4,8 +4,6 @@
 
 #include <ace/Reactor.h>
 
-#include "Stats.pb.h"
-
 #include "Except.h"
 #include "BlockStore.h"
 #include "FileSystem.h"
@@ -20,18 +18,15 @@ using namespace utp;
 
 Controller::Controller(Assembly * i_ap,
                        string const & i_controlpath,
-                       string const & i_statspath,
-                       double i_statssecs,
                        double i_syncsecs)
     : m_opened(false)
     , m_ap(i_ap)
     , m_bsh(i_ap->bsh())
     , m_fsh(i_ap->fsh())
     , m_controlpath(i_controlpath)
-    , m_statspath(i_statspath)
-    , m_statssecs(i_statssecs)
     , m_syncsecs(i_syncsecs)
     , m_reactor(ACE_Reactor::instance())
+    , m_issyncing(false)
 {
     LOG(lgr, 4, "CTOR");
 
@@ -90,27 +85,16 @@ int
 Controller::handle_timeout(ACE_Time_Value const & current_time,
                            void const * act)
 {
-    long which = (long) act;
+    LOG(lgr, 4, "handle_timeout");
 
-    LOG(lgr, 4, "handle_timeout " << which);
-
-    switch (which)
-    {
-    case 0:
-        // Sync timeout
-        // The first time through we open our control socket.  Subsequent
-        // calls perform periodic duties.
-        if (!m_opened)
-            do_open();
-        else
-            do_sync();
-        break;
-
-    case 1:
-        // Stats timeout
-        do_stats();
-        break;
-    }
+    // Sync timeout
+    // The first time through we open our control socket.  Subsequent
+    // calls perform periodic duties.
+    //
+    if (!m_opened)
+        do_open();
+    else
+        do_sync();
 
     return 0;
 }
@@ -132,14 +116,7 @@ Controller::init()
     {
         ACE_Time_Value period;
         period.set(m_syncsecs);
-        m_reactor->schedule_timer(this, (void *) 0, initdelay, period);
-    }
-
-    // Register the stats timeouts.
-    {
-        ACE_Time_Value period;
-        period.set(m_statssecs);
-        m_reactor->schedule_timer(this, (void *) 1, initdelay, period);
+        m_reactor->schedule_timer(this, NULL, initdelay, period);
     }
 }
 
@@ -184,6 +161,14 @@ Controller::do_open()
 void
 Controller::do_sync()
 {
+    // Are we already syncing?
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_cntrlmutex);
+        if (m_issyncing)
+            return;
+        m_issyncing = true;
+    }
+
     try
     {
         // Synchronize the filesystem to the blockstore.
@@ -196,70 +181,11 @@ Controller::do_sync()
     {
         LOG(lgr, 1, "exception in do_sync: " << ex.what());
     }
-}
 
-void
-Controller::do_stats() const
-{
-    try
+    // We're done syncing now.
     {
-        StatSet ss;
-        m_ap->get_stats(ss);
-
-        // Open the stats log.
-        ofstream ostrm(m_statspath.c_str(), ios_base::app);
-        ostrm << T64::now();
-        format_stats(ostrm, "", ss);
-        ostrm << endl;
-    }
-    catch (std::exception const & ex)
-    {
-        LOG(lgr, 1, "exception in do_stats: " << ex.what());
-    }
-}
-
-void
-Controller::format_stats(ostream & i_ostrm,
-                         string const & i_prefix,
-                         StatSet const & i_ss) const
-{
-    string pfx =
-        i_prefix.empty() ? i_ss.name() : i_prefix + '.' + i_ss.name();
-
-    for (int ii = 0; ii < i_ss.rec_size(); ++ii)
-    {
-        StatRec const & sr = i_ss.rec(ii);
-        int64 const & val = sr.value();
-        for (int jj = 0; jj < sr.format_size(); ++jj)
-        {
-            char buffer[256];
-            StatFormat const & sf = sr.format(jj);
-            double factor = sf.has_factor() ? sf.factor() : 1.0;
-
-            double wval;
-
-            switch (sf.fmttype())
-            {
-            case SF_VALUE:
-                wval = double(val) * factor;
-                break;
-
-            case SF_DELTA:
-                throwstream(InternalError, FILELINE
-                            << "SF_DELTA unimplemented");
-                break;
-            }
-
-            snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
-
-            i_ostrm << ' ' << pfx << '.' << sr.name() << '=' << buffer;
-        }
-    }
-
-    for (int ii = 0; ii < i_ss.subset_size(); ++ii)
-    {
-        StatSet const & ss = i_ss.subset(ii);
-        format_stats(i_ostrm, pfx, ss);
+        ACE_Guard<ACE_Thread_Mutex> guard(m_cntrlmutex);
+        m_issyncing = false;
     }
 }
 

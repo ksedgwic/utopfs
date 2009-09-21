@@ -52,6 +52,8 @@ public:
 
     void enqueue_headnode(VBSRequestHandle const & i_rh);
 
+    void get_stats(utp::StatSet & o_ss) const;
+
 protected:
     void initiate_requests();
 
@@ -60,8 +62,9 @@ private:
     ACE_Reactor *						m_reactor;
     utp::BlockStoreHandle				m_bsh;
 
-    ACE_Thread_Mutex					m_chldmutex;
+    mutable ACE_Thread_Mutex			m_chldmutex;
     bool								m_notified;
+    size_t								m_numreqs;
     std::deque<VBSGetRequestHandle>		m_getreqs;
     std::deque<VBSPutRequestHandle>		m_putreqs;
     std::deque<VBSRequestHandle>		m_refreqs;

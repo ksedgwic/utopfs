@@ -21,15 +21,15 @@
 #include <fuse.h>
 #include <fuse/fuse_opt.h>
 
+#include "Assembly.h"
 #include "BlockStoreFactory.h"
 #include "Controller.h"
 #include "Except.h"
 #include "FileSystemFactory.h"
 #include "FileSystem.h"
-#include "Log.h"
-#include "Assembly.h"
-
 #include "fuselog.h"
+#include "Log.h"
+#include "StatsLogger.h"
 
 using namespace std;
 using namespace utp;
@@ -114,6 +114,7 @@ struct utopfs
     string mntpath;
     Assembly * assembly;
     Controller * control;
+    StatsLogger * statslog;
     ThreadPool * thrpool;
 };
 
@@ -233,10 +234,14 @@ utopfs_init(struct fuse_conn_info * i_conn)
         string controlpath = utopfs.mntpath + "/.utopfs/control";
         utopfs.control = new Controller(utopfs.assembly,
                                         controlpath,
-                                        utopfs.statspath,
-                                        utopfs.statssecs,
                                         utopfs.syncsecs);
         utopfs.control->init();
+
+        // Start the stats logger.
+        utopfs.statslog = new StatsLogger(utopfs.assembly,
+                                          utopfs.statspath,
+                                          utopfs.statssecs);
+        utopfs.statslog->init();
     }
     catch (utp::Exception const & ex)
     {
@@ -253,6 +258,9 @@ utopfs_destroy(void * ptr)
     {
         // Flush the filesystem to the blockstore.
         utopfs.assembly->fsh()->fs_sync();
+
+        // Cleanup the stats logger.
+        utopfs.statslog->term();
 
         // Cleanup the control interface.
         utopfs.control->term();

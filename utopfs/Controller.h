@@ -19,8 +19,6 @@ class Controller : public ACE_Event_Handler
 public:
     Controller(utp::Assembly * i_ap,
                std::string const & i_controlpath,
-               std::string const & i_statspath,
-               double i_statssecs,
                double i_syncsecs);
 
     virtual ~Controller();
@@ -42,25 +40,19 @@ public:
 
     void do_sync();
 
-    void do_stats() const;
-
-    void format_stats(std::ostream & i_ostrm,
-                      std::string const & i_prefix,
-                      utp::StatSet const & i_ss) const;
-
 private:
-    bool					m_opened;
-    std::string				m_sockpath;
-    utp::Assembly *			m_ap;
-    utp::BlockStoreHandle	m_bsh;
-    utp::FileSystemHandle	m_fsh;
-    std::string				m_controlpath;
-    std::string				m_statspath;
-    double					m_statssecs;
-    double					m_syncsecs;
-    ACE_Reactor *			m_reactor;
-    ACE_LSOCK_Acceptor		m_acceptor;
-    
+    bool						m_opened;
+    std::string					m_sockpath;
+    utp::Assembly *				m_ap;
+    utp::BlockStoreHandle		m_bsh;
+    utp::FileSystemHandle		m_fsh;
+    std::string					m_controlpath;
+    double						m_syncsecs;
+    ACE_Reactor *				m_reactor;
+    ACE_LSOCK_Acceptor			m_acceptor;
+
+    mutable ACE_Thread_Mutex	m_cntrlmutex;
+    bool						m_issyncing;
 };
 
 // Local Variables:
