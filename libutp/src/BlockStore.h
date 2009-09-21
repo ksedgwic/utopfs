@@ -35,7 +35,7 @@ UTP_EXP
 std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_hn);
 
 // Crutch for some namespace complexities.
-std::string mkstring(HeadNode const & i_hn);
+std::string UTP_EXP mkstring(HeadNode const & i_hn);
 
 class UTP_EXP BlockStore : public virtual RCObj
 {

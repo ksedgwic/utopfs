@@ -11,13 +11,9 @@ LIBSRC =	\
 			pyutpinit.cpp \
 			pyutplog.cpp \
 			statemap.cpp \
-			$(NULL)
-
-ifneq (WIN32,$(SYSNAME))
-LIBSRC +=   pyfilesystem.cpp \
+            pyfilesystem.cpp \
             pystatvfs.cpp \
             $(NULL)
-endif
 
 ifneq (WIN32,$(SYSNAME))
 MODSO =		_utp
@@ -30,6 +26,10 @@ endif
 endif
 
 DEFS +=		-DPYUTP_IMPL
+
+ifeq (WIN32,$(SYSNAME))
+DEFS += -DHAVE_STRUCT_STAT_ST_BLKSIZE -DHAVE_STRUCT_STAT_ST_BLOCKS
+endif
 
 ifneq (WIN32,$(SYSNAME))
 CPPFLAGS +=	-fno-strict-aliasing

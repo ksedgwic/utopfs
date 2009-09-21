@@ -8,6 +8,8 @@
 #include "utfslog.h"
 
 #include "DataBlockNode.h"
+#include "IndirectBlockNode.h"
+#include "DoubleIndBlockNode.h"
 #include "Context.h"
 
 using namespace std;

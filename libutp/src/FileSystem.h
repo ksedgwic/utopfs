@@ -4,8 +4,64 @@
 /// @file FileSystem.h
 /// Abstract FileSystem Interface.
 
-#if defined(LINUX)
+#if defined(WIN32)
+
+#define FSTYPSZ     16
+#define FSSTRSZ     32 //is it the volume name limit on windows?
+
+struct statstb {
+        _dev_t st_dev;
+        _ino_t st_ino;
+        unsigned short st_mode;
+        short st_nlink;
+        short st_uid;
+        short st_gid;
+        _dev_t st_rdev;
+        _off_t st_size;
+        time_t st_atime;
+        time_t st_mtime;
+        time_t st_ctime;
+        long   st_blksize;
+        long   st_blocks;
+};
+
+struct statvfs {
+	unsigned long f_bsize;
+	unsigned long f_frsize;
+	unsigned long f_blocks;
+    unsigned long f_bfree;
+	unsigned long f_bavail;
+	unsigned long f_files;
+	unsigned long f_ffree;
+	unsigned long f_favail;
+	unsigned long f_fsid;
+	unsigned long f_flag;
+	unsigned long f_namemax;
+	unsigned long f_type;
+	char f_basetype[FSTYPSZ];
+	char f_str[FSSTRSZ];
+
+}; 
+
+#ifndef S_ISDIR
+#define S_ISDIR(stmode)  \
+    ((stmode & S_IFMT ) == S_IFDIR)
+#endif
+
+#ifndef S_ISREG
+#define S_ISREG(stmode)  \
+    ((stmode & S_IFMT ) == S_IFREG)
+#endif
+
+#ifndef ALLPERMS
+#define ALLPERMS (_O_WRONLY | _O_CREAT | _O_APPEND | _O_RDWR | \
+                  _O_RDONLY | _O_TRUNC | _O_BINARY | _O_TEXT | \
+                  _O_SEQUENTIAL | _O_RANDOM |_O_WTEXT )
+#endif
+
+#else
 #include <sys/statvfs.h>
+typedef stat   statstb;
 #endif
 
 #include <string>
@@ -19,6 +75,7 @@
 #include "RC.h"
 #include "T64.h"
 
+
 namespace utp {
 
 class UTP_EXP FileSystem : public virtual RCObj
@@ -29,7 +86,7 @@ public:
         // @return true if buffer is full, false otherwise.
         //
         virtual bool def_entry(std::string const & i_name,
-                               struct stat const * i_stbuf,
+                               struct statstb const * i_stbuf,
                                off_t i_off) = 0;
     };
 
@@ -97,7 +154,7 @@ public:
     /// @throw InternalError An non-recoverable error occurred.
     ///
     virtual int fs_getattr(std::string const & i_path,
-                           struct stat * o_statbuf)
+                           struct statstb * o_statbuf)
         throw (utp::InternalError) = 0;
 
     /// Read the target of a symbolic link.
@@ -285,7 +342,6 @@ public:
                          off_t i_off)
         throw (utp::InternalError) = 0;
 
-#if defined(LINUX)
     /// Get filesystem statistics.
     ///
     /// @param[out] o_stvbuf Pointer to output structure.
@@ -296,7 +352,6 @@ public:
     ///
     virtual int fs_statfs(struct ::statvfs * o_stvbuf)
         throw (utp::InternalError) = 0;
-#endif
 
     /// Read directory
     ///

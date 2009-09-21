@@ -25,11 +25,11 @@ PyDirEntryFunc::~PyDirEntryFunc()
 
 bool
 PyDirEntryFunc::def_entry(string const & i_name,
-                          struct stat const * i_stbuf,
+                          struct statstb const * i_stbuf,
                           off_t i_off)
 {
-    PyThreadState * tstate = StateMap::associate(m_interp);
-    PyEval_AcquireThread(tstate);
+	/* ensure we hold the lock */
+	PyGILState_STATE state = PyGILState_Ensure();
 
     PyObject * stobj = i_stbuf ? pystat_fromstructstat(i_stbuf) : Py_None;
     Py_INCREF(stobj);
@@ -45,7 +45,7 @@ PyDirEntryFunc::def_entry(string const & i_name,
     Py_DECREF(args);
     Py_DECREF(method);
 
-    PyEval_ReleaseThread(tstate);
+	PyGILState_Release(state);
 
     // FIXME - need to return a real value here!
     return 0;

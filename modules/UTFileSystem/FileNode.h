@@ -19,6 +19,8 @@
 
 #include "INode.pb.h"
 
+#include "FileSystem.h"
+
 #include "RefBlockNode.h"
 #include "DataBlockNode.h"
 #include "IndirectBlockNode.h"
@@ -72,7 +74,7 @@ public:
     virtual size_t rb_refresh(Context & i_ctxt, utp::uint64 i_rid);
                             
     virtual int getattr(Context & i_ctxt,
-                        struct stat * o_statbuf);
+                        struct statstb * o_statbuf);
 
     virtual int readlink(Context & i_ctxt,
                          char * o_obuf,

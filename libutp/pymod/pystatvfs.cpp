@@ -1,8 +1,11 @@
 #include <Python.h>
 #include <structseq.h>
 
+#if !defined(WIN32)
 #include <sys/statvfs.h>
+#endif
 
+#include "FileSystemFactory.h"
 #include "pystatvfs.h"
 
 namespace utp {

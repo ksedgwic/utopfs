@@ -80,7 +80,7 @@ RootDirNode::node_traverse(Context & i_ctxt,
 }
 
 int
-RootDirNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
+RootDirNode::getattr(Context & i_ctxt, struct statstb * o_stbuf)
 {
     // Let the base class do most of the work.
     DirNode::getattr(i_ctxt, o_stbuf);

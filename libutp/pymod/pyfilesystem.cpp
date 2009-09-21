@@ -1,4 +1,6 @@
+#if !defined(WIN32)
 #include <sys/statvfs.h>
+#endif
 
 #include <memory>
 #include <vector>
@@ -45,7 +47,7 @@ FileSystem_fs_getattr(FileSystemObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:fs_getattr", &path))
         return NULL;
 
-    struct stat statbuf;
+    struct statstb statbuf;
     PYUTP_TRY
     {
         PYUTP_THREADED_SCOPE scope;

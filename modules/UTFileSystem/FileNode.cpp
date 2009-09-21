@@ -1,6 +1,9 @@
 #include <sys/types.h>
+
+#if !defined(WIN32)
 #include <pwd.h>
 #include <grp.h>
+#endif
 
 #include <cassert>
 
@@ -29,6 +32,7 @@ namespace {
 
 // FIXME - Can these results be cached?
 
+#if !defined(WIN32)
 uid_t mapuname(string const & i_uname)
 {
     struct passwd pwbuf;
@@ -50,7 +54,7 @@ uid_t mapgname(string const & i_gname)
 
     return gp ? gp->gr_gid : 0;
 }
-
+#endif
 } // end namespace
 
 namespace UTFS {
@@ -722,15 +726,17 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 }
 
 int
-FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
+FileNode::getattr(Context & i_ctxt, struct statstb * o_statbuf)
 {
     ACE_OS::memset(o_statbuf, '\0', sizeof(*o_statbuf));
 
     
 
     o_statbuf->st_mode = m_inode.mode();
+#if !defined (WIN32)
     o_statbuf->st_uid = mapuname(m_inode.uname());
     o_statbuf->st_gid = mapgname(m_inode.gname());
+#endif
     o_statbuf->st_nlink = m_inode.nlink();
     o_statbuf->st_size = m_inode.size();
     o_statbuf->st_atime = m_inode.atime() / 1000000;

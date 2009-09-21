@@ -54,7 +54,7 @@ public:
                utp::NoSpaceError);
 
     virtual int fs_getattr(std::string const & i_path,
-                           struct stat * o_statbuf)
+                           struct statstb * o_statbuf)
         throw (utp::InternalError);
 
     virtual int fs_readlink(std::string const & i_path,
