@@ -391,16 +391,26 @@ S3BlockStore::destroy(StringSeq const & i_args)
     {
         LOG(lgr, 7, "deleting " << keys[i]);
 
-        ResponseHandler rh;
-        S3_delete_object(&buck,
-                         keys[i].c_str(),
-                         NULL,
-                         &rsp_tramp,
-                         &rh);
-        st = rh.wait();
-        if (st != S3StatusOK)
-            throwstream(InternalError, FILELINE
-                        << "Unexpected S3 error: " << st);
+        for (unsigned tt = 0; tt < MAX_RETRIES; ++tt)
+        {
+            if (tt == MAX_RETRIES)
+                throwstream(InternalError, FILELINE
+                            << "too many retries");
+
+            ResponseHandler rh;
+            S3_delete_object(&buck,
+                             keys[i].c_str(),
+                             NULL,
+                             &rsp_tramp,
+                             &rh);
+            st = rh.wait();
+            if (st == S3StatusOK)
+                break;
+
+            // Sigh ... these we retry a few times ...
+            LOG(lgr, 4, "delete_keys " << bucket_name
+                << " ERROR: " << st << " RETRYING");
+        }
     }
 
     // Delete the bucket.
