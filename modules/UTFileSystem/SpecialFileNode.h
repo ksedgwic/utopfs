@@ -25,7 +25,7 @@ public:
     virtual ~SpecialFileNode();
 
     virtual int getattr(Context & i_ctxt,
-                        struct stat * o_statbuf);
+                        struct statstb * o_statbuf);
 
     virtual int read(Context & i_ctxt,
                      void * o_bufptr,

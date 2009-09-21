@@ -27,6 +27,10 @@ endif
 
 DEFS +=		-DPYUTP_IMPL
 
+ifeq (WIN32,$(SYSNAME))
+DEFS += -DHAVE_STRUCT_STAT_ST_BLKSIZE -DHAVE_STRUCT_STAT_ST_BLOCKS
+endif
+
 ifneq (WIN32,$(SYSNAME))
 CPPFLAGS +=	-fno-strict-aliasing
 endif

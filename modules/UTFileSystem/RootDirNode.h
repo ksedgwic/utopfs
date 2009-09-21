@@ -32,7 +32,7 @@ public:
                                NodeTraverseFunc & i_trav);
 
     virtual int getattr(Context & i_ctxt,
-                        struct stat * o_statbuf);
+                        struct statstb * o_statbuf);
 
     virtual int readdir(Context & i_ctxt,
                         off_t i_offset,

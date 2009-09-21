@@ -28,22 +28,6 @@ using namespace std;
 using namespace utp;
 using namespace google::protobuf::io;
 
-#if defined(WIN32)
-
-#define S_ISDIR(stmode)  \
-    ((stmode & S_IFMT ) == S_IFDIR)
-
-#define S_ISREG(stmode)  \
-    ((stmode & S_IFMT ) == S_IFREG)
-
-#define ALLPERMS (_O_WRONLY | _O_CREAT | _O_APPEND | _O_RDWR | \
-                  _O_RDONLY | _O_TRUNC | _O_BINARY | _O_TEXT | \
-                  _O_SEQUENTIAL | _O_RANDOM |_O_WTEXT )
- 
-
-
-#endif
-
 namespace {
 
 // FIXME - Can these results be cached?
@@ -742,7 +726,7 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 }
 
 int
-FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
+FileNode::getattr(Context & i_ctxt, struct statstb * o_statbuf)
 {
     ACE_OS::memset(o_statbuf, '\0', sizeof(*o_statbuf));
 
@@ -752,14 +736,13 @@ FileNode::getattr(Context & i_ctxt, struct stat * o_statbuf)
 #if !defined (WIN32)
     o_statbuf->st_uid = mapuname(m_inode.uname());
     o_statbuf->st_gid = mapgname(m_inode.gname());
-
-    o_statbuf->st_blocks = m_inode.blocks() * 16;	// *= 8192 / 512
 #endif
     o_statbuf->st_nlink = m_inode.nlink();
     o_statbuf->st_size = m_inode.size();
     o_statbuf->st_atime = m_inode.atime() / 1000000;
     o_statbuf->st_mtime = m_inode.mtime() / 1000000;
     o_statbuf->st_ctime = m_inode.ctime() / 1000000;
+    o_statbuf->st_blocks = m_inode.blocks() * 16;	// *= 8192 / 512
 
     return 0;
 }

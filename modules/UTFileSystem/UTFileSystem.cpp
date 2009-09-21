@@ -132,7 +132,7 @@ UTFileSystem::fs_umount()
 class GetAttrTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:
-    GetAttrTraverseFunc(struct stat * o_stbuf) : m_sbp(o_stbuf) {}
+    GetAttrTraverseFunc(struct statstb * o_stbuf) : m_sbp(o_stbuf) {}
 
     virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
     {
@@ -140,12 +140,12 @@ public:
     }
 
 private:
-    struct stat *	m_sbp;
+    struct statstb *	m_sbp;
 };
 
 int
 UTFileSystem::fs_getattr(string const & i_path,
-                         struct stat * o_stbuf)
+                         struct statstb * o_stbuf)
     throw (InternalError)
 {
     LOG(lgr, 6, "fs_getattr " << i_path);

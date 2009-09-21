@@ -32,7 +32,7 @@ public:
                                NodeTraverseFunc & i_trav);
 
     virtual int getattr(Context & i_ctxt,
-                        struct stat * o_statbuf);
+                        struct statstb * o_statbuf);
 
     virtual int symlink(Context & i_ctxt,
                         std::string const & i_entry,

@@ -62,7 +62,7 @@ SpecialDirNode::node_traverse(Context & i_ctxt,
 }
 
 int
-SpecialDirNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
+SpecialDirNode::getattr(Context & i_ctxt, struct statstb * o_stbuf)
 {
     o_stbuf->st_mode = S_IFDIR | 0755;
     o_stbuf->st_nlink = 2;

@@ -142,7 +142,7 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 /* pack a system stat C structure into the Python stat tuple
    (used by posix_stat() and posix_fstat()) */
 PyObject *
-pystat_fromstructstat(struct stat const * st)
+pystat_fromstructstat(struct statstb const * st)
 {
 	unsigned long ansec, mnsec, cnsec;
 	PyObject *v = PyStructSequence_New(&StatResultType);

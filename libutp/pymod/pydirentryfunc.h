@@ -17,7 +17,7 @@ public:
     virtual ~PyDirEntryFunc();
 
     virtual bool def_entry(std::string const & i_name,
-                           struct stat const * i_stbuf,
+                           struct statstb const * i_stbuf,
                            off_t i_off);
 protected:
     PyInterpreterState *	m_interp;

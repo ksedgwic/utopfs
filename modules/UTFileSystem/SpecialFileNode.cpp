@@ -22,7 +22,7 @@ SpecialFileNode::~SpecialFileNode()
 }
 
 int
-SpecialFileNode::getattr(Context & i_ctxt, struct stat * o_stbuf)
+SpecialFileNode::getattr(Context & i_ctxt, struct statstb * o_stbuf)
 {
     o_stbuf->st_mode = S_IFREG | 0444;
     o_stbuf->st_nlink = 1;

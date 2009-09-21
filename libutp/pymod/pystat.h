@@ -3,13 +3,15 @@
 
 #include <Python.h>             // CONFLICT: include this after ACE includes
 
+#include "FileSystem.h"
+
 namespace utp {
 
 extern PyTypeObject StatResultType;
 
 #define StatObject_Check(v)	((v)->ob_type == &StatResultType)
 
-PyObject * pystat_fromstructstat(struct stat const * st);
+PyObject * pystat_fromstructstat(struct statstb const * st);
 
 #if defined(WIN32)
     __declspec( dllexport )
