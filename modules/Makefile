@@ -10,7 +10,7 @@ SUBDIRS =	\
 			$(NULL)
 
 ifneq (WIN32,$(SYSNAME))
-SUBDIRS =	\
+SUBDIRS +=	\
 			BDBBlockStore \
 			S3BlockStore \
 			$(NULL)
