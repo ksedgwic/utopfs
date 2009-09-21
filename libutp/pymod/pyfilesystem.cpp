@@ -1,4 +1,6 @@
+#if !defined(WIN32)
 #include <sys/statvfs.h>
+#endif
 
 #include <memory>
 #include <vector>

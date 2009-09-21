@@ -11,6 +11,9 @@
 #include "UTFileSystem.h"
 
 #include "UTFSFactory.h"
+#include "DataBlockNode.h"
+#include "IndirectBlockNode.h"
+#include "DoubleIndBlockNode.h"
 
 using namespace std;
 using namespace utp;

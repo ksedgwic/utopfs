@@ -11,13 +11,9 @@ LIBSRC =	\
 			pyutpinit.cpp \
 			pyutplog.cpp \
 			statemap.cpp \
-			$(NULL)
-
-ifneq (WIN32,$(SYSNAME))
-LIBSRC +=   pyfilesystem.cpp \
+            pyfilesystem.cpp \
             pystatvfs.cpp \
             $(NULL)
-endif
 
 ifneq (WIN32,$(SYSNAME))
 MODSO =		_utp

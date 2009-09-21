@@ -4,7 +4,28 @@
 /// @file FileSystem.h
 /// Abstract FileSystem Interface.
 
-#if defined(LINUX)
+#if defined(WIN32)
+
+#define FSTYPSZ     16
+#define FSSTRSZ     32 //is it the volume name limit on windows?
+
+struct statvfs {
+	unsigned long f_bsize;
+	unsigned long f_frsize;
+	unsigned long f_blocks;
+    unsigned long f_bfree;
+	unsigned long f_bavail;
+	unsigned long f_files;
+	unsigned long f_ffree;
+	unsigned long f_favail;
+	unsigned long f_fsid;
+	unsigned long f_flag;
+	unsigned long f_namemax;
+	unsigned long f_type;
+	char f_basetype[FSTYPSZ];
+	char f_str[FSSTRSZ];
+}; 
+#else
 #include <sys/statvfs.h>
 #endif
 
@@ -18,6 +39,7 @@
 #include "Except.h"
 #include "RC.h"
 #include "T64.h"
+
 
 namespace utp {
 
@@ -285,7 +307,6 @@ public:
                          off_t i_off)
         throw (utp::InternalError) = 0;
 
-#if defined(LINUX)
     /// Get filesystem statistics.
     ///
     /// @param[out] o_stvbuf Pointer to output structure.
@@ -296,7 +317,6 @@ public:
     ///
     virtual int fs_statfs(struct ::statvfs * o_stvbuf)
         throw (utp::InternalError) = 0;
-#endif
 
     /// Read directory
     ///
