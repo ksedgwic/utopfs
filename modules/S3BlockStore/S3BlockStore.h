@@ -162,8 +162,6 @@ protected:
 
     std::string ridname(utp::uint64 i_rid) const;
 
-    std::string markname() const { return m_markname; }
-
     void touch_entry(std::string const & i_entry,
                      time_t i_tstamp,
                      off_t i_size);
@@ -173,29 +171,29 @@ protected:
     void write_head(utp::SignedHeadEdge const & i_she);
 
 private:
-    static bool		    	c_s3inited;
+    static bool		    		c_s3inited;
 
-    std::string				m_instname;
+    std::string					m_instname;
 
-    S3Protocol				m_protocol;
-    S3UriStyle				m_uri_style;
-    std::string				m_access_key_id;
-    std::string				m_secret_access_key;
-    std::string				m_bucket_name;
+    S3Protocol					m_protocol;
+    S3UriStyle					m_uri_style;
+    std::string					m_access_key_id;
+    std::string					m_secret_access_key;
+    std::string					m_bucket_name;
 
-    off_t					m_size;			// Total Size in Bytes
-    off_t					m_committed;	// Committed Bytes (must be saved)
-    off_t					m_uncommitted;	// Uncommitted Bytes (reclaimable)
+    utp::LameHeadNodeGraph		m_lhng;
 
-    ACE_Thread_Mutex		m_s3bsmutex;
+    mutable ACE_Thread_Mutex	m_s3bsmutex;
 
-    EntrySet				m_entries;
-    EntryList				m_lru;		// front=newest, back=oldest
+    off_t						m_size;       // Total Size in Bytes
+    off_t						m_committed;  // Committed Bytes (must be saved)
+    off_t						m_uncommitted;// Uncommitted Bytes (reclaimable)
 
-    std::string				m_markname;
-    EntryHandle				m_mark;
+    EntrySet					m_entries;
+    EntryList					m_lru;        // front=newest, back=oldest
 
-    utp::LameHeadNodeGraph	m_lhng;
+    std::string					m_markname;
+    EntryHandle					m_mark;
 };
 
 // FIXME - Why can't I use the one in utp::BlockStore?

@@ -486,6 +486,9 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
           InternalError,
           ValueError)
 {
+    // NOTE - We presume that this routine is externally synchronized
+    // and does not need to hold the mutex during construction.
+
     m_size = i_size;
     m_uncommitted = 0;
     m_committed = 0;
@@ -494,8 +497,6 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 
     LOG(lgr, 4, m_instname << ' '
         << "bs_create " << i_size << ' ' << m_bucket_name);
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
     S3CannedAcl acl = S3CannedAclPrivate;
     char const * loc = NULL;
@@ -741,11 +742,12 @@ S3BlockStore::bs_open(StringSeq const & i_args)
           NotFoundError,
           ValueError)
 {
+    // NOTE - We presume that this routine is externally synchronized
+    // and does not need to hold the mutex during construction.
+
     setup_params(i_args);
 
     LOG(lgr, 4, m_instname << ' ' << "bs_open " << m_bucket_name);
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
     // Make sure the bucket exists.
     ResponseHandler rh;
@@ -881,7 +883,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         else
         {
             // Is this the mark?
-            if (eh->m_name == markname())
+            if (eh->m_name == m_markname)
             {
                 m_mark = eh;
                 mark_seen = true;
@@ -1000,7 +1002,6 @@ S3BlockStore::bs_stat(Stat & o_stat)
     LOG(lgr, 6, m_instname << ' ' << "bs_stat");
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
     o_stat.bss_size = m_size;
     o_stat.bss_free = m_size - m_committed;
 }
@@ -1025,7 +1026,7 @@ void
     {
         int bytes_read;
         {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            // ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
             string entry = entryname(i_keydata, i_keysize);
             string blkpath = blockpath(entry);
@@ -1093,8 +1094,6 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
 {
     try
     {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
         string entry = entryname(i_keydata, i_keysize);
         string blkpath = blockpath(entry);
 
@@ -1106,15 +1105,19 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
         //
         off_t prevsize = 0;
         bool wascommitted = true;
-        EntryHandle meh = new Entry(blkpath, 0, 0);
-        EntrySet::const_iterator pos = m_entries.find(meh);
-        if (pos != m_entries.end())
         {
-            prevsize = (*pos)->m_size;
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-            // Is this block older then the MARK?
-            if (m_mark && m_mark->m_tstamp > (*pos)->m_tstamp)
-                wascommitted = false;
+            EntryHandle meh = new Entry(blkpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(meh);
+            if (pos != m_entries.end())
+            {
+                prevsize = (*pos)->m_size;
+
+                // Is this block older then the MARK?
+                if (m_mark && m_mark->m_tstamp > (*pos)->m_tstamp)
+                    wascommitted = false;
+            }
         }
 
         off_t prevcommited = 0;
@@ -1122,7 +1125,11 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
             prevcommited = prevsize;
 
         // How much space will be available for this block?
-        off_t avail = m_size - m_committed + prevcommited;
+        off_t avail;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            avail = m_size - m_committed + prevcommited;
+        }
 
         if (off_t(i_blksize) > avail)
             throwstream(NoSpaceError,
@@ -1131,9 +1138,12 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
 
         // Do we need to remove uncommitted blocks to make room for this
         // block?
-        while (m_committed + off_t(i_blksize) +
-               m_uncommitted - prevcommited > m_size)
-            purge_uncommitted();
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            while (m_committed + off_t(i_blksize) +
+                   m_uncommitted - prevcommited > m_size)
+                purge_uncommitted();
+        }
             
         // Setup a bucket context.
         S3BucketContext buck;
@@ -1199,19 +1209,21 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
                     time_t mtime = time_t(rh.m_last_modified);
                     off_t size = i_blksize;
 
-                    // First remove the prior block from the stats.
-                    if (wascommitted)
-                        m_committed -= prevsize;
-                    else
-                        m_uncommitted -= prevsize;
+                    {
+                        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+                        // First remove the prior block from the stats.
+                        if (wascommitted)
+                            m_committed -= prevsize;
+                        else
+                            m_uncommitted -= prevsize;
 
-                    // Add the new block to the stats.
-                    m_committed += size;
+                        // Add the new block to the stats.
+                        m_committed += size;
 
-                    // Update the entries.
-                    touch_entry(blkpath, mtime, size);
+                        // Update the entries.
+                        touch_entry(blkpath, mtime, size);
+                    }
 
-                    guard.release();
                     i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
                     return;
                 }
@@ -1244,8 +1256,6 @@ S3BlockStore::bs_refresh_start_async(uint64 i_rid,
         string rpath = blockpath(rname);
  
         LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
-
-        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
         // Setup a bucket context.
         S3BucketContext buck;
@@ -1309,8 +1319,12 @@ S3BlockStore::bs_refresh_start_async(uint64 i_rid,
         time_t mtime = time_t(rh2.m_last_modified);
         off_t size = 0;
 
-        // Create the refresh_id entry.
-        touch_entry(rpath, mtime, size);
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+            // Create the refresh_id entry.
+            touch_entry(rpath, mtime, size);
+        }
 
         i_cmpl.rs_complete(i_rid, i_argp);
     }
@@ -1349,13 +1363,15 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     // We'll retry a few times ...
     for (unsigned i = 0; i <= MAX_RETRIES; ++i)
     {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-        EntryHandle reh = new Entry(rpath, 0, 0);
-        EntrySet::const_iterator pos = m_entries.find(reh);
-        if (pos == m_entries.end())
-            throwstream(NotFoundError,
-                        "refresh id " << i_rid << " not found");
+            EntryHandle reh = new Entry(rpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(reh);
+            if (pos == m_entries.end())
+                throwstream(NotFoundError,
+                            "refresh id " << i_rid << " not found");
+        }
 
         // "Touch" the block by copying it to itself.
         S3PutProperties pp;
@@ -1380,7 +1396,6 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
         {
         case S3StatusErrorNoSuchKey:
             // Block is missing.
-            guard.release();
             i_cmpl.rb_missing(i_keydata, i_keysize, i_argp);
             return;
             
@@ -1389,11 +1404,13 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
                 // Block is here and updated.
                 time_t mtime = last_mod_ret;
                 off_t size = rh.m_content_length;
-        
-                // Update the entries.
-                touch_entry(blkpath, mtime, size);
 
-                guard.release();
+                {
+                    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+                    // Update the entries.
+                    touch_entry(blkpath, mtime, size);
+                }
+
                 i_cmpl.rb_complete(i_keydata, i_keysize, i_argp);
                 return;
             }
@@ -1423,8 +1440,6 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
 
         LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
 
-        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
         // Setup a bucket context.
         S3BucketContext buck;
         buck.bucketName = m_bucket_name.c_str();
@@ -1433,11 +1448,19 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
         buck.accessKeyId = m_access_key_id.c_str();
         buck.secretAccessKey = m_secret_access_key.c_str();
 
-        EntryHandle reh = new Entry(rpath, 0, 0);
-        EntrySet::const_iterator pos = m_entries.find(reh);
-        if (pos == m_entries.end())
-            throwstream(NotFoundError,
-                        "refresh id " << i_rid << " not found");
+        string mrknm;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+            // Find the mark.
+            EntryHandle reh = new Entry(rpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(reh);
+            if (pos == m_entries.end())
+                throwstream(NotFoundError,
+                            "refresh id " << i_rid << " not found");
+
+            mrknm = m_markname;
+        }
 
         // Update the MARKNAME file.
         MD5 md5sum(&rpath[0], rpath.size());
@@ -1458,11 +1481,11 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
                         << "Unexpected S3 error: " << st);
 
         // Delete the old mark
-        if (!m_markname.empty())
+        if (!mrknm.empty())
         {
             ResponseHandler rh2;
             S3_delete_object(&buck,
-                             m_markname.c_str(),
+                             mrknm.c_str(),
                              NULL,
                              &rsp_tramp,
                              &rh2);
@@ -1472,57 +1495,63 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
                             << "Unexpected S3 error: " << st);
 
             // Remove the MARK entry.
-            EntryHandle meh = new Entry(m_markname, 0, 0);
-            pos = m_entries.find(meh);
-            if (pos == m_entries.end())
             {
-                throwstream(InternalError, FILELINE
-                            << "missing mark: " << m_markname);
+                ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-            }
-            else
-            {
-                // Found it.
-                meh = *pos;
+                EntryHandle meh = new Entry(mrknm, 0, 0);
+                EntrySet::const_iterator pos = m_entries.find(meh);
+                if (pos == m_entries.end())
+                {
+                    throwstream(InternalError, FILELINE
+                                << "missing mark: " << mrknm);
+                }
+                else
+                {
+                    // Found it.
+                    meh = *pos;
 
-                // Erase it from the entries set.
-                m_entries.erase(pos);
+                    // Erase it from the entries set.
+                    m_entries.erase(pos);
 
-                // Remove from current location in LRU list.
-                m_lru.erase(meh->m_listpos);
+                    // Remove from current location in LRU list.
+                    m_lru.erase(meh->m_listpos);
+                }
             }
         }
 
         // Now we're using the new mark.
-        m_markname = rpath;
-
-        // Add up all the committed memory.
-        off_t committed = 0;
-        off_t uncommitted = 0;
-        bool saw_mark = false;
-        for (EntryList::const_iterator it = m_lru.begin();
-             it != m_lru.end();
-             ++it)
         {
-            EntryHandle const & eh = *it;
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            m_markname = rpath;
 
-            if (saw_mark)
+            // Add up all the committed memory.
+            off_t committed = 0;
+            off_t uncommitted = 0;
+            bool saw_mark = false;
+            for (EntryList::const_iterator it = m_lru.begin();
+                 it != m_lru.end();
+                 ++it)
             {
-                uncommitted += eh->m_size;
+                EntryHandle const & eh = *it;
+
+                if (saw_mark)
+                {
+                    uncommitted += eh->m_size;
+                }
+                else if (eh->m_name == m_markname)
+                {
+                    saw_mark = true;
+                    m_mark = eh;
+                }
+                else
+                {
+                    committed += eh->m_size;
+                }
             }
-            else if (eh->m_name == markname())
-            {
-                saw_mark = true;
-                m_mark = eh;
-            }
-            else
-            {
-                committed += eh->m_size;
-            }
+
+            m_committed = committed;
+            m_uncommitted = uncommitted;
         }
-
-        m_committed = committed;
-        m_uncommitted = uncommitted;
         
         i_cmpl.rf_complete(i_rid, i_argp);
     }
@@ -1540,11 +1569,7 @@ S3BlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
 {
     LOG(lgr, 6, m_instname << ' ' << "insert " << i_she);
 
-    {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
-        write_head(i_she);
-    }
+    write_head(i_she);
 
     m_lhng.insert_head(i_she);
 
@@ -1667,7 +1692,7 @@ S3BlockStore::ridname(uint64 i_rid) const
     ostringstream ostrm;
     ostrm << "RID-" << i_rid;
     return ostrm.str();
-}                                
+}
 
 void
 S3BlockStore::touch_entry(std::string const & i_entry,
@@ -1729,25 +1754,31 @@ S3BlockStore::purge_uncommitted()
     // Remove from LRU list.
     m_lru.pop_back();
 
-    // Setup a bucket context.
-    S3BucketContext buck;
-    buck.bucketName = m_bucket_name.c_str();
-    buck.protocol = m_protocol;
-    buck.uriStyle = m_uri_style;
-    buck.accessKeyId = m_access_key_id.c_str();
-    buck.secretAccessKey = m_secret_access_key.c_str();
+    {
+        // Unlock the mutex while we run the S3 command.
+        ACE_Reverse_Lock<ACE_Thread_Mutex> revmutex(m_s3bsmutex);
+        ACE_Guard<ACE_Reverse_Lock<ACE_Thread_Mutex> > unguard(revmutex);
 
-    string blkpath = eh->m_name;
-    ResponseHandler rh;
-    S3_delete_object(&buck,
-                     blkpath.c_str(),
-                     NULL,
-                     &rsp_tramp,
-                     &rh);
-    S3Status st = rh.wait();
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+        // Setup a bucket context.
+        S3BucketContext buck;
+        buck.bucketName = m_bucket_name.c_str();
+        buck.protocol = m_protocol;
+        buck.uriStyle = m_uri_style;
+        buck.accessKeyId = m_access_key_id.c_str();
+        buck.secretAccessKey = m_secret_access_key.c_str();
+
+        string blkpath = eh->m_name;
+        ResponseHandler rh;
+        S3_delete_object(&buck,
+                         blkpath.c_str(),
+                         NULL,
+                         &rsp_tramp,
+                         &rh);
+        S3Status st = rh.wait();
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+    }
 
     // Update the accounting.
     m_uncommitted -= eh->m_size;
