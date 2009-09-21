@@ -19,7 +19,6 @@ VBSChild::VBSChild(string const & i_instname)
     : m_instname(i_instname)
     , m_reactor(ACE_Reactor::instance())
     , m_notified(false)
-    , m_numreqs(0)
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");
 
@@ -70,8 +69,6 @@ VBSChild::enqueue_get(VBSGetRequestHandle const & i_grh)
 
     m_getreqs.push_back(i_grh);
 
-    ++m_numreqs;
-
     if (!m_notified)
     {
         m_reactor->notify(this);
@@ -87,8 +84,6 @@ VBSChild::enqueue_put(VBSPutRequestHandle const & i_prh)
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
     m_putreqs.push_back(i_prh);
-
-    ++m_numreqs;
 
     if (!m_notified)
     {
@@ -106,8 +101,6 @@ VBSChild::enqueue_refresh(VBSRequestHandle const & i_rh)
 
     m_refreqs.push_back(i_rh);
 
-    ++m_numreqs;
-
     if (!m_notified)
     {
         m_reactor->notify(this);
@@ -124,8 +117,6 @@ VBSChild::enqueue_headnode(VBSRequestHandle const & i_rh)
 
     m_shereqs.push_back(i_rh);
 
-    ++m_numreqs;
-
     if (!m_notified)
     {
         m_reactor->notify(this);
@@ -138,16 +129,46 @@ VBSChild::get_stats(StatSet & o_ss) const
 {
     o_ss.set_name(m_instname);	// Likely redundant, child BS sets it too.
 
-    size_t numreqs;
+    size_t nget;
+    size_t nput;
+    size_t nrfr;
+    size_t nhed;
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
-        numreqs = m_numreqs;
+        nget = m_getreqs.size();
+        nput = m_putreqs.size();
+        nrfr = m_refreqs.size();
+        nhed = m_shereqs.size();
     }
 
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nreqs");
-        srp->set_value(numreqs);
+        srp->set_name("nget");
+        srp->set_value(nget);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nput");
+        srp->set_value(nput);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nrfr");
+        srp->set_value(nrfr);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nhed");
+        srp->set_value(nhed);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_VALUE);
@@ -183,25 +204,21 @@ VBSChild::initiate_requests()
             {
                 rrh = m_refreqs.front();
                 m_refreqs.pop_front();
-                --m_numreqs;
             }
             else if (!m_shereqs.empty())
             {
                 rrh = m_shereqs.front();
                 m_shereqs.pop_front();
-                --m_numreqs;
             }
             else if (!m_getreqs.empty())
             {
                 grh = m_getreqs.front();
                 m_getreqs.pop_front();
-                --m_numreqs;
             }
             else if (!m_putreqs.empty())
             {
                 prh = m_putreqs.front();
                 m_putreqs.pop_front();
-                --m_numreqs;
             }
             else
             {

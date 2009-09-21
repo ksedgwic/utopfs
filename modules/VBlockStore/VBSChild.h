@@ -64,7 +64,6 @@ private:
 
     mutable ACE_Thread_Mutex			m_chldmutex;
     bool								m_notified;
-    size_t								m_numreqs;
     std::deque<VBSGetRequestHandle>		m_getreqs;
     std::deque<VBSPutRequestHandle>		m_putreqs;
     std::deque<VBSRequestHandle>		m_refreqs;
