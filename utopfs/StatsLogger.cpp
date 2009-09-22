@@ -109,7 +109,7 @@ StatsLogger::format_stats(ostream & i_ostrm,
             StatFormat const & sf = sr.format(jj);
             double factor = sf.has_factor() ? sf.factor() : 1.0;
 
-            double wval;
+            double wval = 0.0;
 
             switch (sf.fmttype())
             {
