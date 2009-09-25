@@ -12,7 +12,10 @@ import utp.BlockStore
 import utp.FileSystem
 
 # This test ensures that sparse file support works.
-
+#
+# Each level of indirection multiples the supported size
+# by BLKSZ / sizeof(BlockRef) = 8K / 32 = 256
+#
 class Test_fs_sparse_01:
 
   def setup_class(self):
@@ -132,6 +135,53 @@ class Test_fs_sparse_01:
     nb = self.fs.fs_refresh();
     assert nb == 13
     
+    # ---------------- tripe indirect ----------------
+
+    # Write the buffer at 25 Gbyte offset.
+    off = 25 * 1024 * 1024 * 1024
+    rv = self.fs.fs_write("/sparse", buffer(jnkstr), off)
+
+    # Size should include the whole space.
+    st = self.fs.fs_getattr("/sparse")
+    nbytes = st.st_size
+    assert nbytes == 18000 + off
+
+    # But the number of blocks is much less ...
+    # inode + 2 data blocks
+    #       + indirect + 3 data blocks
+    #       + doubleind + inddirect + 3 data blocks
+    #       + tripleind + double + indirect + 3 data blocks
+    #
+    nblocks = st.st_blocks
+    assert nblocks == (1 + 2 +
+                       1 + 3 +
+                       1 + 1 + 3 +
+                       1 + 1 + 1 + 3) * 8192 / 512
+
+    # We should be able to read the data.
+    buf = self.fs.fs_read("/sparse", 18000, off)
+    assert str(buf)[0:8] == "00000000"
+    assert str(buf)[18000-9:18000-1] == "00001999"
+
+    # Reading somewhere in the "hole" should see zeros.
+    buf = self.fs.fs_read("/sparse", 18000, off/2)
+    assert str(buf)[0] == '\0'
+    assert str(buf)[18000-1] == '\0'
+
+    # And the read shouldn't change the size or block count.
+    st = self.fs.fs_getattr("/sparse")
+    nbytes = st.st_size
+    assert nbytes == 18000 + off
+    nblocks = st.st_blocks
+    assert nblocks == (1 + 2 +
+                       1 + 3 +
+                       1 + 1 + 3 +
+                       1 + 1 + 1 + 3) * 8192 / 512
+
+    # Refresh the blocks associated w/ the filesystem
+    nb = self.fs.fs_refresh();
+    assert nb == 19
+    
     # ---------------- remount ----------------
 
     # Now we unmount the filesystem.
@@ -153,7 +203,10 @@ class Test_fs_sparse_01:
     # But the number of blocks is much less ...
     # inode + 2 data blocks + indirect + 3 data blocks
     nblocks = st.st_blocks
-    assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512
+    assert nblocks == (1 + 2 +
+                       1 + 3 +
+                       1 + 1 + 3 +
+                       1 + 1 + 1 + 3) * 8192 / 512
 
     # We should be able to read the data.
     self.fs.fs_open("/sparse", O_RDONLY)
@@ -171,11 +224,14 @@ class Test_fs_sparse_01:
     nbytes = st.st_size
     assert nbytes == 18000 + off
     nblocks = st.st_blocks
-    assert nblocks == (1 + 2 + 1 + 3 + 1 + 1 + 3) * 8192 / 512
+    assert nblocks == (1 + 2 +
+                       1 + 3 +
+                       1 + 1 + 3 +
+                       1 + 1 + 1 + 3) * 8192 / 512
 
     # Refresh the blocks associated w/ the filesystem
     nb = self.fs.fs_refresh();
-    assert nb == 13
+    assert nb == 19
     
     # WORKAROUND - py.test doesn't correctly capture the DTOR logging.
     self.bs.bs_close()

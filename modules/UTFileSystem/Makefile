@@ -20,9 +20,10 @@ LIBSRC += 	\
 			SpecialDirNode.cpp \
 			SpecialFileNode.cpp \
 			SymlinkNode.cpp \
+			TripleIndBlockNode.cpp \
 			UTFileSystem.cpp \
-			utfslog.cpp \
 			UTFSFactory.cpp \
+			utfslog.cpp \
 			$(NULL)
 
 MODSO =		UTPFS-UTFS

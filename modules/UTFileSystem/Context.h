@@ -23,6 +23,7 @@ struct UTFS_EXP Context
     DataBlockNodeHandle			m_zdatobj;
     IndirectBlockNodeHandle		m_zsinobj;
     DoubleIndBlockNodeHandle	m_zdinobj;
+    TripleIndBlockNodeHandle	m_ztinobj;
 };
 
 } // namespace UTFS

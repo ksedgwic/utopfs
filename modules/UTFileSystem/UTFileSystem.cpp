@@ -58,6 +58,7 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
     m_ctxt.m_zdatobj = new ZeroDataBlockNode();
     m_ctxt.m_zsinobj = new ZeroIndirectBlockNode(m_ctxt.m_zdatobj);
     m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
+    m_ctxt.m_ztinobj = new ZeroTripleIndBlockNode(m_ctxt.m_zdinobj);
 
     m_rdh = new RootDirNode(i_uname, i_gname);
 

@@ -231,6 +231,14 @@ FileNode::bn_flush(Context & i_ctxt)
     if (m_dinobj && m_dinobj->bn_isdirty())
         m_dinref = m_dinobj->bn_flush(i_ctxt);
 
+    if (m_tinobj && m_tinobj->bn_isdirty())
+        m_tinref = m_tinobj->bn_flush(i_ctxt);
+
+#if 0
+    if (m_qinobj && m_qinobj->bn_isdirty())
+        m_qinref = m_qinobj->bn_flush(i_ctxt);
+#endif
+
     return bn_persist(i_ctxt);
 }
 
@@ -493,6 +501,74 @@ FileNode::rb_traverse(Context & i_ctxt,
     // Tripled Indirect Reference
     // ----------------------------------------------------------------
 
+    // Does this region intersect the triple indirect block?
+    sz =
+        IndirectBlockNode::NUMREF *
+        IndirectBlockNode::NUMREF *
+        IndirectBlockNode::NUMREF *
+        BlockNode::BLKSZ;
+
+    if (i_rngoff < off + sz)
+    {
+        // Find the block object to use.
+        TripleIndBlockNodeHandle nh;
+
+        // Do we have a cached version of this block?
+        if (m_tinobj)
+        {
+            // Yup, use it.
+            nh = m_tinobj;
+        }
+        else
+        {
+            // Nope, does it have a digest yet?
+            if (m_tinref)
+            {
+                // Yes, read it from the blockstore.
+                nh = new TripleIndBlockNode(i_ctxt, m_tinref);
+
+                // Keep it in the cache.
+                m_tinobj = nh;
+            }
+            else if (i_flags & RB_MODIFY)
+            {
+                // Nope, create a new one.
+                nh = new TripleIndBlockNode();
+
+                // Keep it in the cache.
+                m_tinobj = nh;
+
+                // Increment the block count.
+                m_inode.set_blocks(m_inode.blocks() + 1);
+            }
+            else
+            {
+                // Use the zero tingleton.
+                nh = i_ctxt.m_ztinobj;
+
+                // And *don't* keep it in the cache!
+            }
+        }
+
+        if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
+                             i_rngoff, i_rngsize, i_trav))
+        {
+            bn_isdirty(true);
+        }
+    }
+
+    // On to the next block.
+    off += sz;
+
+    // Are we beyond the region?
+    if (off >= i_rngoff + off_t(i_rngsize))
+        goto done;
+
+
+    // ----------------------------------------------------------------
+    // Quad Indirect Reference
+    // ----------------------------------------------------------------
+
     // If we get here we need to code more.
     throwstream(InternalError, FILELINE
                 << "more indirect block traversal implementation required");
@@ -713,6 +789,28 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
             m_dinobj ? m_dinobj : new DoubleIndBlockNode(i_ctxt, m_dinref);
         nblocks += nh->rb_refresh(i_ctxt, i_rid);
     }
+
+    if (m_tinref)
+    {
+        keys.push_back(m_tinref);
+        ++nblocks;
+
+        TripleIndBlockNodeHandle nh =
+            m_tinobj ? m_tinobj : new TripleIndBlockNode(i_ctxt, m_tinref);
+        nblocks += nh->rb_refresh(i_ctxt, i_rid);
+    }
+
+#if 0
+    if (m_qinref)
+    {
+        keys.push_back(m_qinref);
+        ++nblocks;
+
+        QuadIndBlockNodeHandle nh =
+            m_qinobj ? m_qinobj : new QuadIndBlockNode(i_ctxt, m_qinref);
+        nblocks += nh->rb_refresh(i_ctxt, i_rid);
+    }
+#endif
 
     BlockStore::KeySeq missing;
     i_ctxt.m_bsh->bs_refresh_blocks(i_rid, keys, missing);

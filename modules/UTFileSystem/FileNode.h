@@ -25,6 +25,7 @@
 #include "DataBlockNode.h"
 #include "IndirectBlockNode.h"
 #include "DoubleIndBlockNode.h"
+#include "TripleIndBlockNode.h"
 #include "BlockRef.h"
 
 namespace UTFS {
@@ -142,6 +143,7 @@ private:
     DataBlockNodeHandle			m_dirobj[NDIRECT];
     IndirectBlockNodeHandle		m_sinobj;
     DoubleIndBlockNodeHandle	m_dinobj;
+    TripleIndBlockNodeHandle	m_tinobj;
 };
 
 } // namespace UTFS
