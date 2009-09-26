@@ -1803,7 +1803,7 @@ S3BlockStore::write_head(SignedHeadEdge const & i_she)
 
     // Make up a unique name.
     Digest namedig(encbuf.data(), encbuf.size());
-    string namestr = Base64::encode(namedig.data(), namedig.size());
+    string namestr = Base32::encode(namedig.data(), namedig.size());
     string edgekey = edgepath(namestr);
 
     LOG(lgr, 6, m_instname << ' ' << "write_head " << edgekey);
