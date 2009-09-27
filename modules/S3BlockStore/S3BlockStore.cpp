@@ -831,7 +831,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     {
         EntryListHandler elh(m_entries, ets);
         S3_list_bucket(&buck,
-                       NULL,
+                       "BLOCKS/",
                        marker.empty() ? NULL : marker.c_str(),
                        NULL,
                        INT_MAX,
@@ -1009,7 +1009,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     {
         EdgeListHandler elh(edgekeys);
         S3_list_bucket(&buck,
-                       NULL,
+                       "EDGES/",
                        marker.empty() ? NULL : marker.c_str(),
                        NULL,
                        INT_MAX,
