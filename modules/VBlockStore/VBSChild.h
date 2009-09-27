@@ -52,6 +52,8 @@ public:
 
     void enqueue_headnode(VBSRequestHandle const & i_rh);
 
+    VBSGetRequestHandle cancel_get(utp::OctetSeq const & i_key);
+
     void get_stats(utp::StatSet & o_ss) const;
 
 protected:

@@ -13,7 +13,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSHeadInsertRequest::VBSHeadInsertRequest(VBSRequestHolder & i_vbs,
+VBSHeadInsertRequest::VBSHeadInsertRequest(VBlockStore & i_vbs,
                                            long i_outstanding,
                                            SignedHeadEdge const & i_she,
                                            BlockStore::HeadEdgeInsertCompletion * i_cmpl,

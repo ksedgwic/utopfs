@@ -16,7 +16,7 @@ class VBS_EXP VBSHeadFurthestSubReq
     , public utp::BlockStore::HeadNodeTraverseFunc
 {
 public:
-    VBSHeadFurthestSubReq(VBSRequestHolder & i_vbs,
+    VBSHeadFurthestSubReq(VBlockStore & i_vbs,
                           long i_outstanding,
                           utp::HeadNode const & i_hn,
                           utp::BlockStore::HeadNodeTraverseFunc * i_cmpl,

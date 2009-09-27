@@ -16,7 +16,7 @@ class VBS_EXP VBSPutRequest
     , public utp::BlockStore::BlockPutCompletion
 {
 public:
-    VBSPutRequest(VBSRequestHolder & i_vbs,
+    VBSPutRequest(VBlockStore & i_vbs,
                   long i_outstanding,
                   void const * i_keydata,
                   size_t i_keysize,

@@ -15,7 +15,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSHeadFurthestSubReq::VBSHeadFurthestSubReq(VBSRequestHolder & i_vbs,
+VBSHeadFurthestSubReq::VBSHeadFurthestSubReq(VBlockStore & i_vbs,
                                              long i_outstanding,
                                              HeadNode const & i_hn,
                                              BlockStore::HeadNodeTraverseFunc * i_cmpl,

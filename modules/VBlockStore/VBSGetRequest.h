@@ -16,7 +16,7 @@ class VBS_EXP VBSGetRequest
     , public utp::BlockStore::BlockGetCompletion
 {
 public:
-    VBSGetRequest(VBSRequestHolder & i_vbs,
+    VBSGetRequest(VBlockStore & i_vbs,
                   long i_outstanding,
                   void const * i_keydata,
                   size_t i_keysize,
@@ -49,6 +49,8 @@ public:
     // VBSGetRequest
 
     void needy(VBSChildHandle const & i_needy);
+
+    utp::OctetSeq const & key() const { return m_key; }
 
 private:
     utp::OctetSeq							m_key;

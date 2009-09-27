@@ -18,7 +18,7 @@ class VBS_EXP VBSHeadFollowFillReq
     , public utp::BlockStore::HeadEdgeInsertCompletion
 {
 public:
-    VBSHeadFollowFillReq(VBSRequestHolder & i_vbs,
+    VBSHeadFollowFillReq(VBlockStore & i_vbs,
                          long i_outstanding,
                          utp::HeadNode const & i_hn,
                          utp::BlockStore::HeadEdgeTraverseFunc * i_cmpl,

@@ -18,11 +18,11 @@ class VBS_EXP VBSRefreshFinishRequest
     , public utp::BlockStore::RefreshFinishCompletion
 {
 public:
-    VBSRefreshFinishRequest(VBSRequestHolder & i_vbs,
-                           long i_outstanding,
-                           utp::uint64 i_rid,
-                           utp::BlockStore::RefreshFinishCompletion & i_cmpl,
-                           void const * i_argp);
+    VBSRefreshFinishRequest(VBlockStore & i_vbs,
+                            long i_outstanding,
+                            utp::uint64 i_rid,
+                            utp::BlockStore::RefreshFinishCompletion & i_cmpl,
+                            void const * i_argp);
 
     virtual ~VBSRefreshFinishRequest();
 

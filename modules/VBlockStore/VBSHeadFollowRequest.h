@@ -17,7 +17,7 @@ class VBS_EXP VBSHeadFollowRequest
     , public utp::BlockStore::HeadEdgeTraverseFunc
 {
 public:
-    VBSHeadFollowRequest(VBSRequestHolder & i_vbs,
+    VBSHeadFollowRequest(VBlockStore & i_vbs,
                          long i_outstanding,
                          utp::HeadNode const & i_hn,
                          utp::BlockStore::HeadEdgeTraverseFunc * i_cmpl,

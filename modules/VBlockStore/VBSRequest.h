@@ -13,7 +13,6 @@
 
 #include "RC.h"
 
-#include "VBSRequestHolder.h"
 #include "vbsexp.h"
 #include "vbsfwd.h"
 
@@ -24,7 +23,7 @@ namespace VBS {
 class VBS_EXP VBSRequest : public virtual utp::RCObj
 {
 public:
-    VBSRequest(VBSRequestHolder & i_vbs, long i_outstanding);
+    VBSRequest(VBlockStore & i_vbs, long i_outstanding);
 
     virtual ~VBSRequest();
 
@@ -38,11 +37,11 @@ public:
     virtual void done();
 
 protected:
-    VBSRequestHolder &					m_vbs;
+    VBlockStore &					m_vbs;
 
-    ACE_Thread_Mutex					m_vbsreqmutex;
-    bool								m_succeeded;
-    long								m_outstanding;
+    ACE_Thread_Mutex				m_vbsreqmutex;
+    bool							m_succeeded;
+    long							m_outstanding;
 };
 
 std::ostream & operator<<(std::ostream & ostrm, VBSRequest const & i_req);

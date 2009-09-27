@@ -16,7 +16,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSHeadFollowFillReq::VBSHeadFollowFillReq(VBSRequestHolder & i_vbs,
+VBSHeadFollowFillReq::VBSHeadFollowFillReq(VBlockStore & i_vbs,
                                            long i_outstanding,
                                            HeadNode const & i_hn,
                                            BlockStore::HeadEdgeTraverseFunc * i_cmpl,
@@ -70,7 +70,7 @@ VBSHeadFollowFillReq::het_edge(void const * i_argp,
         new VBSHeadInsertRequest(m_vbs, 1, i_she, this, NULL);
 
     // Enqueue on our parent's request list.
-    m_vbs.rh_insert(rh);
+    m_vbs.insert_req(rh);
 
     m_targcp->enqueue_headnode(rh);
 }

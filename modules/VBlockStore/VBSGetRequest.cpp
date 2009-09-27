@@ -14,7 +14,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSGetRequest::VBSGetRequest(VBSRequestHolder & i_vbs,
+VBSGetRequest::VBSGetRequest(VBlockStore & i_vbs,
                              long i_outstanding,
                              void const * i_keydata,
                              size_t i_keysize,
@@ -110,6 +110,9 @@ VBSGetRequest::bg_complete(void const * i_keydata,
             ACE_OS::memcpy(m_buffdata, &m_blk[0], i_blksize);
 
         m_cmpl->bg_complete(&m_key[0], m_key.size(), m_argp, i_blksize);
+
+        // Cancel any other chilren's requests.
+        m_vbs.cancel_get(cp, m_key);
     }
 
     // If there were any needy children, setup a put request for them.
@@ -124,7 +127,7 @@ VBSGetRequest::bg_complete(void const * i_keydata,
                                                     NULL,
                                                     NULL);
 
-        m_vbs.rh_insert(prh);
+        m_vbs.insert_req(prh);
 
         for (unsigned ii = 0; ii < needy.size(); ++ii)
             needy[ii]->enqueue_put(prh);
@@ -190,22 +193,29 @@ VBSGetRequest::bg_error(void const * i_keydata,
         m_cmpl->bg_error(&m_key[0], m_key.size(), m_argp, i_exp);
     }
 
-    // If we were needy and someone else found data make a cross-copy
-    // of the data.
-    if (do_xcopy)
+    if (i_exp.type() == Exception::T_NOTFOUND)
     {
-        VBSPutRequestHandle prh = new VBSPutRequest(m_vbs,
-                                                    1,
-                                                    &m_key[0],
-                                                    m_key.size(),
-                                                    &m_blk[0],
-                                                    m_retsize,
-                                                    NULL,
-                                                    NULL);
+        // If we were needy and someone else found data make a
+        // cross-copy of the data.
+        //
+        // Only do this if the error was NotFound, otherwise
+        // we were canceled and we don't need to do this ...
+        //
+        if (do_xcopy)
+        {
+            VBSPutRequestHandle prh = new VBSPutRequest(m_vbs,
+                                                        1,
+                                                        &m_key[0],
+                                                        m_key.size(),
+                                                        &m_blk[0],
+                                                        m_retsize,
+                                                        NULL,
+                                                        NULL);
 
-        m_vbs.rh_insert(prh);
+            m_vbs.insert_req(prh);
 
-        cp->enqueue_put(prh);
+            cp->enqueue_put(prh);
+        }
     }
 
     // This likely results in our destruction, do it last and

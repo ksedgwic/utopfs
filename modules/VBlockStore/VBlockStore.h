@@ -16,7 +16,6 @@
 #include "BlockStore.h"
 #include "RC.h"
 
-#include "VBSRequestHolder.h"
 #include "vbsexp.h"
 #include "vbsfwd.h"
 
@@ -26,7 +25,6 @@ namespace VBS {
 //
 class VBS_EXP VBlockStore 
     : public utp::BlockStore
-    , public VBSRequestHolder
 {
 public:
     static void destroy(utp::StringSeq const & i_args);
@@ -113,11 +111,14 @@ public:
     virtual void bs_get_stats(utp::StatSet & o_ss) const
         throw(utp::InternalError);
 
-    // VBSRequestHolder Methods
+    // VBlockStore methods
 
-    virtual void rh_insert(VBSRequestHandle const & i_rh);
+    void insert_req(VBSRequestHandle const & i_rh);
 
-    virtual void rh_remove(VBSRequestHandle const & i_rh);
+    void remove_req(VBSRequestHandle const & i_rh);
+
+    // Called when a child has gotten a block to cancel other child gets.
+    void cancel_get(VBSChild * i_hadit, utp::OctetSeq const & i_key);
 
 protected:
 

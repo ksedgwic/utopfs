@@ -17,7 +17,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSHeadFurthestTopReq::VBSHeadFurthestTopReq(VBSRequestHolder & i_vbs,
+VBSHeadFurthestTopReq::VBSHeadFurthestTopReq(VBlockStore & i_vbs,
                                              long i_outstanding,
                                              HeadNode const & i_hn,
                                              BlockStore::HeadNodeTraverseFunc * i_cmpl,
@@ -289,7 +289,7 @@ VBSHeadFurthestTopReq::init()
     LOG(lgr, 6, "bs_head_further_async " << *m_subfurther);
 
     // Need to do this *before* we enqueue the requests.
-    m_vbs.rh_insert(m_subfurther);
+    m_vbs.insert_req(m_subfurther);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -336,7 +336,7 @@ VBSHeadFurthestTopReq::directed_follow_fill
                 new VBSHeadFollowFillReq(m_vbs, ncp, hn, this, NULL, cp);
 
             // Need to do this before we enqueue.
-            m_vbs.rh_insert(rh);
+            m_vbs.insert_req(rh);
 
             // Enqueue the request w/ all of the except the one.
             for (VBSChildMap::const_iterator it3 = m_children.begin();
@@ -368,7 +368,7 @@ VBSHeadFurthestTopReq::second_check()
     LOG(lgr, 6, "bs_head_further_async " << *m_subfurther);
 
     // Need to do this *before* we enqueue the requests.
-    m_vbs.rh_insert(m_subfurther);
+    m_vbs.insert_req(m_subfurther);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -404,7 +404,7 @@ VBSHeadFurthestTopReq::full_follow_fill()
             new VBSHeadFollowFillReq(m_vbs, ncp, hn, this, NULL, &*ch);
 
         // Need to do this before we enqueue.
-        m_vbs.rh_insert(rh);
+        m_vbs.insert_req(rh);
 
         // Enqueue the request w/ all of the except the one.
         for (VBSChildMap::const_iterator it3 = m_children.begin();
@@ -434,7 +434,7 @@ VBSHeadFurthestTopReq::last_check()
     LOG(lgr, 6, "bs_head_further_async " << *m_subfurther);
 
     // Need to do this *before* we enqueue the requests.
-    m_vbs.rh_insert(m_subfurther);
+    m_vbs.insert_req(m_subfurther);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();

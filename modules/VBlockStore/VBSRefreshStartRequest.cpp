@@ -13,7 +13,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSRefreshStartRequest::VBSRefreshStartRequest(VBSRequestHolder & i_vbs,
+VBSRefreshStartRequest::VBSRefreshStartRequest(VBlockStore & i_vbs,
                                                long i_outstanding,
                                                uint64 i_rid,
                                                RefreshStartCompletion & i_cmpl,

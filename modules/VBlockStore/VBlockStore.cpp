@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "Base32.h"
 #include "Log.h"
 #include "BlockStoreFactory.h"
@@ -208,7 +210,7 @@ VBlockStore::bs_block_put_async(void const * i_keydata,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(prh);
+    insert_req(prh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -235,7 +237,7 @@ VBlockStore::bs_refresh_start_async(uint64 i_rid,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(rrh);
+    insert_req(rrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -267,7 +269,7 @@ VBlockStore::bs_refresh_block_async(uint64 i_rid,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(rrh);
+    insert_req(rrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -294,7 +296,7 @@ VBlockStore::bs_refresh_finish_async(uint64 i_rid,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(rrh);
+    insert_req(rrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -321,7 +323,7 @@ VBlockStore::bs_head_insert_async(SignedHeadEdge const & i_she,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(hirh);
+    insert_req(hirh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -348,7 +350,7 @@ VBlockStore::bs_head_follow_async(HeadNode const & i_hn,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(hfrh);
+    insert_req(hfrh);
 
     // Enqueue the request w/ all of the kids.
     for (VBSChildMap::const_iterator it = m_children.begin();
@@ -376,7 +378,7 @@ VBlockStore::bs_head_furthest_async(HeadNode const & i_hn,
 
     // Insert this request in our request list.  We need to do this
     // first in case the request completes synchrounously below.
-    rh_insert(hftrh);
+    insert_req(hftrh);
 
     // This request type issues subrequests to the children ...
     hftrh->init();
@@ -426,9 +428,9 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
 }
 
 void
-VBlockStore::rh_insert(VBSRequestHandle const & i_rh)
+VBlockStore::insert_req(VBSRequestHandle const & i_rh)
 {
-    LOG(lgr, 6, m_instname << ' ' << "rh_insert " << *i_rh);
+    LOG(lgr, 6, m_instname << ' ' << "insert_req " << *i_rh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
 
@@ -436,9 +438,9 @@ VBlockStore::rh_insert(VBSRequestHandle const & i_rh)
 }
 
 void
-VBlockStore::rh_remove(VBSRequestHandle const & i_rh)
+VBlockStore::remove_req(VBSRequestHandle const & i_rh)
 {
-    LOG(lgr, 6, m_instname << ' ' << "rh_remove " << *i_rh);
+    LOG(lgr, 6, m_instname << ' ' << "remove_req " << *i_rh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
 
@@ -453,6 +455,41 @@ VBlockStore::rh_remove(VBSRequestHandle const & i_rh)
     {
         m_vbscond.broadcast();
         m_waiting = false;
+    }
+}
+
+void
+VBlockStore::cancel_get(VBSChild * i_hadit, utp::OctetSeq const & i_key)
+{
+    LOG(lgr, 6, m_instname << ' ' << "cancel_get");
+
+    vector<pair<VBSChildHandle, VBSGetRequestHandle> > reqs;
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+
+        // Cancel the get across all the kids.  Skip the kid that had it.
+        for (VBSChildMap::const_iterator it = m_children.begin();
+             it != m_children.end();
+             ++it)
+        {
+            if (&*it->second == i_hadit)
+                continue;
+
+            VBSGetRequestHandle grh = it->second->cancel_get(i_key);
+            if (grh)
+                reqs.push_back(make_pair(it->second, grh));
+        }
+    }
+
+    // Just pretend they all failed ...
+    for (unsigned ii = 0; ii < reqs.size(); ++ii)
+    {
+        VBSChildHandle const & ch = reqs[ii].first;
+        VBSGetRequestHandle const & grh = reqs[ii].second;
+
+        InternalError err("canceled");
+
+        grh->bg_error(i_key.data(), i_key.size(), &*ch, err);
     }
 }
 

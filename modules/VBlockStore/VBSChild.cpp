@@ -124,6 +124,33 @@ VBSChild::enqueue_headnode(VBSRequestHandle const & i_rh)
     }
 }
 
+VBSGetRequestHandle
+VBSChild::cancel_get(utp::OctetSeq const & i_key)
+{
+    LOG(lgr, 6, m_instname << ' ' << "cancel_get");
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+
+    VBSGetRequestHandle grh;
+
+    // Scan the requests looking for a match on key.
+    std::deque<VBSGetRequestHandle>::iterator it;
+    for (it == m_getreqs.begin(); it != m_getreqs.end(); ++it)
+    {
+        if ((*it)->key() == i_key)
+        {
+            grh = *it;
+            break;
+        }
+    }
+
+    // Remove it from the dequeue.
+    if (it != m_getreqs.end())
+        m_getreqs.erase(it);
+
+    return grh;
+}
+
 void
 VBSChild::get_stats(StatSet & o_ss) const
 {

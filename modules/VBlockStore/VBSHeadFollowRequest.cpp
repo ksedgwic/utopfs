@@ -15,7 +15,7 @@ using namespace utp;
 
 namespace VBS {
 
-VBSHeadFollowRequest::VBSHeadFollowRequest(VBSRequestHolder & i_vbs,
+VBSHeadFollowRequest::VBSHeadFollowRequest(VBlockStore & i_vbs,
                                            long i_outstanding,
                                            HeadNode const & i_hn,
                                            BlockStore::HeadEdgeTraverseFunc * i_cmpl,
