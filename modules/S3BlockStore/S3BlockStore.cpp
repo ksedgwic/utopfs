@@ -844,6 +844,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                         << "Unexpected S3 error: " << st);
         istrunc = elh.m_istrunc;
         marker = elh.m_last_seen;
+
+        LOG(lgr, 4, m_instname << ' '
+            << "bs_open listed " << m_entries.size() << " blocks");
     }
     while (istrunc);
 
@@ -922,6 +925,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         MDIndex mdndx;
         if (!mdndx.ParseFromString(mdndxbuf))
             throwstream(InternalError, FILELINE << "trouble parsing MDNDX");
+
+        LOG(lgr, 4, m_instname << ' '
+            << "parsed " << mdndx.mdentry_size() << " MDNDX entries");
 
         int32_t timeoff = mdndx.has_timeoff() ? mdndx.timeoff() : 0;
         for (int ii = 0; ii < mdndx.mdentry_size(); ++ii)
@@ -1016,6 +1022,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                         << "Unexpected S3 error: " << st);
         istrunc = elh.m_istrunc;
         marker = elh.m_last_seen;
+
+        LOG(lgr, 4, m_instname << ' '
+            << "bs_open listed " << edgekeys.size() << " edges");
     }
     while (istrunc);
 

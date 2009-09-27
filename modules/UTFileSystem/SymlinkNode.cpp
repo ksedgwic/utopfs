@@ -12,7 +12,7 @@ namespace UTFS {
 SymlinkNode::SymlinkNode(string const & i_path)
     : FileNode(0777, "root", "root")
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 
     // We are a symlink, not a file.
     mode_t m = mode();	// Fetch current bits
@@ -30,12 +30,12 @@ SymlinkNode::SymlinkNode(string const & i_path)
 SymlinkNode::SymlinkNode(FileNode const & i_fn)
     : FileNode(i_fn)
 {
-    LOG(lgr, 4, "CTOR " << bn_blkref());
+    LOG(lgr, 6, "CTOR " << bn_blkref());
 }
 
 SymlinkNode::~SymlinkNode()
 {
-    LOG(lgr, 4, "DTOR " << bn_blkref());
+    LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
 int
