@@ -16,7 +16,7 @@ namespace UTFS {
 RootDirNode::RootDirNode(string const & i_uname, string const & i_gname)
     : DirNode(0777, i_uname, i_gname)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 
     m_sdh = new SpecialDirNode;
 }
@@ -24,14 +24,14 @@ RootDirNode::RootDirNode(string const & i_uname, string const & i_gname)
 RootDirNode::RootDirNode(Context & i_ctxt, BlockRef const & i_ref)
     : DirNode(i_ctxt, i_ref)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 
     m_sdh = new SpecialDirNode;
 }
 
 RootDirNode::~RootDirNode()
 {
-    LOG(lgr, 4, "DTOR");
+    LOG(lgr, 6, "DTOR");
 }
 
 void

@@ -67,7 +67,7 @@ DirNode::DirNode(mode_t i_mode,
                  string const & i_gname)
     : FileNode(i_mode, i_uname, i_gname)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 
     // We are a directory, not a file.
     mode_t m = mode();	// Fetch current bits
