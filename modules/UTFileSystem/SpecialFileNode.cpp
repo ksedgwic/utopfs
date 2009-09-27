@@ -13,12 +13,12 @@ SpecialFileNode::SpecialFileNode(string const & i_data)
     : FileNode(0444, "root", "root")
     , m_data(i_data)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 }
 
 SpecialFileNode::~SpecialFileNode()
 {
-    LOG(lgr, 4, "DTOR");
+    LOG(lgr, 6, "DTOR");
 }
 
 int

@@ -21,12 +21,12 @@ SpecialDirNode::SpecialDirNode()
     : DirNode(0555, "root", "root")
     , m_version(new SpecialFileNode(utopfs_ver_str))
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 }
 
 SpecialDirNode::~SpecialDirNode()
 {
-    LOG(lgr, 4, "DTOR");
+    LOG(lgr, 6, "DTOR");
 }
 
 void

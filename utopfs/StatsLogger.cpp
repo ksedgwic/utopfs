@@ -27,12 +27,12 @@ StatsLogger::StatsLogger(Assembly * i_ap,
     , m_statssecs(i_statssecs)
     , m_reactor(ACE_Reactor::instance())
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 }
 
 StatsLogger::~StatsLogger()
 {
-    LOG(lgr, 4, "DTOR");
+    LOG(lgr, 6, "DTOR");
 }
 
 int

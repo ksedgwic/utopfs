@@ -28,7 +28,7 @@ Controller::Controller(Assembly * i_ap,
     , m_reactor(ACE_Reactor::instance())
     , m_issyncing(false)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 
     ostringstream pathstrm;
     pathstrm << "/var/tmp/utopfs_control." << getpid();
@@ -37,7 +37,7 @@ Controller::Controller(Assembly * i_ap,
 
 Controller::~Controller()
 {
-    LOG(lgr, 4, "DTOR");
+    LOG(lgr, 6, "DTOR");
 }
 
 int
