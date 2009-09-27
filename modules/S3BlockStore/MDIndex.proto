@@ -1,0 +1,13 @@
+package S3BS;
+
+message MDEntry
+{
+    required string		name	= 1;
+    optional uint32		mtime	= 2;
+}
+
+message MDIndex
+{
+    optional uint32		timeoff	= 1;
+    repeated MDEntry	mdentry	= 2;
+}

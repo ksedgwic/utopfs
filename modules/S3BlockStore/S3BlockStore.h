@@ -162,9 +162,10 @@ protected:
 
     std::string ridname(utp::uint64 i_rid) const;
 
-    void touch_entry(std::string const & i_entry,
+    bool touch_entry(std::string const & i_entry,
                      time_t i_tstamp,
-                     off_t i_size);
+                     off_t i_size,
+                     bool i_plsinsert);
 
     void purge_uncommitted();
 

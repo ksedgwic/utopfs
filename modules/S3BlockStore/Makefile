@@ -2,6 +2,10 @@ ROOTDIR =	../..
 
 include $(ROOTDIR)/config/define.mk
 
+PROTO +=	\
+			MDIndex.proto \
+			$(NULL)
+
 LIBSRC += 	\
 			S3BlockStore.cpp \
 			S3BSFactory.cpp \
@@ -21,6 +25,7 @@ include $(ROOTDIR)/config/depend.mk
 include $(ROOTDIR)/libutp/src/export.mk
 
 # external dependencies
+include $(ROOTDIR)/config/extdep/protobuf.mk
 include $(ROOTDIR)/config/extdep/ACE.mk
 include $(ROOTDIR)/config/extdep/libs3.mk
 
