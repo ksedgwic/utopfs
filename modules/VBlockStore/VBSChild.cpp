@@ -63,7 +63,7 @@ VBSChild::handle_exception(ACE_HANDLE fd)
 void
 VBSChild::enqueue_get(VBSGetRequestHandle const & i_grh)
 {
-    LOG(lgr, 4, m_instname << ' ' << "enqueue_get " << *i_grh);
+    LOG(lgr, 6, m_instname << ' ' << "enqueue_get " << *i_grh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
@@ -95,7 +95,7 @@ VBSChild::enqueue_put(VBSPutRequestHandle const & i_prh)
 void
 VBSChild::enqueue_refresh(VBSRequestHandle const & i_rh)
 {
-    LOG(lgr, 4, m_instname << ' ' << "enqueue_refresh " << *i_rh);
+    LOG(lgr, 6, m_instname << ' ' << "enqueue_refresh " << *i_rh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
@@ -111,7 +111,7 @@ VBSChild::enqueue_refresh(VBSRequestHandle const & i_rh)
 void
 VBSChild::enqueue_headnode(VBSRequestHandle const & i_rh)
 {
-    LOG(lgr, 4, m_instname << ' ' << "enqueue_headnode " << *i_rh);
+    LOG(lgr, 6, m_instname << ' ' << "enqueue_headnode " << *i_rh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 

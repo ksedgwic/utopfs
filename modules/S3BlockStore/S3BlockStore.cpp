@@ -1019,7 +1019,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     }
     while (istrunc);
 
-    LOG(lgr, 4, m_instname << ' ' << "done reading EDGES");
+    LOG(lgr, 4, m_instname << ' ' << "read " << edgekeys.size() << " EDGES");
 
     // Read all of the signed edges and insert.
     for (StringSeq::const_iterator it = edgekeys.begin();
