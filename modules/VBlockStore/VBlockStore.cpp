@@ -107,7 +107,7 @@ void
 VBlockStore::bs_stat(Stat & o_stat)
     throw(InternalError)
 {
-    LOG(lgr, 4, m_instname << ' ' << "bs_stat");
+    LOG(lgr, 6, m_instname << ' ' << "bs_stat");
 
     // For now we presume that the stat call doesn't block and we just
     // call all of the children directly ...
@@ -137,7 +137,7 @@ void
 VBlockStore::bs_sync()
     throw(InternalError)
 {
-    LOG(lgr, 4, m_instname << ' ' << "bs_sync starting");
+    LOG(lgr, 6, m_instname << ' ' << "bs_sync starting");
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
 
@@ -147,7 +147,7 @@ VBlockStore::bs_sync()
         m_vbscond.wait();
     }
 
-    LOG(lgr, 4, m_instname << ' ' << "bs_sync finished");
+    LOG(lgr, 6, m_instname << ' ' << "bs_sync finished");
 }
 
 void

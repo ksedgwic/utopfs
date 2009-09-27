@@ -39,7 +39,7 @@ int
 StatsLogger::handle_timeout(ACE_Time_Value const & current_time,
                            void const * act)
 {
-    LOG(lgr, 4, "handle_timeout");
+    LOG(lgr, 6, "handle_timeout");
 
     do_stats();
 
