@@ -1109,57 +1109,59 @@ void
 {
     try
     {
-        int bytes_read;
+        string entry = entryname(i_keydata, i_keysize);
+        string blkpath = blockpath(entry);
+
+        LOG(lgr, 6, m_instname << ' '
+            << "bs_block_get " << entry.substr(0, 8) << "...");
+
+        // Do we have this block?
         {
-            // ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
-            string entry = entryname(i_keydata, i_keysize);
-            string blkpath = blockpath(entry);
-
-            LOG(lgr, 6, m_instname << ' '
-                << "bs_block_get " << entry.substr(0, 8) << "...");
-
-            // Setup a bucket context.
-            S3BucketContext buck;
-            buck.bucketName = m_bucket_name.c_str();
-            buck.protocol = m_protocol;
-            buck.uriStyle = m_uri_style;
-            buck.accessKeyId = m_access_key_id.c_str();
-            buck.secretAccessKey = m_secret_access_key.c_str();
-
-            S3GetConditions gc;
-            gc.ifModifiedSince = -1;
-            gc.ifNotModifiedSince = -1;
-            gc.ifMatchETag = NULL;
-            gc.ifNotMatchETag = NULL;
-
-            GetHandler gh((uint8 *) o_buffdata, i_buffsize);
-
-            S3_get_object(&buck,
-                          blkpath.c_str(),
-                          &gc,
-                          0,
-                          0,
-                          NULL,
-                          &get_tramp,
-                          &gh);
-
-            S3Status st = gh.wait();
-
-            if (st == S3StatusErrorNoSuchKey)
+            EntryHandle meh = new Entry(blkpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(meh);
+            if (pos == m_entries.end())
                 throwstream(NotFoundError,
-                            "key \"" << blkpath << "\" not found");
-
-            if (st != S3StatusOK)
-                throwstream(InternalError, FILELINE
-                            << "Unexpected S3 error: " << st);
-
-            bytes_read = gh.size();
-
-            // Release the mutex before the completion function.
+                            "key \"" << blkpath << "\" not in entries");
         }
+            
+        // Setup a bucket context.
+        S3BucketContext buck;
+        buck.bucketName = m_bucket_name.c_str();
+        buck.protocol = m_protocol;
+        buck.uriStyle = m_uri_style;
+        buck.accessKeyId = m_access_key_id.c_str();
+        buck.secretAccessKey = m_secret_access_key.c_str();
 
-        i_cmpl.bg_complete(i_keydata, i_keysize, i_argp, bytes_read);
+        S3GetConditions gc;
+        gc.ifModifiedSince = -1;
+        gc.ifNotModifiedSince = -1;
+        gc.ifMatchETag = NULL;
+        gc.ifNotMatchETag = NULL;
+
+        GetHandler gh((uint8 *) o_buffdata, i_buffsize);
+
+        S3_get_object(&buck,
+                      blkpath.c_str(),
+                      &gc,
+                      0,
+                      0,
+                      NULL,
+                      &get_tramp,
+                      &gh);
+
+        S3Status st = gh.wait();
+
+        if (st == S3StatusErrorNoSuchKey)
+            throwstream(NotFoundError,
+                        "key \"" << blkpath << "\" not found");
+
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "Unexpected S3 error: " << st);
+
+        i_cmpl.bg_complete(i_keydata, i_keysize, i_argp, gh.size());
     }
     catch (Exception const & ex)
     {
