@@ -79,7 +79,7 @@ VBSChild::enqueue_get(VBSGetRequestHandle const & i_grh)
 void
 VBSChild::enqueue_put(VBSPutRequestHandle const & i_prh)
 {
-    LOG(lgr, 4, m_instname << ' ' << "enqueue_put " << *i_prh);
+    LOG(lgr, 6, m_instname << ' ' << "enqueue_put " << *i_prh);
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
@@ -205,7 +205,7 @@ VBSChild::get_stats(StatSet & o_ss) const
 void
 VBSChild::initiate_requests()
 {
-    LOG(lgr, 4, m_instname << ' ' << "initiate_requests starting");
+    LOG(lgr, 6, m_instname << ' ' << "initiate_requests starting");
 
     // NOTE - This loop handles requests in the following order:
     //
@@ -275,7 +275,7 @@ VBSChild::initiate_requests()
         }
     }
 
-    LOG(lgr, 4, m_instname << ' ' << "initiate_requests finished");
+    LOG(lgr, 6, m_instname << ' ' << "initiate_requests finished");
 }
 
 } // namespace VBS
