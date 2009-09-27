@@ -83,7 +83,7 @@ DirNode::DirNode(mode_t i_mode,
 DirNode::DirNode(Context & i_ctxt, FileNode const & i_fn)
     : FileNode(i_fn)
 {
-    LOG(lgr, 4, "CTOR " << bn_blkref());
+    LOG(lgr, 6, "CTOR " << bn_blkref());
 
     deserialize(i_ctxt);
 }
@@ -91,14 +91,14 @@ DirNode::DirNode(Context & i_ctxt, FileNode const & i_fn)
 DirNode::DirNode(Context & i_ctxt, BlockRef const & i_ref)
     : FileNode(i_ctxt, i_ref)
 {
-    LOG(lgr, 4, "CTOR " << i_ref);
+    LOG(lgr, 6, "CTOR " << i_ref);
 
     deserialize(i_ctxt);
 }
 
 DirNode::~DirNode()
 {
-    LOG(lgr, 4, "DTOR " << bn_blkref());
+    LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
 BlockRef const &

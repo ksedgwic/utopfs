@@ -63,7 +63,7 @@ FileNode::FileNode(mode_t i_mode,
                    string const & i_uname,
                    string const & i_gname)
 {
-    LOG(lgr, 4, "CTOR");
+    LOG(lgr, 6, "CTOR");
 
     T64 now = T64::now();
 
@@ -143,7 +143,7 @@ FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
 
 FileNode::~FileNode()
 {
-    LOG(lgr, 4, "DTOR " << bn_blkref());
+    LOG(lgr, 6, "DTOR " << bn_blkref());
 }
 
 BlockRef const &
