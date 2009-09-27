@@ -135,7 +135,7 @@ VBSChild::cancel_get(utp::OctetSeq const & i_key)
 
     // Scan the requests looking for a match on key.
     std::deque<VBSGetRequestHandle>::iterator it;
-    for (it == m_getreqs.begin(); it != m_getreqs.end(); ++it)
+    for (it = m_getreqs.begin(); it != m_getreqs.end(); ++it)
     {
         if ((*it)->key() == i_key)
         {

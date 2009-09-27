@@ -823,6 +823,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     // Inventory all existing blocks, insert into entries and
     // time-sorted entries sets.
     //
+    LOG(lgr, 4, m_instname << ' ' << "bs_open listing blocks");
     EntryTimeSet ets;
     string marker = "";
     bool istrunc = false;
@@ -845,6 +846,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         marker = elh.m_last_seen;
     }
     while (istrunc);
+
+    LOG(lgr, 4, m_instname << ' '
+        << "bs_open saw " << m_entries.size() << " blocks");
 
     // Figure out the size of the MDNDX file.
     ssize_t mdndxsz = -1;
@@ -882,6 +886,8 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     if (mdndxsz != -1)
     {
+        LOG(lgr, 4, m_instname << ' ' << "reading MDNDX");
+
         // Read the mdndx into a buffer.
         string mdndxbuf(mdndxsz, '\0');
         for (unsigned ii = 0; ii < MAX_RETRIES; ++ii)
@@ -903,7 +909,10 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         
             S3Status st = gh.wait();
             if (st == S3StatusOK)
+            {
+                LOG(lgr, 4, m_instname << ' ' << "done reading MDNDX");
                 break;
+            }
 
             // Sigh ... these we retry a few times ...
             LOG(lgr, 4, "mdndx get " << m_bucket_name
@@ -986,6 +995,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     // Read all of the SignedHeadEdges.
 
     // Accumulate a list of all the signed edges
+    LOG(lgr, 4, m_instname << ' ' << "reading EDGES");
     StringSeq edgekeys;
     marker = "";
     istrunc = false;
@@ -1008,6 +1018,8 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         marker = elh.m_last_seen;
     }
     while (istrunc);
+
+    LOG(lgr, 4, m_instname << ' ' << "done reading EDGES");
 
     // Read all of the signed edges and insert.
     for (StringSeq::const_iterator it = edgekeys.begin();
