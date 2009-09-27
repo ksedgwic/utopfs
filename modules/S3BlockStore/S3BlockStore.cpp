@@ -1199,6 +1199,22 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
         LOG(lgr, 6, m_instname << ' '
             << "bs_block_put " << entry.substr(0, 8) << "...");
 
+        // Do we alerady have this block?
+        bool alreadyhave = false;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+            EntryHandle meh = new Entry(blkpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(meh);
+            if (pos != m_entries.end())
+                alreadyhave = true;
+        }
+
+        if (alreadyhave)
+        {
+            i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
+        }
+
         // We need to determine the current size of the block
         // if it already exists.
         //
