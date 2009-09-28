@@ -181,6 +181,8 @@ DirNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
             else if (S_ISLNK(nh->mode()))
                 nh = new SymlinkNode(*nh);
 
+            m_cache.insert(make_pair(ent.name(), nh);
+
             nblocks += nh->rb_refresh(i_ctxt, i_rid);
         }
     }
