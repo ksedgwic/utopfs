@@ -962,6 +962,11 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
         rb_traverse(i_ctxt, *this, RB_DEFAULT, 0, i_off, i_size, rbtf);
         return rbtf.bt_retval();
     }
+    catch (NotFoundError const & ex)
+    {
+        // A block we need is missing, fail this read w/ an IO error.
+        return -EIO;
+    }
     catch (int const & i_errno)
     {
         return -i_errno;
