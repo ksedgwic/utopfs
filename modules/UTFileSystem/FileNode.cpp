@@ -965,6 +965,7 @@ FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
     catch (NotFoundError const & ex)
     {
         // A block we need is missing, fail this read w/ an IO error.
+        LOG(lgr, 1, "IO ERROR: " << ex.what());
         return -EIO;
     }
     catch (int const & i_errno)
