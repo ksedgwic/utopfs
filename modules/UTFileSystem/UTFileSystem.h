@@ -150,8 +150,6 @@ protected:
     BlockRef rootref();
 
 private:
-    typedef std::map<std::string, FileNodeHandle>	NodeMap;
-
     utp::Digest					m_fsiddig;
 
     ACE_Thread_Mutex			m_utfsmutex;
