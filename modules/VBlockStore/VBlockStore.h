@@ -10,10 +10,12 @@
 
 #include <ace/Condition_Thread_Mutex.h>
 #include <ace/Thread_Mutex.h>
+#include <ace/Reactor.h>
 
 #include "utpfwd.h"
 
 #include "BlockStore.h"
+#include "ThreadPool.h"
 #include "RC.h"
 
 #include "vbsexp.h"
@@ -125,6 +127,8 @@ protected:
 private:
     std::string						m_instname;
     VBSChildMap						m_children;
+    ACE_Reactor *					m_vbsreactor;
+    utp::ThreadPool					m_vbsthreadpool;
 
     mutable ACE_Thread_Mutex		m_vbsmutex;
     ACE_Condition_Thread_Mutex		m_vbscond;

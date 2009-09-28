@@ -26,7 +26,8 @@ class VBS_EXP VBSChild
     , public virtual utp::RCObj
 {
 public:
-    VBSChild(std::string const & i_instname);
+    VBSChild(ACE_Reactor * i_reactor,
+             std::string const & i_instname);
 
     virtual ~VBSChild();
 
@@ -60,8 +61,8 @@ protected:
     void initiate_requests();
 
 private:
-    std::string							m_instname;
     ACE_Reactor *						m_reactor;
+    std::string							m_instname;
     utp::BlockStoreHandle				m_bsh;
 
     mutable ACE_Thread_Mutex			m_chldmutex;

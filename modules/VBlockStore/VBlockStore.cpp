@@ -1,5 +1,7 @@
 #include <vector>
 
+#include <ace/TP_Reactor.h>
+
 #include "Base32.h"
 #include "Log.h"
 #include "BlockStoreFactory.h"
@@ -31,15 +33,21 @@ VBlockStore::destroy(StringSeq const & i_args)
 
 VBlockStore::VBlockStore(string const & i_instname)
     : m_instname(i_instname)
+    , m_vbsreactor(new ACE_Reactor(new ACE_TP_Reactor))
+    , m_vbsthreadpool(m_vbsreactor)
     , m_vbscond(m_vbsmutex)
     , m_waiting(false)
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");
+
+    m_vbsthreadpool.init(ACE_OS::num_processors_online() * 2);
 }
 
 VBlockStore::~VBlockStore()
 {
     LOG(lgr, 4, m_instname << ' ' << "DTOR");
+
+    m_vbsthreadpool.term();
 }
 
 string const &
@@ -70,7 +78,8 @@ VBlockStore::bs_open(StringSeq const & i_args)
     for (size_t ii = 0; ii < i_args.size(); ++ii)
     {
         string const & instname = i_args[ii];
-        m_children.insert(make_pair(instname, new VBSChild(instname)));
+        m_children.insert(make_pair(instname,
+                                    new VBSChild(m_vbsreactor, instname)));
     }
 }
 

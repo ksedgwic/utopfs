@@ -13,7 +13,6 @@
 
 #include <ace/Reactor.h>
 #include <ace/Service_Config.h>
-#include <ace/Task.h>
 #include <ace/TP_Reactor.h>
 
 #define FUSE_USE_VERSION 26
@@ -30,63 +29,10 @@
 #include "fuselog.h"
 #include "Log.h"
 #include "StatsLogger.h"
+#include "ThreadPool.h"
 
 using namespace std;
 using namespace utp;
-
-namespace {
-
-class ThreadPool : public ACE_Task_Base
-{
-public:
-    ThreadPool(ACE_Reactor * i_reactor, int i_numthreads)
-        : m_reactor(i_reactor)
-    {
-        LOG(lgr, 4, "ThreadPool CTOR");
-
-        if (activate(THR_NEW_LWP | THR_JOINABLE, i_numthreads) != 0)
-            abort();
-    }
-    
-    ~ThreadPool()
-    {
-        LOG(lgr, 4, "ThreadPool DTOR");
-        wait();
-    }
-
-    virtual int svc(void)
-    {
-        LOG(lgr, 4, "ThreadPool starting");
-
-        // Run the Reactor event loop.  Catch exceptions and report but keep
-        // the threads running ...
-        //
-        while (true)
-        {
-            try
-            {
-                m_reactor->run_reactor_event_loop();
-            }
-
-            catch (exception const & ex)
-            {
-                cerr << "caught std::exception: " << ex.what() << endl;
-            }
-            catch (...)
-            {
-                cerr << "caught UNKNOWN EXCEPTION" << endl;
-            }
-        }
-
-        LOG(lgr, 4, "ThreadPool finished");
-        return 0;
-    }
-
-private:
-    ACE_Reactor *		m_reactor;
-};
-
-} // end namespace
 
 extern "C" {
 
@@ -221,8 +167,10 @@ utopfs_init(struct fuse_conn_info * i_conn)
     ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor), 1);
 
     // Start the thread pool.
-    size_t numthreads = ACE_OS::num_processors_online() * 4;
-    utopfs.thrpool = new ThreadPool(ACE_Reactor::instance(), numthreads);
+    // size_t numthreads = ACE_OS::num_processors_online() * 2;
+    size_t numthreads = 4;
+    utopfs.thrpool = new ThreadPool(ACE_Reactor::instance());
+    utopfs.thrpool->init(numthreads);
 
     // Create the assembly of blockstores and filesystem.
     try

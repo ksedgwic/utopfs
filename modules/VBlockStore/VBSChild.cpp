@@ -15,9 +15,9 @@ using namespace utp;
 
 namespace VBS {
 
-VBSChild::VBSChild(string const & i_instname)
-    : m_instname(i_instname)
-    , m_reactor(ACE_Reactor::instance())
+VBSChild::VBSChild(ACE_Reactor * i_reactor, string const & i_instname)
+    : m_reactor(i_reactor)
+    , m_instname(i_instname)
     , m_notified(false)
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");

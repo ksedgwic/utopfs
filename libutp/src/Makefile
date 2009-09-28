@@ -27,6 +27,7 @@ LIBSRC =	\
 			MD5.cpp \
 			Random.cpp \
 			StreamCipher.cpp \
+			ThreadPool.cpp \
 			T64.cpp \
 			utplog.cpp \
 			$(NULL)
