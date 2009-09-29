@@ -1542,7 +1542,7 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
             throwstream(InternalError, FILELINE
                         << "trouble serializing MDNDX");
 
-        LOG(lgr, 6, m_instname << ' '
+        LOG(lgr, 4, m_instname << ' '
             << "writing MDNDX, size " << mdndxbuf.size());
 
         // Setup a bucket context.
@@ -1581,6 +1581,9 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
             LOG(lgr, 4, "mdndx update " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
         }
+
+        LOG(lgr, 4, m_instname << ' '
+            << "wrote MDNDX, size " << mdndxbuf.size());
 
         i_cmpl.rf_complete(i_rid, i_argp);
     }
