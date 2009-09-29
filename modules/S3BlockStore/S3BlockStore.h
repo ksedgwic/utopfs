@@ -182,6 +182,8 @@ private:
     std::string					m_secret_access_key;
     std::string					m_bucket_name;
 
+    S3BucketContext				m_buckctxt;
+
     utp::LameHeadNodeGraph		m_lhng;
 
     mutable ACE_Thread_Mutex	m_s3bsmutex;

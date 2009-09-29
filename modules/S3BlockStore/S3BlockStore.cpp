@@ -344,13 +344,12 @@ S3BlockStore::destroy(StringSeq const & i_args)
         throwstream(InternalError, FILELINE
                     << "Unexpected S3 error: " << st);
 
-    // Setup a bucket context.
-    S3BucketContext buck;
-    buck.bucketName = bucket_name.c_str();
-    buck.protocol = protocol;
-    buck.uriStyle = uri_style;
-    buck.accessKeyId = access_key_id.c_str();
-    buck.secretAccessKey = secret_access_key.c_str();
+    S3BucketContext buckctxt;
+    buckctxt.bucketName = bucket_name.c_str();
+    buckctxt.protocol = protocol;
+    buckctxt.uriStyle = uri_style;
+    buckctxt.accessKeyId = access_key_id.c_str();
+    buckctxt.secretAccessKey = secret_access_key.c_str();
 
     // Accumulate a list of all the keys.
     StringSeq keys;
@@ -366,7 +365,7 @@ S3BlockStore::destroy(StringSeq const & i_args)
                 throwstream(InternalError, FILELINE
                             << "too many retries");
 
-            S3_list_bucket(&buck,
+            S3_list_bucket(&buckctxt,
                            NULL,
                            marker.empty() ? NULL : marker.c_str(),
                            NULL,
@@ -400,7 +399,7 @@ S3BlockStore::destroy(StringSeq const & i_args)
                             << "too many retries");
 
             ResponseHandler rh;
-            S3_delete_object(&buck,
+            S3_delete_object(&buckctxt,
                              keys[i].c_str(),
                              NULL,
                              &rsp_tramp,
@@ -593,14 +592,6 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
         LOG(lgr, 7, m_instname << ' ' << "polling created bucket again ...");
     }
 
-    // Setup a bucket context.
-    S3BucketContext buck;
-    buck.bucketName = m_bucket_name.c_str();
-    buck.protocol = m_protocol;
-    buck.uriStyle = m_uri_style;
-    buck.accessKeyId = m_access_key_id.c_str();
-    buck.secretAccessKey = m_secret_access_key.c_str();
-
     // Create a SIZE object record.
     ostringstream ostrm;
     ostrm << m_size << endl;
@@ -614,7 +605,7 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     for (unsigned i = 0; i <= MAX_RETRIES; ++i)
     {
         PutHandler ph((uint8 const *) obj.data(), obj.size());
-        S3_put_object(&buck,
+        S3_put_object(&m_buckctxt,
                       "SIZE",
                       obj.size(),
                       &pp,
@@ -784,14 +775,6 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         throwstream(InternalError, FILELINE
                     << "Unexpected S3 error: " << st);
 
-    // Setup a bucket context.
-    S3BucketContext buck;
-    buck.bucketName = m_bucket_name.c_str();
-    buck.protocol = m_protocol;
-    buck.uriStyle = m_uri_style;
-    buck.accessKeyId = m_access_key_id.c_str();
-    buck.secretAccessKey = m_secret_access_key.c_str();
-
     S3GetConditions gc;
     gc.ifModifiedSince = -1;
     gc.ifNotModifiedSince = -1;
@@ -802,7 +785,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     GetHandler gh((uint8 *) &buffer[0], buffer.size());
 
-    S3_get_object(&buck,
+    S3_get_object(&m_buckctxt,
                   "SIZE",
                   &gc,
                   0,
@@ -830,7 +813,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     do
     {
         EntryListHandler elh(m_entries, ets);
-        S3_list_bucket(&buck,
+        S3_list_bucket(&m_buckctxt,
                        "BLOCKS/",
                        marker.empty() ? NULL : marker.c_str(),
                        NULL,
@@ -862,7 +845,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                         << "too many retries");
 
         ResponseHandler rh;
-        S3_head_object(&buck,
+        S3_head_object(&m_buckctxt,
                        "MDNDX",
                        NULL,
                        &rsp_tramp,
@@ -901,7 +884,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
             GetHandler gh((uint8 *) &mdndxbuf[0], mdndxbuf.size());
 
-            S3_get_object(&buck,
+            S3_get_object(&m_buckctxt,
                           "MDNDX",
                           &gc,
                           0,
@@ -1008,7 +991,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     do
     {
         EdgeListHandler elh(edgekeys);
-        S3_list_bucket(&buck,
+        S3_list_bucket(&m_buckctxt,
                        "EDGES/",
                        marker.empty() ? NULL : marker.c_str(),
                        NULL,
@@ -1047,7 +1030,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
         GetHandler gh(buffer, sizeof(buffer));
 
-        S3_get_object(&buck,
+        S3_get_object(&m_buckctxt,
                       edgekey.c_str(),
                       &gc,
                       0,
@@ -1147,14 +1130,6 @@ void
                             "key \"" << blkpath << "\" not in entries");
         }
             
-        // Setup a bucket context.
-        S3BucketContext buck;
-        buck.bucketName = m_bucket_name.c_str();
-        buck.protocol = m_protocol;
-        buck.uriStyle = m_uri_style;
-        buck.accessKeyId = m_access_key_id.c_str();
-        buck.secretAccessKey = m_secret_access_key.c_str();
-
         S3GetConditions gc;
         gc.ifModifiedSince = -1;
         gc.ifNotModifiedSince = -1;
@@ -1163,7 +1138,7 @@ void
 
         GetHandler gh((uint8 *) o_buffdata, i_buffsize);
 
-        S3_get_object(&buck,
+        S3_get_object(&m_buckctxt,
                       blkpath.c_str(),
                       &gc,
                       0,
@@ -1269,14 +1244,6 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
                 purge_uncommitted();
         }
             
-        // Setup a bucket context.
-        S3BucketContext buck;
-        buck.bucketName = m_bucket_name.c_str();
-        buck.protocol = m_protocol;
-        buck.uriStyle = m_uri_style;
-        buck.accessKeyId = m_access_key_id.c_str();
-        buck.secretAccessKey = m_secret_access_key.c_str();
-
         MD5 md5sum(i_blkdata, i_blksize);
         S3PutProperties pp;
         ACE_OS::memset(&pp, '\0', sizeof(pp));
@@ -1289,7 +1256,7 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
                             << "too many retries");
 
             PutHandler ph((uint8 const *) i_blkdata, i_blksize);
-            S3_put_object(&buck,
+            S3_put_object(&m_buckctxt,
                           blkpath.c_str(),
                           i_blksize,
                           &pp,
@@ -1545,14 +1512,6 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
         LOG(lgr, 4, m_instname << ' '
             << "writing MDNDX, size " << mdndxbuf.size());
 
-        // Setup a bucket context.
-        S3BucketContext buck;
-        buck.bucketName = m_bucket_name.c_str();
-        buck.protocol = m_protocol;
-        buck.uriStyle = m_uri_style;
-        buck.accessKeyId = m_access_key_id.c_str();
-        buck.secretAccessKey = m_secret_access_key.c_str();
-
         // Update the MARKNAME file.
         MD5 md5sum(&mdndxbuf[0], mdndxbuf.size());
         S3PutProperties pp;
@@ -1566,7 +1525,7 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
                             << "too many retries");
 
             PutHandler ph((uint8 const *) &mdndxbuf[0], mdndxbuf.size());
-            S3_put_object(&buck,
+            S3_put_object(&m_buckctxt,
                           "MDNDX",
                           mdndxbuf.size(),
                           &pp,
@@ -1710,6 +1669,13 @@ S3BlockStore::setup_params(StringSeq const & i_args)
                  m_access_key_id,
                  m_secret_access_key,
                  m_bucket_name);
+
+    // Fill the bucket context w/ contents of the other fields.
+    m_buckctxt.bucketName = m_bucket_name.c_str();
+    m_buckctxt.protocol = m_protocol;
+    m_buckctxt.uriStyle = m_uri_style;
+    m_buckctxt.accessKeyId = m_access_key_id.c_str();
+    m_buckctxt.secretAccessKey = m_secret_access_key.c_str();
 }
 
 string 
@@ -1803,17 +1769,9 @@ S3BlockStore::purge_uncommitted()
         ACE_Reverse_Lock<ACE_Thread_Mutex> revmutex(m_s3bsmutex);
         ACE_Guard<ACE_Reverse_Lock<ACE_Thread_Mutex> > unguard(revmutex);
 
-        // Setup a bucket context.
-        S3BucketContext buck;
-        buck.bucketName = m_bucket_name.c_str();
-        buck.protocol = m_protocol;
-        buck.uriStyle = m_uri_style;
-        buck.accessKeyId = m_access_key_id.c_str();
-        buck.secretAccessKey = m_secret_access_key.c_str();
-
         string blkpath = eh->m_name;
         ResponseHandler rh;
-        S3_delete_object(&buck,
+        S3_delete_object(&m_buckctxt,
                          blkpath.c_str(),
                          NULL,
                          &rsp_tramp,
@@ -1848,18 +1806,10 @@ S3BlockStore::write_head(SignedHeadEdge const & i_she)
     ACE_OS::memset(&pp, '\0', sizeof(pp));
     pp.md5 = md5sum;
 
-    // Setup a bucket context.
-    S3BucketContext buck;
-    buck.bucketName = m_bucket_name.c_str();
-    buck.protocol = m_protocol;
-    buck.uriStyle = m_uri_style;
-    buck.accessKeyId = m_access_key_id.c_str();
-    buck.secretAccessKey = m_secret_access_key.c_str();
-
     for (unsigned i = 0; i <= MAX_RETRIES; ++i)
     {
         PutHandler ph((uint8 const *) encbuf.data(), encbuf.size());
-        S3_put_object(&buck,
+        S3_put_object(&m_buckctxt,
                       edgekey.c_str(),
                       encbuf.size(),
                       &pp,
