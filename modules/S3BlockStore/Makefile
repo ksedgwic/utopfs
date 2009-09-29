@@ -7,6 +7,7 @@ PROTO +=	\
 			$(NULL)
 
 LIBSRC += 	\
+			S3ResponseHandler.cpp \
 			S3BlockStore.cpp \
 			S3BSFactory.cpp \
 			s3bslog.cpp \
