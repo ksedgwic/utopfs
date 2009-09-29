@@ -11,6 +11,7 @@
 #include <libs3.h>
 
 #include <ace/Thread_Mutex.h>
+#include <ace/Event_Handler.h>
 
 #include "utpfwd.h"
 
@@ -54,7 +55,9 @@ struct lessByTstamp {
     }
 };
 
-class S3BS_EXP S3BlockStore : public utp::BlockStore
+class S3BS_EXP S3BlockStore
+    : public utp::BlockStore
+    , public ACE_Event_Handler
 {
 public:
     typedef std::set<EntryHandle, lessByName> EntrySet;
@@ -144,6 +147,16 @@ public:
     virtual void bs_get_stats(utp::StatSet & o_ss) const
         throw(utp::InternalError);
 
+    // ACE_Event_Handler methods
+
+    virtual int handle_input(ACE_HANDLE i_fd);
+
+    virtual int handle_output(ACE_HANDLE i_fd);
+
+    virtual int handle_exception(ACE_HANDLE i_fd);
+
+    // S3BlockStore methods
+
     static std::string blockpath(std::string const & i_entry = "");
     
     static std::string edgepath(std::string const & i_entry = "");
@@ -155,6 +168,8 @@ protected:
                              std::string & o_access_key_id,
                              std::string & o_secret_access_key,
                              std::string & o_bucket_name);
+
+    int service_reqctxt();
 
     void setup_params(utp::StringSeq const & i_args);
     
@@ -187,6 +202,8 @@ private:
     utp::LameHeadNodeGraph		m_lhng;
 
     mutable ACE_Thread_Mutex	m_s3bsmutex;
+
+    S3RequestContext *			m_reqctxt;
 
     off_t						m_size;       // Total Size in Bytes
     off_t						m_committed;  // Committed Bytes (must be saved)

@@ -472,6 +472,7 @@ S3BlockStore::destroy(StringSeq const & i_args)
 
 S3BlockStore::S3BlockStore(std::string const & i_instname)
     : m_instname(i_instname)
+    , m_reqctxt(NULL)
     , m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
@@ -555,11 +556,22 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     // Poll until the bucket appears.
     for (unsigned i = 0; true; ++i)
     {
+        if (m_reqctxt)
+        {
+            S3_destroy_request_context(m_reqctxt);
+            m_reqctxt = NULL;
+        }
+
         // Re-init the s3 context; it appears buckets don't appear
         // until we re-initialize ... sigh.
         //
         S3_deinitialize();
         S3_initialize(NULL, S3_INIT_ALL);
+
+        S3Status st = S3_create_request_context(&m_reqctxt);
+        if (st != S3StatusOK)
+            throwstream(InternalError, FILELINE
+                        << "trouble in S3_create_request_context");
 
         ResponseHandler rh;
         char locstr[128];
@@ -573,7 +585,7 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
                        NULL,
                        &rsp_tramp,
                        &rh);
-        S3Status st = rh.wait();
+        st = rh.wait();
 
         // If it's gone we're done
         if (st == S3StatusOK)
@@ -1598,6 +1610,24 @@ S3BlockStore::bs_get_stats(StatSet & o_ss) const
     // FIXME - Add some stats here.
 }
 
+int
+S3BlockStore::handle_input(ACE_HANDLE i_fd)
+{
+    return service_reqctxt();
+}
+
+int
+S3BlockStore::handle_output(ACE_HANDLE i_fd)
+{
+    return service_reqctxt();
+}
+
+int
+S3BlockStore::handle_exception(ACE_HANDLE i_fd)
+{
+    return service_reqctxt();
+}
+
 string 
 S3BlockStore::blockpath(string const & i_entry)
 {
@@ -1658,6 +1688,19 @@ S3BlockStore::parse_params(StringSeq const & i_args,
         S3_initialize(NULL, S3_INIT_ALL);
         c_s3inited = true;
     }
+}
+
+int
+S3BlockStore::service_reqctxt()
+{
+    int req_remain;
+    S3Status st = S3_runonce_request_context(m_reqctxt,
+                                             &req_remain);
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "trouble in S3_runonce_request_context");
+
+    return 0;
 }
 
 void
