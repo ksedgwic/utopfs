@@ -106,7 +106,7 @@ init_utp(void)
 
     // Start the thread pool.
     ThreadPool * thrpool = new ThreadPool(ACE_Reactor::instance());
-    thrpool->init(1);
+    thrpool->init(4);
     (void) thrpool;	// FIXME - Clean this up when we are done ...
 
     PyObject *m, *d;

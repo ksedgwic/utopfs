@@ -127,8 +127,6 @@ VBSChild::enqueue_headnode(VBSRequestHandle const & i_rh)
 VBSGetRequestHandle
 VBSChild::cancel_get(utp::OctetSeq const & i_key)
 {
-    LOG(lgr, 6, m_instname << ' ' << "cancel_get");
-
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
     VBSGetRequestHandle grh;
@@ -139,6 +137,8 @@ VBSChild::cancel_get(utp::OctetSeq const & i_key)
     {
         if ((*it)->key() == i_key)
         {
+            LOG(lgr, 6, m_instname << ' '
+                << "cancel_get CANCELED: " << keystr(i_key));
             grh = *it;
             break;
         }

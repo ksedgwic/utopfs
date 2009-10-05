@@ -28,6 +28,7 @@ class Test_vbs_data_01:
       self.bs1 = None
 
   def test_data_single_child(self):
+    print "test_data_single_child"
     bspath1 = "vbs_data_01_c1"
     CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
@@ -41,20 +42,20 @@ class Test_vbs_data_01:
                                    "rootbs",
                                    ("child1",))
 
-    # Put a block of data.
+    print "Put a block of data."
     key1 = buffer("key1")
     val1 = buffer("val1")
     self.vbs.bs_block_put(key1, val1)
 
-    # Retrieve the block.
+    print "Retrieve the block."
     blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
-    # Test block that doesn't exist.
+    print "Test block that doesn't exist."
     key2 = buffer("key2")
     py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
-    # Close and reopen everything.
+    print "Close and reopen everything."
     self.vbs.bs_close()
     self.bs1.bs_close()
     self.bs1 = utp.BlockStore.open(CONFIG.BSTYPE,
@@ -64,15 +65,15 @@ class Test_vbs_data_01:
                                    "rootbs",
                                    ("child1",))
 
-    # Retrieve the block.
+    print "Retrieve the block."
     blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
-    # Test block that doesn't exist.
+    print "Test block that doesn't exist."
     key2 = buffer("key2")
     py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
-    # Close for good.
+    print "Close for good."
     self.vbs.bs_close()
     self.vbs = None
 
@@ -80,6 +81,7 @@ class Test_vbs_data_01:
     CONFIG.remove_bs(bspath1)
 
   def test_data_two_children(self):
+    print "test_data_two_children"
     bspath1 = "vbs_data_01_c1"
     CONFIG.unmap_bs("child1")
     CONFIG.remove_bs(bspath1)
@@ -88,7 +90,7 @@ class Test_vbs_data_01:
                                      CONFIG.BSSIZE,
                                      CONFIG.BSARGS(bspath1))
 
-    # Second child is twice as big
+    print "Second child is twice as big"
     bspath2 = "vbs_data_01_c2"
     CONFIG.unmap_bs("child2")
     CONFIG.remove_bs(bspath2)
@@ -103,20 +105,20 @@ class Test_vbs_data_01:
                                    "rootbs",
                                    ("child1", "child2"))
 
-    # Put a block of data.
+    print "Put a block of data."
     key1 = buffer("key1")
     val1 = buffer("val1")
     self.vbs.bs_block_put(key1, val1)
 
-    # Retrieve the block.
+    print "Retrieve the block."
     blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
-    # Test block that doesn't exist.
+    print "Test block that doesn't exist."
     key2 = buffer("key2")
     py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
-    # Close and reopen everything.
+    print "Close and reopen everything."
     self.vbs.bs_close()
     self.bs2.bs_close()
     self.bs1.bs_close()
@@ -130,15 +132,15 @@ class Test_vbs_data_01:
                                    "rootbs",
                                    ("child1", "child2"))
 
-    # Retrieve the block.
+    print "Retrieve the block."
     blk1 = self.vbs.bs_block_get(key1)
     assert blk1 == val1
 
-    # Test block that doesn't exist.
+    print "Test block that doesn't exist."
     key2 = buffer("key2")
     py.test.raises(utp.NotFoundError, self.vbs.bs_block_get, key2)
 
-    # Close for good.
+    print "Close for good."
     self.vbs.bs_close()
     self.vbs = None
     self.bs2.bs_close()

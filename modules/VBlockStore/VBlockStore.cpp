@@ -148,13 +148,34 @@ VBlockStore::bs_sync()
 {
     LOG(lgr, 6, m_instname << ' ' << "bs_sync starting");
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
-
-    while (!m_requests.empty())
+    bool clean;
+    do
     {
-        m_waiting = true;
-        m_vbscond.wait();
+        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+
+        clean = true;
+
+        // Make sure all the kids are sync'd first.
+        for (VBSChildMap::const_iterator it = m_children.begin();
+             it != m_children.end();
+             ++it)
+        {
+            // Release the lock while we call the child.
+            ACE_Reverse_Lock<ACE_Thread_Mutex> revmutex(m_vbsmutex);
+            ACE_Guard<ACE_Reverse_Lock<ACE_Thread_Mutex> > unguard(revmutex);
+
+            it->second->bs()->bs_sync();
+        }
+
+        // Make sure we have no requests left.
+        while (!m_requests.empty())
+        {
+            clean = false;
+            m_waiting = true;
+            m_vbscond.wait();
+        }
     }
+    while (!clean);
 
     LOG(lgr, 6, m_instname << ' ' << "bs_sync finished");
 }
@@ -470,7 +491,9 @@ VBlockStore::remove_req(VBSRequestHandle const & i_rh)
 void
 VBlockStore::cancel_get(VBSChild * i_hadit, utp::OctetSeq const & i_key)
 {
-    LOG(lgr, 6, m_instname << ' ' << "cancel_get");
+    LOG(lgr, 6, m_instname << ' '
+        << "cancel_get " << keystr(i_key)
+        << ", " << i_hadit->instname() << " had it");
 
     vector<pair<VBSChildHandle, VBSGetRequestHandle> > reqs;
     {

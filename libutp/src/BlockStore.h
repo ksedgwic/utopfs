@@ -31,8 +31,11 @@ typedef std::vector<HeadNode> HeadNodeSeq;
 typedef std::set<HeadNode> HeadNodeSet;
 
 // Helpful for debugging.
-UTP_EXP
-std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_hn);
+UTP_EXP std::ostream & operator<<(std::ostream & ostrm, HeadNode const & i_hn);
+
+// Helpful for debugging, abbreviated encoded string reps ...
+UTP_EXP std::string keystr(utp::OctetSeq const & i_key);
+UTP_EXP std::string keystr(void const * i_data, size_t i_size);
 
 // Crutch for some namespace complexities.
 std::string UTP_EXP mkstring(HeadNode const & i_hn);

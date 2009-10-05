@@ -167,8 +167,10 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
             // We've got children with unique answers, try and
             // clean this up with follow fills ...
             //
-            LOG(lgr, 6, *this << ' ' << "RESOLVING UNIQUE CHILDREN");
+            LOG(lgr, 6, *this << ' ' << "UNIQUE CHILDREN: DIRECTED FOLLOWFILL");
 
+            log_cmn_and_unq(subfurther);
+            
             directed_follow_fill(subfurther);
 
             is_done = false;
@@ -201,6 +203,8 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
             //
             LOG(lgr, 6, *this << ' ' << "DESPERATELY TRYING FULL FOLLOWFILL");
 
+            log_cmn_and_unq(subfurther);
+
             full_follow_fill();
 
             is_done = false;
@@ -232,6 +236,10 @@ VBSHeadFurthestTopReq::hnt_complete(void const * i_argp)
         {
             // This shouldn't happen!
             //
+            LOG(lgr, 6, *this << ' ' << "FULL FOLLOWFILL DIDN'T WORK");
+
+            log_cmn_and_unq(subfurther);
+
             throwstream(InternalError, FILELINE
                         << "FULL FOLLOWFILL DIDN'T WORK");
         }
@@ -272,6 +280,8 @@ VBSHeadFurthestTopReq::hnt_error(void const * i_argp,
 void
 VBSHeadFurthestTopReq::init()
 {
+    LOG(lgr, 6, "init starting");
+
     // NOTE - We initiate the sequence with a simple furthest
     // subrequest.  If there are no child-unique answers we're done!
     //
@@ -296,12 +306,16 @@ VBSHeadFurthestTopReq::init()
          it != m_children.end();
          ++it)
         it->second->enqueue_headnode(m_subfurther);
+
+    LOG(lgr, 6, "init finished");
 }
 
 void
 VBSHeadFurthestTopReq::directed_follow_fill
 					(VBSHeadFurthestSubReqHandle const & i_srh)
 {
+    LOG(lgr, 6, "directed_follow_fill starting");
+
     // Our initial survey showed that some of the children have unique
     // further values.
     //
@@ -346,11 +360,15 @@ VBSHeadFurthestTopReq::directed_follow_fill
                     it3->second->enqueue_headnode(rh);
         }
     }
+
+    LOG(lgr, 6, "directed_follow_fill finished");
 }
 
 void
 VBSHeadFurthestTopReq::second_check()
 {
+    LOG(lgr, 6, "second check starting");
+
     // We've completed the follow-fill pass after the initial unique
     // nodes were discovered.  Now we do another furthest pass to see
     // if the unique nodes have been annealed.
@@ -375,11 +393,15 @@ VBSHeadFurthestTopReq::second_check()
          it != m_children.end();
          ++it)
         it->second->enqueue_headnode(m_subfurther);
+
+    LOG(lgr, 6, "second check finished");
 }
 
 void
 VBSHeadFurthestTopReq::full_follow_fill()
 {
+    LOG(lgr, 6, "full_follow_fill starting");
+
     // Te directed follow-fill didn't work.  We issue a full
     // follow fill to copy all head entries.  This is expensive but
     // it is guranteed to work.
@@ -413,11 +435,15 @@ VBSHeadFurthestTopReq::full_follow_fill()
             if (&*(it3->second) != &*ch)
                 it3->second->enqueue_headnode(rh);
     }
+
+    LOG(lgr, 6, "full_follow_fill finished");
 }
 
 void
 VBSHeadFurthestTopReq::last_check()
 {
+    LOG(lgr, 6, "last_check starting");
+
     // We've completed the last-ditch full follow-fill cycle to
     // copy everything.  Did it work?
     //
@@ -441,6 +467,37 @@ VBSHeadFurthestTopReq::last_check()
          it != m_children.end();
          ++it)
         it->second->enqueue_headnode(m_subfurther);
+
+    LOG(lgr, 6, "last_check finished");
+}
+
+void
+VBSHeadFurthestTopReq::log_cmn_and_unq
+	(VBSHeadFurthestSubReqHandle const & i_subfurther)
+{
+    // Log all of the common head nodes.
+    HeadNodeSeq const & hns = i_subfurther->common();
+    for (unsigned ii = 0; ii < hns.size(); ++ii)
+    {
+        LOG(lgr, 6, *this << ' ' << "CMN: " << hns[ii]);
+    }
+
+    ChildNodeSetMap const & unq = i_subfurther->unique();
+    for (ChildNodeSetMap::const_iterator it = unq.begin();
+         it != unq.end();
+         ++it)
+    {
+        VBSChild * cp = it->first;
+        HeadNodeSet const & hns = it->second;
+        for (HeadNodeSet::const_iterator it2 = hns.begin();
+             it2 != hns.end();
+             ++it2)
+        {
+            HeadNode const & hn = *it2;
+            LOG(lgr, 6, *this << ' '
+                << "UNQ: " << cp->instname() << ": " << hn);
+        }
+    }
 }
 
 } // namespace VBS

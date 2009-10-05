@@ -72,6 +72,7 @@ public:
     void last_check();
 
 protected:
+    void log_cmn_and_unq(VBSHeadFurthestSubReqHandle const & i_subfurther);
 
 private:
     utp::HeadNode								m_hn;

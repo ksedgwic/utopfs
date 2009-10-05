@@ -280,6 +280,16 @@ operator<<(ostream & ostrm, HeadNode const & i_hn)
     return ostrm;
 }
 
+string keystr(utp::OctetSeq const & i_key)
+{
+    return keystr(&i_key[0], i_key.size());
+}
+
+string keystr(void const * i_data, size_t i_size)
+{
+    return Base32::encode(i_data, i_size).substr(0, 8) + "...";
+}
+
 string mkstring(HeadNode const & i_hn)
 {
     string pt1 = Base32::encode(i_hn.first.data(), i_hn.first.size());

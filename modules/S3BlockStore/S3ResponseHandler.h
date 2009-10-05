@@ -15,6 +15,7 @@
 #include "RC.h"
 
 #include "s3bsexp.h"
+#include "s3bsfwd.h"
 
 namespace S3BS {
 
@@ -28,7 +29,17 @@ public:
     virtual void rh_complete(S3Status status,
                              S3ErrorDetails const * errorDetails);
 
+    void reset();	// Resets state for multiple uses.
+
     S3Status wait();
+
+    S3Status status() const;
+
+    // Comparison operator for collection operations.
+    bool operator<(ResponseHandler const & i_o) const;
+
+    // Equality operator for collection operations.
+    bool operator==(ResponseHandler const & i_o) const;
 
     typedef std::vector<std::pair<std::string, std::string> > NameValueSeq;
 
@@ -46,10 +57,10 @@ public:
 private:
     ACE_Thread_Mutex			m_s3rhmutex;
     ACE_Condition_Thread_Mutex	m_s3rhcond;
+    bool						m_waiters;
     bool						m_complete;
     S3Status					m_status;
 };
-typedef utp::RCPtr<ResponseHandler> ResponseHandlerHandle;
 
 class S3BS_EXP PutHandler : public ResponseHandler
 {
@@ -62,7 +73,6 @@ private:
     utp::uint8 const *		m_data;
     size_t					m_size;
 };
-typedef utp::RCPtr<PutHandler> PutHandlerHandle;
 
 class S3BS_EXP GetHandler : public ResponseHandler
 {
@@ -78,7 +88,6 @@ private:
     size_t				m_buffsize;
     size_t				m_size;
 };
-typedef utp::RCPtr<GetHandler> GetHandlerHandle;
 
 class S3BS_EXP ListHandler : public ResponseHandler
 {

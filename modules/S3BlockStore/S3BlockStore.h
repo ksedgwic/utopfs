@@ -10,12 +10,15 @@
 
 #include <libs3.h>
 
-#include <ace/Thread_Mutex.h>
 #include <ace/Event_Handler.h>
+#include <ace/Handle_Set.h>
+#include <ace/Reactor.h>
+#include <ace/Thread_Mutex.h>
 
 #include "utpfwd.h"
 
 #include "BlockStore.h"
+#include "S3ResponseHandler.h"
 #include "LameHeadNodeGraph.h"
 #include "RC.h"
 
@@ -161,6 +164,10 @@ public:
     
     static std::string edgepath(std::string const & i_entry = "");
 
+    void remove_handler(ResponseHandlerHandle const & i_rhh);
+
+    void initiate_get(AsyncGetHandlerHandle const & i_rhh);
+
 protected:
     static void parse_params(utp::StringSeq const & i_args,
                              S3Protocol & o_protocol,
@@ -169,7 +176,11 @@ protected:
                              std::string & o_secret_access_key,
                              std::string & o_bucket_name);
 
-    int service_reqctxt();
+    void initiate_get_internal(AsyncGetHandlerHandle const & i_rhh);
+
+    int reqctxt_service();
+
+    void reqctxt_reregister();
 
     void setup_params(utp::StringSeq const & i_args);
     
@@ -189,6 +200,8 @@ protected:
 private:
     static bool		    		c_s3inited;
 
+    ACE_Reactor *				m_reactor;
+
     std::string					m_instname;
 
     S3Protocol					m_protocol;
@@ -202,8 +215,17 @@ private:
     utp::LameHeadNodeGraph		m_lhng;
 
     mutable ACE_Thread_Mutex	m_s3bsmutex;
+    ACE_Condition_Thread_Mutex	m_s3bscond;
+
+    bool						m_waiting;
 
     S3RequestContext *			m_reqctxt;
+
+    ACE_Handle_Set 				m_rset;
+    ACE_Handle_Set				m_wset;
+    ACE_Handle_Set				m_eset;
+
+    ResponseHandlerSeq			m_rsphandlers;
 
     off_t						m_size;       // Total Size in Bytes
     off_t						m_committed;  // Committed Bytes (must be saved)

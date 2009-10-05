@@ -4,9 +4,10 @@
 #include <vector>
 
 #include <ace/Condition_Thread_Mutex.h>
-#include <ace/Thread_Mutex.h>
 #include <ace/Dirent.h>
+#include <ace/Handle_Set.h>
 #include <ace/os_include/os_byteswap.h>
+#include <ace/Thread_Mutex.h>
 
 #include "Base32.h"
 #include "Base64.h"
@@ -20,6 +21,7 @@
 #include "S3BlockStore.h"
 #include "s3bslog.h"
 #include "S3ResponseHandler.h"
+#include "S3AsyncGetHandler.h"
 
 using namespace std;
 using namespace utp;
@@ -316,7 +318,10 @@ S3BlockStore::destroy(StringSeq const & i_args)
 }
 
 S3BlockStore::S3BlockStore(std::string const & i_instname)
-    : m_instname(i_instname)
+    : m_reactor(ACE_Reactor::instance())
+    , m_instname(i_instname)
+    , m_s3bscond(m_s3bsmutex)
+    , m_waiting(false)
     , m_reqctxt(NULL)
     , m_size(0)
     , m_committed(0)
@@ -403,6 +408,8 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
     {
         if (m_reqctxt)
         {
+            LOG(lgr, 4, m_instname << ' ' << "destroying S3 request context");
+
             S3_destroy_request_context(m_reqctxt);
             m_reqctxt = NULL;
         }
@@ -413,11 +420,14 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
         S3_deinitialize();
         S3_initialize(NULL, S3_INIT_ALL);
 
+        LOG(lgr, 4, m_instname << ' ' << "creating S3 request context");
         S3Status st = S3_create_request_context(&m_reqctxt);
         if (st != S3StatusOK)
             throwstream(InternalError, FILELINE
-                        << "trouble in S3_create_request_context");
+                        << "unexpected S3 error: " << st);
 
+        LOG(lgr, 4, m_instname << ' '
+            << "testing S3 bucket: " << m_bucket_name);
         ResponseHandler rh;
         char locstr[128];
         S3_test_bucket(m_protocol,
@@ -631,6 +641,12 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     if (st != S3StatusOK)
         throwstream(InternalError, FILELINE
                     << "Unexpected S3 error: " << st);
+
+    LOG(lgr, 4, m_instname << ' ' << "creating S3 request context");
+    st = S3_create_request_context(&m_reqctxt);
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE
+                    << "unexpected S3 error: " << st);
 
     S3GetConditions gc;
     gc.ifModifiedSince = -1;
@@ -923,6 +939,27 @@ S3BlockStore::bs_close()
 {
     LOG(lgr, 4, m_instname << ' ' << "bs_close");
 
+    // Unregister any request context handlers.
+    LOG(lgr, 4, m_instname << ' ' << "unregistering handlers");
+    if (m_rset.num_set() > 0)
+        m_reactor->remove_handler(m_rset, ACE_Event_Handler::READ_MASK |
+                                          ACE_Event_Handler::DONT_CALL);
+
+    if (m_wset.num_set() > 0)
+        m_reactor->remove_handler(m_wset, ACE_Event_Handler::WRITE_MASK |
+                                          ACE_Event_Handler::DONT_CALL);
+        
+    if (m_eset.num_set() > 0)
+        m_reactor->remove_handler(m_eset, ACE_Event_Handler::EXCEPT_MASK |
+                                          ACE_Event_Handler::DONT_CALL);
+        
+    if (m_reqctxt)
+    {
+        LOG(lgr, 4, m_instname << ' ' << "destroying S3 request context");
+        S3_destroy_request_context(m_reqctxt);
+        m_reqctxt = NULL;
+    }
+
     // Unregister this instance.
     try
     {
@@ -956,6 +993,18 @@ void
 S3BlockStore::bs_sync()
     throw(InternalError)
 {
+    LOG(lgr, 6, m_instname << ' ' << "bs_sync starting");
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+    // Make sure we have no requests left.
+    while (!m_rsphandlers.empty())
+    {
+        m_waiting = true;
+        m_s3bscond.wait();
+    }
+
+    LOG(lgr, 6, m_instname << ' ' << "bs_sync finished");
 }
 
 #if 0
@@ -1042,43 +1091,32 @@ S3BlockStore::bs_block_get_async(void const * i_keydata,
         LOG(lgr, 6, m_instname << ' '
             << "bs_block_get " << entry.substr(0, 8) << "...");
 
-        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+        AsyncGetHandlerHandle aghh;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
         
-        // Do we have this block?
-        EntryHandle meh = new Entry(blkpath, 0, 0);
-        EntrySet::const_iterator pos = m_entries.find(meh);
-        if (pos == m_entries.end())
-            throwstream(NotFoundError,
-                        "key \"" << blkpath << "\" not in entries");
+            // Do we have this block?
+            EntryHandle meh = new Entry(blkpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(meh);
+            if (pos == m_entries.end())
+                throwstream(NotFoundError,
+                            "key \"" << blkpath << "\" not in entries");
             
-        S3GetConditions gc;
-        gc.ifModifiedSince = -1;
-        gc.ifNotModifiedSince = -1;
-        gc.ifMatchETag = NULL;
-        gc.ifNotMatchETag = NULL;
+            aghh = new AsyncGetHandler(m_reactor,
+                                       *this,
+                                       blkpath,
+                                       i_keydata,
+                                       i_keysize,
+                                       (uint8 *) o_buffdata,
+                                       i_buffsize,
+                                       i_cmpl,
+                                       i_argp);
 
-        GetHandler gh((uint8 *) o_buffdata, i_buffsize);
+            // Enqueue in the master list.
+            m_rsphandlers.push_back(aghh);
 
-        S3_get_object(&m_buckctxt,
-                      blkpath.c_str(),
-                      &gc,
-                      0,
-                      0,
-                      NULL,
-                      &get_tramp,
-                      &gh);
-
-        S3Status st = gh.wait();
-
-        if (st == S3StatusErrorNoSuchKey)
-            throwstream(NotFoundError,
-                        "key \"" << blkpath << "\" not found");
-
-        if (st != S3StatusOK)
-            throwstream(InternalError, FILELINE
-                        << "Unexpected S3 error: " << st);
-
-        i_cmpl.bg_complete(i_keydata, i_keysize, i_argp, gh.size());
+            initiate_get_internal(aghh);
+        }
     }
     catch (Exception const & ex)
     {
@@ -1522,19 +1560,19 @@ S3BlockStore::bs_get_stats(StatSet & o_ss) const
 int
 S3BlockStore::handle_input(ACE_HANDLE i_fd)
 {
-    return service_reqctxt();
+    return reqctxt_service();
 }
 
 int
 S3BlockStore::handle_output(ACE_HANDLE i_fd)
 {
-    return service_reqctxt();
+    return reqctxt_service();
 }
 
 int
 S3BlockStore::handle_exception(ACE_HANDLE i_fd)
 {
-    return service_reqctxt();
+    return reqctxt_service();
 }
 
 string 
@@ -1548,6 +1586,30 @@ S3BlockStore::edgepath(string const & i_edge)
 {
     return string("EDGES/") + i_edge;
 }                                
+
+void
+S3BlockStore::remove_handler(ResponseHandlerHandle const & i_rhh)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+    m_rsphandlers.erase(remove(m_rsphandlers.begin(),
+                               m_rsphandlers.end(),
+                               i_rhh),
+                        m_rsphandlers.end());
+
+    // If we've emptied the collection wake any waiters.
+    if (m_rsphandlers.empty() && m_waiting)
+    {
+        m_s3bscond.broadcast();
+        m_waiting = false;
+    }
+}
+
+void
+S3BlockStore::initiate_get(AsyncGetHandlerHandle const & i_aghh)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+    initiate_get_internal(i_aghh);
+}
 
 void
 S3BlockStore::parse_params(StringSeq const & i_args,
@@ -1599,17 +1661,118 @@ S3BlockStore::parse_params(StringSeq const & i_args,
     }
 }
 
-int
-S3BlockStore::service_reqctxt()
+void
+S3BlockStore::initiate_get_internal(AsyncGetHandlerHandle const & i_aghh)
 {
-    int req_remain;
+    // IMPORTANT - Caller must hold the mutex!
+
+    S3GetConditions gc;
+    gc.ifModifiedSince = -1;
+    gc.ifNotModifiedSince = -1;
+    gc.ifMatchETag = NULL;
+    gc.ifNotMatchETag = NULL;
+
+    // Kick off the async get.
+    S3_get_object(&m_buckctxt,
+                  i_aghh->blkpath().c_str(),
+                  &gc,
+                  0,
+                  0,
+                  m_reqctxt,
+                  &get_tramp,
+                  &*i_aghh);
+
+    // Seems we need to advance the state w/ this non-blocking
+    // call before we can register FDs w/ the reactor?
+    int nreqremain;
+    S3_runonce_request_context(m_reqctxt,
+                               &nreqremain);
+
+    // Re-register the request context.
+    reqctxt_reregister();
+}
+
+int
+S3BlockStore::reqctxt_service()
+{
+    LOG(lgr, 6, m_instname << ' ' << "reqctxt_service starting");
+
+    int nreqremain;
     S3Status st = S3_runonce_request_context(m_reqctxt,
-                                             &req_remain);
+                                             &nreqremain);
     if (st != S3StatusOK)
         throwstream(InternalError, FILELINE
-                    << "trouble in S3_runonce_request_context");
+                    << "unexpected S3 error: " << st);
+
+    // Stuff might have changed ...
+    reqctxt_reregister();
+
+    LOG(lgr, 6, m_instname << ' '
+        << "reqctxt_service finished nreqremain=" << nreqremain);
 
     return 0;
+}
+
+void
+S3BlockStore::reqctxt_reregister()
+{
+    // IMPORTANT - It's presumed that the called of this routine
+    // has the mutex held ...
+
+    LOG(lgr, 6, m_instname << ' ' << "reqctxt_reregister starting");
+
+    // Cancel any existing registrations.
+    LOG(lgr, 6, m_instname << ' ' << "unregistering handlers");
+
+    if (m_rset.num_set() > 0)
+        m_reactor->remove_handler(m_rset, ACE_Event_Handler::READ_MASK |
+                                          ACE_Event_Handler::DONT_CALL);
+
+    if (m_wset.num_set() > 0)
+        m_reactor->remove_handler(m_wset, ACE_Event_Handler::WRITE_MASK |
+                                          ACE_Event_Handler::DONT_CALL);
+        
+    if (m_eset.num_set() > 0)
+        m_reactor->remove_handler(m_eset, ACE_Event_Handler::EXCEPT_MASK |
+                                          ACE_Event_Handler::DONT_CALL);
+        
+
+    // Fill the fd_set's w/ the fds the reqctxt is using.
+    int maxfd;
+    fd_set rfdset; FD_ZERO(&rfdset);
+    fd_set wfdset; FD_ZERO(&wfdset);
+    fd_set efdset; FD_ZERO(&efdset);
+    S3Status st = S3_get_request_context_fdsets(m_reqctxt,
+                                                &rfdset,
+                                                &wfdset,
+                                                &efdset,
+                                                &maxfd);
+
+    if (st != S3StatusOK)
+        throwstream(InternalError, FILELINE << "unexpected status: " << st);
+
+    m_rset = ACE_Handle_Set(rfdset);
+    m_wset = ACE_Handle_Set(wfdset);
+    m_eset = ACE_Handle_Set(efdset);
+
+    LOG(lgr, 6, m_instname << ' ' << "registering handlers");
+
+    if (m_rset.num_set() > 0)
+        m_reactor->register_handler(m_rset,
+                                    this,
+                                    ACE_Event_Handler::READ_MASK);
+
+    if (m_wset.num_set() > 0)
+        m_reactor->register_handler(m_wset,
+                                    this,
+                                    ACE_Event_Handler::WRITE_MASK);
+
+    if (m_eset.num_set() > 0)
+        m_reactor->register_handler(m_eset,
+                                    this,
+                                    ACE_Event_Handler::EXCEPT_MASK);
+
+    LOG(lgr, 6, m_instname << ' ' << "reqctxt_reregister finished");
 }
 
 void

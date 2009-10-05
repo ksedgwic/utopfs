@@ -27,18 +27,18 @@ VBSPutRequest::VBSPutRequest(VBlockStore & i_vbs,
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "PUT @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "PUT @" << (void *) this << ' ' << keystr(m_key) << " CTOR");
 }
 
 VBSPutRequest::~VBSPutRequest()
 {
-    LOG(lgr, 6, "PUT @" << (void *) this << " DTOR");
+    LOG(lgr, 6, "PUT @" << (void *) this << ' ' << keystr(m_key) << " DTOR");
 }
 
 void
 VBSPutRequest::stream_insert(std::ostream & ostrm) const
 {
-    ostrm << "PUT @" << (void *) this;
+    ostrm << "PUT @" << (void *) this << ' ' << keystr(m_key);
 }
 
 void

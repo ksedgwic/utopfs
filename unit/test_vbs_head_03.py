@@ -81,7 +81,10 @@ class Test_vbs_head_03:
                                    CONFIG.FSARGS)
 
     print "Now we should be able to stat the file."
-    self.fs.fs_getattr("/bar");
+    self.fs.fs_getattr("/bar")
+
+    print "Run a refresh cycle"
+    self.fs.fs_refresh()
     
     print "Make sure everything is done transferring."
     self.vbs.bs_sync()

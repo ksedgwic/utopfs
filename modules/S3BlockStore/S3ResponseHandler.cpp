@@ -15,6 +15,7 @@ namespace S3BS {
 ResponseHandler::ResponseHandler()
     : m_propsvalid(false)
     , m_s3rhcond(m_s3rhmutex)
+    , m_waiters(false)
     , m_complete(false)
 {
 }
@@ -54,16 +55,45 @@ ResponseHandler::rh_complete(S3Status status,
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3rhmutex);
     m_status = status;
     m_complete = true;
-    m_s3rhcond.broadcast();
+    if (m_waiters)
+        m_s3rhcond.broadcast();
+}
+
+void
+ResponseHandler::reset()
+{
+    m_waiters = false;
+    m_complete = false;
 }
 
 S3Status
 ResponseHandler::wait()
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3rhmutex);
+    m_waiters = true;
     while (!m_complete)
         m_s3rhcond.wait();
     return m_status;
+}
+
+S3Status
+ResponseHandler::status() const
+{
+    return m_status;
+}
+
+bool
+ResponseHandler::operator<(ResponseHandler const & i_o) const
+{
+    // Just use the address of the request.
+    return this < &i_o;
+}
+
+bool
+ResponseHandler::operator==(ResponseHandler const & i_o) const
+{
+    // Just use the address of the request.
+    return this == &i_o;
 }
 
 // ----------------------------------------------------------------

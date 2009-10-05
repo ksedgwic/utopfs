@@ -29,18 +29,18 @@ VBSGetRequest::VBSGetRequest(VBlockStore & i_vbs,
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
 {
-    LOG(lgr, 6, "GET @" << (void *) this << " CTOR");
+    LOG(lgr, 6, "GET @" << (void *) this << ' ' << keystr(m_key) << " CTOR");
 }
 
 VBSGetRequest::~VBSGetRequest()
 {
-    LOG(lgr, 6, "GET @" << (void *) this << " DTOR");
+    LOG(lgr, 6, "GET @" << (void *) this << ' ' << keystr(m_key) << " DTOR");
 }
 
 void
 VBSGetRequest::stream_insert(std::ostream & ostrm) const
 {
-    ostrm << "GET @" << (void *) this;
+    ostrm << "GET @" << (void *) this << ' ' << keystr(m_key);
 }
 
 void
@@ -118,6 +118,13 @@ VBSGetRequest::bg_complete(void const * i_keydata,
     // If there were any needy children, setup a put request for them.
     if (!needy.empty())
     {
+        for (unsigned ii = 0; ii < needy.size(); ++ii)
+        {
+            LOG(lgr, 6, *this << ' '
+                << "NEEDY CHILD: " << needy[ii]->instname());
+
+        }
+
         VBSPutRequestHandle prh = new VBSPutRequest(m_vbs,
                                                     needy.size(),
                                                     &m_key[0],
