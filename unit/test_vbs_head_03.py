@@ -63,7 +63,7 @@ class Test_vbs_head_03:
     print "Unmount."
     self.fs.fs_umount()
 
-    print " Create second child."
+    print "Create second child."
     bspath2 = "vbs_head_03_c2"
     CONFIG.unmap_bs("child2")
     CONFIG.remove_bs(bspath2)

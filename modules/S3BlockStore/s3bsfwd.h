@@ -33,6 +33,10 @@ class AsyncGetHandler;
 /// Handle to AsyncGetHandler object.
 typedef utp::RCPtr<AsyncGetHandler> AsyncGetHandlerHandle;
 
+class AsyncPutHandler;
+/// Handle to AsyncPutHandler object.
+typedef utp::RCPtr<AsyncPutHandler> AsyncPutHandlerHandle;
+
 } // end namespace S3BS
 
 // Local Variables:

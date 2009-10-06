@@ -22,6 +22,7 @@
 #include "s3bslog.h"
 #include "S3ResponseHandler.h"
 #include "S3AsyncGetHandler.h"
+#include "S3AsyncPutHandler.h"
 
 using namespace std;
 using namespace utp;
@@ -30,12 +31,6 @@ namespace S3BS {
 
 static unsigned const MAX_RETRIES = 10;
 
-std::ostream & operator<<(std::ostream & ostrm, S3Status status)
-{
-    ostrm << S3_get_status_name(status);
-    return ostrm;
-}
-    
 S3Status response_properties(S3ResponseProperties const * properties,
                              void * callbackData)
 {
@@ -1089,34 +1084,32 @@ S3BlockStore::bs_block_get_async(void const * i_keydata,
         string blkpath = blockpath(entry);
 
         LOG(lgr, 6, m_instname << ' '
-            << "bs_block_get " << entry.substr(0, 8) << "...");
+            << "bs_block_get " << keystr(i_keydata, i_keysize));
 
-        AsyncGetHandlerHandle aghh;
-        {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
         
-            // Do we have this block?
-            EntryHandle meh = new Entry(blkpath, 0, 0);
-            EntrySet::const_iterator pos = m_entries.find(meh);
-            if (pos == m_entries.end())
-                throwstream(NotFoundError,
-                            "key \"" << blkpath << "\" not in entries");
+        // Do we have this block?
+        EntryHandle meh = new Entry(blkpath, 0, 0);
+        EntrySet::const_iterator pos = m_entries.find(meh);
+        if (pos == m_entries.end())
+            throwstream(NotFoundError,
+                        "key \"" << blkpath << "\" not in entries");
             
-            aghh = new AsyncGetHandler(m_reactor,
-                                       *this,
-                                       blkpath,
-                                       i_keydata,
-                                       i_keysize,
-                                       (uint8 *) o_buffdata,
-                                       i_buffsize,
-                                       i_cmpl,
-                                       i_argp);
+        AsyncGetHandlerHandle aghh = new AsyncGetHandler(m_reactor,
+                                                         *this,
+                                                         blkpath,
+                                                         i_keydata,
+                                                         i_keysize,
+                                                         (uint8 *) o_buffdata,
+                                                         i_buffsize,
+                                                         i_cmpl,
+                                                         i_argp,
+                                                         MAX_RETRIES);
 
-            // Enqueue in the master list.
-            m_rsphandlers.push_back(aghh);
+        // Enqueue in the master list.
+        m_rsphandlers.push_back(aghh);
 
-            initiate_get_internal(aghh);
-        }
+        initiate_get_internal(aghh);
     }
     catch (Exception const & ex)
     {
@@ -1124,6 +1117,7 @@ S3BlockStore::bs_block_get_async(void const * i_keydata,
     }
 }
 
+#if 0
 void
 S3BlockStore::bs_block_put_async(void const * i_keydata,
                                  size_t i_keysize,
@@ -1251,6 +1245,94 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
         }
 
         i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
+    }
+    catch (Exception const & ex)
+    {
+        i_cmpl.bp_error(i_keydata, i_keysize, i_argp, ex);
+    }
+}
+#endif
+
+void
+S3BlockStore::bs_block_put_async(void const * i_keydata,
+                                 size_t i_keysize,
+                                 void const * i_blkdata,
+                                 size_t i_blksize,
+                                 BlockPutCompletion & i_cmpl,
+                                 void const * i_argp)
+    throw(InternalError,
+          ValueError)
+{
+    try
+    {
+        string entry = entryname(i_keydata, i_keysize);
+        string blkpath = blockpath(entry);
+
+        LOG(lgr, 6, m_instname << ' '
+            << "bs_block_put " << keystr(i_keydata, i_keysize));
+
+        // Do we already have this block?
+        bool alreadyhave = false;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+            EntryHandle meh = new Entry(blkpath, 0, 0);
+            EntrySet::const_iterator pos = m_entries.find(meh);
+            if (pos != m_entries.end())
+                alreadyhave = true;
+        }
+            
+        if (alreadyhave)
+        {
+            i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
+        }
+            
+        // We used to check to see if the block already existed so
+        // it's prev bytes could be "credited" when it was updated.
+        // Now we shortcut above, so there are no previous bytes if we
+        // get here.
+        //
+        off_t prevcommited = 0;
+
+        // How much space will be available for this block?
+        off_t avail;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            avail = m_size - m_committed + prevcommited;
+        }
+
+        if (off_t(i_blksize) > avail)
+            throwstream(NoSpaceError,
+                        "insufficent space: "
+                        << avail << " bytes avail, needed " << i_blksize);
+
+        // Do we need to remove uncommitted blocks to make room for this
+        // block?
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+            while (m_committed + off_t(i_blksize) +
+                   m_uncommitted - prevcommited > m_size)
+                purge_uncommitted();
+        }
+            
+        AsyncPutHandlerHandle aphh =
+            new AsyncPutHandler(m_reactor,
+                                *this,
+                                blkpath,
+                                i_keydata,
+                                i_keysize,
+                                (uint8 const *) i_blkdata,
+                                i_blksize,
+                                i_cmpl,
+                                i_argp,
+                                MAX_RETRIES);
+
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+        // Enqueue in the master list.
+        m_rsphandlers.push_back(aphh);
+
+        initiate_put_internal(aphh);
     }
     catch (Exception const & ex)
     {
@@ -1554,7 +1636,20 @@ S3BlockStore::bs_get_stats(StatSet & o_ss) const
 {
     o_ss.set_name(m_instname);
 
-    // FIXME - Add some stats here.
+    size_t nreqs = 0;
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+        nreqs = m_rsphandlers.size();
+    }
+
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nreqs");
+        srp->set_value(nreqs);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
 }
 
 int
@@ -1609,6 +1704,30 @@ S3BlockStore::initiate_get(AsyncGetHandlerHandle const & i_aghh)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
     initiate_get_internal(i_aghh);
+}
+
+void
+S3BlockStore::initiate_put(AsyncPutHandlerHandle const & i_aphh)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+    initiate_put_internal(i_aphh);
+}
+
+void
+S3BlockStore::update_put_stats(AsyncPutHandlerHandle const & i_aphh)
+{
+    string blkpath = i_aphh->blkpath();
+
+    time_t mtime = time(NULL);
+    off_t size = i_aphh->blksize();
+
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+    // Add the new block to the stats.
+    m_committed += size;
+
+    // Update the entries.
+    touch_entry(blkpath, mtime, size, true);
 }
 
 void
@@ -1681,6 +1800,29 @@ S3BlockStore::initiate_get_internal(AsyncGetHandlerHandle const & i_aghh)
                   m_reqctxt,
                   &get_tramp,
                   &*i_aghh);
+
+    // Seems we need to advance the state w/ this non-blocking
+    // call before we can register FDs w/ the reactor?
+    int nreqremain;
+    S3_runonce_request_context(m_reqctxt,
+                               &nreqremain);
+
+    // Re-register the request context.
+    reqctxt_reregister();
+}
+
+void
+S3BlockStore::initiate_put_internal(AsyncPutHandlerHandle const & i_aphh)
+{
+    // IMPORTANT - Caller must hold the mutex!
+
+    S3_put_object(&m_buckctxt,
+                  i_aphh->blkpath().c_str(),
+                  i_aphh->blksize(),
+                  i_aphh->ppp(),
+                  m_reqctxt,
+                  &put_tramp,
+                  &*i_aphh);
 
     // Seems we need to advance the state w/ this non-blocking
     // call before we can register FDs w/ the reactor?
@@ -1978,6 +2120,13 @@ operator<<(ostream & ostrm, HeadNode const & i_nr)
     return ostrm;
 }
 
+ostream &
+operator<<(std::ostream & ostrm, S3Status status)
+{
+    ostrm << S3_get_status_name(status);
+    return ostrm;
+}
+    
 } // namespace S3BS
 
 // Local Variables:

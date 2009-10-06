@@ -229,21 +229,29 @@ VBSChild::initiate_requests()
 
             if (!m_refreqs.empty())
             {
+                LOG(lgr, 6, m_instname << ' '
+                    << "initiate refresh request starting");
                 rrh = m_refreqs.front();
                 m_refreqs.pop_front();
             }
             else if (!m_shereqs.empty())
             {
+                LOG(lgr, 6, m_instname << ' '
+                    << "initiate headnode request starting");
                 rrh = m_shereqs.front();
                 m_shereqs.pop_front();
             }
             else if (!m_getreqs.empty())
             {
+                LOG(lgr, 6, m_instname << ' '
+                    << "initiate get request starting");
                 grh = m_getreqs.front();
                 m_getreqs.pop_front();
             }
             else if (!m_putreqs.empty())
             {
+                LOG(lgr, 6, m_instname << ' '
+                    << "initiate put request starting");
                 prh = m_putreqs.front();
                 m_putreqs.pop_front();
             }
@@ -259,14 +267,20 @@ VBSChild::initiate_requests()
         if (grh)
         {
             grh->initiate(this, m_bsh);
+            LOG(lgr, 6, m_instname << ' '
+                    << "initiate get request finished");
         }
         else if (prh)
         {
             prh->initiate(this, m_bsh);
+            LOG(lgr, 6, m_instname << ' '
+                    << "initiate put request finished");
         }
         else if (rrh)
         {
             rrh->initiate(this, m_bsh);
+            LOG(lgr, 6, m_instname << ' '
+                    << "initiate refresh/headnode request finished");
         }
         else
         {

@@ -53,16 +53,6 @@ Formatter::format(LogFieldSeq const & i_valseq) const
             string bufstr;
             (*pos)->outstr(bufstr);
             buffer << 'T' << bufstr;
-#if 0
-            // pad the threadid with leading spaces to 2 char
-            string bufstr;
-            (*pos)->outstr(bufstr);
-            int width = 5;
-            int len = bufstr.length();
-            if (len < width)
-                buffer << string(width - len, ' ');
-            buffer << bufstr;
-#endif
         }
         else
         {

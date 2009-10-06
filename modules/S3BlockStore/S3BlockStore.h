@@ -166,7 +166,11 @@ public:
 
     void remove_handler(ResponseHandlerHandle const & i_rhh);
 
-    void initiate_get(AsyncGetHandlerHandle const & i_rhh);
+    void initiate_get(AsyncGetHandlerHandle const & i_aghh);
+
+    void initiate_put(AsyncPutHandlerHandle const & i_aphh);
+
+    void update_put_stats(AsyncPutHandlerHandle const & i_aphh);
 
 protected:
     static void parse_params(utp::StringSeq const & i_args,
@@ -176,7 +180,9 @@ protected:
                              std::string & o_secret_access_key,
                              std::string & o_bucket_name);
 
-    void initiate_get_internal(AsyncGetHandlerHandle const & i_rhh);
+    void initiate_get_internal(AsyncGetHandlerHandle const & i_aghh);
+
+    void initiate_put_internal(AsyncPutHandlerHandle const & i_aphh);
 
     int reqctxt_service();
 
@@ -241,6 +247,8 @@ private:
 // FIXME - Why can't I use the one in utp::BlockStore?
 // Helpful for debugging.
 std::ostream & operator<<(std::ostream & ostrm, utp::HeadNode const & i_nr);
+
+std::ostream & operator<<(std::ostream & ostrm, S3Status status);
 
 } // namespace S3BS
 

@@ -8,6 +8,7 @@ PROTO +=	\
 
 LIBSRC += 	\
 			S3AsyncGetHandler.cpp \
+			S3AsyncPutHandler.cpp \
 			S3ResponseHandler.cpp \
 			S3BlockStore.cpp \
 			S3BSFactory.cpp \

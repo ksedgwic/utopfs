@@ -69,6 +69,10 @@ public:
 
     virtual int ph_objdata(int i_buffsz, char * o_buffer);
 
+    utp::uint8 const * blkdata() const { return m_data; }
+
+    size_t blksize() const { return m_size; }
+
 private:
     utp::uint8 const *		m_data;
     size_t					m_size;

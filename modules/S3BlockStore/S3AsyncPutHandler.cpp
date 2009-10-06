@@ -1,9 +1,10 @@
 #include <iostream>
 #include <sstream>
 #include "Except.h"
+#include "MD5.h"
 
 #include "S3BlockStore.h"
-#include "S3AsyncGetHandler.h"
+#include "S3AsyncPutHandler.h"
 #include "s3bslog.h"
 #include "s3bsfwd.h"
 
@@ -12,17 +13,17 @@ using namespace utp;
 
 namespace S3BS {
 
-AsyncGetHandler::AsyncGetHandler(ACE_Reactor * i_reactor,
+AsyncPutHandler::AsyncPutHandler(ACE_Reactor * i_reactor,
                                  S3BlockStore & i_s3bs,
                                  string const & i_blkpath,
                                  void const * i_keydata,
                                  size_t i_keysize,
-                                 uint8 * o_buffdata,
-                                 size_t i_buffsize,
-                                 BlockStore::BlockGetCompletion & i_cmpl,
+                                 uint8 const * i_blkdata,
+                                 size_t i_blksize,
+                                 BlockStore::BlockPutCompletion & i_cmpl,
                                  void const * i_argp,
                                  size_t i_retries)
-    : GetHandler(o_buffdata, i_buffsize)
+    : PutHandler(i_blkdata, i_blksize)
     , m_reactor(i_reactor)
     , m_s3bs(i_s3bs)
     , m_blkpath(i_blkpath)
@@ -34,59 +35,68 @@ AsyncGetHandler::AsyncGetHandler(ACE_Reactor * i_reactor,
 {
     LOG(lgr, 6, (void *) this << ' '
         << keystr(m_keydata, m_keysize) << " CTOR");
+
+    MD5 md5sum(i_blkdata, i_blksize);
+    ACE_OS::memset(&m_pp, '\0', sizeof(m_pp));
+    m_pp.md5 = md5sum;
 }
 
-AsyncGetHandler::~AsyncGetHandler()
+AsyncPutHandler::~AsyncPutHandler()
 {
     LOG(lgr, 6, (void *) this << ' '
         << keystr(m_keydata, m_keysize) << " DTOR");
 }
 
 void
-AsyncGetHandler::rh_complete(S3Status status,
+AsyncPutHandler::rh_complete(S3Status status,
                              S3ErrorDetails const * errorDetails)
 {
     // Call base class completion first.
-    GetHandler::rh_complete(status, errorDetails);
+    PutHandler::rh_complete(status, errorDetails);
 
     // IMPORTANT - We can be called here w/ the S3BlockStore mutex
-    // held so we'll need to enqueue all the goods and get called from
+    // held so we'll need to enqueue all the goods and put called from
     // the reactor without the mutex held ...
     m_reactor->notify(this);
 }
 
 ACE_Event_Handler::Reference_Count
-AsyncGetHandler::add_reference()
+AsyncPutHandler::add_reference()
 {
-    LOG(lgr, 9, "add_reference " << rc_count() << "->" << (rc_count() + 1));
+    LOG(lgr, 9, (void *) this << ' '
+        << "add_reference " << rc_count() << "->" << (rc_count() + 1));
 
     return this->rc_add_ref();
 }
 
 ACE_Event_Handler::Reference_Count
-AsyncGetHandler::remove_reference()
+AsyncPutHandler::remove_reference()
 {
-    LOG(lgr, 9, "remove_reference " << rc_count() << "->" << (rc_count() - 1));
+    LOG(lgr, 9, (void *) this << ' '
+        << "remove_reference " << rc_count() << "->" << (rc_count() - 1));
 
     // Don't touch any members after this!
     return this->rc_rem_ref();
 }
 
 int
-AsyncGetHandler::handle_exception(ACE_HANDLE fd)
+AsyncPutHandler::handle_exception(ACE_HANDLE fd)
 {
     S3Status st = status();
-    
+
     // Was this a successful completion?
     if (st == S3StatusOK)
     {
         LOG(lgr, 6, (void *) this << ' '
             << keystr(m_keydata, m_keysize) << " SUCCESS");
 
-        // Call the completion handler.
-        m_cmpl.bg_complete(m_keydata, m_keysize, m_argp, size());
+        // Update the blockstore accounting.
+        m_s3bs.update_put_stats(this);
 
-        // IMPORTANT - We get destructed here; Don't touch *anything*
+        // Call the completion handler.
+        m_cmpl.bp_complete(m_keydata, m_keysize, m_argp);
+
+        // IMPORTANT - We put destructed here; Don't touch *anything*
         // after this!
         //
         m_s3bs.remove_handler(this);
@@ -101,7 +111,7 @@ AsyncGetHandler::handle_exception(ACE_HANDLE fd)
                 << keystr(m_keydata, m_keysize) << " RETRY");
 
             reset(); // Reset our state.
-            m_s3bs.initiate_get(this);
+            m_s3bs.initiate_put(this);
 
             // This path doesn't destroy the handler ...
         }
@@ -113,9 +123,9 @@ AsyncGetHandler::handle_exception(ACE_HANDLE fd)
             ostringstream errstrm;
             errstrm << FILELINE << "too many S3 retries";
             InternalError ex(errstrm.str().c_str());
-            m_cmpl.bg_error(m_keydata, m_keysize, m_argp, ex);
+            m_cmpl.bp_error(m_keydata, m_keysize, m_argp, ex);
 
-            // IMPORTANT - We get destructed here; Don't touch *anything*
+            // IMPORTANT - We put destructed here; Don't touch *anything*
             // after this!
             //
             m_s3bs.remove_handler(this);
@@ -127,26 +137,14 @@ AsyncGetHandler::handle_exception(ACE_HANDLE fd)
     {
         // Call the error handler.
         ostringstream errstrm;
-        if (st == S3StatusErrorNoSuchKey)
-        {
-            LOG(lgr, 6, (void *) this << ' '
-                << keystr(m_keydata, m_keysize) << " NOT FOUND");
+        LOG(lgr, 6, (void *) this << ' '
+            << keystr(m_keydata, m_keysize) << " UNEXPECTED: " << st);
 
-            errstrm << "key \"" << m_blkpath << "\" not found";
-            NotFoundError ex(errstrm.str().c_str());
-            m_cmpl.bg_error(m_keydata, m_keysize, m_argp, ex);
-        }
-        else
-        {
-            LOG(lgr, 6, (void *) this << ' '
-                << keystr(m_keydata, m_keysize) << "UNEXPECTED: " << st);
+        errstrm << FILELINE << "unexpected S3 error: " << st;
+        InternalError ex(errstrm.str().c_str());
+        m_cmpl.bp_error(m_keydata, m_keysize, m_argp, ex);
 
-            errstrm << FILELINE << "unexpected S3 error: " << st;
-            InternalError ex(errstrm.str().c_str());
-            m_cmpl.bg_error(m_keydata, m_keysize, m_argp, ex);
-        }
-
-        // IMPORTANT - We get destructed here; Don't touch *anything*
+        // IMPORTANT - We put destructed here; Don't touch *anything*
         // after this!
         //
         m_s3bs.remove_handler(this);
