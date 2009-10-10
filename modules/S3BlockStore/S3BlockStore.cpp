@@ -1269,7 +1269,8 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
         string blkpath = blockpath(entry);
 
         LOG(lgr, 6, m_instname << ' '
-            << "bs_block_put " << keystr(i_keydata, i_keysize));
+            << "bs_block_put_async " << keystr(i_keydata, i_keysize)
+            << " starting");
 
         // Do we already have this block?
         bool alreadyhave = false;
@@ -1284,7 +1285,11 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
             
         if (alreadyhave)
         {
+            LOG(lgr, 6, m_instname << ' '
+                << "bs_block_put_async " << keystr(i_keydata, i_keysize)
+                << " ALREADY HAVE IT");
             i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
+            return;
         }
             
         // We used to check to see if the block already existed so
@@ -1333,6 +1338,10 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
         m_rsphandlers.push_back(aphh);
 
         initiate_put_internal(aphh);
+
+        LOG(lgr, 6, m_instname << ' '
+            << "bs_block_put_async " << keystr(i_keydata, i_keysize)
+            << " finished");
     }
     catch (Exception const & ex)
     {

@@ -330,7 +330,21 @@ VBSHeadFurthestTopReq::directed_follow_fill
     // Each FollowFill is submitted to all other children.
     size_t ncp = m_children.size() - 1;
 
+
+    // IMPORTANT - Since the completions can start coming back before
+    // we complete issuing all the work we need to make sure the
+    // outstanding count is correctly set before we issue any of them.
+    //
+    m_ffout = 0;
     ChildNodeSetMap const & unq = i_srh->unique();
+    for (ChildNodeSetMap::const_iterator it = unq.begin();
+         it != unq.end();
+         ++it)
+    {
+        HeadNodeSet const & hns = it->second;
+        m_ffout += hns.size();
+    }
+
     for (ChildNodeSetMap::const_iterator it = unq.begin();
          it != unq.end();
          ++it)
@@ -343,8 +357,6 @@ VBSHeadFurthestTopReq::directed_follow_fill
              ++it2)
         {
             HeadNode const & hn = *it2;
-            
-            ++m_ffout;
 
             VBSRequestHandle rh =
                 new VBSHeadFollowFillReq(m_vbs, ncp, hn, this, NULL, cp);
@@ -412,13 +424,18 @@ VBSHeadFurthestTopReq::full_follow_fill()
     // Each FollowFill is submitted to all other children.
     size_t ncp = m_children.size() - 1;
 
+    // We are going to have one follow fill outstanding for each
+    // child.  IMPORTANT - Need to increment the count now before
+    // any of the callbacks could come back (Doesn't work to do it
+    // in the loop below ...
+    //
+    m_ffout = m_children.size();
+
     for (VBSChildMap::const_iterator it = m_children.begin();
          it != m_children.end();
          ++it)
     {
         VBSChildHandle ch = it->second;
-
-        ++m_ffout;
 
         HeadNode hn(m_hn.first, "");
 
@@ -433,7 +450,12 @@ VBSHeadFurthestTopReq::full_follow_fill()
              it3 != m_children.end();
              ++it3)
             if (&*(it3->second) != &*ch)
+            {
+                LOG(lgr, 6, "full_follow_fill "
+                    << ch->instname() << " <- " << it3->second->instname());
+
                 it3->second->enqueue_headnode(rh);
+            }
     }
 
     LOG(lgr, 6, "full_follow_fill finished");
