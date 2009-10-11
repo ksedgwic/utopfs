@@ -1848,6 +1848,8 @@ S3BlockStore::reqctxt_service()
 {
     LOG(lgr, 6, m_instname << ' ' << "reqctxt_service starting");
 
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
     int nreqremain;
     S3Status st = S3_runonce_request_context(m_reqctxt,
                                              &nreqremain);
