@@ -64,6 +64,7 @@ private:
     utp::BlockStore::BlockPutCompletion &	m_cmpl;
     void const *							m_argp;
     size_t									m_retries;
+    utp::MD5								m_md5;
     S3PutProperties							m_pp;
 };
 typedef utp::RCPtr<AsyncPutHandler> AsyncPutHandlerHandle;

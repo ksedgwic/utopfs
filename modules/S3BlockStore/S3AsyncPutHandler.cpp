@@ -32,13 +32,13 @@ AsyncPutHandler::AsyncPutHandler(ACE_Reactor * i_reactor,
     , m_cmpl(i_cmpl)
     , m_argp(i_argp)
     , m_retries(i_retries)
+    , m_md5(i_blkdata, i_blksize)
 {
     LOG(lgr, 6, (void *) this << ' '
         << keystr(m_keydata, m_keysize) << " CTOR");
 
-    MD5 md5sum(i_blkdata, i_blksize);
     ACE_OS::memset(&m_pp, '\0', sizeof(m_pp));
-    m_pp.md5 = md5sum;
+    m_pp.md5 = m_md5;
 }
 
 AsyncPutHandler::~AsyncPutHandler()
