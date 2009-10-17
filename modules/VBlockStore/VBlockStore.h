@@ -113,6 +113,13 @@ public:
     virtual void bs_get_stats(utp::StatSet & o_ss) const
         throw(utp::InternalError);
 
+    virtual bool bs_issaturated()
+        throw(utp::InternalError);
+
+    virtual void bs_register_unsathandler(UnsaturatedHandler & i_handler,
+                                          void const * i_argp)
+        throw(utp::InternalError);
+
     // VBlockStore methods
 
     void insert_req(VBSRequestHandle const & i_rh);

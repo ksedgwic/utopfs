@@ -457,6 +457,23 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
     }
 }
 
+bool
+VBlockStore::bs_issaturated()
+    throw(InternalError)
+{
+    // FIXME - Probbly should return true at some point.
+    return false;
+}
+
+void
+VBlockStore::bs_register_unsathandler(UnsaturatedHandler & i_handler,
+                                      void const * i_argp)
+        throw(InternalError)
+{
+    // FIXME - Might want to save this and call it at the appropriate
+    // times ...
+}
+
 void
 VBlockStore::insert_req(VBSRequestHandle const & i_rh)
 {

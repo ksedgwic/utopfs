@@ -480,6 +480,30 @@ public:
     ///
     virtual void bs_get_stats(StatSet & o_ss) const
         throw(InternalError) = 0;
+
+    /// Returns true if blockstore is saturated (busy).  When the
+    /// blockstore is saturated no further async work should be
+    /// enqueued.
+    ///
+    virtual bool bs_issaturated()
+        throw(InternalError) = 0;
+
+    /// Handler for Unsaturated Events
+    ///
+    /// This handler will get called whenever the blockstore
+    /// could use more work.
+    ///
+    class UnsaturatedHandler
+    {
+    public:
+        virtual void uh_unsaturated(void const * i_argp) = 0;
+    };
+
+    /// Registers a callback handler for unsaturated transition calls.
+    ///
+    virtual void bs_register_unsathandler(UnsaturatedHandler & i_handler,
+                                          void const * i_argp)
+        throw(InternalError) = 0;
 };
 
 } // end namespace utp

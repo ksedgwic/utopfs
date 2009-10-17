@@ -150,6 +150,13 @@ public:
     virtual void bs_get_stats(utp::StatSet & o_ss) const
         throw(utp::InternalError);
 
+    virtual bool bs_issaturated()
+        throw(utp::InternalError);
+
+    virtual void bs_register_unsathandler(UnsaturatedHandler & i_handler,
+                                          void const * i_argp)
+        throw(utp::InternalError);
+
     // ACE_Event_Handler methods
 
     virtual int handle_input(ACE_HANDLE i_fd);

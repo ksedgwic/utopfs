@@ -887,6 +887,23 @@ FSBlockStore::bs_get_stats(StatSet & o_ss) const
     // FIXME - Add some stats here.
 }
 
+bool
+FSBlockStore::bs_issaturated()
+    throw(InternalError)
+{
+    // FIXME - Probbly should return true at some point.
+    return false;
+}
+
+void
+FSBlockStore::bs_register_unsathandler(UnsaturatedHandler & i_handler,
+                                       void const * i_argp)
+        throw(InternalError)
+{
+    // FIXME - Might want to save this and call it at the appropriate
+    // times ...
+}
+
 string 
 FSBlockStore::entryname(void const * i_keydata, size_t i_keysize) const
 {

@@ -12,6 +12,7 @@
 
 #include "utpfwd.h"
 
+#include "BlockStore.h"
 #include "RC.h"
 
 #include "vbsexp.h"
@@ -23,6 +24,7 @@ namespace VBS {
 //
 class VBS_EXP VBSChild
     : public ACE_Event_Handler
+    , public utp::BlockStore::UnsaturatedHandler
     , public virtual utp::RCObj
 {
 public:
@@ -38,6 +40,10 @@ public:
     virtual Reference_Count remove_reference();
 
     virtual int handle_exception(ACE_HANDLE fd);
+
+    // UnsaturatedHandler
+
+    virtual void uh_unsaturated(void const * i_argp);
 
     // VBSChild
 

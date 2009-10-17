@@ -24,6 +24,8 @@ VBSChild::VBSChild(ACE_Reactor * i_reactor, string const & i_instname)
 
     m_bsh = BlockStoreFactory::lookup(i_instname);
 
+    m_bsh->bs_register_unsathandler(*this, NULL);
+
     this->reference_counting_policy().value
         (ACE_Event_Handler::Reference_Counting_Policy::ENABLED);
 }
@@ -58,6 +60,12 @@ VBSChild::handle_exception(ACE_HANDLE fd)
     initiate_requests();
     
     return 0;
+}
+
+void
+VBSChild::uh_unsaturated(void const * i_argp)
+{
+    initiate_requests();
 }
 
 void
@@ -218,6 +226,10 @@ VBSChild::initiate_requests()
     //
     while (true)
     {
+        // Check to make sure the child isn't saturated.
+        if (m_bsh->bs_issaturated())
+            break;
+
         // First, figure out what we are going to do with the mutex
         // held.
         //
