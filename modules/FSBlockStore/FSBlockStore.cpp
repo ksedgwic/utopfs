@@ -896,7 +896,7 @@ FSBlockStore::bs_issaturated()
 }
 
 void
-FSBlockStore::bs_register_unsathandler(UnsaturatedHandler & i_handler,
+FSBlockStore::bs_register_unsathandler(UnsaturatedHandler * i_handler,
                                        void const * i_argp)
         throw(InternalError)
 {

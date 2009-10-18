@@ -24,7 +24,7 @@ VBSChild::VBSChild(ACE_Reactor * i_reactor, string const & i_instname)
 
     m_bsh = BlockStoreFactory::lookup(i_instname);
 
-    m_bsh->bs_register_unsathandler(*this, NULL);
+    m_bsh->bs_register_unsathandler(this, NULL);
 
     this->reference_counting_policy().value
         (ACE_Event_Handler::Reference_Counting_Policy::ENABLED);

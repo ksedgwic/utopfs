@@ -153,7 +153,7 @@ public:
     virtual bool bs_issaturated()
         throw(utp::InternalError);
 
-    virtual void bs_register_unsathandler(UnsaturatedHandler & i_handler,
+    virtual void bs_register_unsathandler(UnsaturatedHandler * i_handler,
                                           void const * i_argp)
         throw(utp::InternalError);
 
@@ -249,6 +249,10 @@ private:
 
     std::string					m_markname;
     EntryHandle					m_mark;
+
+    bool										m_wassat;
+    utp::BlockStore::UnsaturatedHandler *		m_unsathandler;
+    void const *								m_unsatargp;
 };
 
 // FIXME - Why can't I use the one in utp::BlockStore?

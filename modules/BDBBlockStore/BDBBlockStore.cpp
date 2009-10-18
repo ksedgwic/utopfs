@@ -606,7 +606,7 @@ BDBBlockStore::bs_issaturated()
 }
 
 void
-BDBBlockStore::bs_register_unsathandler(UnsaturatedHandler & i_handler,
+BDBBlockStore::bs_register_unsathandler(UnsaturatedHandler * i_handler,
                                         void const * i_argp)
         throw(InternalError)
 {

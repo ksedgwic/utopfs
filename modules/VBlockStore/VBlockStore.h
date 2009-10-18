@@ -116,7 +116,7 @@ public:
     virtual bool bs_issaturated()
         throw(utp::InternalError);
 
-    virtual void bs_register_unsathandler(UnsaturatedHandler & i_handler,
+    virtual void bs_register_unsathandler(UnsaturatedHandler * i_handler,
                                           void const * i_argp)
         throw(utp::InternalError);
 

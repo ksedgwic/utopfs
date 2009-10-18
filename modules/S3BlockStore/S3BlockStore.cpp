@@ -29,6 +29,8 @@ using namespace utp;
 
 namespace S3BS {
 
+static unsigned const SATURATED_SIZE = 100;
+
 static unsigned const MAX_RETRIES = 10;
 
 S3Status response_properties(S3ResponseProperties const * properties,
@@ -321,6 +323,9 @@ S3BlockStore::S3BlockStore(std::string const & i_instname)
     , m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
+    , m_wassat(false)
+    , m_unsathandler(NULL)
+    , m_unsatargp(NULL)
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");
 }
@@ -1665,17 +1670,18 @@ bool
 S3BlockStore::bs_issaturated()
     throw(InternalError)
 {
-    // FIXME - Probbly should return true at some point.
-    return false;
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+    return m_rsphandlers.size() >= SATURATED_SIZE;
 }
 
 void
-S3BlockStore::bs_register_unsathandler(UnsaturatedHandler & i_handler,
+S3BlockStore::bs_register_unsathandler(UnsaturatedHandler * i_handler,
                                        void const * i_argp)
         throw(InternalError)
 {
-    // FIXME - Might want to save this and call it at the appropriate
-    // times ...
+    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+    m_unsathandler = i_handler;
+    m_unsatargp = i_argp;
 }
 
 int
@@ -1711,18 +1717,42 @@ S3BlockStore::edgepath(string const & i_edge)
 void
 S3BlockStore::remove_handler(ResponseHandlerHandle const & i_rhh)
 {
-    ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-    m_rsphandlers.erase(remove(m_rsphandlers.begin(),
-                               m_rsphandlers.end(),
-                               i_rhh),
-                        m_rsphandlers.end());
+    // NOTE - We don't want to hold the mutex while we call the
+    // unsaturatedhandler.  But we need to hold it while we figure out
+    // if it should be called and what it's args are ...
 
-    // If we've emptied the collection wake any waiters.
-    if (m_rsphandlers.empty() && m_waiting)
+    BlockStore::UnsaturatedHandler * uhp = NULL;
+    void const * argp = NULL;
     {
-        m_s3bscond.broadcast();
-        m_waiting = false;
+        ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+        m_rsphandlers.erase(remove(m_rsphandlers.begin(),
+                                   m_rsphandlers.end(),
+                                   i_rhh),
+                            m_rsphandlers.end());
+
+        // If we've emptied the collection wake any waiters.
+        if (m_rsphandlers.empty() && m_waiting)
+        {
+            m_s3bscond.broadcast();
+            m_waiting = false;
+        }
+
+        // Are we saturated?
+        bool issat = m_rsphandlers.size() >= SATURATED_SIZE;
+
+        // If we just became unsaturated, setup the unsaturation handler.
+        if (m_wassat && !issat)
+        {
+            uhp = m_unsathandler;
+            argp = m_unsatargp;
+        }
+
+        m_wassat = issat;
     }
+
+    // Call the unsaturated handler, if appropriate.
+    if (uhp)
+        uhp->uh_unsaturated(argp);
 }
 
 void

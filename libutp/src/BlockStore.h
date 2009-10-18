@@ -499,9 +499,10 @@ public:
         virtual void uh_unsaturated(void const * i_argp) = 0;
     };
 
-    /// Registers a callback handler for unsaturated transition calls.
+    /// Registers a callback handler which will be called when the
+    /// blockstore becomes unsaturated (needs more work).
     ///
-    virtual void bs_register_unsathandler(UnsaturatedHandler & i_handler,
+    virtual void bs_register_unsathandler(UnsaturatedHandler * i_handler,
                                           void const * i_argp)
         throw(InternalError) = 0;
 };
