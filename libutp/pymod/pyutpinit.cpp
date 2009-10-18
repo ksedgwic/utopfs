@@ -105,7 +105,7 @@ init_utp(void)
     ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor), 1);
 
     // Start the thread pool.
-    ThreadPool * thrpool = new ThreadPool(ACE_Reactor::instance());
+    ThreadPool * thrpool = new ThreadPool(ACE_Reactor::instance(), "pyutp");
     thrpool->init(4);
     (void) thrpool;	// FIXME - Clean this up when we are done ...
 

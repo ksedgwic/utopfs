@@ -8,21 +8,22 @@ using namespace std;
 
 namespace utp {
 
-ThreadPool::ThreadPool(ACE_Reactor * i_reactor)
+    ThreadPool::ThreadPool(ACE_Reactor * i_reactor, string const & i_tpname)
     : m_reactor(i_reactor)
+    , m_tpname(i_tpname)
 {
-    LOG(lgr, 4, "ThreadPool CTOR");
+    LOG(lgr, 4, "ThreadPool CTOR " << m_tpname);
 }
     
 ThreadPool::~ThreadPool()
 {
-    LOG(lgr, 4, "ThreadPool DTOR");
+    LOG(lgr, 4, "ThreadPool DTOR " << m_tpname);
 }
 
 int
 ThreadPool::svc(void)
 {
-    LOG(lgr, 4, "ThreadPool starting");
+    LOG(lgr, 4, "ThreadPool " << m_tpname << " thread starting");
 
     // Run the Reactor event loop.  Catch exceptions and report but keep
     // the threads running ...
@@ -44,14 +45,14 @@ ThreadPool::svc(void)
         }
     }
 
-    LOG(lgr, 4, "ThreadPool finished");
+    LOG(lgr, 4, "ThreadPool " << m_tpname << " thread finished");
     return 0;
 }
 
 void
 ThreadPool::init(int i_numthreads)
 {
-    LOG(lgr, 4, "ThreadPool init " << i_numthreads);
+    LOG(lgr, 4, "ThreadPool " << m_tpname << " init " << i_numthreads);
     m_running = true;
     
     if (activate(THR_NEW_LWP | THR_JOINABLE, i_numthreads) != 0)
@@ -62,9 +63,13 @@ ThreadPool::init(int i_numthreads)
 void
 ThreadPool::term()
 {
+    LOG(lgr, 4, "ThreadPool " << m_tpname << " term starting");
+
     m_running = false;
     m_reactor->end_reactor_event_loop();
     wait();
+
+    LOG(lgr, 4, "ThreadPool " << m_tpname << " term finished");
 }
 
 } // end namespace utp

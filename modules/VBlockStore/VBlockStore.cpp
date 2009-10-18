@@ -34,7 +34,7 @@ VBlockStore::destroy(StringSeq const & i_args)
 VBlockStore::VBlockStore(string const & i_instname)
     : m_instname(i_instname)
     , m_vbsreactor(new ACE_Reactor(new ACE_TP_Reactor))
-    , m_vbsthreadpool(m_vbsreactor)
+    , m_vbsthreadpool(m_vbsreactor, "vbs")
     , m_vbscond(m_vbsmutex)
     , m_waiting(false)
 {

@@ -169,7 +169,7 @@ utopfs_init(struct fuse_conn_info * i_conn)
     // Start the thread pool.
     // size_t numthreads = ACE_OS::num_processors_online() * 2;
     size_t numthreads = 4;
-    utopfs.thrpool = new ThreadPool(ACE_Reactor::instance());
+    utopfs.thrpool = new ThreadPool(ACE_Reactor::instance(), "fuse");
     utopfs.thrpool->init(numthreads);
 
     // Create the assembly of blockstores and filesystem.

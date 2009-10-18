@@ -6,6 +6,8 @@
 ///
 /// ThreadPool Object for Utopfs FileSystem.
 
+#include <string>
+
 #include <ace/Reactor.h>
 #include <ace/Task.h>
 
@@ -19,7 +21,8 @@ namespace utp {
 class UTP_EXP ThreadPool : public ACE_Task_Base
 {
 public:
-    ThreadPool(ACE_Reactor * i_reactor);
+    ThreadPool(ACE_Reactor * i_reactor,
+               std::string const & i_tpname);
     
     ~ThreadPool();
 
@@ -32,6 +35,7 @@ public:
 private:
     ACE_Reactor *		m_reactor;
     bool				m_running;
+    std::string			m_tpname;
 };
 
 } // end namespace utp
