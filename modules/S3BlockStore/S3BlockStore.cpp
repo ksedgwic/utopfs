@@ -1671,8 +1671,12 @@ S3BlockStore::bs_issaturated()
     throw(InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-    return false;	// FIXME - this is bogus
-    return m_rsphandlers.size() >= SATURATED_SIZE;
+    bool issat = m_rsphandlers.size() >= SATURATED_SIZE;
+    if (issat)
+    {
+        LOG(lgr, 4, m_instname << ' ' << "SATURATED");
+    }
+    return issat;
 }
 
 void
@@ -1764,7 +1768,7 @@ S3BlockStore::remove_handler(ResponseHandlerHandle const & i_rhh)
     // Call the unsaturated handler, if appropriate.
     if (uhp)
     {
-        LOG(lgr, 6, m_instname << ' '
+        LOG(lgr, 4, m_instname << ' '
             << "remove_handler calling unsat handler");
         uhp->uh_unsaturated(argp);
     }
