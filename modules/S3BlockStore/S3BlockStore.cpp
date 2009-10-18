@@ -1671,6 +1671,7 @@ S3BlockStore::bs_issaturated()
     throw(InternalError)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+    return false;	// FIXME - this is bogus
     return m_rsphandlers.size() >= SATURATED_SIZE;
 }
 
