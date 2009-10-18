@@ -103,17 +103,24 @@ ResponseHandler::operator==(ResponseHandler const & i_o) const
 PutHandler::PutHandler(uint8 const * i_data, size_t i_size)
     : m_data(i_data)
     , m_size(i_size)
+    , m_left(i_size)
 {
+    LOG(lgr, 7, "PutHandler " << (void *) this << " CTOR sz=" << i_size);
+}
+
+PutHandler::~PutHandler()
+{
+    LOG(lgr, 7, "PutHandler " << (void *) this << " DTOR");
 }
 
 int
 PutHandler::ph_objdata(int i_buffsz, char * o_buffer)
 {
-    size_t sz = min(size_t(i_buffsz), m_size);
+    size_t sz = min(size_t(i_buffsz), m_left);
 
     ACE_OS::memcpy(o_buffer, m_data, sz);
     m_data += sz;
-    m_size -= sz;
+    m_left -= sz;
     return sz;
 }
 

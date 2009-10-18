@@ -1721,14 +1721,24 @@ S3BlockStore::remove_handler(ResponseHandlerHandle const & i_rhh)
     // unsaturatedhandler.  But we need to hold it while we figure out
     // if it should be called and what it's args are ...
 
+    LOG(lgr, 6, m_instname << ' ' << "remove_handler starting");
+
     BlockStore::UnsaturatedHandler * uhp = NULL;
     void const * argp = NULL;
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
+
+        size_t szbefore = m_rsphandlers.size();
+
         m_rsphandlers.erase(remove(m_rsphandlers.begin(),
                                    m_rsphandlers.end(),
                                    i_rhh),
                             m_rsphandlers.end());
+
+        size_t szafter = m_rsphandlers.size();
+
+        LOG(lgr, 6, m_instname << ' ' << "remove_handler removed "
+            << (szbefore - szafter) << " handler(s)");
 
         // If we've emptied the collection wake any waiters.
         if (m_rsphandlers.empty() && m_waiting)
@@ -1752,7 +1762,13 @@ S3BlockStore::remove_handler(ResponseHandlerHandle const & i_rhh)
 
     // Call the unsaturated handler, if appropriate.
     if (uhp)
+    {
+        LOG(lgr, 6, m_instname << ' '
+            << "remove_handler calling unsat handler");
         uhp->uh_unsaturated(argp);
+    }
+
+    LOG(lgr, 6, m_instname << ' ' << "remove_handler finished");
 }
 
 void

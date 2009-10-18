@@ -67,6 +67,8 @@ class S3BS_EXP PutHandler : public ResponseHandler
 public:
     PutHandler(utp::uint8 const * i_data, size_t i_size);
 
+    virtual ~PutHandler();
+
     virtual int ph_objdata(int i_buffsz, char * o_buffer);
 
     utp::uint8 const * blkdata() const { return m_data; }
@@ -76,6 +78,7 @@ public:
 private:
     utp::uint8 const *		m_data;
     size_t					m_size;
+    size_t					m_left;
 };
 
 class S3BS_EXP GetHandler : public ResponseHandler

@@ -35,10 +35,13 @@ AsyncPutHandler::AsyncPutHandler(ACE_Reactor * i_reactor,
     , m_md5(i_blkdata, i_blksize)
 {
     LOG(lgr, 6, (void *) this << ' '
-        << keystr(m_keydata, m_keysize) << " CTOR");
+        << keystr(m_keydata, m_keysize) << " CTOR sz=" << i_blksize);
 
     ACE_OS::memset(&m_pp, '\0', sizeof(m_pp));
     m_pp.md5 = m_md5;
+
+    this->reference_counting_policy().value
+        (ACE_Event_Handler::Reference_Counting_Policy::ENABLED);
 }
 
 AsyncPutHandler::~AsyncPutHandler()

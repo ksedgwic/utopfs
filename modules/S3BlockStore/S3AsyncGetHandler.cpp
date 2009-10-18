@@ -34,6 +34,9 @@ AsyncGetHandler::AsyncGetHandler(ACE_Reactor * i_reactor,
 {
     LOG(lgr, 6, (void *) this << ' '
         << keystr(m_keydata, m_keysize) << " CTOR");
+
+    this->reference_counting_policy().value
+        (ACE_Event_Handler::Reference_Counting_Policy::ENABLED);
 }
 
 AsyncGetHandler::~AsyncGetHandler()
