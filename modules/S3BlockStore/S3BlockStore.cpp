@@ -618,31 +618,38 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
     LOG(lgr, 4, m_instname << ' ' << "bs_open " << m_bucket_name);
 
-    // Make sure the bucket exists.
-    ResponseHandler rh;
-    char locstr[128];
-    S3_test_bucket(m_protocol,
-                   m_uri_style,
-                   m_access_key_id.c_str(),
-                   m_secret_access_key.c_str(),
-                   m_bucket_name.c_str(),
-                   sizeof(locstr),
-                   locstr,
-                   NULL,
-                   &rsp_tramp,
-                   &rh);
-    S3Status st = rh.wait();
+    for (unsigned ii = 0; ii < MAX_RETRIES; ++ii)
+    {
+        if (ii == MAX_RETRIES)
+            throwstream(InternalError, FILELINE
+                        << "too many retries");
 
-    if (st == S3StatusErrorNoSuchBucket)
-        throwstream(NotFoundError,
-                    "bucket " << m_bucket_name << " doesn't exist");
+        // Make sure the bucket exists.
+        ResponseHandler rh;
+        char locstr[128];
+        S3_test_bucket(m_protocol,
+                       m_uri_style,
+                       m_access_key_id.c_str(),
+                       m_secret_access_key.c_str(),
+                       m_bucket_name.c_str(),
+                       sizeof(locstr),
+                       locstr,
+                       NULL,
+                       &rsp_tramp,
+                       &rh);
+        S3Status st = rh.wait();
 
-    if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "Unexpected S3 error: " << st);
+        if (st == S3StatusErrorNoSuchBucket)
+            throwstream(NotFoundError,
+                        "bucket " << m_bucket_name << " doesn't exist");
+
+        if (!S3_status_is_retryable(st))
+            throwstream(InternalError, FILELINE
+                        << "Unretryable S3 error: " << st);
+    }
 
     LOG(lgr, 4, m_instname << ' ' << "creating S3 request context");
-    st = S3_create_request_context(&m_reqctxt);
+    S3Status st = S3_create_request_context(&m_reqctxt);
     if (st != S3StatusOK)
         throwstream(InternalError, FILELINE
                     << "unexpected S3 error: " << st);
