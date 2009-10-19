@@ -29,7 +29,7 @@ using namespace utp;
 
 namespace S3BS {
 
-static unsigned const SATURATED_SIZE = 500;
+static unsigned const SATURATED_SIZE = 32;
 
 static unsigned const MAX_RETRIES = 10;
 
