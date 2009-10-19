@@ -228,7 +228,11 @@ VBSChild::initiate_requests()
     {
         // Check to make sure the child isn't saturated.
         if (m_bsh->bs_issaturated())
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+            m_notified = false;
             break;
+        }
 
         // First, figure out what we are going to do with the mutex
         // held.
