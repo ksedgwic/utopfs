@@ -253,7 +253,6 @@ private:
     std::string					m_markname;
     EntryHandle					m_mark;
 
-    bool										m_wassat;
     utp::BlockStore::UnsaturatedHandler *		m_unsathandler;
     void const *								m_unsatargp;
 };

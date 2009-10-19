@@ -323,7 +323,6 @@ S3BlockStore::S3BlockStore(std::string const & i_instname)
     , m_size(0)
     , m_committed(0)
     , m_uncommitted(0)
-    , m_wassat(false)
     , m_unsathandler(NULL)
     , m_unsatargp(NULL)
 {
@@ -1761,17 +1760,12 @@ S3BlockStore::remove_handler(ResponseHandlerHandle const & i_rhh)
             m_waiting = false;
         }
 
-        // Are we saturated?
-        bool issat = m_rsphandlers.size() >= SATURATED_SIZE;
-
-        // If we just became unsaturated, setup the unsaturation handler.
-        if (m_wassat && !issat)
+        // If we aren't saturated call the unsaturatedhandler.
+        if (m_rsphandlers.size() < SATURATED_SIZE)
         {
             uhp = m_unsathandler;
             argp = m_unsatargp;
         }
-
-        m_wassat = issat;
     }
 
     // Call the unsaturated handler, if appropriate.
