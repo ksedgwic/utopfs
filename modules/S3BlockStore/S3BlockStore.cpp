@@ -884,7 +884,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     }
     while (istrunc);
 
-    LOG(lgr, 4, m_instname << ' ' << "read " << edgekeys.size() << " EDGES");
+    LOG(lgr, 4, m_instname << ' ' << "listed " << edgekeys.size() << " EDGES");
 
     // Read all of the signed edges and insert.
     for (StringSeq::const_iterator it = edgekeys.begin();
@@ -931,6 +931,8 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                         << " SignedHeadEdge deserialize failed");
         m_lhng.insert_head(she);
     }
+
+    LOG(lgr, 4, m_instname << ' ' << "read " << edgekeys.size() << " EDGES");
 }
 
 void
@@ -1674,7 +1676,7 @@ S3BlockStore::bs_issaturated()
     bool issat = m_rsphandlers.size() >= SATURATED_SIZE;
     if (issat)
     {
-        LOG(lgr, 4, m_instname << ' ' << "SATURATED");
+        LOG(lgr, 6, m_instname << ' ' << "SATURATED");
     }
     return issat;
 }
@@ -1703,6 +1705,13 @@ S3BlockStore::handle_output(ACE_HANDLE i_fd)
 
 int
 S3BlockStore::handle_exception(ACE_HANDLE i_fd)
+{
+    return reqctxt_service();
+}
+
+int
+S3BlockStore::handle_timeout(ACE_Time_Value const & current_time,
+                             void const * act)
 {
     return reqctxt_service();
 }
@@ -1942,6 +1951,9 @@ S3BlockStore::reqctxt_reregister()
 
     LOG(lgr, 6, m_instname << ' ' << "reqctxt_reregister starting");
 
+    // Cancel any existing timeouts.
+    m_reactor->cancel_timer(this);
+
     // Cancel any existing registrations.
     LOG(lgr, 6, m_instname << ' ' << "unregistering handlers");
 
@@ -1992,6 +2004,13 @@ S3BlockStore::reqctxt_reregister()
         m_reactor->register_handler(m_eset,
                                     this,
                                     ACE_Event_Handler::EXCEPT_MASK);
+
+    // Set a timeout.
+    int64_t maxmsec = S3_get_request_context_timeout(m_reqctxt);
+    time_t secs = maxmsec / 1000;
+    suseconds_t usecs = (maxmsec % 1000) * 1000;
+    ACE_Time_Value to(secs, usecs);
+    m_reactor->schedule_timer(this, NULL, to);
 
     LOG(lgr, 6, m_instname << ' ' << "reqctxt_reregister finished");
 }

@@ -165,6 +165,9 @@ public:
 
     virtual int handle_exception(ACE_HANDLE i_fd);
 
+    virtual int handle_timeout(ACE_Time_Value const & current_time,
+                               void const * act);
+
     // S3BlockStore methods
 
     static std::string blockpath(std::string const & i_entry = "");
