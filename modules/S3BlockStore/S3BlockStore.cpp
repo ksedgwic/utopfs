@@ -29,7 +29,7 @@ using namespace utp;
 
 namespace S3BS {
 
-static unsigned const SATURATED_SIZE = 100;
+static unsigned const SATURATED_SIZE = 500;
 
 static unsigned const MAX_RETRIES = 10;
 
@@ -1771,7 +1771,7 @@ S3BlockStore::remove_handler(ResponseHandlerHandle const & i_rhh)
     // Call the unsaturated handler, if appropriate.
     if (uhp)
     {
-        LOG(lgr, 4, m_instname << ' '
+        LOG(lgr, 6, m_instname << ' '
             << "remove_handler calling unsat handler");
         uhp->uh_unsaturated(argp);
     }

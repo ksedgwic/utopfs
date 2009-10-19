@@ -65,7 +65,7 @@ VBSChild::handle_exception(ACE_HANDLE fd)
 void
 VBSChild::uh_unsaturated(void const * i_argp)
 {
-    LOG(lgr, 4, m_instname << ' ' << "uh_unsaturated");
+    LOG(lgr, 6, m_instname << ' ' << "uh_unsaturated");
     initiate_requests();
 }
 
