@@ -1894,8 +1894,15 @@ S3BlockStore::initiate_get_internal(AsyncGetHandlerHandle const & i_aghh)
     // Seems we need to advance the state w/ this non-blocking
     // call before we can register FDs w/ the reactor?
     int nreqremain;
-    S3_runonce_request_context(m_reqctxt,
-                               &nreqremain);
+    S3Status st = S3_runonce_request_context(m_reqctxt,
+                                             &nreqremain);
+
+    // If things aren't good log and keep going ...
+    if (st != S3StatusOK)
+    {
+        LOG(lgr, 2, m_instname << ' '
+            << "initiate_get_internal: S3_runonce_request_context: " << st);
+    }
 
     // Re-register the request context.
     reqctxt_reregister();
@@ -1917,8 +1924,15 @@ S3BlockStore::initiate_put_internal(AsyncPutHandlerHandle const & i_aphh)
     // Seems we need to advance the state w/ this non-blocking
     // call before we can register FDs w/ the reactor?
     int nreqremain;
-    S3_runonce_request_context(m_reqctxt,
-                               &nreqremain);
+    S3Status st = S3_runonce_request_context(m_reqctxt,
+                                             &nreqremain);
+
+    // If things aren't good log and keep going ...
+    if (st != S3StatusOK)
+    {
+        LOG(lgr, 2, m_instname << ' '
+            << "initiate_put_internal: S3_runonce_request_context: " << st);
+    }
 
     // Re-register the request context.
     reqctxt_reregister();
@@ -1934,9 +1948,13 @@ S3BlockStore::reqctxt_service()
     int nreqremain;
     S3Status st = S3_runonce_request_context(m_reqctxt,
                                              &nreqremain);
+
+    // If things aren't good log and keep going ...
     if (st != S3StatusOK)
-        throwstream(InternalError, FILELINE
-                    << "unexpected S3 error: " << st);
+    {
+        LOG(lgr, 2, m_instname << ' '
+            << "reqctxt_service: S3_runonce_request_context: " << st);
+    }
 
     // Stuff might have changed ...
     reqctxt_reregister();
