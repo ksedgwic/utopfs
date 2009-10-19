@@ -639,6 +639,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                        &rh);
         S3Status st = rh.wait();
 
+        if (st == S3StatusOK)
+            break;
+
         if (st == S3StatusErrorNoSuchBucket)
             throwstream(NotFoundError,
                         "bucket " << m_bucket_name << " doesn't exist");
