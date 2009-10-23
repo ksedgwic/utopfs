@@ -109,7 +109,8 @@ StatsLogger::format_stats(ostream & i_ostrm,
             StatFormat const & sf = sr.format(jj);
             double factor = sf.has_factor() ? sf.factor() : 1.0;
 
-            double wval = 0.0;
+            string namestr = pfx + '.' + sr.name();
+            double wval;
 
             switch (sf.fmttype())
             {
@@ -118,14 +119,14 @@ StatsLogger::format_stats(ostream & i_ostrm,
                 break;
 
             case SF_DELTA:
-                throwstream(InternalError, FILELINE
-                            << "SF_DELTA unimplemented");
+                wval = double(val - m_val[namestr]) * factor;
+                m_val[namestr] = val;
                 break;
             }
 
             snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
 
-            i_ostrm << ' ' << pfx << '.' << sr.name() << '=' << buffer;
+            i_ostrm << ' ' << namestr << '=' << buffer;
         }
     }
 

@@ -21,6 +21,10 @@ using namespace utp;
 namespace UTFS {
 
 UTFileSystem::UTFileSystem()
+    : m_nrdops(0)
+    , m_nwrops(0)
+    , m_nrdbytes(0)
+    , m_nwrbytes(0)
 {
     LOG(lgr, 4, "CTOR");
 }
@@ -728,6 +732,9 @@ UTFileSystem::fs_read(string const & i_path,
 
     try
     {
+        m_nrdops += 1;
+        m_nrdbytes += i_size;
+
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
@@ -773,6 +780,9 @@ UTFileSystem::fs_write(string const & i_path,
 
     try
     {
+        m_nwrops += 1;
+        m_nwrbytes += i_size;
+
         pair<string, string> ps = DirNode::pathsplit(i_path);
         WriteTraverseFunc wtf(i_data, i_size, i_off);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
@@ -1011,7 +1021,38 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
 {
     o_ss.set_name("fs");
 
-    // FIXME - Add some stats here.
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nrdops");
+        srp->set_value(m_nrdbytes.value());
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_DELTA);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nwrops");
+        srp->set_value(m_nwrbytes.value());
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_DELTA);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nrdbytes");
+        srp->set_value(m_nrdbytes.value());
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_DELTA);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("nwrbytes");
+        srp->set_value(m_nwrbytes.value());
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_DELTA);
+    }
 }
 
 void

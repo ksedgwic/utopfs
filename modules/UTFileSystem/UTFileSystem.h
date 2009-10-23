@@ -15,6 +15,7 @@
 #include "BlockRef.h"
 #include "Digest.h"
 #include "FileSystem.h"
+#include "Types.h"
 
 #include "Context.h"
 
@@ -161,6 +162,11 @@ private:
     utp::HeadNode				m_hn;
 
     BlockRef					m_rbr;
+
+    utp::AtomicLong				m_nrdops;
+    utp::AtomicLong				m_nwrops;
+    utp::AtomicLong				m_nrdbytes;
+    utp::AtomicLong				m_nwrbytes;
 };
 
 } // namespace UTFS

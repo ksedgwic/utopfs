@@ -37,12 +37,16 @@ public:
                       utp::StatSet const & i_ss) const;
 
 private:
+    typedef std::map<std::string, utp::int64> ValueMap;
+
     utp::Assembly *			m_ap;
     utp::BlockStoreHandle	m_bsh;
     utp::FileSystemHandle	m_fsh;
     std::string				m_statspath;
     double					m_statssecs;
     ACE_Reactor *			m_reactor;
+
+    mutable ValueMap		m_val;
 };
 
 // Local Variables:

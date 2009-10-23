@@ -695,18 +695,35 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     do
     {
         EntryListHandler elh(m_entries, ets);
-        S3_list_bucket(&m_buckctxt,
-                       "BLOCKS/",
-                       marker.empty() ? NULL : marker.c_str(),
-                       NULL,
-                       INT_MAX,
-                       NULL,
-                       &lst_tramp,
-                       &elh);
-        st = elh.wait();
-        if (st != S3StatusOK)
-            throwstream(InternalError, FILELINE
-                        << "Unexpected S3 error: " << st);
+
+        for (unsigned i = 0; i < MAX_RETRIES; ++i)
+        {
+            if (i == MAX_RETRIES)
+                throwstream(InternalError, FILELINE
+                            << "too many retries");
+
+            S3_list_bucket(&m_buckctxt,
+                           "BLOCKS/",
+                           marker.empty() ? NULL : marker.c_str(),
+                           NULL,
+                           INT_MAX,
+                           NULL,
+                           &lst_tramp,
+                           &elh);
+            st = elh.wait();
+
+            if (st == S3StatusOK)
+                break;
+
+            if (!S3_status_is_retryable(st))
+                throwstream(InternalError, FILELINE
+                            << "Unretryable S3 error: " << st);
+
+            // Sigh ... these we retry a few times ...
+            LOG(lgr, 4, "list_blocks " << m_bucket_name
+                << " ERROR: " << st << " RETRYING");
+        }
+
         istrunc = elh.m_istrunc;
         marker = elh.m_last_seen;
 
