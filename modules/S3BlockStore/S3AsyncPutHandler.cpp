@@ -110,8 +110,8 @@ AsyncPutHandler::handle_exception(ACE_HANDLE fd)
     {
         if (--m_retries > 0)
         {
-            LOG(lgr, 6, (void *) this << ' '
-                << keystr(m_keydata, m_keysize) << " RETRY");
+            LOG(lgr, 3, (void *) this << ' '
+                << keystr(m_keydata, m_keysize) << ": " << st << ": RETRY");
 
             reset(); // Reset our state.
             m_s3bs.initiate_put(this);
@@ -120,8 +120,9 @@ AsyncPutHandler::handle_exception(ACE_HANDLE fd)
         }
         else
         {
-            LOG(lgr, 6, (void *) this << ' '
-                << keystr(m_keydata, m_keysize) << " TOO MANY RETRIES");
+            LOG(lgr, 2, (void *) this << ' '
+                << keystr(m_keydata, m_keysize)  << ": " << st
+                << " TOO MANY RETRIES");
 
             ostringstream errstrm;
             errstrm << FILELINE << "too many S3 retries";

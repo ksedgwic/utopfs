@@ -222,7 +222,7 @@ S3BlockStore::destroy(StringSeq const & i_args)
                 break;
 
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, "list_keys " << bucket_name
+            LOG(lgr, 3, "list_keys " << bucket_name
                 << " ERROR: " << st << " RETRYING");
         }
 
@@ -253,7 +253,7 @@ S3BlockStore::destroy(StringSeq const & i_args)
                 break;
 
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, "delete_keys " << bucket_name
+            LOG(lgr, 3, "delete_keys " << bucket_name
                 << " ERROR: " << st << " RETRYING");
         }
     }
@@ -487,7 +487,7 @@ S3BlockStore::bs_create(size_t i_size, StringSeq const & i_args)
 
         default:
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, m_instname << ' ' << "bs_create " << m_bucket_name
+            LOG(lgr, 3, m_instname << ' ' << "bs_create " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
             break;
         }
@@ -720,7 +720,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                             << "Unretryable S3 error: " << st);
 
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, "list_blocks " << m_bucket_name
+            LOG(lgr, 3, "list_blocks " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
         }
 
@@ -765,7 +765,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         }
 
         // Sigh ... these we retry a few times ...
-        LOG(lgr, 4, "mdndx head " << m_bucket_name
+        LOG(lgr, 3, "mdndx head " << m_bucket_name
             << " ERROR: " << st << " RETRYING");
     }
 
@@ -800,7 +800,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
             }
 
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, "mdndx get " << m_bucket_name
+            LOG(lgr, 3, "mdndx get " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
         }
 
@@ -1254,7 +1254,7 @@ S3BlockStore::bs_block_put_async(void const * i_keydata,
             if (st == S3StatusOK)
                 break;
 
-            LOG(lgr, 4, m_instname << ' '
+            LOG(lgr, 3, m_instname << ' '
                 << "bs_block_put_async " << entry.substr(0, 8) << "..."
                 << " ERROR: " << st << ", RETRYING");
         }
@@ -1620,7 +1620,7 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
                 break;
 
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, "mdndx update " << m_bucket_name
+            LOG(lgr, 3, "mdndx update " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
         }
 
@@ -2218,7 +2218,7 @@ S3BlockStore::write_head(SignedHeadEdge const & i_she)
 
         default:
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 4, m_instname << ' ' << "write_head " << m_bucket_name
+            LOG(lgr, 3, m_instname << ' ' << "write_head " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
             break;
         }
