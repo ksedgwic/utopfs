@@ -180,6 +180,7 @@ Controller::do_sync()
     catch (std::exception const & ex)
     {
         LOG(lgr, 1, "exception in do_sync: " << ex.what());
+        LOG(lgr, 1, "continuing ...");
     }
 
     // We're done syncing now.
