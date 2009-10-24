@@ -1024,7 +1024,7 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
     {
         StatRec * srp = o_ss.add_rec();
         srp->set_name("nrdops");
-        srp->set_value(m_nrdbytes.value());
+        srp->set_value(m_nrdops.value());
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_DELTA);
@@ -1032,7 +1032,7 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
     {
         StatRec * srp = o_ss.add_rec();
         srp->set_name("nwrops");
-        srp->set_value(m_nwrbytes.value());
+        srp->set_value(m_nwrops.value());
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_DELTA);
