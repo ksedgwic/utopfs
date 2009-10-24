@@ -86,6 +86,7 @@ FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
     LOG(lgr, 6, "CTOR " << i_ref);
 
     uint8 buf[BlockNode::BLKSZ];
+    ACE_OS::memset(buf, '\0', sizeof(buf));
 
     // Read the block from the blockstore.
     i_ctxt.m_bsh->bs_block_get(i_ref.data(), i_ref.size(),
