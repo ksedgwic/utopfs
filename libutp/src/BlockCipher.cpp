@@ -51,6 +51,14 @@ BlockCipher::encrypt(void const * i_ivptr,
                      void * io_data,
                      size_t i_size)
 {
+    // IMPORTANT - the size *better* be a even multiple of the
+    // AES_BLOCK_SIZE or we'll have padding issues!
+    //
+    if (i_size % AES_BLOCK_SIZE)
+        throwstream(InternalError, FILELINE
+                    << "BlockCipher::encrypt called with size of " << i_size
+                    << " which is not a multiple of " << AES_BLOCK_SIZE);
+
     // Looks like the IV may get scribbled on, make a copy.
     uint8 iv[AES_BLOCK_SIZE];
     ACE_OS::memcpy(iv, i_ivptr, sizeof(iv));
@@ -68,6 +76,11 @@ BlockCipher::decrypt(void const * i_ivptr,
                      void * io_data,
                      size_t i_size)
 {
+    if (i_size % AES_BLOCK_SIZE)
+        throwstream(InternalError, FILELINE
+                    << "BlockCipher::decrypt called with size of " << i_size
+                    << " which is not a multiple of " << AES_BLOCK_SIZE);
+
     // Looks like the IV may get scribbled on, make a copy.
     uint8 iv[AES_BLOCK_SIZE];
     ACE_OS::memcpy(iv, i_ivptr, sizeof(iv));
