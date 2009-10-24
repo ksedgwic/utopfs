@@ -141,7 +141,7 @@ AsyncPutHandler::handle_exception(ACE_HANDLE fd)
     {
         // Call the error handler.
         ostringstream errstrm;
-        LOG(lgr, 6, (void *) this << ' '
+        LOG(lgr, 2, (void *) this << ' '
             << keystr(m_keydata, m_keysize) << " UNEXPECTED: " << st);
 
         errstrm << FILELINE << "unexpected S3 error: " << st;

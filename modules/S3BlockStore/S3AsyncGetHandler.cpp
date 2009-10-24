@@ -133,7 +133,7 @@ AsyncGetHandler::handle_exception(ACE_HANDLE fd)
         ostringstream errstrm;
         if (st == S3StatusErrorNoSuchKey)
         {
-            LOG(lgr, 6, (void *) this << ' '
+            LOG(lgr, 2, (void *) this << ' '
                 << keystr(m_keydata, m_keysize) << " NOT FOUND");
 
             errstrm << "key \"" << m_blkpath << "\" not found";
@@ -142,7 +142,7 @@ AsyncGetHandler::handle_exception(ACE_HANDLE fd)
         }
         else
         {
-            LOG(lgr, 6, (void *) this << ' '
+            LOG(lgr, 2, (void *) this << ' '
                 << keystr(m_keydata, m_keysize) << "UNEXPECTED: " << st);
 
             errstrm << FILELINE << "unexpected S3 error: " << st;
