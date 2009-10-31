@@ -23,6 +23,7 @@
 #include "BlockRef.h"
 #include "Context.h"
 #include "FileNode.h"
+#include "UTFileSystem.h"
 
 using namespace std;
 using namespace utp;
@@ -205,8 +206,13 @@ FileNode::bn_persist(Context & i_ctxt)
     LOG(lgr, 6, "persist " << m_ref);
 
     // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_block_put(m_ref.data(), m_ref.size(),
-                               buf, sizeof(buf));
+    ++i_ctxt.m_putsout;
+    i_ctxt.m_bsh->bs_block_put_async((void *) m_ref.data(),
+                                     m_ref.size(),
+                                     (void *) buf,
+                                     sizeof(buf),
+                                     *i_ctxt.m_utfsp,
+                                     NULL);
 
     bn_isdirty(false);
 

@@ -7,10 +7,11 @@
 
 #include "utfslog.h"
 
-#include "DataBlockNode.h"
-#include "IndirectBlockNode.h"
-#include "DoubleIndBlockNode.h"
 #include "Context.h"
+#include "DataBlockNode.h"
+#include "DoubleIndBlockNode.h"
+#include "IndirectBlockNode.h"
+#include "UTFileSystem.h"
 
 using namespace std;
 using namespace utp;
@@ -71,8 +72,13 @@ DataBlockNode::bn_persist(Context & i_ctxt)
     LOG(lgr, 6, "persist " << bn_blkref());
 
     // Write the block out to the block store.
-    i_ctxt.m_bsh->bs_block_put(m_ref.data(), m_ref.size(),
-                               buf, sizeof(buf));
+    ++i_ctxt.m_putsout;
+    i_ctxt.m_bsh->bs_block_put_async((void *) m_ref.data(),
+                                     m_ref.size(),
+                                     (void *) buf,
+                                     sizeof(buf),
+                                     *i_ctxt.m_utfsp,
+                                     NULL);
 
     bn_isdirty(false);
 

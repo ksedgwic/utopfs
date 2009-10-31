@@ -8,6 +8,8 @@
 
 namespace UTFS {
 
+class UTFileSystem;
+
 class TripleIndBlockNode;
 /// Handle to TripleIndBlockNode object.
 typedef utp::RCPtr<TripleIndBlockNode> TripleIndBlockNodeHandle;

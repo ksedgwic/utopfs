@@ -7,7 +7,8 @@
 #include <map>
 #include <string>
 
-#include <ace/Thread_Mutex.h>
+#include <ace/Recursive_Thread_Mutex.h>
+#include <ace/Condition_Recursive_Thread_Mutex.h>
 
 #include "utpfwd.h"
 
@@ -24,7 +25,9 @@
 
 namespace UTFS {
 
-class UTFS_EXP UTFileSystem : public utp::FileSystem
+class UTFS_EXP UTFileSystem
+    : public utp::FileSystem
+    , public utp::BlockStore::BlockPutCompletion
 {
 public:
     UTFileSystem();
@@ -145,28 +148,41 @@ public:
     virtual void fs_get_stats(utp::StatSet & o_ss) const
         throw(utp::InternalError);
 
+    // BlockPutCompletion methods.
+
+    virtual void bp_complete(void const * i_keydata,
+                             size_t i_keysize,
+                             void const * i_argp);
+
+    virtual void bp_error(void const * i_keydata,
+                          size_t i_keysize,
+                          void const * i_argp,
+                          utp::Exception const & i_exp);
+
 protected:
     void rootref(BlockRef const & i_blkref);
 
     BlockRef rootref();
 
 private:
-    utp::Digest					m_fsiddig;
+    utp::Digest								m_fsiddig;
 
-    ACE_Thread_Mutex			m_utfsmutex;
+    mutable ACE_Recursive_Thread_Mutex		m_utfsmutex;
+    ACE_Condition_Recursive_Thread_Mutex	m_utfscond;
+    bool									m_waiters;
 
-    Context						m_ctxt;
+    Context									m_ctxt;
 
-    DirNodeHandle				m_rdh;
+    DirNodeHandle							m_rdh;
 
-    utp::HeadNode				m_hn;
+    utp::HeadNode							m_hn;
 
-    BlockRef					m_rbr;
+    BlockRef								m_rbr;
 
-    utp::AtomicLong				m_nrdops;
-    utp::AtomicLong				m_nwrops;
-    utp::AtomicLong				m_nrdbytes;
-    utp::AtomicLong				m_nwrbytes;
+    utp::AtomicLong							m_nrdops;
+    utp::AtomicLong							m_nwrops;
+    utp::AtomicLong							m_nrdbytes;
+    utp::AtomicLong							m_nwrbytes;
 };
 
 } // namespace UTFS

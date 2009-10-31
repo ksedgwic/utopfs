@@ -18,6 +18,8 @@ namespace UTFS {
 
 struct UTFS_EXP Context
 {
+    UTFileSystem *				m_utfsp;
+    size_t						m_putsout;
     utp::BlockStoreHandle		m_bsh;
     utp::BlockCipher			m_cipher;
     DataBlockNodeHandle			m_zdatobj;
