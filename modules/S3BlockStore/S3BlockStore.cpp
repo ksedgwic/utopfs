@@ -927,26 +927,40 @@ S3BlockStore::bs_open(StringSeq const & i_args)
 
         uint8 buffer[8192];
 
-        GetHandler gh(buffer, sizeof(buffer));
+        for (unsigned ii = 0; ii < MAX_RETRIES; ++ii)
+        {
+            if (ii == MAX_RETRIES)
+                throwstream(InternalError, FILELINE
+                            << "too many retries");
 
-        S3_get_object(&m_buckctxt,
-                      edgekey.c_str(),
-                      &gc,
-                      0,
-                      0,
-                      NULL,
-                      &get_tramp,
-                      &gh);
+            GetHandler gh(buffer, sizeof(buffer));
 
-        S3Status st = gh.wait();
+            S3_get_object(&m_buckctxt,
+                          edgekey.c_str(),
+                          &gc,
+                          0,
+                          0,
+                          NULL,
+                          &get_tramp,
+                          &gh);
 
-        if (st == S3StatusErrorNoSuchKey)
-            throwstream(NotFoundError,
-                        "edge \"" << edgekey << "\" not found");
+            S3Status st = gh.wait();
 
-        if (st != S3StatusOK)
-            throwstream(InternalError, FILELINE
-                        << "Unexpected S3 error: " << st);
+            if (st == S3StatusOK)
+                break;
+
+            if (st == S3StatusErrorNoSuchKey)
+                throwstream(NotFoundError,
+                            "edge \"" << edgekey << "\" not found");
+
+            if (!S3_status_is_retryable(st))
+                throwstream(InternalError, FILELINE
+                            << "Unretryable S3 error: " << st);
+
+            // Sigh ... these we retry a few times ...
+            LOG(lgr, 3, "insert_edges " << m_bucket_name
+                << " ERROR: " << st << " RETRYING");
+        }
 
         string encoded((char const *) buffer, gh.size());
         string data = Base64::decode(encoded);
