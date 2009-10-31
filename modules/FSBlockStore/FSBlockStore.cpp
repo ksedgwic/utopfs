@@ -420,6 +420,9 @@ void
 {
     try
     {
+        LOG(lgr, 6, m_instname << ' ' << "bs_block_get_async "
+            << keystr(i_keydata, i_keysize));
+
         int bytes_read;
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
@@ -502,7 +505,8 @@ FSBlockStore::bs_block_put_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, m_instname << ' ' << "bs_block_put");
+        LOG(lgr, 6, m_instname << ' ' << "bs_block_put_async "
+            << keystr(i_keydata, i_keysize));
 
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
