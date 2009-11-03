@@ -4,12 +4,15 @@
 
 #include <ace/Get_Opt.h>
 #include <ace/LSOCK_Connector.h>
+#include <ace/Reactor.h>
 #include <ace/Service_Config.h>
+#include <ace/TP_Reactor.h>
 #include <ace/UNIX_Addr.h>
 
-#include <Types.h>
-#include <BlockStoreFactory.h>
-#include <FileSystemFactory.h>
+#include "BlockStoreFactory.h"
+#include "FileSystemFactory.h"
+#include "ThreadPool.h"
+#include "Types.h"
 
 using namespace std;
 using namespace utp;
@@ -104,7 +107,7 @@ parse_args(int & argc, char ** & argv)
                 else if (lopt == "loglevel")
                 {
                     g_loglevel = strtoul(getopt.opt_arg(), &endp, 0);
-                    if (*endp != NULL)
+                    if (*endp != '\0')
                         fatal("invalid --loglevel value \""
                               << getopt.opt_arg() << "\"");
                 }
@@ -123,7 +126,7 @@ parse_args(int & argc, char ** & argv)
                     case CMD_MKBS:
                     case CMD_MKFS:
                         g_bssize = strtoull(getopt.opt_arg(), &endp, 0);
-                        if (*endp != NULL)
+                        if (*endp != '\0')
                             fatal("invalid --bssize value \""
                                   << getopt.opt_arg() << "\"");
                         break;
@@ -450,6 +453,14 @@ main(int argc, char ** argv)
     parse_args(argc, argv);
 
     init_modules();
+
+    // Instantiate the reactor explicitly.
+    ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor), 1);
+
+    // size_t numthreads = ACE_OS::num_processors_online() * 2;
+    size_t numthreads = 4;
+    ThreadPool thrpool(ACE_Reactor::instance(), "utp");
+    thrpool.init(numthreads);
 
     switch (g_cmd)
     {

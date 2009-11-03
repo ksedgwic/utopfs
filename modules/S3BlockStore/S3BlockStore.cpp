@@ -18,11 +18,12 @@
 
 #include "MDIndex.pb.h"
 
-#include "S3BlockStore.h"
-#include "s3bslog.h"
-#include "S3ResponseHandler.h"
 #include "S3AsyncGetHandler.h"
 #include "S3AsyncPutHandler.h"
+#include "S3BlockStore.h"
+#include "s3bslog.h"
+#include "S3BucketDestroyer.h"
+#include "S3ResponseHandler.h"
 
 using namespace std;
 using namespace utp;
@@ -99,46 +100,6 @@ lessByTstamp(EntryHandle const & i_a, EntryHandle const & i_b)
     return i_a->m_tstamp < i_b->m_tstamp;
 }
 
-class KeyListHandler : public ListHandler
-{
-public:
-    KeyListHandler(StringSeq & o_keys)
-        : m_istrunc(false)
-        , m_keys(o_keys)
-    {}
-
-    virtual S3Status lh_item(int i_istrunc,
-                             char const * i_next_marker,
-                             int i_contents_count,
-                             S3ListBucketContent const * i_contents,
-                             int i_common_prefixes_count,
-                             char const ** i_common_prefixes)
-    {
-        m_istrunc = i_istrunc;
-
-        if (i_common_prefixes_count)
-            throwstream(InternalError, FILELINE
-                        << "common prefixes make me sad");
-
-        for (int i = 0; i < i_contents_count; ++i)
-        {
-            S3ListBucketContent const * cp = &i_contents[i];
-            m_keys.push_back(cp->key);
-        }
-
-        m_last_seen = i_contents_count ?
-            i_contents[i_contents_count-1].key : "";
-
-        return S3StatusOK;
-    }
-    
-    bool m_istrunc;
-    string m_last_seen;
-
-private:
-    StringSeq & m_keys;
-};
-
 void
 S3BlockStore::destroy(StringSeq const & i_args)
 {
@@ -199,10 +160,9 @@ S3BlockStore::destroy(StringSeq const & i_args)
     StringSeq keys;
     string marker = "";
     bool istrunc = false;
+    BucketDestroyer buckill(buckctxt);
     do
     {
-        KeyListHandler klh(keys);
-
         for (unsigned i = 0; i < MAX_RETRIES; ++i)
         {
             if (i == MAX_RETRIES)
@@ -216,8 +176,8 @@ S3BlockStore::destroy(StringSeq const & i_args)
                            INT_MAX,
                            NULL,
                            &lst_tramp,
-                           &klh);
-            st = klh.wait();
+                           &buckill);
+            st = buckill.wait();
             if (st == S3StatusOK)
                 break;
 
@@ -226,11 +186,12 @@ S3BlockStore::destroy(StringSeq const & i_args)
                 << " ERROR: " << st << " RETRYING");
         }
 
-        istrunc = klh.m_istrunc;
-        marker = klh.m_last_seen;
+        istrunc = buckill.m_istrunc;
+        marker = buckill.m_last_seen;
     }
     while (istrunc);
 
+#if 0
     // Delete all of the keys.
     for (unsigned i = 0; i < keys.size(); ++i)
     {
@@ -257,6 +218,7 @@ S3BlockStore::destroy(StringSeq const & i_args)
                 << " ERROR: " << st << " RETRYING");
         }
     }
+#endif
 
     // Delete the bucket.
     ResponseHandler rh2;

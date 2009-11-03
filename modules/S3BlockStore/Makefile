@@ -9,10 +9,11 @@ PROTO +=	\
 LIBSRC += 	\
 			S3AsyncGetHandler.cpp \
 			S3AsyncPutHandler.cpp \
-			S3ResponseHandler.cpp \
 			S3BlockStore.cpp \
 			S3BSFactory.cpp \
 			s3bslog.cpp \
+			S3BucketDestroyer.cpp \
+			S3ResponseHandler.cpp \
 			$(NULL)
 
 MODSO =		UTPFS-S3BS

@@ -22,7 +22,7 @@ namespace S3BS {
 
 class S3BS_EXP AsyncPutHandler
     : public PutHandler
-    , ACE_Event_Handler
+    , public ACE_Event_Handler
 {
 public:
     AsyncPutHandler(ACE_Reactor * i_reactor,
@@ -37,6 +37,8 @@ public:
                     size_t i_retries);
 
     virtual ~AsyncPutHandler();
+
+    // PutHandler methods
 
     virtual void rh_complete(S3Status status,
                              S3ErrorDetails const * errorDetails);

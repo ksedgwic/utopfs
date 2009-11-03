@@ -37,6 +37,9 @@ class AsyncPutHandler;
 /// Handle to AsyncPutHandler object.
 typedef utp::RCPtr<AsyncPutHandler> AsyncPutHandlerHandle;
 
+class ObjectDestroyer;
+typedef utp::RCPtr<ObjectDestroyer> ObjectDestroyerHandle;
+
 } // end namespace S3BS
 
 // Local Variables:
