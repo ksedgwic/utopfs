@@ -397,7 +397,7 @@ BucketDestroyer::service_queue()
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_bdmutex);
 
-    while (m_outstanding < 256 && !m_keyqueue.empty())
+    while (m_outstanding < 128 && !m_keyqueue.empty())
     {
         ++m_outstanding;
         string key = m_keyqueue.front();
