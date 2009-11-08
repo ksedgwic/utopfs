@@ -7,8 +7,7 @@
 #include <map>
 #include <string>
 
-#include <ace/Recursive_Thread_Mutex.h>
-#include <ace/Condition_Recursive_Thread_Mutex.h>
+#include <ace/Thread_Mutex.h>
 
 #include "utpfwd.h"
 
@@ -167,9 +166,10 @@ protected:
 private:
     utp::Digest								m_fsiddig;
 
-    mutable ACE_Recursive_Thread_Mutex		m_utfsmutex;
-    ACE_Condition_Recursive_Thread_Mutex	m_utfscond;
-    bool									m_waiters;
+    // This mutex is used to protect the structure of the filesystem.
+    // Almost all operations need it ...
+    //
+    mutable ACE_Thread_Mutex				m_utfsmutex;
 
     Context									m_ctxt;
 

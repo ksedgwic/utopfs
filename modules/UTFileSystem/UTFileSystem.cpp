@@ -21,9 +21,7 @@ using namespace utp;
 namespace UTFS {
 
 UTFileSystem::UTFileSystem()
-    : m_utfscond(m_utfsmutex)
-    , m_waiters(0)
-    , m_nrdops(0)
+    : m_nrdops(0)
     , m_nwrops(0)
     , m_nrdbytes(0)
     , m_nwrbytes(0)
@@ -49,7 +47,7 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
 {
     LOG(lgr, 4, "fs_mkfs " << i_fsid);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     m_ctxt.m_utfsp = this;
     m_ctxt.m_putsout = 0;
@@ -86,7 +84,7 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 {
     LOG(lgr, 4, "fs_mount " << i_fsid);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     m_ctxt.m_utfsp = this;
     m_ctxt.m_putsout = 0;
@@ -130,7 +128,7 @@ UTFileSystem::fs_umount()
 {
     LOG(lgr, 4, "fs_umount ");
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     rootref(m_rdh->bn_flush(m_ctxt));
 
@@ -161,7 +159,7 @@ UTFileSystem::fs_getattr(string const & i_path,
 {
     LOG(lgr, 6, "fs_getattr " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -205,7 +203,7 @@ UTFileSystem::fs_readlink(string const & i_path,
 {
     LOG(lgr, 6, "fs_readlink " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -258,7 +256,7 @@ UTFileSystem::fs_mknod(string const & i_path,
 {
     LOG(lgr, 6, "fs_mknod " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -308,7 +306,7 @@ UTFileSystem::fs_mkdir(string const & i_path,
 {
     LOG(lgr, 6, "fs_mkdir " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -350,7 +348,7 @@ UTFileSystem::fs_unlink(string const & i_path)
 {
     LOG(lgr, 6, "fs_unlink " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -391,7 +389,7 @@ UTFileSystem::fs_rmdir(string const & i_path)
 {
     LOG(lgr, 6, "fs_rmdir " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -433,7 +431,7 @@ UTFileSystem::fs_symlink(string const & i_opath, string const & i_npath)
 {
     LOG(lgr, 6, "fs_symlink " << i_opath << ' ' << i_npath);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -498,7 +496,7 @@ UTFileSystem::fs_rename(string const & i_opath, string const & i_npath)
 {
     LOG(lgr, 6, "fs_rename " << i_opath << ' ' << i_npath);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -538,7 +536,7 @@ UTFileSystem::fs_link(string const & i_opath, string const & i_npath)
 {
     LOG(lgr, 6, "fs_link " << i_opath << ' ' << i_npath);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -587,7 +585,7 @@ UTFileSystem::fs_chmod(string const & i_path, mode_t i_mode)
 {
     LOG(lgr, 6, "fs_chmod " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -627,7 +625,7 @@ UTFileSystem::fs_truncate(string const & i_path, off_t i_size)
 {
     LOG(lgr, 6, "fs_truncate " << i_path << ' ' << i_size);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -669,7 +667,7 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
 {
     LOG(lgr, 6, "fs_open " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -714,7 +712,7 @@ UTFileSystem::fs_read(string const & i_path,
 {
     LOG(lgr, 6, "fs_read " << i_path << " sz=" << i_size << " off=" << i_off);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -762,7 +760,7 @@ UTFileSystem::fs_write(string const & i_path,
 {
     LOG(lgr, 6, "fs_write " << i_path << " sz=" << i_size << " off=" << i_off);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -815,7 +813,7 @@ UTFileSystem::fs_readdir(string const & i_path,
 {
     LOG(lgr, 6, "fs_readdir " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -840,7 +838,7 @@ UTFileSystem::fs_statfs(struct statvfs * o_stvbuf)
 {
     LOG(lgr, 6, "fs_statvfs");
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -883,7 +881,7 @@ UTFileSystem::fs_access(string const & i_path, int i_mode)
 {
     LOG(lgr, 6, "fs_access " << i_path);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -928,7 +926,7 @@ UTFileSystem::fs_utime(string const & i_path,
 {
     LOG(lgr, 6, "fs_utime " << i_path << ' ' << i_atime << ' ' << i_mtime);
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     try
     {
@@ -954,7 +952,7 @@ UTFileSystem::fs_refresh()
 {
     LOG(lgr, 6, "fs_refresh");
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
     // Try and sync first.  If we are out of space we'll
     // have to try and sync again afterwards.
@@ -993,16 +991,19 @@ UTFileSystem::fs_sync()
 {
     LOG(lgr, 6, "fs_sync");
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    if (m_rdh->bn_isdirty())
-        rootref(m_rdh->bn_flush(m_ctxt));
+        if (m_rdh->bn_isdirty())
+            rootref(m_rdh->bn_flush(m_ctxt));
+    }
 
     // Wait for outstanding puts to complete.
+    ACE_Guard<ACE_Thread_Mutex> guard(m_ctxt.m_ctxtmutex);
     while (m_ctxt.m_putsout > 0)
     {
-        m_waiters = true;
-        m_utfscond.wait();
+        m_ctxt.m_waiters = true;
+        m_ctxt.m_ctxtcond.wait();
     }
 }
 
@@ -1053,13 +1054,13 @@ UTFileSystem::bp_complete(void const * i_keydata,
 {
     LOG(lgr, 6, "bp_complete " << keystr(i_keydata, i_keysize));
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_ctxt.m_ctxtmutex);
     --m_ctxt.m_putsout;
 
-    if (m_ctxt.m_putsout == 0 && m_waiters)
+    if (m_ctxt.m_putsout == 0 && m_ctxt.m_waiters)
     {
-        m_utfscond.broadcast();
-        m_waiters = false;
+        m_ctxt.m_ctxtcond.broadcast();
+        m_ctxt.m_waiters = false;
     }
 }
 
@@ -1071,13 +1072,13 @@ UTFileSystem::bp_error(void const * i_keydata,
 {
     LOG(lgr, 1, "bp_error " << keystr(i_keydata, i_keysize));
 
-    ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_ctxt.m_ctxtmutex);
     --m_ctxt.m_putsout;
 
-    if (m_ctxt.m_putsout == 0 && m_waiters)
+    if (m_ctxt.m_putsout == 0 && m_ctxt.m_waiters)
     {
-        m_utfscond.broadcast();
-        m_waiters = false;
+        m_ctxt.m_ctxtcond.broadcast();
+        m_ctxt.m_waiters = false;
     }
 }
 
