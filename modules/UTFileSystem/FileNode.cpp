@@ -206,13 +206,10 @@ FileNode::bn_persist(Context & i_ctxt)
     LOG(lgr, 6, "persist " << m_ref);
 
     // Write the block out to the block store.
-    ++i_ctxt.m_putsout;
-    i_ctxt.m_bsh->bs_block_put_async((void *) m_ref.data(),
-                                     m_ref.size(),
-                                     (void *) buf,
-                                     sizeof(buf),
-                                     *i_ctxt.m_utfsp,
-                                     NULL);
+    i_ctxt.m_bsh->bs_block_put((void *) m_ref.data(),
+                               m_ref.size(),
+                               (void *) buf,
+                               sizeof(buf));
 
     bn_isdirty(false);
 

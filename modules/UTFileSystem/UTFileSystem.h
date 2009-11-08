@@ -24,9 +24,7 @@
 
 namespace UTFS {
 
-class UTFS_EXP UTFileSystem
-    : public utp::FileSystem
-    , public utp::BlockStore::BlockPutCompletion
+class UTFS_EXP UTFileSystem : public utp::FileSystem
 {
 public:
     UTFileSystem();
@@ -146,17 +144,6 @@ public:
 
     virtual void fs_get_stats(utp::StatSet & o_ss) const
         throw(utp::InternalError);
-
-    // BlockPutCompletion methods.
-
-    virtual void bp_complete(void const * i_keydata,
-                             size_t i_keysize,
-                             void const * i_argp);
-
-    virtual void bp_error(void const * i_keydata,
-                          size_t i_keysize,
-                          void const * i_argp,
-                          utp::Exception const & i_exp);
 
 protected:
     void rootref(BlockRef const & i_blkref);

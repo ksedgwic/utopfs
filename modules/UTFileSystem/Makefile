@@ -10,7 +10,6 @@ PROTO +=	\
 LIBSRC += 	\
 			BlockNode.cpp \
 			BlockRef.cpp \
-			Context.cpp \
 			DataBlockNode.cpp \
 			DirNode.cpp \
 			DoubleIndBlockNode.cpp \

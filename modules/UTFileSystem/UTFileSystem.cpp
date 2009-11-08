@@ -49,8 +49,6 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    m_ctxt.m_utfsp = this;
-    m_ctxt.m_putsout = 0;
     m_ctxt.m_bsh = i_bsh;
 
     // Save the digest of the fsid.
@@ -86,8 +84,6 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-    m_ctxt.m_utfsp = this;
-    m_ctxt.m_putsout = 0;
     m_ctxt.m_bsh = i_bsh;
 
     // Save the digest of the fsid.
@@ -991,20 +987,10 @@ UTFileSystem::fs_sync()
 {
     LOG(lgr, 6, "fs_sync");
 
-    {
-        ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
 
-        if (m_rdh->bn_isdirty())
-            rootref(m_rdh->bn_flush(m_ctxt));
-    }
-
-    // Wait for outstanding puts to complete.
-    ACE_Guard<ACE_Thread_Mutex> guard(m_ctxt.m_ctxtmutex);
-    while (m_ctxt.m_putsout > 0)
-    {
-        m_ctxt.m_waiters = true;
-        m_ctxt.m_ctxtcond.wait();
-    }
+    if (m_rdh->bn_isdirty())
+        rootref(m_rdh->bn_flush(m_ctxt));
 }
 
 void
@@ -1044,41 +1030,6 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_DELTA);
-    }
-}
-
-void
-UTFileSystem::bp_complete(void const * i_keydata,
-                          size_t i_keysize,
-                          void const * i_argp)
-{
-    LOG(lgr, 6, "bp_complete " << keystr(i_keydata, i_keysize));
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_ctxt.m_ctxtmutex);
-    --m_ctxt.m_putsout;
-
-    if (m_ctxt.m_putsout == 0 && m_ctxt.m_waiters)
-    {
-        m_ctxt.m_ctxtcond.broadcast();
-        m_ctxt.m_waiters = false;
-    }
-}
-
-void
-UTFileSystem::bp_error(void const * i_keydata,
-                       size_t i_keysize,
-                       void const * i_argp,
-                       Exception const & i_exp)
-{
-    LOG(lgr, 1, "bp_error " << keystr(i_keydata, i_keysize));
-
-    ACE_Guard<ACE_Thread_Mutex> guard(m_ctxt.m_ctxtmutex);
-    --m_ctxt.m_putsout;
-
-    if (m_ctxt.m_putsout == 0 && m_ctxt.m_waiters)
-    {
-        m_ctxt.m_ctxtcond.broadcast();
-        m_ctxt.m_waiters = false;
     }
 }
 
