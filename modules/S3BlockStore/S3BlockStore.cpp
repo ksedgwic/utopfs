@@ -929,9 +929,14 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         SignedHeadEdge she;
         int ok = she.ParseFromString(data);
         if (!ok)
+        {
+            LOG(lgr, 1, "encoded.size() = " << encoded.size());
+            LOG(lgr, 1, "data.size() = " << data.size());
+
             throwstream(InternalError, FILELINE
                         << " SignedHeadEdge deserialize "
                         << edgekey << " failed");
+        }
 
         m_lhng.insert_head(she);
     }
