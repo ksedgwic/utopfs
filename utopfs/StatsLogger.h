@@ -38,6 +38,7 @@ public:
 
 private:
     typedef std::map<std::string, utp::int64> ValueMap;
+    typedef std::map<std::string, utp::int64> TimeMap;
 
     utp::Assembly *			m_ap;
     utp::BlockStoreHandle	m_bsh;
@@ -47,6 +48,7 @@ private:
     ACE_Reactor *			m_reactor;
 
     mutable ValueMap		m_val;
+    mutable TimeMap			m_t0;
 };
 
 // Local Variables:

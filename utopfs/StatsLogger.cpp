@@ -96,6 +96,8 @@ StatsLogger::format_stats(ostream & i_ostrm,
                          string const & i_prefix,
                          StatSet const & i_ss) const
 {
+    int64 t0 = T64::now().usec();
+
     string pfx =
         i_prefix.empty() ? i_ss.name() : i_prefix + '.' + i_ss.name();
 
@@ -111,6 +113,7 @@ StatsLogger::format_stats(ostream & i_ostrm,
 
             string namestr = pfx + '.' + sr.name();
             double wval;
+            double tval;
 
             switch (sf.fmttype())
             {
@@ -119,8 +122,13 @@ StatsLogger::format_stats(ostream & i_ostrm,
                 break;
 
             case SF_DELTA:
-                wval = double(val - m_val[namestr]) * factor;
+                tval = double(t0 - m_t0[namestr]) / 1e6;
+                wval = tval > 0.0
+                    ? double(val - m_val[namestr]) * factor / tval
+                    : 0.0;
+                    
                 m_val[namestr] = val;
+                m_t0[namestr] = t0;
                 break;
             }
 

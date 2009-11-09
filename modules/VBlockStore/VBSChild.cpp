@@ -244,7 +244,7 @@ VBSChild::get_stats(StatSet & o_ss) const
         srp->set_name("getrate");
         srp->set_value(nget);
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_fmtstr("%.1f/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
@@ -252,7 +252,8 @@ VBSChild::get_stats(StatSet & o_ss) const
         srp->set_name("getbw");
         srp->set_value(getb);
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_factor(1.0/1024.0);
+        sfp->set_fmtstr("%.1fK/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
@@ -260,7 +261,7 @@ VBSChild::get_stats(StatSet & o_ss) const
         srp->set_name("putrate");
         srp->set_value(nput);
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_fmtstr("%.1f/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
@@ -268,7 +269,8 @@ VBSChild::get_stats(StatSet & o_ss) const
         srp->set_name("putbw");
         srp->set_value(putb);
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_factor(1.0/1024.0);
+        sfp->set_fmtstr("%.1fK/s");
         sfp->set_fmttype(SF_DELTA);
     }
 }

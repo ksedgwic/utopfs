@@ -1193,7 +1193,7 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
         srp->set_name("nrdops");
         srp->set_value(m_nrdops.value());
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_fmtstr("%.1f/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
@@ -1201,7 +1201,7 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
         srp->set_name("nwrops");
         srp->set_value(m_nwrops.value());
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_fmtstr("%.1f/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
@@ -1209,7 +1209,8 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
         srp->set_name("nrdbytes");
         srp->set_value(m_nrdbytes.value());
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_factor(1.0/1024.0);
+        sfp->set_fmtstr("%.1fK/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
@@ -1217,7 +1218,8 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
         srp->set_name("nwrbytes");
         srp->set_value(m_nwrbytes.value());
         StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
+        sfp->set_factor(1.0/1024.0);
+        sfp->set_fmtstr("%.1fK/s");
         sfp->set_fmttype(SF_DELTA);
     }
 }
