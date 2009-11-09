@@ -20,6 +20,8 @@
 #include <fuse.h>
 #include <fuse/fuse_opt.h>
 
+#include <google/protobuf/stubs/common.h>
+
 #include "Assembly.h"
 #include "BlockStoreFactory.h"
 #include "Controller.h"
@@ -33,6 +35,19 @@
 
 using namespace std;
 using namespace utp;
+
+namespace {
+
+void
+pbloghandler(google::protobuf::LogLevel level,
+             char const * filename,
+             int line,
+             string const & message)
+{
+    LOG(lgr, 1, "PROTOBUF: " << filename << ':' << line << ": " << message);
+}
+
+} // end namespace
 
 extern "C" {
 
@@ -162,6 +177,10 @@ utopfs_init(struct fuse_conn_info * i_conn)
     
     // Modules (including logging) load and start here.
     init_modules(utopfs.argv0);
+
+    // Set a protobuf loghandler so protobuf messages end up in our
+    // log.
+    google::protobuf::SetLogHandler(pbloghandler);
 
     // Instantiate the reactor explicitly.
     ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor), 1);
