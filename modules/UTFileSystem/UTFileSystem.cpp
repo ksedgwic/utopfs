@@ -47,7 +47,7 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
 {
     LOG(lgr, 4, "fs_mkfs " << i_fsid);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     m_ctxt.m_bsh = i_bsh;
 
@@ -82,7 +82,7 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
 {
     LOG(lgr, 4, "fs_mount " << i_fsid);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     m_ctxt.m_bsh = i_bsh;
 
@@ -124,7 +124,7 @@ UTFileSystem::fs_umount()
 {
     LOG(lgr, 4, "fs_umount ");
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     rootref(m_rdh->bn_flush(m_ctxt));
 
@@ -155,13 +155,43 @@ UTFileSystem::fs_getattr(string const & i_path,
 {
     LOG(lgr, 6, "fs_getattr " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    // Try first with only a read lock, if we can't resolve everything
+    // with what's already faulted in memory we catch an
+    // OperationError and try again with a write lock ...
 
     try
     {
+        ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
         pair<string, string> ps = DirNode::pathsplit(i_path);
         GetAttrTraverseFunc gatf(o_stbuf);
-        m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT | DirNode::NT_READONLY,
+                             ps.first, ps.second, gatf);
+
+        LOG(lgr, 6, "fs_getattr " << i_path << " -> " << gatf.nt_retval());
+        return gatf.nt_retval();
+    }
+    catch (OperationError const & ex)
+    {
+        LOG(lgr, 6, "fs_getattr " << i_path << " needs write lock");
+        // Fall through to retry w/ write lock ...
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_getattr " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+
+    try
+    {
+        ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        GetAttrTraverseFunc gatf(o_stbuf);
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT,
                              ps.first, ps.second, gatf);
 
         LOG(lgr, 6, "fs_getattr " << i_path << " -> " << gatf.nt_retval());
@@ -199,13 +229,43 @@ UTFileSystem::fs_readlink(string const & i_path,
 {
     LOG(lgr, 6, "fs_readlink " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    // Try first with only a read lock, if we can't resolve everything
+    // with what's already faulted in memory we catch an
+    // OperationError and try again with a write lock ...
 
     try
     {
+        ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadLinkTraverseFunc rltf(o_obuf, i_size);
-        m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT | DirNode::NT_READONLY,
+                             ps.first, ps.second, rltf);
+
+        LOG(lgr, 6, "fs_readlink " << i_path << " -> " << rltf.nt_retval());
+        return rltf.nt_retval();
+    }
+    catch (OperationError const & ex)
+    {
+        LOG(lgr, 6, "fs_readlink " << i_path << " needs write lock");
+        // Fall through to retry w/ write lock ...
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_readlink " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+
+    try
+    {
+        ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ReadLinkTraverseFunc rltf(o_obuf, i_size);
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT,
                              ps.first, ps.second, rltf);
 
         LOG(lgr, 6, "fs_readlink " << i_path << " -> " << rltf.nt_retval());
@@ -252,7 +312,7 @@ UTFileSystem::fs_mknod(string const & i_path,
 {
     LOG(lgr, 6, "fs_mknod " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -302,7 +362,7 @@ UTFileSystem::fs_mkdir(string const & i_path,
 {
     LOG(lgr, 6, "fs_mkdir " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -344,7 +404,7 @@ UTFileSystem::fs_unlink(string const & i_path)
 {
     LOG(lgr, 6, "fs_unlink " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -385,7 +445,7 @@ UTFileSystem::fs_rmdir(string const & i_path)
 {
     LOG(lgr, 6, "fs_rmdir " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -427,7 +487,7 @@ UTFileSystem::fs_symlink(string const & i_opath, string const & i_npath)
 {
     LOG(lgr, 6, "fs_symlink " << i_opath << ' ' << i_npath);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -492,7 +552,7 @@ UTFileSystem::fs_rename(string const & i_opath, string const & i_npath)
 {
     LOG(lgr, 6, "fs_rename " << i_opath << ' ' << i_npath);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -532,7 +592,7 @@ UTFileSystem::fs_link(string const & i_opath, string const & i_npath)
 {
     LOG(lgr, 6, "fs_link " << i_opath << ' ' << i_npath);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -581,7 +641,7 @@ UTFileSystem::fs_chmod(string const & i_path, mode_t i_mode)
 {
     LOG(lgr, 6, "fs_chmod " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -621,7 +681,7 @@ UTFileSystem::fs_truncate(string const & i_path, off_t i_size)
 {
     LOG(lgr, 6, "fs_truncate " << i_path << ' ' << i_size);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -663,13 +723,42 @@ UTFileSystem::fs_open(string const & i_path, int i_flags)
 {
     LOG(lgr, 6, "fs_open " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    // Try first with only a read lock, if we can't resolve everything
+    // with what's already faulted in memory we catch an
+    // OperationError and try again with a write lock ...
 
     try
     {
+        ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
         pair<string, string> ps = DirNode::pathsplit(i_path);
         OpenTraverseFunc otf(i_flags);
-        m_rdh->node_traverse(m_ctxt, DirNode::NT_PARENT,
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_PARENT | DirNode::NT_READONLY,
+                             ps.first, ps.second, otf);
+        LOG(lgr, 6, "fs_open " << i_path << " -> " << otf.nt_retval());
+        return otf.nt_retval();
+    }
+    catch (OperationError const & ex)
+    {
+        LOG(lgr, 6, "fs_open " << i_path << " needs write lock");
+        // Fall through to retry w/ write lock ...
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_open " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+
+    try
+    {
+        ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        OpenTraverseFunc otf(i_flags);
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_PARENT,
                              ps.first, ps.second, otf);
         LOG(lgr, 6, "fs_open " << i_path << " -> " << otf.nt_retval());
         return otf.nt_retval();
@@ -708,18 +797,52 @@ UTFileSystem::fs_read(string const & i_path,
 {
     LOG(lgr, 6, "fs_read " << i_path << " sz=" << i_size << " off=" << i_off);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    // Try first with only a read lock, if we can't resolve everything
+    // with what's already faulted in memory we catch an
+    // OperationError and try again with a write lock ...
 
     try
     {
-        m_nrdops += 1;
-        m_nrdbytes += i_size;
+        ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
-        m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT | DirNode::NT_READONLY,
                              ps.first, ps.second, wtf);
         LOG(lgr, 6, "fs_read " << i_path << " -> " << wtf.nt_retval());
+
+        m_nrdops += 1;
+        m_nrdbytes += i_size;
+
+        return wtf.nt_retval();
+    }
+    catch (OperationError const & ex)
+    {
+        LOG(lgr, 6, "fs_read " << i_path << " needs write lock");
+        // Fall through to retry w/ write lock ...
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_read " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+
+    try
+    {
+        ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ReadTraverseFunc wtf(o_bufptr, i_size, i_off);
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT,
+                             ps.first, ps.second, wtf);
+        LOG(lgr, 6, "fs_read " << i_path << " -> " << wtf.nt_retval());
+
+        m_nrdops += 1;
+        m_nrdbytes += i_size;
+
         return wtf.nt_retval();
     }
     catch (int const & i_errno)
@@ -756,18 +879,20 @@ UTFileSystem::fs_write(string const & i_path,
 {
     LOG(lgr, 6, "fs_write " << i_path << " sz=" << i_size << " off=" << i_off);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
-        m_nwrops += 1;
-        m_nwrbytes += i_size;
-
         pair<string, string> ps = DirNode::pathsplit(i_path);
         WriteTraverseFunc wtf(i_data, i_size, i_off);
         m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
                              ps.first, ps.second, wtf);
+
         LOG(lgr, 6, "fs_write " << i_path << " -> " << wtf.nt_retval());
+
+        m_nwrops += 1;
+        m_nwrbytes += i_size;
+
         return wtf.nt_retval();
     }
     catch (int const & i_errno)
@@ -809,13 +934,42 @@ UTFileSystem::fs_readdir(string const & i_path,
 {
     LOG(lgr, 6, "fs_readdir " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    // Try first with only a read lock, if we can't resolve everything
+    // with what's already faulted in memory we catch an
+    // OperationError and try again with a write lock ...
 
     try
     {
+        ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
         pair<string, string> ps = DirNode::pathsplit(i_path);
         ReadDirTraverseFunc rdtf(i_offset, o_entryfunc);
-        m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT | DirNode::NT_READONLY,
+                             ps.first, ps.second, rdtf);
+        LOG(lgr, 6, "fs_readdir " << i_path << " -> " << rdtf.nt_retval());
+        return rdtf.nt_retval();
+    }
+    catch (OperationError const & ex)
+    {
+        LOG(lgr, 6, "fs_readdir " << i_path << " needs write lock");
+        // Fall through to retry w/ write lock ...
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_readdir " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+
+    try
+    {
+        ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ReadDirTraverseFunc rdtf(i_offset, o_entryfunc);
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT,
                              ps.first, ps.second, rdtf);
         LOG(lgr, 6, "fs_readdir " << i_path << " -> " << rdtf.nt_retval());
         return rdtf.nt_retval();
@@ -834,7 +988,7 @@ UTFileSystem::fs_statfs(struct statvfs * o_stvbuf)
 {
     LOG(lgr, 6, "fs_statvfs");
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -877,13 +1031,42 @@ UTFileSystem::fs_access(string const & i_path, int i_mode)
 {
     LOG(lgr, 6, "fs_access " << i_path);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    // Try first with only a read lock, if we can't resolve everything
+    // with what's already faulted in memory we catch an
+    // OperationError and try again with a write lock ...
 
     try
     {
+        ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
         pair<string, string> ps = DirNode::pathsplit(i_path);
         AccessTraverseFunc atf(i_mode);
-        m_rdh->node_traverse(m_ctxt, DirNode::NT_DEFAULT,
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT | DirNode::NT_READONLY,
+                             ps.first, ps.second, atf);
+        LOG(lgr, 6, "fs_access " << i_path << " -> " << atf.nt_retval());
+        return atf.nt_retval();
+    }
+    catch (OperationError const & ex)
+    {
+        LOG(lgr, 6, "fs_access " << i_path << " needs write lock");
+        // Fall through to retry w/ write lock ...
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_access " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+
+    try
+    {
+        ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        AccessTraverseFunc atf(i_mode);
+        m_rdh->node_traverse(m_ctxt,
+                             DirNode::NT_DEFAULT,
                              ps.first, ps.second, atf);
         LOG(lgr, 6, "fs_access " << i_path << " -> " << atf.nt_retval());
         return atf.nt_retval();
@@ -922,7 +1105,7 @@ UTFileSystem::fs_utime(string const & i_path,
 {
     LOG(lgr, 6, "fs_utime " << i_path << ' ' << i_atime << ' ' << i_mtime);
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     try
     {
@@ -948,7 +1131,7 @@ UTFileSystem::fs_refresh()
 {
     LOG(lgr, 6, "fs_refresh");
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     // Try and sync first.  If we are out of space we'll
     // have to try and sync again afterwards.
@@ -987,7 +1170,13 @@ UTFileSystem::fs_sync()
 {
     LOG(lgr, 6, "fs_sync");
 
-    ACE_Guard<ACE_Thread_Mutex> guard(m_utfsmutex);
+    // Yes, we think this is a non-modifying function!
+    //
+    // This function takes a long time when the tree is heavily
+    // written; it's a major improvement allowing other read-only
+    // operations to take place concurrently ...
+    //
+    ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     if (m_rdh->bn_isdirty())
         rootref(m_rdh->bn_flush(m_ctxt));

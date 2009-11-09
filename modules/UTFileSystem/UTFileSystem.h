@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 
-#include <ace/Thread_Mutex.h>
+#include <ace/RW_Thread_Mutex.h>
 
 #include "utpfwd.h"
 
@@ -156,7 +156,7 @@ private:
     // This mutex is used to protect the structure of the filesystem.
     // Almost all operations need it ...
     //
-    mutable ACE_Thread_Mutex				m_utfsmutex;
+    mutable ACE_RW_Thread_Mutex				m_utfsrwmutex;
 
     Context									m_ctxt;
 

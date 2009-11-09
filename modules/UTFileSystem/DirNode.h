@@ -79,7 +79,8 @@ public:
     {
         NT_DEFAULT		= 0x0,	// Traverse to leaf, don't update.
         NT_PARENT		= 0x1,	// Stop at parent, leaf may be missing.
-        NT_UPDATE		= 0x2	// Call the update method.
+        NT_UPDATE		= 0x2,	// Call the update method.
+        NT_READONLY		= 0x4	// OperationError instead of modifying.
     };
 
     // Flush any dirty pages to the blockstore and return digest.
@@ -88,6 +89,10 @@ public:
     virtual size_t rb_refresh(Context & i_ctxt, utp::uint64 i_rid);
                             
     // Traverse a path calling functor methods as appropriate.
+    //
+    // If NT_READONLY is set throws OperationError if it would
+    // need to make any changes to the tree (even filling in nodes).
+    //
     virtual void node_traverse(Context & i_ctxt,
                                unsigned int i_flags,
                                std::string const & i_entry,
@@ -143,7 +148,8 @@ protected:
                         FileNodeHandle const & i_fnh);
 
     virtual FileNodeHandle lookup(Context & i_ctxt,
-                                  std::string const & i_entry);
+                                  std::string const & i_entry,
+                                  bool i_readonly);
 
     virtual BlockRef find_blkref(Context & i_ctxt,
                                  std::string const & i_entry);

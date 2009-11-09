@@ -197,7 +197,7 @@ DirNode::node_traverse(Context & i_ctxt,
                        string const & i_rmndr,
                        NodeTraverseFunc & i_trav)
 {
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, i_flags & NT_READONLY);
 
     if (i_flags & NT_PARENT)
     {
@@ -212,7 +212,7 @@ DirNode::node_traverse(Context & i_ctxt,
             if (i_flags & NT_UPDATE)
             {
                 // Need to redo the lookup because it might have changed.
-                fnh = lookup(i_ctxt, i_entry);
+                fnh = lookup(i_ctxt, i_entry, i_flags & NT_READONLY);
                 update(i_ctxt, i_entry, fnh);
             }
         }
@@ -280,7 +280,7 @@ DirNode::mknod(Context & i_ctxt,
                string const & i_uname,
                string const & i_gname)
 {
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, false);
     if (fnh)
         throw EEXIST;
 
@@ -306,7 +306,7 @@ DirNode::mkdir(Context & i_ctxt,
                string const & i_gname)
 {
     // The entry better not already exist.
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, false);
     if (fnh)
         throw EEXIST;
 
@@ -331,7 +331,7 @@ int
 DirNode::unlink(Context & i_ctxt, string const & i_entry, bool i_dirstoo)
 {
     // Lookup the entry.
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, false);
 
     // It needs to exist.
     if (!fnh)
@@ -350,7 +350,7 @@ int
 DirNode::rmdir(Context & i_ctxt, string const & i_entry)
 {
     // Lookup the entry.
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, false);
 
     // It needs to exist.
     if (!fnh)
@@ -375,7 +375,7 @@ DirNode::symlink(Context & i_ctxt,
                  string const & i_entry,
                  string const & i_opath)
 {
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, false);
 
     // It needs to not exist.
     if (fnh)
@@ -409,7 +409,7 @@ DirNode::linkdst(Context & i_ctxt,
                  BlockRef const & i_blkref,
                  bool i_force)
 {
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, false);
 
     // Does the target path exist already?
     if (fnh)
@@ -433,7 +433,7 @@ DirNode::linkdst(Context & i_ctxt,
 int
 DirNode::open(Context & i_ctxt, string const & i_entry, int i_flags)
 {
-    FileNodeHandle fnh = lookup(i_ctxt, i_entry);
+    FileNodeHandle fnh = lookup(i_ctxt, i_entry, false);
 
     // The file needs to exist.
     if (!fnh)
@@ -471,7 +471,9 @@ DirNode::update(Context & i_ctxt,
 }
 
 FileNodeHandle
-DirNode::lookup(Context & i_ctxt, string const & i_entry)
+DirNode::lookup(Context & i_ctxt,
+                string const & i_entry,
+                bool i_readonly)
 {
     // Do we have a cached entry for this name?
     EntryMap::const_iterator pos = m_cache.find(i_entry);
@@ -486,6 +488,12 @@ DirNode::lookup(Context & i_ctxt, string const & i_entry)
         {
             if (m_dir.entry(i).name() == i_entry)
             {
+                // If we are read-only bail and come back with a
+                // write lock ...
+                //
+                if (i_readonly)
+                    throw OperationError(i_entry);
+
                 FileNodeHandle nh =
                     new FileNode(i_ctxt, m_dir.entry(i).blkref());
 
