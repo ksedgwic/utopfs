@@ -2033,10 +2033,13 @@ S3BlockStore::reqctxt_reregister()
 
     // Set a timeout.
     int64_t maxmsec = S3_get_request_context_timeout(m_reqctxt);
-    time_t secs = maxmsec / 1000;
-    suseconds_t usecs = (maxmsec % 1000) * 1000;
-    ACE_Time_Value to(secs, usecs);
-    m_reactor->schedule_timer(this, NULL, to);
+    if (maxmsec >= 0)
+    {
+        time_t secs = maxmsec / 1000;
+        suseconds_t usecs = (maxmsec % 1000) * 1000;
+        ACE_Time_Value to(secs, usecs);
+        m_reactor->schedule_timer(this, NULL, to);
+    }
 
     LOG(lgr, 6, m_instname << ' ' << "reqctxt_reregister finished");
 }
