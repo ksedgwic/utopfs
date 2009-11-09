@@ -101,41 +101,48 @@ StatsLogger::format_stats(ostream & i_ostrm,
     string pfx =
         i_prefix.empty() ? i_ss.name() : i_prefix + '.' + i_ss.name();
 
-    for (int ii = 0; ii < i_ss.rec_size(); ++ii)
+    if (i_ss.rec_size() > 0)
     {
-        StatRec const & sr = i_ss.rec(ii);
-        int64 const & val = sr.value();
-        for (int jj = 0; jj < sr.format_size(); ++jj)
+        i_ostrm << ' ' << pfx << '[';
+
+        for (int ii = 0; ii < i_ss.rec_size(); ++ii)
         {
-            char buffer[256];
-            StatFormat const & sf = sr.format(jj);
-            double factor = sf.has_factor() ? sf.factor() : 1.0;
-
-            string namestr = pfx + '.' + sr.name();
-            double wval;
-            double tval;
-
-            switch (sf.fmttype())
+            StatRec const & sr = i_ss.rec(ii);
+            int64 const & val = sr.value();
+            for (int jj = 0; jj < sr.format_size(); ++jj)
             {
-            case SF_VALUE:
-                wval = double(val) * factor;
-                break;
+                char buffer[256];
+                StatFormat const & sf = sr.format(jj);
+                double factor = sf.has_factor() ? sf.factor() : 1.0;
 
-            case SF_DELTA:
-                tval = double(t0 - m_t0[namestr]) / 1e6;
-                wval = tval > 0.0
-                    ? double(val - m_val[namestr]) * factor / tval
-                    : 0.0;
+                string namestr = pfx + '.' + sr.name();
+                double wval;
+                double tval;
+
+                switch (sf.fmttype())
+                {
+                case SF_VALUE:
+                    wval = double(val) * factor;
+                    break;
+
+                case SF_DELTA:
+                    tval = double(t0 - m_t0[namestr]) / 1e6;
+                    wval = tval > 0.0
+                        ? double(val - m_val[namestr]) * factor / tval
+                        : 0.0;
                     
-                m_val[namestr] = val;
-                m_t0[namestr] = t0;
-                break;
+                    m_val[namestr] = val;
+                    m_t0[namestr] = t0;
+                    break;
+                }
+
+                snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
+
+                i_ostrm << ' ' << sr.name() << '=' << buffer;
             }
-
-            snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
-
-            i_ostrm << ' ' << namestr << '=' << buffer;
         }
+
+        i_ostrm << ']';
     }
 
     for (int ii = 0; ii < i_ss.subset_size(); ++ii)

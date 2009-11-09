@@ -253,7 +253,7 @@ VBSChild::get_stats(StatSet & o_ss) const
         srp->set_value(getb);
         StatFormat * sfp = srp->add_format();
         sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fK/s");
+        sfp->set_fmtstr("%.1fKB/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
@@ -270,7 +270,7 @@ VBSChild::get_stats(StatSet & o_ss) const
         srp->set_value(putb);
         StatFormat * sfp = srp->add_format();
         sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fK/s");
+        sfp->set_fmtstr("%.1fKB/s");
         sfp->set_fmttype(SF_DELTA);
     }
 }
