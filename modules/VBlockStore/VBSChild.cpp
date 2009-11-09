@@ -205,6 +205,7 @@ VBSChild::get_stats(StatSet & o_ss) const
         putb = m_putbytes;
     }
 
+    // Report queue lengths.
     {
         StatRec * srp = o_ss.add_rec();
         srp->set_name("getq");
@@ -237,37 +238,38 @@ VBSChild::get_stats(StatSet & o_ss) const
         sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_VALUE);
     }
+    // Report operation rates.
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nget");
+        srp->set_name("getrate");
         srp->set_value(nget);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
-        sfp->set_fmttype(SF_VALUE);
+        sfp->set_fmttype(SF_DELTA);
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("getb");
+        srp->set_name("getbw");
         srp->set_value(getb);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
-        sfp->set_fmttype(SF_VALUE);
+        sfp->set_fmttype(SF_DELTA);
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nput");
+        srp->set_name("putrate");
         srp->set_value(nput);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
-        sfp->set_fmttype(SF_VALUE);
+        sfp->set_fmttype(SF_DELTA);
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("putb");
+        srp->set_name("putbw");
         srp->set_value(putb);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
-        sfp->set_fmttype(SF_VALUE);
+        sfp->set_fmttype(SF_DELTA);
     }
 }
 
