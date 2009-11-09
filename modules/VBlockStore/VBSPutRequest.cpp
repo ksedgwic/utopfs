@@ -61,6 +61,8 @@ VBSPutRequest::bp_complete(void const * i_keydata,
 
     LOG(lgr, 6, *this << ' ' << cp->instname() << " bp_complete");
 
+    cp->report_put(m_blk.size());
+
     bool do_complete = false;
     bool do_done = false;
 

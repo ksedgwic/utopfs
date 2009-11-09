@@ -69,6 +69,8 @@ VBSGetRequest::bg_complete(void const * i_keydata,
 
     LOG(lgr, 6, *this << ' ' << cp->instname() << " bg_complete");
 
+    cp->report_get(i_blksize);
+
     bool do_complete = false;
     bool do_done = false;
     VBSChildSeq needy;

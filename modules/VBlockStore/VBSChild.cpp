@@ -19,6 +19,10 @@ VBSChild::VBSChild(ACE_Reactor * i_reactor, string const & i_instname)
     : m_reactor(i_reactor)
     , m_instname(i_instname)
     , m_notified(false)
+    , m_getcount(0)
+    , m_getbytes(0)
+    , m_putcount(0)
+    , m_putbytes(0)
 {
     LOG(lgr, 4, m_instname << ' ' << "CTOR");
 
@@ -161,26 +165,90 @@ VBSChild::cancel_get(utp::OctetSeq const & i_key)
 }
 
 void
+VBSChild::report_get(size_t i_nbytes)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+    ++m_getcount;
+    m_getbytes += i_nbytes;
+}
+
+void
+VBSChild::report_put(size_t i_nbytes)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+    ++m_putcount;
+    m_putbytes += i_nbytes;
+}
+
+void
 VBSChild::get_stats(StatSet & o_ss) const
 {
     o_ss.set_name(m_instname);	// Likely redundant, child BS sets it too.
 
-    size_t nget;
-    size_t nput;
-    size_t nrfr;
-    size_t nhed;
+    size_t getq;
+    size_t putq;
+    size_t rfrq;
+    size_t hedq;
+    int64 nget;
+    int64 getb;
+    int64 nput;
+    int64 putb;
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
-        nget = m_getreqs.size();
-        nput = m_putreqs.size();
-        nrfr = m_refreqs.size();
-        nhed = m_shereqs.size();
+        getq = m_getreqs.size();
+        putq = m_putreqs.size();
+        rfrq = m_refreqs.size();
+        hedq = m_shereqs.size();
+        nget = m_getcount;
+        getb = m_getbytes;
+        nput = m_putcount;
+        putb = m_putbytes;
     }
 
     {
         StatRec * srp = o_ss.add_rec();
+        srp->set_name("getq");
+        srp->set_value(getq);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("putq");
+        srp->set_value(putq);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("rfrq");
+        srp->set_value(rfrq);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("hedq");
+        srp->set_value(hedq);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
         srp->set_name("nget");
         srp->set_value(nget);
+        StatFormat * sfp = srp->add_format();
+        sfp->set_fmtstr("%.0f");
+        sfp->set_fmttype(SF_VALUE);
+    }
+    {
+        StatRec * srp = o_ss.add_rec();
+        srp->set_name("getb");
+        srp->set_value(getb);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_VALUE);
@@ -195,16 +263,8 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nrfr");
-        srp->set_value(nrfr);
-        StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
-        sfp->set_fmttype(SF_VALUE);
-    }
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("nhed");
-        srp->set_value(nhed);
+        srp->set_name("putb");
+        srp->set_value(putb);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
         sfp->set_fmttype(SF_VALUE);

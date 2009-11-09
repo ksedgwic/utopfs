@@ -61,6 +61,10 @@ public:
 
     VBSGetRequestHandle cancel_get(utp::OctetSeq const & i_key);
 
+    void report_get(size_t i_nbytes);
+
+    void report_put(size_t i_nbytes);
+
     void get_stats(utp::StatSet & o_ss) const;
 
 protected:
@@ -77,6 +81,11 @@ private:
     std::deque<VBSPutRequestHandle>		m_putreqs;
     std::deque<VBSRequestHandle>		m_refreqs;
     std::deque<VBSRequestHandle>		m_shereqs;
+
+    utp::int64							m_getcount;
+    utp::int64							m_getbytes;
+    utp::int64							m_putcount;
+    utp::int64							m_putbytes;
 };
 
 } // namespace VBS
