@@ -930,7 +930,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         int ok = she.ParseFromString(data);
         if (!ok)
             throwstream(InternalError, FILELINE
-                        << " SignedHeadEdge deserialize failed");
+                        << " SignedHeadEdge deserialize "
+                        << edgekey << " failed");
+
         m_lhng.insert_head(she);
     }
 
