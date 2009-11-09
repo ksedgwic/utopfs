@@ -105,6 +105,8 @@ StatsLogger::format_stats(ostream & i_ostrm,
     {
         i_ostrm << ' ' << pfx << '[';
 
+        bool isfirst = true;
+
         for (int ii = 0; ii < i_ss.rec_size(); ++ii)
         {
             StatRec const & sr = i_ss.rec(ii);
@@ -138,7 +140,13 @@ StatsLogger::format_stats(ostream & i_ostrm,
 
                 snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
 
-                i_ostrm << ' ' << sr.name() << '=' << buffer;
+                // Emit a spacer for all but the first.
+                if (isfirst)
+                    isfirst = false;
+                else
+                    i_ostrm << ' ';
+
+                i_ostrm << sr.name() << '=' << buffer;
             }
         }
 
