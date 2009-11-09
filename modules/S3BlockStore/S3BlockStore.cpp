@@ -743,7 +743,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                 throwstream(InternalError, FILELINE
                             << "too many retries");
 
-            GetHandler gh((uint8 *) &mdndxbuf[0], mdndxbuf.size());
+            GetHandler gh2((uint8 *) &mdndxbuf[0], mdndxbuf.size());
 
             S3_get_object(&m_buckctxt,
                           "MDNDX",
@@ -752,9 +752,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                           0,
                           NULL,
                           &get_tramp,
-                          &gh);
+                          &gh2);
         
-            S3Status st = gh.wait();
+            S3Status st = gh2.wait();
             if (st == S3StatusOK)
             {
                 LOG(lgr, 4, m_instname << ' ' << "done reading MDNDX");
@@ -888,6 +888,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         gc.ifNotMatchETag = NULL;
 
         uint8 buffer[8192];
+        size_t sz;
 
         for (unsigned ii = 0; ii < MAX_RETRIES; ++ii)
         {
@@ -895,7 +896,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                 throwstream(InternalError, FILELINE
                             << "too many retries");
 
-            GetHandler gh(buffer, sizeof(buffer));
+            GetHandler gh3(buffer, sizeof(buffer));
 
             S3_get_object(&m_buckctxt,
                           edgekey.c_str(),
@@ -904,12 +905,15 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                           0,
                           NULL,
                           &get_tramp,
-                          &gh);
+                          &gh3);
 
-            S3Status st = gh.wait();
+            S3Status st = gh3.wait();
 
             if (st == S3StatusOK)
+            {
+                sz = gh3.size();
                 break;
+            }
 
             if (st == S3StatusErrorNoSuchKey)
                 throwstream(NotFoundError,
@@ -924,7 +928,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
                 << " ERROR: " << st << " RETRYING");
         }
 
-        string encoded((char const *) buffer, gh.size());
+        string encoded((char const *) buffer, sz);
         string data = Base64::decode(encoded);
         SignedHeadEdge she;
         int ok = she.ParseFromString(data);
