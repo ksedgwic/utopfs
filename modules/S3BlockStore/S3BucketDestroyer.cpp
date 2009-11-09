@@ -354,20 +354,20 @@ BucketDestroyer::reqctxt_reregister()
 
     LOG(lgr, 6, "BucketDestroyer registering handlers");
 
-    if (m_rset.num_set() > 0)
-        m_reactor->register_handler(m_rset,
+    if (m_eset.num_set() > 0)
+        m_reactor->register_handler(m_eset,
                                     this,
-                                    ACE_Event_Handler::READ_MASK);
+                                    ACE_Event_Handler::EXCEPT_MASK);
 
     if (m_wset.num_set() > 0)
         m_reactor->register_handler(m_wset,
                                     this,
                                     ACE_Event_Handler::WRITE_MASK);
 
-    if (m_eset.num_set() > 0)
-        m_reactor->register_handler(m_eset,
+    if (m_rset.num_set() > 0)
+        m_reactor->register_handler(m_rset,
                                     this,
-                                    ACE_Event_Handler::EXCEPT_MASK);
+                                    ACE_Event_Handler::READ_MASK);
 
     // Set a timeout.
     int64_t maxmsec = S3_get_request_context_timeout(m_reqctxt);
