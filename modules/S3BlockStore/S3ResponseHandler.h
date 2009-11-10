@@ -29,7 +29,7 @@ public:
     virtual void rh_complete(S3Status status,
                              S3ErrorDetails const * errorDetails);
 
-    void reset();	// Resets state for multiple uses.
+    virtual void rh_reset();	// Resets state for retries.
 
     S3Status wait();
 
@@ -69,14 +69,17 @@ public:
 
     virtual ~PutHandler();
 
+    virtual void rh_reset();	// Resets state for retries.
+
     virtual int ph_objdata(int i_buffsz, char * o_buffer);
 
-    utp::uint8 const * blkdata() const { return m_data; }
+    // utp::uint8 const * blkdata() const { return m_data; }
 
     size_t blksize() const { return m_size; }
 
 private:
     utp::uint8 const *		m_data;
+    utp::uint8 const *		m_ptr;
     size_t					m_size;
     size_t					m_left;
 };
@@ -85,6 +88,8 @@ class S3BS_EXP GetHandler : public ResponseHandler
 {
 public:
     GetHandler(utp::uint8 * o_buffdata, size_t i_buffsize);
+
+    virtual void rh_reset();	// Resets state for retries.
 
     virtual S3Status gh_objdata(int i_buffsz, char const * i_buffer);
 

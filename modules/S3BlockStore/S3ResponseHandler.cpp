@@ -60,7 +60,7 @@ ResponseHandler::rh_complete(S3Status status,
 }
 
 void
-ResponseHandler::reset()
+ResponseHandler::rh_reset()
 {
     m_waiters = false;
     m_complete = false;
@@ -102,6 +102,7 @@ ResponseHandler::operator==(ResponseHandler const & i_o) const
 
 PutHandler::PutHandler(uint8 const * i_data, size_t i_size)
     : m_data(i_data)
+    , m_ptr(i_data)
     , m_size(i_size)
     , m_left(i_size)
 {
@@ -113,13 +114,22 @@ PutHandler::~PutHandler()
     LOG(lgr, 7, "PutHandler " << (void *) this << " DTOR");
 }
 
+void
+PutHandler::rh_reset()
+{
+    m_ptr = m_data;
+    m_left = m_size;
+
+    ResponseHandler::rh_reset();
+}
+
 int
 PutHandler::ph_objdata(int i_buffsz, char * o_buffer)
 {
     size_t sz = min(size_t(i_buffsz), m_left);
 
-    ACE_OS::memcpy(o_buffer, m_data, sz);
-    m_data += sz;
+    ACE_OS::memcpy(o_buffer, m_ptr, sz);
+    m_ptr += sz;
     m_left -= sz;
     return sz;
 }
@@ -133,6 +143,14 @@ GetHandler::GetHandler(uint8 * o_buffdata, size_t i_buffsize)
     , m_buffsize(i_buffsize)
     , m_size(0)
 {}
+
+void
+GetHandler::rh_reset()
+{
+    m_size = 0;
+
+    ResponseHandler::rh_reset();
+}
 
 S3Status
 GetHandler::gh_objdata(int i_buffsz, char const * i_buffer)

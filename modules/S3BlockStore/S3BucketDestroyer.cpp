@@ -113,7 +113,7 @@ ObjectDestroyer::handle_exception(ACE_HANDLE fd)
             LOG(lgr, 3, (void *) this << " DESTROY " << m_key
                 << ": " << st << ": RETRY");
 
-            reset(); // Reset our state.
+            rh_reset(); // Reset our state.
             m_bd.initiate_delete(this);
 
             // This path doesn't destroy the handler ...

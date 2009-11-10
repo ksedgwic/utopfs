@@ -103,7 +103,7 @@ AsyncGetHandler::handle_exception(ACE_HANDLE fd)
             LOG(lgr, 3, (void *) this << ' '
                 << keystr(m_keydata, m_keysize) << ": " << st << ": RETRY");
 
-            reset(); // Reset our state.
+            rh_reset(); // Reset our state.
             m_s3bs.initiate_get(this);
 
             // This path doesn't destroy the handler ...
