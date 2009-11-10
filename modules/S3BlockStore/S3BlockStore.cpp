@@ -30,7 +30,7 @@ using namespace utp;
 
 namespace S3BS {
 
-static unsigned const SATURATED_SIZE = 10;
+static unsigned const SATURATED_SIZE = 20;
 
 static unsigned const MAX_RETRIES = 10;
 
@@ -722,7 +722,7 @@ S3BlockStore::bs_open(StringSeq const & i_args)
         if (st == S3StatusHttpErrorNotFound)
         {
             // This is OK, we just don't have a MDNDX file.
-            LOG(lgr, 4, m_instname << ' ' << "no MNDX file found");
+            LOG(lgr, 4, m_instname << ' ' << "no MDNDX file found");
             break;
         }
 
