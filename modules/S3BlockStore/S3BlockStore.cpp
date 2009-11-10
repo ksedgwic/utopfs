@@ -1673,7 +1673,7 @@ S3BlockStore::bs_get_stats(StatSet & o_ss) const
 
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nreqs");
+        srp->set_name("q");
         srp->set_value(nreqs);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");

@@ -208,7 +208,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     // Report queue lengths.
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("getq");
+        srp->set_name("gq");
         srp->set_value(getq);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
@@ -216,7 +216,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("putq");
+        srp->set_name("pq");
         srp->set_value(putq);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
@@ -224,7 +224,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("rfrq");
+        srp->set_name("rq");
         srp->set_value(rfrq);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
@@ -232,7 +232,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("hedq");
+        srp->set_name("hq");
         srp->set_value(hedq);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.0f");
@@ -241,7 +241,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     // Report operation rates.
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("getrate");
+        srp->set_name("gr");
         srp->set_value(nget);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.1f/s");
@@ -249,7 +249,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("getbw");
+        srp->set_name("gb");
         srp->set_value(getb);
         StatFormat * sfp = srp->add_format();
         sfp->set_factor(1.0/1024.0);
@@ -258,7 +258,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("putrate");
+        srp->set_name("pr");
         srp->set_value(nput);
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.1f/s");
@@ -266,7 +266,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("putbw");
+        srp->set_name("pb");
         srp->set_value(putb);
         StatFormat * sfp = srp->add_format();
         sfp->set_factor(1.0/1024.0);

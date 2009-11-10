@@ -1190,7 +1190,7 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
 
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nrdops");
+        srp->set_name("rr");
         srp->set_value(m_nrdops.value());
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.1f/s");
@@ -1198,7 +1198,7 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nwrops");
+        srp->set_name("wr");
         srp->set_value(m_nwrops.value());
         StatFormat * sfp = srp->add_format();
         sfp->set_fmtstr("%.1f/s");
@@ -1206,20 +1206,20 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nrdbytes");
+        srp->set_name("rb");
         srp->set_value(m_nrdbytes.value());
         StatFormat * sfp = srp->add_format();
         sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fK/s");
+        sfp->set_fmtstr("%.1fKB/s");
         sfp->set_fmttype(SF_DELTA);
     }
     {
         StatRec * srp = o_ss.add_rec();
-        srp->set_name("nwrbytes");
+        srp->set_name("wb");
         srp->set_value(m_nwrbytes.value());
         StatFormat * sfp = srp->add_format();
         sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fK/s");
+        sfp->set_fmtstr("%.1fKB/s");
         sfp->set_fmttype(SF_DELTA);
     }
 }
