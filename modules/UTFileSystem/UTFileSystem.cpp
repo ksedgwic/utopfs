@@ -7,6 +7,7 @@
 #include "BlockStoreFactory.h"
 #include "Log.h"
 #include "Random.h"
+#include "Stats.h"
 
 #include "utfslog.h"
 
@@ -1189,75 +1190,17 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
 {
     o_ss.set_name("fs");
 
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("rrps");
-        srp->set_value(m_stats.m_nrdops.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.1f/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("wrps");
-        srp->set_value(m_stats.m_nwrops.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.1f/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("rbps");
-        srp->set_value(m_stats.m_nrdbytes.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fKB/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("wbps");
-        srp->set_value(m_stats.m_nwrbytes.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fKB/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
+    Stats::set(o_ss, "rrps", m_stats.m_nrdops.value(), "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "wrps", m_stats.m_nwrops.value(), "%.1f/s", SF_DELTA);
 
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("grps");
-        srp->set_value(m_stats.m_ngops.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.1f/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("prps");
-        srp->set_value(m_stats.m_npops.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.1f/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("gbps");
-        srp->set_value(m_stats.m_ngbytes.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fKB/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("pbps");
-        srp->set_value(m_stats.m_npbytes.value());
-        StatFormat * sfp = srp->add_format();
-        sfp->set_factor(1.0/1024.0);
-        sfp->set_fmtstr("%.1fKB/s");
-        sfp->set_fmttype(SF_DELTA);
-    }
+    Stats::set(o_ss, "rbps", m_stats.m_nrdbytes.value(), "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "wbps", m_stats.m_nwrbytes.value(), "%.1fKB/s", SF_DELTA);
+
+    Stats::set(o_ss, "grps", m_stats.m_ngops.value(), "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "prps", m_stats.m_npops.value(), "%.1f/s", SF_DELTA);
+
+    Stats::set(o_ss, "gbps", m_stats.m_ngbytes.value(), "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "pbps", m_stats.m_npbytes.value(), "%.1fKB/s", SF_DELTA);
 }
 
 void

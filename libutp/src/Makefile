@@ -26,6 +26,7 @@ LIBSRC =	\
 			LoggerBase.cpp \
 			MD5.cpp \
 			Random.cpp \
+			Stats.cpp \
 			StreamCipher.cpp \
 			ThreadPool.cpp \
 			T64.cpp \

@@ -15,6 +15,7 @@
 #include "Digest.h"
 #include "Log.h"
 #include "MD5.h"
+#include "Stats.h"
 
 #include "MDIndex.pb.h"
 
@@ -1671,14 +1672,7 @@ S3BlockStore::bs_get_stats(StatSet & o_ss) const
         nreqs = m_rsphandlers.size();
     }
 
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("s3ql");
-        srp->set_value(nreqs);
-        StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
-        sfp->set_fmttype(SF_VALUE);
-    }
+    Stats::set(o_ss, "s3ql", nreqs, "%.0f", SF_VALUE);
 }
 
 bool
