@@ -1672,7 +1672,7 @@ S3BlockStore::bs_get_stats(StatSet & o_ss) const
         nreqs = m_rsphandlers.size();
     }
 
-    Stats::set(o_ss, "s3ql", nreqs, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "s3ql", nreqs, 1.0, "%.0f", SF_VALUE);
 }
 
 bool

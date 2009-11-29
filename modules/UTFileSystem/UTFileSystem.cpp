@@ -1192,17 +1192,17 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
 {
     o_ss.set_name("fs");
 
-    Stats::set(o_ss, "rrps", m_stats.m_nrdops.value(), "%.1f/s", SF_DELTA);
-    Stats::set(o_ss, "wrps", m_stats.m_nwrops.value(), "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "rrps", m_stats.m_nrdops.value(), 1.0, "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "wrps", m_stats.m_nwrops.value(), 1.0, "%.1f/s", SF_DELTA);
 
-    Stats::set(o_ss, "rbps", m_stats.m_nrdbytes.value(), "%.1fKB/s", SF_DELTA);
-    Stats::set(o_ss, "wbps", m_stats.m_nwrbytes.value(), "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "rbps", m_stats.m_nrdbytes.value(), 1.0/1024.0, "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "wbps", m_stats.m_nwrbytes.value(), 1.0/1024.0, "%.1fKB/s", SF_DELTA);
 
-    Stats::set(o_ss, "grps", m_stats.m_ngops.value(), "%.1f/s", SF_DELTA);
-    Stats::set(o_ss, "prps", m_stats.m_npops.value(), "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "grps", m_stats.m_ngops.value(), 1.0, "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "prps", m_stats.m_npops.value(), 1.0, "%.1f/s", SF_DELTA);
 
-    Stats::set(o_ss, "gbps", m_stats.m_ngbytes.value(), "%.1fKB/s", SF_DELTA);
-    Stats::set(o_ss, "pbps", m_stats.m_npbytes.value(), "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "gbps", m_stats.m_ngbytes.value(), 1.0/1024.0, "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "pbps", m_stats.m_npbytes.value(), 1.0/1024.0, "%.1fKB/s", SF_DELTA);
 }
 
 void

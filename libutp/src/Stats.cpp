@@ -12,6 +12,7 @@ namespace utp {
 StatRec * Stats::set(StatSet & o_ss,
                      string const & i_name,
                      int64_t i_value,
+                     double i_factor,
                      string const & i_format,
                      StatFormatType i_type)
 {
@@ -19,6 +20,7 @@ StatRec * Stats::set(StatSet & o_ss,
     srp->set_name(i_name);
     srp->set_value(i_value);
     StatFormat * sfp = srp->add_format();
+    sfp->set_factor(i_factor);
     sfp->set_fmtstr(i_format);
     sfp->set_fmttype(i_type);
 

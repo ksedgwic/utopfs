@@ -435,7 +435,7 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
         }
     }
 
-    Stats::set(o_ss, "nreqs", nreqs, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "nreqs", nreqs, 1.0, "%.0f", SF_VALUE);
 
     // Add a Stats subset for each of our children and fill.
     for (VBSChildMap::const_iterator it = m_children.begin();

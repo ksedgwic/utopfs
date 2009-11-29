@@ -54,23 +54,26 @@ VBSRefreshStartRequest::rs_complete(utp::uint64 i_rid,
 
     LOG(lgr, 6, *this << ' ' << cp->instname() << " rs_complete");
 
+    // NOTE - Unlike other completion routines we need to be sure that
+    // *all* blockstores have seen the START before we start sending
+    // refresh requests on the RID.
+    //
+    // Don't call the completion until the last guy is in ...
+
     bool do_complete = false;
     bool do_done = false;
 
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
 
-        // Are we the first successful completion?
-        if (!m_succeeded)
-        {
-            do_complete = true;
-            m_succeeded = true;
-        }
-
         // Are we the last completion?
         --m_outstanding;
         if (m_outstanding == 0)
+        {
             do_done = true;
+            do_complete = true;
+            m_succeeded = true;
+        }
     }
 
     // If we are the first child back with success we get

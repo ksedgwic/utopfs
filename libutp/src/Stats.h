@@ -21,6 +21,7 @@ public:
     static StatRec * set(StatSet & o_ss,
                          std::string const & i_name,
                          int64_t i_value,
+                         double i_factor,
                          std::string const & i_format,
                          StatFormatType i_type);
 };

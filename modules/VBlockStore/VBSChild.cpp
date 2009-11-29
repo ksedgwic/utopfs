@@ -184,7 +184,7 @@ VBSChild::report_put(size_t i_nbytes)
 void
 VBSChild::get_stats(StatSet & o_ss) const
 {
-    o_ss.set_name(m_instname);	// Likely redundant, child BS sets it too.
+    o_ss.set_name(string("vbs.") + m_instname);
 
     size_t getq;
     size_t putq;
@@ -207,16 +207,16 @@ VBSChild::get_stats(StatSet & o_ss) const
     }
 
     // Report queue lengths.
-    Stats::set(o_ss, "gql", getq, "%.0f", SF_VALUE);
-    Stats::set(o_ss, "pql", putq, "%.0f", SF_VALUE);
-    Stats::set(o_ss, "rql", rfrq, "%.0f", SF_VALUE);
-    Stats::set(o_ss, "hql", hedq, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "gql", getq, 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "pql", putq, 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "rql", rfrq, 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "hql", hedq, 1.0, "%.0f", SF_VALUE);
 
     // Report operation rates.
-    Stats::set(o_ss, "grps", nget, "%.1f/s", SF_DELTA);
-    Stats::set(o_ss, "gbps", getb, "%.1fKB/s", SF_DELTA);
-    Stats::set(o_ss, "prps", nput, "%.1f/s", SF_DELTA);
-    Stats::set(o_ss, "pbps", putb, "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "grps", nget, 1.0, "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "gbps", getb, 1.0/1024.0, "%.1fKB/s", SF_DELTA);
+    Stats::set(o_ss, "prps", nput, 1.0, "%.1f/s", SF_DELTA);
+    Stats::set(o_ss, "pbps", putb, 1.0/1024.0, "%.1fKB/s", SF_DELTA);
 }
 
 void
