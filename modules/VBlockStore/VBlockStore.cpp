@@ -4,6 +4,7 @@
 
 #include "Base32.h"
 #include "Log.h"
+#include "Stats.h"
 #include "BlockStoreFactory.h"
 
 #include "VBlockStore.h"
@@ -434,27 +435,18 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
         }
     }
 
-    {
-        StatRec * srp = o_ss.add_rec();
-        srp->set_name("nreqs");
-        srp->set_value(nreqs);
-        StatFormat * sfp = srp->add_format();
-        sfp->set_fmtstr("%.0f");
-        sfp->set_fmttype(SF_VALUE);
-    }
+    Stats::set(o_ss, "nreqs", nreqs, "%.0f", SF_VALUE);
 
     // Add a Stats subset for each of our children and fill.
     for (VBSChildMap::const_iterator it = m_children.begin();
          it != m_children.end();
          ++it)
     {
-        StatSet * ssp = o_ss.add_subset();
-
         // Per-child stats from the VBS itself.
-        it->second->get_stats(*ssp);
+        it->second->get_stats(*o_ss.add_subset());
 
         // Child blockstore itself.
-        it->second->bs()->bs_get_stats(*ssp);
+        it->second->bs()->bs_get_stats(*o_ss.add_subset());
     }
 }
 

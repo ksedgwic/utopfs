@@ -1131,8 +1131,6 @@ size_t
 UTFileSystem::fs_refresh()
     throw (InternalError)
 {
-    LOG(lgr, 6, "fs_refresh");
-
     ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     // Try and sync first.  If we are out of space we'll
@@ -1151,6 +1149,8 @@ UTFileSystem::fs_refresh()
     uint64 rid;
     Random::fill(&rid, sizeof(rid));
 
+    LOG(lgr, 4, "fs_refresh starting RID=" << rid);
+
     // Perform the refresh cycle.
     m_ctxt.m_bsh->bs_refresh_start(rid);
     size_t nb = m_rdh->rb_refresh(m_ctxt, rid);
@@ -1161,6 +1161,8 @@ UTFileSystem::fs_refresh()
     // If we failed to sync earlier try again here..
     if (m_rdh->bn_isdirty())
         rootref(m_rdh->bn_flush(m_ctxt));
+
+    LOG(lgr, 4, "fs_refresh finished RID=" << rid);
 
     return nb;
 }
