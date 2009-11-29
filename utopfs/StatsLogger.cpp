@@ -138,15 +138,18 @@ StatsLogger::format_stats(ostream & i_ostrm,
                     break;
                 }
 
-                snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
+                if (wval != 0.0)
+                {
+                    snprintf(buffer, sizeof(buffer), sf.fmtstr().c_str(), wval);
 
-                // Emit a spacer for all but the first.
-                if (isfirst)
-                    isfirst = false;
-                else
-                    i_ostrm << ' ';
+                    // Emit a spacer for all but the first.
+                    if (isfirst)
+                        isfirst = false;
+                    else
+                        i_ostrm << ' ';
 
-                i_ostrm << sr.name() << '=' << buffer;
+                    i_ostrm << sr.name() << '=' << buffer;
+                }
             }
         }
 
