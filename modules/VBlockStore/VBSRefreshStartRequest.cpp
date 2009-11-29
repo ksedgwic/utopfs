@@ -72,8 +72,9 @@ VBSRefreshStartRequest::rs_complete(utp::uint64 i_rid,
         {
             do_done = true;
             do_complete = true;
-            m_succeeded = true;
         }
+
+        m_succeeded = true;
     }
 
     // If we are the first child back with success we get

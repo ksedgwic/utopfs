@@ -184,7 +184,7 @@ VBSChild::report_put(size_t i_nbytes)
 void
 VBSChild::get_stats(StatSet & o_ss) const
 {
-    o_ss.set_name(string("vbs.") + m_instname);
+    o_ss.set_name(string("c.") + m_instname);
 
     size_t getq;
     size_t putq;

@@ -614,7 +614,7 @@ FSBlockStore::bs_refresh_start_async(uint64 i_rid,
         string rname = ridname(i_rid);
         string rpath = blockpath(rname);
  
-        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
+        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start_async " << rname);
 
         ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
@@ -659,6 +659,9 @@ FSBlockStore::bs_refresh_start_async(uint64 i_rid,
     }
     catch (Exception const & i_ex)
     {
+        LOG(lgr, 2, FILELINE
+            << m_instname << ' ' << "bs_refresh_start_async FAILED: "
+            << i_ex.what());
         i_cmpl.rs_error(i_rid, i_argp, i_ex);
     }
 }
@@ -740,7 +743,7 @@ FSBlockStore::bs_refresh_finish_async(uint64 i_rid,
         string rname = ridname(i_rid);
         string rpath = blockpath(rname);
 
-        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish " << rname);
+        LOG(lgr, 6, m_instname << ' ' << "bs_refresh_finish_async " << rname);
 
         ACE_Guard<ACE_Thread_Mutex> guard(m_fsbsmutex);
 
