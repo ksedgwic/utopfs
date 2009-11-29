@@ -11,6 +11,7 @@
 #include "BlockStore.h"
 #include "BlockCipher.h"
 
+#include "UTStats.h"
 #include "utfsexp.h"
 #include "utfsfwd.h"
 
@@ -24,6 +25,8 @@ struct UTFS_EXP Context
     IndirectBlockNodeHandle		m_zsinobj;
     DoubleIndBlockNodeHandle	m_zdinobj;
     TripleIndBlockNodeHandle	m_ztinobj;
+
+    UTStats *					m_statsp;
 };
 
 } // namespace UTFS

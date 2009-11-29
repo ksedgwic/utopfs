@@ -166,10 +166,7 @@ private:
 
     BlockRef								m_rbr;
 
-    utp::AtomicLong							m_nrdops;
-    utp::AtomicLong							m_nwrops;
-    utp::AtomicLong							m_nrdbytes;
-    utp::AtomicLong							m_nwrbytes;
+    UTStats									m_stats;
 };
 
 } // namespace UTFS

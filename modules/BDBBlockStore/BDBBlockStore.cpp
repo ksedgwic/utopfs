@@ -310,7 +310,7 @@ BDBBlockStore::bs_block_put_async(void const * i_keydata,
 {
     try
     {
-        LOG(lgr, 6, m_instname << ' ' << "bs_block_put");
+        LOG(lgr, 6, m_instname << ' ' << "bs_block_put_async");
         if (! m_db_opened) {
             throwstream(InternalError, FILELINE
                         << "BDBBlockStore db not opened!");
@@ -326,7 +326,8 @@ BDBBlockStore::bs_block_put_async(void const * i_keydata,
         int results = m_db->put(NULL,&key,&data,DB_NOOVERWRITE);
         if (results != 0) {
             throwstream(InternalError, FILELINE
-                        << "BDBBlockStore::bs_block_put returned error " << results << db_strerror(results));
+                        << "BDBBlockStore::bs_block_put_async returned error "
+                        << results << db_strerror(results));
         }      
 
         i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);

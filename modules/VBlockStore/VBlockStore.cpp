@@ -429,6 +429,7 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
              it != m_requests.end();
              ++it)
         {
+            // BREAK here to see the VBS request queue.
             ++nreqs;
         }
     }

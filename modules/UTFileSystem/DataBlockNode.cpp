@@ -36,15 +36,19 @@ DataBlockNode::DataBlockNode(Context & i_ctxt, BlockRef const & i_ref)
 {
     LOG(lgr, 6, "CTOR " << i_ref);
 
+    size_t sz = sizeof(m_data);
+
     // Read the block from the blockstore.
-    i_ctxt.m_bsh->bs_block_get(i_ref.data(), i_ref.size(),
-                               m_data, sizeof(m_data));
+    i_ctxt.m_bsh->bs_block_get(i_ref.data(), i_ref.size(), m_data, sz);
+
+    ++i_ctxt.m_statsp->m_ngops;
+    i_ctxt.m_statsp->m_ngbytes += sz;;
 
     // Validate the block.
-    i_ref.validate(m_data, sizeof(m_data));
+    i_ref.validate(m_data, sz);
 
     // Decrypt the block.
-    i_ctxt.m_cipher.decrypt(i_ref.iv(), m_data, sizeof(m_data));
+    i_ctxt.m_cipher.decrypt(i_ref.iv(), m_data, sz);
 }
 
 DataBlockNode::~DataBlockNode()
@@ -76,6 +80,9 @@ DataBlockNode::bn_persist(Context & i_ctxt)
                                m_ref.size(),
                                (void *) buf,
                                sizeof(buf));
+
+    ++i_ctxt.m_statsp->m_npops;
+    i_ctxt.m_statsp->m_npbytes += sizeof(buf);
 
     bn_isdirty(false);
 

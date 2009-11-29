@@ -87,17 +87,22 @@ FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
     LOG(lgr, 6, "CTOR " << i_ref);
 
     uint8 buf[BlockNode::BLKSZ];
-    ACE_OS::memset(buf, '\0', sizeof(buf));
+    size_t bsz = sizeof(buf);
+
+    ACE_OS::memset(buf, '\0', bsz);
 
     // Read the block from the blockstore.
     i_ctxt.m_bsh->bs_block_get(i_ref.data(), i_ref.size(),
-                               buf, sizeof(buf));
+                               buf, bsz);
+
+    ++i_ctxt.m_statsp->m_ngops;
+    i_ctxt.m_statsp->m_ngbytes += bsz;
 
     // Validate the block.
-    i_ref.validate(buf, sizeof(buf));
+    i_ref.validate(buf, bsz);
 
     // Decrypt the block.
-    i_ctxt.m_cipher.decrypt(i_ref.iv(), buf, sizeof(buf));
+    i_ctxt.m_cipher.decrypt(i_ref.iv(), buf, bsz);
 
     // Compute the size of fixed fields after the inode.
     size_t fixedsz = fixed_field_size();
@@ -116,7 +121,7 @@ FileNode::FileNode(Context & i_ctxt, BlockRef const & i_ref)
                     << "inode deserialization failed");
 
     // Setup a pointer for the fixed fields.
-    uint8 * ptr = &buf[BlockNode::BLKSZ - fixedsz];
+    uint8 * ptr = &buf[sz];
 
     // Copy the inline data.
     ACE_OS::memcpy(m_inl, ptr, sizeof(m_inl));
@@ -210,6 +215,9 @@ FileNode::bn_persist(Context & i_ctxt)
                                m_ref.size(),
                                (void *) buf,
                                sizeof(buf));
+
+    ++i_ctxt.m_statsp->m_npops;
+    i_ctxt.m_statsp->m_npbytes += sizeof(buf);
 
     bn_isdirty(false);
 

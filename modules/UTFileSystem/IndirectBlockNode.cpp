@@ -40,6 +40,9 @@ IndirectBlockNode::IndirectBlockNode(Context & i_ctxt,
     // Read the block from the blockstore.
     i_ctxt.m_bsh->bs_block_get(i_ref.data(), i_ref.size(), ptr, sz);
 
+    ++i_ctxt.m_statsp->m_ngops;
+    i_ctxt.m_statsp->m_ngbytes += sz;
+
     // Validate the block.
     i_ref.validate(ptr, sz);
 
@@ -77,6 +80,9 @@ IndirectBlockNode::bn_persist(Context & i_ctxt)
                                m_ref.size(),
                                (void *) buf,
                                sizeof(buf));
+
+    ++i_ctxt.m_statsp->m_npops;
+    i_ctxt.m_statsp->m_npbytes += sizeof(buf);
 
     bn_isdirty(false);
 
