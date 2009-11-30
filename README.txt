@@ -1,5 +1,5 @@
 
-#### This needs updating pretty badly
+#### This needs updating pretty badly.
 
 Installing and Running from RPM
 ----------------------------------------------------------------
