@@ -50,8 +50,6 @@ private:
     utp::OctetSeq								m_key;
     utp::BlockStore::RefreshBlockCompletion	&	m_cmpl;
     void const *								m_argp;
-    VBSChildSeq									m_needy;
-    VBSChildHandle								m_hadit;
 };
 
 } // namespace VBS

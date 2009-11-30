@@ -129,6 +129,9 @@ public:
     // Called when a child has gotten a block to cancel other child gets.
     void cancel_get(VBSChild * i_hadit, utp::OctetSeq const & i_key);
 
+    void enqueue_needy_get(VBSGetRequestHandle const & i_grh,
+                           VBSChildHandle i_nh);
+
 protected:
 
 private:

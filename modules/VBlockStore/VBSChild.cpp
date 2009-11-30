@@ -5,19 +5,23 @@
 #include "Log.h"
 #include "Stats.h"
 
+#include "VBlockStore.h"
 #include "VBSChild.h"
-#include "vbslog.h"
-#include "VBSRequest.h"
 #include "VBSGetRequest.h"
+#include "vbslog.h"
 #include "VBSPutRequest.h"
+#include "VBSRequest.h"
 
 using namespace std;
 using namespace utp;
 
 namespace VBS {
 
-VBSChild::VBSChild(ACE_Reactor * i_reactor, string const & i_instname)
-    : m_reactor(i_reactor)
+VBSChild::VBSChild(VBlockStore & i_vbs,
+                   ACE_Reactor * i_reactor,
+                   string const & i_instname)
+    : m_vbs(i_vbs)
+    , m_reactor(i_reactor)
     , m_instname(i_instname)
     , m_notified(false)
     , m_getcount(0)
@@ -190,6 +194,7 @@ VBSChild::get_stats(StatSet & o_ss) const
     size_t putq;
     size_t rfrq;
     size_t hedq;
+    size_t ndkq;
     int64 nget;
     int64 getb;
     int64 nput;
@@ -200,6 +205,7 @@ VBSChild::get_stats(StatSet & o_ss) const
         putq = m_putreqs.size();
         rfrq = m_refreqs.size();
         hedq = m_shereqs.size();
+        ndkq = m_neededkeys.size();
         nget = m_getcount;
         getb = m_getbytes;
         nput = m_putcount;
@@ -211,12 +217,21 @@ VBSChild::get_stats(StatSet & o_ss) const
     Stats::set(o_ss, "pql", putq, 1.0, "%.0f", SF_VALUE);
     Stats::set(o_ss, "rql", rfrq, 1.0, "%.0f", SF_VALUE);
     Stats::set(o_ss, "hql", hedq, 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "nql", ndkq, 1.0, "%.0f", SF_VALUE);
 
     // Report operation rates.
     Stats::set(o_ss, "grps", nget, 1.0, "%.1f/s", SF_DELTA);
     Stats::set(o_ss, "gbps", getb, 1.0/1024.0, "%.1fKB/s", SF_DELTA);
     Stats::set(o_ss, "prps", nput, 1.0, "%.1f/s", SF_DELTA);
     Stats::set(o_ss, "pbps", putb, 1.0/1024.0, "%.1fKB/s", SF_DELTA);
+}
+
+void
+VBSChild::needed_append_key(void const * i_keydata, size_t i_keysize)
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
+    m_neededkeys.push_back(OctetSeq((uint8 const *) i_keydata,
+                                    (uint8 const *) i_keydata + i_keysize));
 }
 
 void
@@ -249,6 +264,7 @@ VBSChild::initiate_requests()
         VBSGetRequestHandle grh = NULL;
         VBSPutRequestHandle prh = NULL;
         VBSRequestHandle rrh = NULL;
+        OctetSeq nk;
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
 
@@ -280,6 +296,13 @@ VBSChild::initiate_requests()
                 prh = m_putreqs.front();
                 m_putreqs.pop_front();
             }
+            else if (!m_neededkeys.empty())
+            {
+                LOG(lgr, 6, m_instname << ' '
+                    << "initiate needed key request starting");
+                nk = m_neededkeys.front();
+                m_neededkeys.pop_front();
+            }
             else
             {
                 // If we get here we're done.
@@ -306,6 +329,24 @@ VBSChild::initiate_requests()
             rrh->initiate(this, m_bsh);
             LOG(lgr, 6, m_instname << ' '
                     << "initiate refresh/headnode request finished");
+        }
+        else if (!nk.empty())
+        {
+            VBSGetRequestHandle grh = new VBSGetRequest(m_vbs,
+                                                        1,
+                                                        &nk[0],
+                                                        nk.size(),
+                                                        NULL,
+                                                        32 * 1024,
+                                                        NULL,
+                                                        NULL);
+            grh->needy(this);
+
+            // Enqueue in all other children.
+            m_vbs.enqueue_needy_get(grh, this);
+
+            LOG(lgr, 6, m_instname << ' '
+                    << "initiate needed key request finished");
         }
         else
         {

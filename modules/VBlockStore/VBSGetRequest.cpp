@@ -74,7 +74,6 @@ VBSGetRequest::bg_complete(void const * i_keydata,
     bool do_complete = false;
     bool do_done = false;
     VBSChildSeq needy;
-
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
 
@@ -164,8 +163,6 @@ VBSGetRequest::bg_error(void const * i_keydata,
 
     bool do_complete = false;
     bool do_done = false;
-    bool do_xcopy = false;
-
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsreqmutex);
 
@@ -178,18 +175,6 @@ VBSGetRequest::bg_error(void const * i_keydata,
             // If no other child succeeded send our status.
             if (!m_succeeded)
                 do_complete = true;
-        }
-
-        // We're needy, did someone else succeed?
-        if (m_succeeded)
-        {
-            // Yes, setup a put of the data to us below.
-            do_xcopy = true;
-        }
-        else
-        {
-            // Nope, just add ourselves to the needy list.
-            m_needy.push_back(cp);
         }
     }
 
@@ -204,27 +189,12 @@ VBSGetRequest::bg_error(void const * i_keydata,
 
     if (i_exp.type() == Exception::T_NOTFOUND)
     {
-        // If we were needy and someone else found data make a
-        // cross-copy of the data.
+        // If we didn't find the block add it to our need list.
         //
         // Only do this if the error was NotFound, otherwise
         // we were canceled and we don't need to do this ...
         //
-        if (do_xcopy)
-        {
-            VBSPutRequestHandle prh = new VBSPutRequest(m_vbs,
-                                                        1,
-                                                        &m_key[0],
-                                                        m_key.size(),
-                                                        &m_blk[0],
-                                                        m_retsize,
-                                                        NULL,
-                                                        NULL);
-
-            m_vbs.insert_req(prh);
-
-            cp->enqueue_put(prh);
-        }
+        cp->needed_append_key(&m_key[0], m_key.size());
     }
 
     // This likely results in our destruction, do it last and

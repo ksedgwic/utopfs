@@ -80,7 +80,7 @@ VBlockStore::bs_open(StringSeq const & i_args)
     {
         string const & instname = i_args[ii];
         m_children.insert(make_pair(instname,
-                                    new VBSChild(m_vbsreactor, instname)));
+                                    new VBSChild(*this, m_vbsreactor, instname)));
     }
 }
 
@@ -533,6 +533,44 @@ VBlockStore::cancel_get(VBSChild * i_hadit, utp::OctetSeq const & i_key)
 
         grh->bg_error(i_key.data(), i_key.size(), &*ch, err);
     }
+}
+
+void
+VBlockStore::enqueue_needy_get(VBSGetRequestHandle const & i_grh,
+                               VBSChildHandle i_nh)
+{
+    // Fill a collection with the "other" children, who might
+    // have the item we need ...
+    //
+    vector<VBSChildHandle> others;
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+        for (VBSChildMap::const_iterator it = m_children.begin();
+             it != m_children.end();
+             ++it)
+        {
+            VBSChildHandle const & ch = it->second;
+
+            // Skip the needy kid ...
+            if (!ch.same(i_nh))
+                others.push_back(ch);
+        }
+    }
+
+    // If there are now other children we're out of luck
+    // and done, just let the request drop ...
+    //
+    if (others.empty())
+        return;
+
+    // Insert this request into our list.
+    //
+    insert_req(i_grh);
+
+    // With the lock released, enqueue the get with the others.
+    //
+    for (unsigned ii = 0; ii < others.size(); ++ii)
+        others[ii]->enqueue_get(i_grh);
 }
 
 // FIXME - Why do I have to copy this here from BlockStore.cpp?

@@ -28,7 +28,8 @@ class VBS_EXP VBSChild
     , public virtual utp::RCObj
 {
 public:
-    VBSChild(ACE_Reactor * i_reactor,
+    VBSChild(VBlockStore & i_vbs,
+             ACE_Reactor * i_reactor,
              std::string const & i_instname);
 
     virtual ~VBSChild();
@@ -67,20 +68,27 @@ public:
 
     void get_stats(utp::StatSet & o_ss) const;
 
+    void needed_append_key(void const * i_keydata, size_t i_keysize);
+
 protected:
     void initiate_requests();
 
 private:
+    typedef std::deque<utp::OctetSeq> KeyQueue;
+
+    VBlockStore &						m_vbs;
     ACE_Reactor *						m_reactor;
     std::string							m_instname;
     utp::BlockStoreHandle				m_bsh;
 
     mutable ACE_Thread_Mutex			m_chldmutex;
     bool								m_notified;
-    std::deque<VBSGetRequestHandle>		m_getreqs;
-    std::deque<VBSPutRequestHandle>		m_putreqs;
-    std::deque<VBSRequestHandle>		m_refreqs;
-    std::deque<VBSRequestHandle>		m_shereqs;
+    std::deque<VBSGetRequestHandle>		m_getreqs;	// Get Request Queue
+    std::deque<VBSPutRequestHandle>		m_putreqs;	// Put Request Queue
+    std::deque<VBSRequestHandle>		m_refreqs;	// Refresh Request Queue
+    std::deque<VBSRequestHandle>		m_shereqs;	// Signed Headnode Request Queue
+
+    KeyQueue							m_neededkeys;
 
     utp::int64							m_getcount;
     utp::int64							m_getbytes;
