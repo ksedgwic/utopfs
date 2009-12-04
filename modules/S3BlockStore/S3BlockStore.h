@@ -4,9 +4,10 @@
 /// @file S3BlockStore.h
 /// FileSystem BlockStore Instance.
 
-#include <string>
-#include <set>
+#include <iosfwd>
 #include <list>
+#include <set>
+#include <string>
 
 #include <libs3.h>
 
@@ -188,7 +189,8 @@ protected:
                              S3UriStyle & o_uri_style,
                              std::string & o_access_key_id,
                              std::string & o_secret_access_key,
-                             std::string & o_bucket_name);
+                             std::string & o_bucket_name,
+                             std::string & o_mdndx_path_name);
 
     void initiate_get_internal(AsyncGetHandlerHandle const & i_aghh);
 
@@ -213,6 +215,8 @@ protected:
 
     void write_head(utp::SignedHeadEdge const & i_she);
 
+    void parse_mdndx_entries(std::istream & i_strm, EntryTimeSet & o_ets);
+
 private:
     static bool		    		c_s3inited;
 
@@ -225,6 +229,7 @@ private:
     std::string					m_access_key_id;
     std::string					m_secret_access_key;
     std::string					m_bucket_name;
+    std::string					m_mdndx_path_name;
 
     S3BucketContext				m_buckctxt;
 

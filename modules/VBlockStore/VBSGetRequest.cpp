@@ -194,7 +194,7 @@ VBSGetRequest::bg_error(void const * i_keydata,
         // Only do this if the error was NotFound, otherwise
         // we were canceled and we don't need to do this ...
         //
-        cp->needed_append_key(&m_key[0], m_key.size());
+        cp->needed_keys_append(&m_key[0], m_key.size());
     }
 
     // This likely results in our destruction, do it last and

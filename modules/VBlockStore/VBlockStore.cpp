@@ -423,7 +423,7 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
     o_ss.set_name(m_instname);
 
     // Accumulate some stats across the request queue.
-    size_t nreqs = 0;
+    size_t nreqs = m_requests.size();
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
         for (VBSRequestSet::const_iterator it = m_requests.begin();
@@ -435,9 +435,8 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
         }
     }
 
-    Stats::set(o_ss, "nreqs", nreqs, 1.0, "%.0f", SF_VALUE);
-
     // Add a Stats subset for each of our children and fill.
+    size_t nkql = 0;
     for (VBSChildMap::const_iterator it = m_children.begin();
          it != m_children.end();
          ++it)
@@ -447,7 +446,11 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
 
         // Child blockstore itself.
         it->second->bs()->bs_get_stats(*o_ss.add_subset());
+
+        nkql += it->second->needed_keys_size();
     }
+
+    Stats::set(o_ss, "nreqs", nreqs + nkql, 1.0, "%.0f", SF_VALUE);
 }
 
 bool

@@ -68,7 +68,9 @@ public:
 
     void get_stats(utp::StatSet & o_ss) const;
 
-    void needed_append_key(void const * i_keydata, size_t i_keysize);
+    void needed_keys_append(void const * i_keydata, size_t i_keysize);
+
+    size_t needed_keys_size();
 
 protected:
     void initiate_requests();

@@ -7,6 +7,7 @@
 #include <ace/Dirent.h>
 #include <ace/Handle_Set.h>
 #include <ace/os_include/os_byteswap.h>
+#include <ace/OS_NS_sys_stat.h>
 #include <ace/Thread_Mutex.h>
 
 #include "Base32.h"
@@ -117,13 +118,15 @@ S3BlockStore::destroy(StringSeq const & i_args)
     string access_key_id;
     string secret_access_key;
     string bucket_name;
+    string mdndx_path;
 
     parse_params(i_args,
                  protocol,
                  uri_style,
                  access_key_id,
                  secret_access_key,
-                 bucket_name);
+                 bucket_name,
+                 mdndx_path);
 
     LOG(lgr, 4, "destroy " << bucket_name);
 
@@ -191,35 +194,6 @@ S3BlockStore::destroy(StringSeq const & i_args)
         marker = buckill.m_last_seen;
     }
     while (istrunc);
-
-#if 0
-    // Delete all of the keys.
-    for (unsigned i = 0; i < keys.size(); ++i)
-    {
-        LOG(lgr, 7, "deleting " << keys[i]);
-
-        for (unsigned tt = 0; tt < MAX_RETRIES; ++tt)
-        {
-            if (tt == MAX_RETRIES)
-                throwstream(InternalError, FILELINE
-                            << "too many retries");
-
-            ResponseHandler rh;
-            S3_delete_object(&buckctxt,
-                             keys[i].c_str(),
-                             NULL,
-                             &rsp_tramp,
-                             &rh);
-            st = rh.wait();
-            if (st == S3StatusOK)
-                break;
-
-            // Sigh ... these we retry a few times ...
-            LOG(lgr, 3, "delete_keys " << bucket_name
-                << " ERROR: " << st << " RETRYING");
-        }
-    }
-#endif
 
     // Delete the bucket.
     ResponseHandler rh2;
@@ -648,160 +622,153 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     istrm >> m_size;
     LOG(lgr, 4, m_instname << ' ' << "bs_open size=" << m_size);
 
-    // Inventory all existing blocks, insert into entries and
-    // time-sorted entries sets.
-    //
-    LOG(lgr, 4, m_instname << ' ' << "bs_open listing blocks");
     EntryTimeSet ets;
-    string marker = "";
-    bool istrunc = false;
-    do
+
+    // Do we have a saved MDNDX file?
+    ACE_stat sbuf;
+    int rv = ACE_OS::stat(m_mdndx_path_name.c_str(), &sbuf);
+    if (rv == 0 && S_ISREG(sbuf.st_mode))
     {
-        EntryListHandler elh(m_entries, ets);
-
-        for (unsigned i = 0; i < MAX_RETRIES; ++i)
-        {
-            if (i == MAX_RETRIES)
-                throwstream(InternalError, FILELINE
-                            << "too many retries");
-
-            S3_list_bucket(&m_buckctxt,
-                           "BLOCKS/",
-                           marker.empty() ? NULL : marker.c_str(),
-                           NULL,
-                           INT_MAX,
-                           NULL,
-                           &lst_tramp,
-                           &elh);
-            st = elh.wait();
-
-            if (st == S3StatusOK)
-                break;
-
-            if (!S3_status_is_retryable(st))
-                throwstream(InternalError, FILELINE
-                            << "Unretryable S3 error: " << st);
-
-            // Sigh ... these we retry a few times ...
-            LOG(lgr, 3, "list_blocks " << m_bucket_name
-                << " ERROR: " << st << " RETRYING");
-        }
-
-        istrunc = elh.m_istrunc;
-        marker = elh.m_last_seen;
-
+        // We have a saved file, use that.
         LOG(lgr, 4, m_instname << ' '
-            << "bs_open listed " << m_entries.size() << " blocks");
+            << "bs_open using saved MDNDX: " << m_mdndx_path_name);
+        ifstream mdni(m_mdndx_path_name.c_str());
+        parse_mdndx_entries(mdni, ets);
     }
-    while (istrunc);
-
-    LOG(lgr, 4, m_instname << ' '
-        << "bs_open saw " << m_entries.size() << " blocks");
-
-    // Figure out the size of the MDNDX file.
-    ssize_t mdndxsz = -1;
-    for (unsigned ii = 0; ii < MAX_RETRIES; ++ii)
+    else
     {
-        if (ii == MAX_RETRIES)
-            throwstream(InternalError, FILELINE
-                        << "too many retries");
+        LOG(lgr, 4, m_instname << ' '
+            << "bs_open attempting to download MDNDX");
 
-        ResponseHandler rh;
-        S3_head_object(&m_buckctxt,
-                       "MDNDX",
-                       NULL,
-                       &rsp_tramp,
-                       &rh);
-        S3Status st = rh.wait();
-        if (st == S3StatusOK)
-        {
-            mdndxsz = rh.m_content_length;
-            LOG(lgr, 4, m_instname << ' ' << "MDNDX " << mdndxsz << " bytes");
-            break;
-        }
-
-        if (st == S3StatusHttpErrorNotFound)
-        {
-            // This is OK, we just don't have a MDNDX file.
-            LOG(lgr, 4, m_instname << ' ' << "no MDNDX file found");
-            break;
-        }
-
-        // Sigh ... these we retry a few times ...
-        LOG(lgr, 3, "mdndx head " << m_bucket_name
-            << " ERROR: " << st << " RETRYING");
-    }
-
-    if (mdndxsz != -1)
-    {
-        LOG(lgr, 4, m_instname << ' ' << "reading MDNDX");
-
-        // Read the mdndx into a buffer.
-        string mdndxbuf(mdndxsz, '\0');
+        // Figure out the size of the MDNDX file.
+        ssize_t mdndxsz = -1;
         for (unsigned ii = 0; ii < MAX_RETRIES; ++ii)
         {
             if (ii == MAX_RETRIES)
                 throwstream(InternalError, FILELINE
                             << "too many retries");
 
-            GetHandler gh2((uint8 *) &mdndxbuf[0], mdndxbuf.size());
-
-            S3_get_object(&m_buckctxt,
-                          "MDNDX",
-                          &gc,
-                          0,
-                          0,
-                          NULL,
-                          &get_tramp,
-                          &gh2);
-        
-            S3Status st = gh2.wait();
+            ResponseHandler rh;
+            S3_head_object(&m_buckctxt,
+                           "MDNDX",
+                           NULL,
+                           &rsp_tramp,
+                           &rh);
+            S3Status st = rh.wait();
             if (st == S3StatusOK)
             {
-                LOG(lgr, 4, m_instname << ' ' << "done reading MDNDX");
+                mdndxsz = rh.m_content_length;
+                LOG(lgr, 4, m_instname << ' '
+                    << "MDNDX " << mdndxsz << " bytes");
+                break;
+            }
+
+            if (st == S3StatusHttpErrorNotFound)
+            {
+                // This is OK, we just don't have a MDNDX file.
+                LOG(lgr, 4, m_instname << ' ' << "no MDNDX file found");
                 break;
             }
 
             // Sigh ... these we retry a few times ...
-            LOG(lgr, 3, "mdndx get " << m_bucket_name
+            LOG(lgr, 3, "mdndx head " << m_bucket_name
                 << " ERROR: " << st << " RETRYING");
         }
 
-        MDIndex mdndx;
-        if (!mdndx.ParseFromString(mdndxbuf))
-            throwstream(InternalError, FILELINE << "trouble parsing MDNDX");
-
-        LOG(lgr, 4, m_instname << ' '
-            << "parsed " << mdndx.mdentry_size() << " MDNDX entries");
-
-        int32_t timeoff = mdndx.has_timeoff() ? mdndx.timeoff() : 0;
-        for (int ii = 0; ii < mdndx.mdentry_size(); ++ii)
+        if (mdndxsz != -1)
         {
-            string const & name = mdndx.mdentry(ii).name();
-            int32_t mtime = timeoff + mdndx.mdentry(ii).mtime();
+            LOG(lgr, 4, m_instname << ' ' << "reading MDNDX");
 
-            EntryHandle eh = new Entry(name, 0, 0);
-            EntrySet::const_iterator pos = m_entries.find(eh);
-            if (pos == m_entries.end())
+            // Read the mdndx into a buffer.
+            string mdndxbuf(mdndxsz, '\0');
+            for (unsigned ii = 0; ii < MAX_RETRIES; ++ii)
             {
-                // If this is the MARK insert it special.
-                if (name == "MARK")
+                if (ii == MAX_RETRIES)
+                    throwstream(InternalError, FILELINE
+                                << "too many retries");
+
+                GetHandler gh2((uint8 *) &mdndxbuf[0], mdndxbuf.size());
+
+                S3_get_object(&m_buckctxt,
+                              "MDNDX",
+                              &gc,
+                              0,
+                              0,
+                              NULL,
+                              &get_tramp,
+                              &gh2);
+        
+                S3Status st = gh2.wait();
+                if (st == S3StatusOK)
                 {
-                    EntryHandle eh = new Entry(name, mtime, 0);
-                    m_entries.insert(eh);
-                    ets.insert(eh);
+                    LOG(lgr, 4, m_instname << ' ' << "done reading MDNDX");
+                    break;
                 }
-                else
-                {
-                    LOG(lgr, 2, "expected entry \"" << name << "\" missing");
-                }
+
+                // Sigh ... these we retry a few times ...
+                LOG(lgr, 3, "mdndx get " << m_bucket_name
+                    << " ERROR: " << st << " RETRYING");
             }
-            else
+
+            istringstream istrm(mdndxbuf);
+            parse_mdndx_entries(istrm, ets);
+        }
+        else
+        {
+            // We are pretty sad here, have to list all of the blocks.
+            LOG(lgr, 4, m_instname << ' '
+            << "bs_open enumerating all blocks for MDNDX");
+            
+            // Inventory all existing blocks, insert into entries and
+            // time-sorted entries sets.
+            //
+            LOG(lgr, 4, m_instname << ' ' << "bs_open listing blocks");
+            string marker = "";
+            bool istrunc = false;
+            do
             {
-                (*pos)->m_tstamp = mtime;
+                EntryListHandler elh(m_entries, ets);
+
+                for (unsigned i = 0; i < MAX_RETRIES; ++i)
+                {
+                    if (i == MAX_RETRIES)
+                        throwstream(InternalError, FILELINE
+                                    << "too many retries");
+
+                    S3_list_bucket(&m_buckctxt,
+                                   "BLOCKS/",
+                                   marker.empty() ? NULL : marker.c_str(),
+                                   NULL,
+                                   INT_MAX,
+                                   NULL,
+                                   &lst_tramp,
+                                   &elh);
+                    st = elh.wait();
+
+                    if (st == S3StatusOK)
+                        break;
+
+                    if (!S3_status_is_retryable(st))
+                        throwstream(InternalError, FILELINE
+                                    << "Unretryable S3 error: " << st);
+
+                    // Sigh ... these we retry a few times ...
+                    LOG(lgr, 3, "list_blocks " << m_bucket_name
+                        << " ERROR: " << st << " RETRYING");
+                }
+
+                istrunc = elh.m_istrunc;
+                marker = elh.m_last_seen;
+
+                LOG(lgr, 4, m_instname << ' '
+                    << "bs_open listed " << m_entries.size() << " blocks");
             }
+            while (istrunc);
         }
     }
+
+    LOG(lgr, 4, m_instname << ' '
+        << "bs_open saw " << m_entries.size() << " blocks");
 
     // Unroll the ordered set into the LRU list from recent to oldest.
     //
@@ -848,8 +815,8 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     // Accumulate a list of all the signed edges
     LOG(lgr, 4, m_instname << ' ' << "reading EDGES");
     StringSeq edgekeys;
-    marker = "";
-    istrunc = false;
+    string marker = "";
+    bool istrunc = false;
     do
     {
         EdgeListHandler elh(edgekeys);
@@ -1023,72 +990,6 @@ S3BlockStore::bs_sync()
     LOG(lgr, 6, m_instname << ' ' << "bs_sync finished");
 }
 
-#if 0
-void
-S3BlockStore::bs_block_get_async(void const * i_keydata,
-                                 size_t i_keysize,
-                                 void * o_buffdata,
-                                 size_t i_buffsize,
-                                 BlockGetCompletion & i_cmpl,
-                                 void const * i_argp)
-    throw(InternalError,
-          ValueError)
-{
-    try
-    {
-        string entry = entryname(i_keydata, i_keysize);
-        string blkpath = blockpath(entry);
-
-        LOG(lgr, 6, m_instname << ' '
-            << "bs_block_get " << entry.substr(0, 8) << "...");
-
-        // Do we have this block?
-        {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
-            EntryHandle meh = new Entry(blkpath, 0, 0);
-            EntrySet::const_iterator pos = m_entries.find(meh);
-            if (pos == m_entries.end())
-                throwstream(NotFoundError,
-                            "key \"" << blkpath << "\" not in entries");
-        }
-            
-        S3GetConditions gc;
-        gc.ifModifiedSince = -1;
-        gc.ifNotModifiedSince = -1;
-        gc.ifMatchETag = NULL;
-        gc.ifNotMatchETag = NULL;
-
-        GetHandler gh((uint8 *) o_buffdata, i_buffsize);
-
-        S3_get_object(&m_buckctxt,
-                      blkpath.c_str(),
-                      &gc,
-                      0,
-                      0,
-                      NULL,
-                      &get_tramp,
-                      &gh);
-
-        S3Status st = gh.wait();
-
-        if (st == S3StatusErrorNoSuchKey)
-            throwstream(NotFoundError,
-                        "key \"" << blkpath << "\" not found");
-
-        if (st != S3StatusOK)
-            throwstream(InternalError, FILELINE
-                        << "Unexpected S3 error: " << st);
-
-        i_cmpl.bg_complete(i_keydata, i_keysize, i_argp, gh.size());
-    }
-    catch (Exception const & ex)
-    {
-        i_cmpl.bg_error(i_keydata, i_keysize, i_argp, ex);
-    }
-}
-#endif
-
 void
 S3BlockStore::bs_block_get_async(void const * i_keydata,
                                  size_t i_keysize,
@@ -1137,142 +1038,6 @@ S3BlockStore::bs_block_get_async(void const * i_keydata,
         i_cmpl.bg_error(i_keydata, i_keysize, i_argp, ex);
     }
 }
-
-#if 0
-void
-S3BlockStore::bs_block_put_async(void const * i_keydata,
-                                 size_t i_keysize,
-                                 void const * i_blkdata,
-                                 size_t i_blksize,
-                                 BlockPutCompletion & i_cmpl,
-                                 void const * i_argp)
-    throw(InternalError,
-          ValueError)
-{
-    try
-    {
-        string entry = entryname(i_keydata, i_keysize);
-        string blkpath = blockpath(entry);
-
-        LOG(lgr, 6, m_instname << ' '
-            << "bs_block_put " << entry.substr(0, 8) << "...");
-
-        // Do we alerady have this block?
-        bool alreadyhave = false;
-        {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
-            EntryHandle meh = new Entry(blkpath, 0, 0);
-            EntrySet::const_iterator pos = m_entries.find(meh);
-            if (pos != m_entries.end())
-                alreadyhave = true;
-        }
-
-        if (alreadyhave)
-        {
-            i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
-        }
-
-        // We need to determine the current size of the block
-        // if it already exists.
-        //
-        off_t prevsize = 0;
-        bool wascommitted = true;
-        {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-
-            EntryHandle meh = new Entry(blkpath, 0, 0);
-            EntrySet::const_iterator pos = m_entries.find(meh);
-            if (pos != m_entries.end())
-            {
-                prevsize = (*pos)->m_size;
-
-                // Is this block older then the MARK?
-                if (m_mark && m_mark->m_tstamp > (*pos)->m_tstamp)
-                    wascommitted = false;
-            }
-        }
-
-        off_t prevcommited = 0;
-        if (wascommitted)
-            prevcommited = prevsize;
-
-        // How much space will be available for this block?
-        off_t avail;
-        {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-            avail = m_size - m_committed + prevcommited;
-        }
-
-        if (off_t(i_blksize) > avail)
-            throwstream(NoSpaceError,
-                        "insufficent space: "
-                        << avail << " bytes avail, needed " << i_blksize);
-
-        // Do we need to remove uncommitted blocks to make room for this
-        // block?
-        {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-            while (m_committed + off_t(i_blksize) +
-                   m_uncommitted - prevcommited > m_size)
-                purge_uncommitted();
-        }
-            
-        MD5 md5sum(i_blkdata, i_blksize);
-        S3PutProperties pp;
-        ACE_OS::memset(&pp, '\0', sizeof(pp));
-        pp.md5 = md5sum;
-
-        for (unsigned i = 0; i <= MAX_RETRIES; ++i)
-        {
-            if (i == MAX_RETRIES)
-                throwstream(InternalError, FILELINE
-                            << "too many retries");
-
-            PutHandler ph((uint8 const *) i_blkdata, i_blksize);
-            S3_put_object(&m_buckctxt,
-                          blkpath.c_str(),
-                          i_blksize,
-                          &pp,
-                          NULL,
-                          &put_tramp,
-                          &ph);
-            S3Status st = ph.wait();
-
-            if (st == S3StatusOK)
-                break;
-
-            LOG(lgr, 3, m_instname << ' '
-                << "bs_block_put_async " << entry.substr(0, 8) << "..."
-                << " ERROR: " << st << ", RETRYING");
-        }
-
-        time_t mtime = time(NULL);
-        off_t size = i_blksize;
-
-        {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
-            // First remove the prior block from the stats.
-            if (wascommitted)
-                m_committed -= prevsize;
-            else
-                m_uncommitted -= prevsize;
-
-            // Add the new block to the stats.
-            m_committed += size;
-
-            // Update the entries.
-            touch_entry(blkpath, mtime, size, true);
-        }
-
-        i_cmpl.bp_complete(i_keydata, i_keysize, i_argp);
-    }
-    catch (Exception const & ex)
-    {
-        i_cmpl.bp_error(i_keydata, i_keysize, i_argp, ex);
-    }
-}
-#endif
 
 void
 S3BlockStore::bs_block_put_async(void const * i_keydata,
@@ -1583,6 +1348,11 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
         LOG(lgr, 4, m_instname << ' '
             << "writing MDNDX, size " << mdndxbuf.size());
 
+        // Write it in a plain file.
+        ofstream mdno(m_mdndx_path_name.c_str());
+        mdno.write(mdndxbuf.data(), mdndxbuf.size());
+        mdno.close();
+
         // Update the MARKNAME file.
         MD5 md5sum(&mdndxbuf[0], mdndxbuf.size());
         S3PutProperties pp;
@@ -1824,7 +1594,8 @@ S3BlockStore::parse_params(StringSeq const & i_args,
                            S3UriStyle & o_uri_style,
                            string & o_access_key_id,
                            string & o_secret_access_key,
-                           string & o_bucket_name)
+                           string & o_bucket_name,
+                           string & o_mdndx_path_name)
 {
     // For now just assign these
     o_protocol = S3ProtocolHTTP;
@@ -1834,6 +1605,7 @@ S3BlockStore::parse_params(StringSeq const & i_args,
     string const KEY_ID = "--s3-access-key-id=";
     string const SECRET = "--s3-secret-access-key=";
     string const BUCKET = "--bucket=";
+    string const MDNDX_PATH = "--mdndx-path=";
 
     for (unsigned i = 0; i < i_args.size(); ++i)
     {
@@ -1845,6 +1617,9 @@ S3BlockStore::parse_params(StringSeq const & i_args,
 
         else if (i_args[i].find(BUCKET) == 0)
             o_bucket_name = i_args[i].substr(BUCKET.length());
+
+        else if (i_args[i].find(MDNDX_PATH) == 0)
+            o_mdndx_path_name = i_args[i].substr(MDNDX_PATH.length());
 
         else
             throwstream(ValueError,
@@ -1859,6 +1634,9 @@ S3BlockStore::parse_params(StringSeq const & i_args,
 
     if (o_bucket_name.empty())
         throwstream(ValueError, "S3BS parameter " << BUCKET << " missing");
+
+    if (o_mdndx_path_name.empty())
+        throwstream(ValueError, "S3BS parameter " << MDNDX_PATH << " missing");
 
     // Perform one-time initialization.
     if (!c_s3inited)
@@ -2046,7 +1824,8 @@ S3BlockStore::setup_params(StringSeq const & i_args)
                  m_uri_style,
                  m_access_key_id,
                  m_secret_access_key,
-                 m_bucket_name);
+                 m_bucket_name,
+                 m_mdndx_path_name);
 
     // Fill the bucket context w/ contents of the other fields.
     m_buckctxt.bucketName = m_bucket_name.c_str();
@@ -2209,6 +1988,48 @@ S3BlockStore::write_head(SignedHeadEdge const & i_she)
     }
 
     throwstream(InternalError, FILELINE << "too many retries");
+}
+
+void
+S3BlockStore::parse_mdndx_entries(istream & i_strm, EntryTimeSet & o_ets)
+{
+    MDIndex mdndx;
+    if (!mdndx.ParseFromIstream(&i_strm))
+        throwstream(InternalError, FILELINE << "trouble parsing MDNDX");
+
+    LOG(lgr, 4, m_instname << ' '
+        << "parsed " << mdndx.mdentry_size() << " MDNDX entries");
+
+    int32_t timeoff = mdndx.has_timeoff() ? mdndx.timeoff() : 0;
+    for (int ii = 0; ii < mdndx.mdentry_size(); ++ii)
+    {
+        string const & name = mdndx.mdentry(ii).name();
+        int32_t mtime = timeoff + mdndx.mdentry(ii).mtime();
+
+        EntryHandle eh = new Entry(name, 0, 0);
+        EntrySet::const_iterator pos = m_entries.find(eh);
+        if (pos != m_entries.end())
+        {
+            // It's an existing entry, just update the time.
+            (*pos)->m_tstamp = mtime;
+        }
+        else
+        {
+            // If this is the MARK insert it special.
+            if (name == "MARK")
+            {
+                EntryHandle eh = new Entry(name, mtime, 0);
+                m_entries.insert(eh);
+                o_ets.insert(eh);
+            }
+            else
+            {
+                // Insert normal entries.
+                m_entries.insert(eh);
+                o_ets.insert(eh);
+            }
+        }
+    }
 }
 
 // FIXME - Why do I have to copy this here from BlockStore.cpp?

@@ -227,12 +227,20 @@ VBSChild::get_stats(StatSet & o_ss) const
 }
 
 void
-VBSChild::needed_append_key(void const * i_keydata, size_t i_keysize)
+VBSChild::needed_keys_append(void const * i_keydata, size_t i_keysize)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);
     m_neededkeys.push_back(OctetSeq((uint8 const *) i_keydata,
                                     (uint8 const *) i_keydata + i_keysize));
 }
+
+size_t
+VBSChild::needed_keys_size()
+{
+    ACE_Guard<ACE_Thread_Mutex> guard(m_chldmutex);    
+    return m_neededkeys.size();
+}
+
 
 void
 VBSChild::initiate_requests()

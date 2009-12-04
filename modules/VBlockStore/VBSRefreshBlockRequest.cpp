@@ -133,7 +133,7 @@ VBSRefreshBlockRequest::rb_missing(void const * i_keydata,
 
     // Add this key to the child's needed list ...
     //
-    cp->needed_append_key(i_keydata, i_keysize);
+    cp->needed_keys_append(i_keydata, i_keysize);
 
     // This likely results in our destruction, do it last and
     // don't touch anything afterwards!
