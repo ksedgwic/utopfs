@@ -149,6 +149,8 @@ VBlockStore::bs_sync()
 {
     LOG(lgr, 6, m_instname << ' ' << "bs_sync starting");
 
+    ++m_nwaitsyn;
+
     bool clean;
     do
     {
@@ -177,6 +179,8 @@ VBlockStore::bs_sync()
         }
     }
     while (!clean);
+
+    --m_nwaitsyn;
 
     LOG(lgr, 6, m_instname << ' ' << "bs_sync finished");
 }
@@ -421,6 +425,9 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
 {
     // Fill the name field in.
     o_ss.set_name(m_instname);
+
+    // Base class stats.
+    BlockStore::bs_get_stats(o_ss);
 
     // Accumulate some stats across the request queue.
     size_t nreqs = m_requests.size();

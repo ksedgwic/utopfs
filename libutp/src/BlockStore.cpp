@@ -3,6 +3,7 @@
 #include "Base32.h"
 #include "Except.h"
 #include "BlockStore.h"
+#include "Stats.h"
 
 #include <ace/Condition_Thread_Mutex.h>
 #include <ace/Thread_Mutex.h>
@@ -316,6 +317,15 @@ string mkstring(HeadNode const & i_hn)
     return pt1.substr(off1) + ':' + pt2.substr(off2);
 }
 
+BlockStore::BlockStore()
+    : m_nwaitget(0)
+    , m_nwaitput(0)
+    , m_nwaitrfr(0)
+    , m_nwaithed(0)
+    , m_nwaitsyn(0)
+{
+}
+
 BlockStore::~BlockStore()
 {
 }
@@ -333,10 +343,12 @@ BlockStore::bs_block_get(void const * i_keydata,
     GetCompletion gc;
 
     // Initiate the asynchrounous get.
-     bs_block_get_async(i_keydata, i_keysize, o_outbuff, i_outsize, gc, NULL);
+    bs_block_get_async(i_keydata, i_keysize, o_outbuff, i_outsize, gc, NULL);
 
     // Wait for completion.
+    ++m_nwaitget;
     gc.wait();
+    --m_nwaitget;
 
     // If there was an exception, throw it.
     if (gc.is_error())
@@ -362,7 +374,9 @@ BlockStore::bs_block_put(void const * i_keydata,
     bs_block_put_async(i_keydata, i_keysize, i_blkdata, i_blksize, pc, NULL);
 
     // Wait for completion.
+    ++m_nwaitput;
     pc.wait();
+    --m_nwaitput;
 
     // If there was an exception, throw it.
     if (pc.is_error())
@@ -381,7 +395,9 @@ BlockStore::bs_refresh_start(uint64 i_rid)
     bs_refresh_start_async(i_rid, rsc, NULL);
 
     // Wait for completion.
+    ++m_nwaitrfr;
     rsc.wait();
+    --m_nwaitrfr;
 
     // If there was an exception, throw it.
     if (rsc.is_error())
@@ -404,7 +420,9 @@ BlockStore::bs_refresh_blocks(uint64 i_rid,
                                i_keys[i].size(), rbc, NULL);
 
     // Wait for completion.
+    ++m_nwaitrfr;
     rbc.wait();
+    --m_nwaitrfr;
 
     // If there was an exception, throw it.
     if (rbc.is_error())
@@ -423,7 +441,9 @@ BlockStore::bs_refresh_finish(uint64 i_rid)
     bs_refresh_finish_async(i_rid, rfc, NULL);
 
     // Wait for completion.
+    ++m_nwaitrfr;
     rfc.wait();
+    --m_nwaitrfr;
 
     // If there was an exception, throw it.
     if (rfc.is_error())
@@ -441,7 +461,9 @@ BlockStore::bs_head_insert(SignedHeadEdge const & i_she)
     bs_head_insert_async(i_she, ic, NULL);
 
     // Wait for completion.
+    ++m_nwaithed;
     ic.wait();
+    --m_nwaithed;
 
     // If there was an exception, throw it.
     if (ic.is_error())
@@ -461,7 +483,9 @@ BlockStore::bs_head_follow(HeadNode const & i_hn,
     bs_head_follow_async(i_hn, etc, NULL);
 
     // Wait for completion.
+    ++m_nwaithed;
     etc.wait();
+    --m_nwaithed;
 
     // If there was an exception, throw it.
     if (etc.is_error())
@@ -481,11 +505,23 @@ BlockStore::bs_head_furthest(HeadNode const & i_hn,
     bs_head_furthest_async(i_hn, ntc, NULL);
 
     // Wait for completion.
+    ++m_nwaithed;
     ntc.wait();
+    --m_nwaithed;
 
     // If there was an exception, throw it.
     if (ntc.is_error())
         ntc.rethrow();
+}
+
+void
+BlockStore::bs_get_stats(StatSet & o_ss) const
+        throw(InternalError)
+{
+    Stats::set(o_ss, "nwaitget", m_nwaitget.value(), 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "nwaitput", m_nwaitput.value(), 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "nwaitrfr", m_nwaitrfr.value(), 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "nwaithed", m_nwaithed.value(), 1.0, "%.0f", SF_VALUE);
 }
 
 } // end namespace utp

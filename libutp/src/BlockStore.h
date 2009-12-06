@@ -49,6 +49,10 @@ public:
     /// Sequence of Signed Head Edges
     typedef std::deque<SignedHeadEdge> SignedHeadEdgeSeq;
 
+    /// Default Constructor
+    ///
+    BlockStore();
+
     /// Destructor
     ///
     virtual ~BlockStore();
@@ -476,10 +480,13 @@ public:
                                         void const * i_argp)
         throw(InternalError) = 0;
 
-    /// Fetch statistics
+    /// Fetch internal statistics.
+    ///
+    /// Note - This function is not pure virtual, call it to add some
+    /// base class stats ...
     ///
     virtual void bs_get_stats(StatSet & o_ss) const
-        throw(InternalError) = 0;
+        throw(InternalError);
 
     /// Returns true if blockstore is saturated (busy).  When the
     /// blockstore is saturated no further async work should be
@@ -505,6 +512,14 @@ public:
     virtual void bs_register_unsathandler(UnsaturatedHandler * i_handler,
                                           void const * i_argp)
         throw(InternalError) = 0;
+
+protected:
+    utp::AtomicLong				m_nwaitget;	// Number blocked gets
+    utp::AtomicLong				m_nwaitput;	// Number blocked puts
+    utp::AtomicLong				m_nwaitrfr;	// Number blocked refresh ops
+    utp::AtomicLong				m_nwaithed;	// Number blocked head ops
+    utp::AtomicLong				m_nwaitsyn;	// Number blocked syncs
+    
 };
 
 } // end namespace utp
