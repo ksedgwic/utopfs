@@ -522,6 +522,7 @@ BlockStore::bs_get_stats(StatSet & o_ss) const
     Stats::set(o_ss, "nwaitput", m_nwaitput.value(), 1.0, "%.0f", SF_VALUE);
     Stats::set(o_ss, "nwaitrfr", m_nwaitrfr.value(), 1.0, "%.0f", SF_VALUE);
     Stats::set(o_ss, "nwaithed", m_nwaithed.value(), 1.0, "%.0f", SF_VALUE);
+    Stats::set(o_ss, "nwaitsyn", m_nwaitsyn.value(), 1.0, "%.0f", SF_VALUE);
 }
 
 } // end namespace utp
