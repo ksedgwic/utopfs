@@ -10,6 +10,10 @@
 #include <ace/OS_NS_sys_stat.h>
 #include <ace/Thread_Mutex.h>
 
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+
 #include "Base32.h"
 #include "Base64.h"
 #include "BlockStoreFactory.h"
@@ -1325,7 +1329,7 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
             m_committed = committed;
             m_uncommitted = uncommitted;
         }
-        
+
         // Create an mdndx protocol buffer from our entries set.
         MDIndex mdndx;
         {
@@ -2003,8 +2007,16 @@ S3BlockStore::write_head(SignedHeadEdge const & i_she)
 void
 S3BlockStore::parse_mdndx_entries(istream & i_strm, EntryTimeSet & o_ets)
 {
+    // Have to create an explicit CodedInputStream so we can change
+    // the default byte count limit ...
+    //
+    google::protobuf::io::IstreamInputStream iis(&i_strm);
+    google::protobuf::io::CodedInputStream cis(&iis);
+    int limitbytes = 512 * 1024 * 1024;
+    cis.SetTotalBytesLimit(limitbytes, limitbytes);
+
     MDIndex mdndx;
-    if (!mdndx.ParseFromIstream(&i_strm))
+    if (!mdndx.ParseFromCodedStream(&cis))
         throwstream(InternalError, FILELINE << "trouble parsing MDNDX");
 
     LOG(lgr, 4, m_instname << ' '
