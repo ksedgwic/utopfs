@@ -774,12 +774,16 @@ S3BlockStore::bs_open(StringSeq const & i_args)
     //
     off_t committed = 0;
     off_t uncommitted = 0;
+    size_t npresent = 0;
     bool mark_seen = false;
     for (EntryTimeSet::reverse_iterator rit = ets.rbegin();
          rit != ets.rend();
          ++rit)
     {
         EntryHandle const & eh = *rit;
+
+        if (eh->m_size > 0)
+            ++npresent;
 
         m_lru.push_back(eh);
 
@@ -806,6 +810,9 @@ S3BlockStore::bs_open(StringSeq const & i_args)
             }
         }
     }
+
+    LOG(lgr, 4, m_instname << ' '
+        << "bs_open saw " << npresent << " present blocks");
 
     m_committed = committed;
     m_uncommitted = uncommitted;
@@ -1148,9 +1155,6 @@ S3BlockStore::bs_refresh_start_async(uint64 i_rid,
  
         LOG(lgr, 6, m_instname << ' ' << "bs_refresh_start " << rname);
 
-        time_t mtime = time(NULL);
-        off_t size = 0;
-
         {
             ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
 
@@ -1162,7 +1166,7 @@ S3BlockStore::bs_refresh_start_async(uint64 i_rid,
                             "refresh id " << i_rid << " already exists");
 
             // Create the refresh_id entry.
-            touch_entry(rpath, mtime, size, true);
+            touch_entry(rpath, time(NULL), -1, true);
         }
 
         i_cmpl.rs_complete(i_rid, i_argp);
@@ -1189,14 +1193,14 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     string rname = ridname(i_rid);
     string rpath = blockpath(rname);
 
-    // Make sure our refresh entry is here.
+    // Do we have the refresh marker?
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
         EntryHandle reh = new Entry(rpath, 0, 0);
         EntrySet::const_iterator pos = m_entries.find(reh);
         if (pos == m_entries.end())
             throwstream(NotFoundError,
-                        "refresh id " << i_rid << " not found"); 
+                        "refresh id " << i_rid << " not found");
     }
 
     string entry = entryname(i_keydata, i_keysize);
@@ -1205,14 +1209,11 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
     LOG(lgr, 6, m_instname << ' '
         << "refreshing " << entry.substr(0,8) << "...");
 
-    time_t mtime = time(NULL);
-    off_t size = -1;
-
     bool found;
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_s3bsmutex);
         // Update the entries, don't create new ones.
-        found = touch_entry(blkpath, mtime, size, false);
+        found = touch_entry(blkpath, time(NULL), 0, false);
     }
 
     if (!found)
@@ -1336,6 +1337,8 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
                 MDEntry * mdep = mdndx.add_mdentry();
                 mdep->set_name((*it)->m_name);
                 mdep->set_mtime((*it)->m_tstamp);
+                if ((*it)->m_size)
+                    mdep->set_size((*it)->m_size);
             }
         }
 
@@ -1857,6 +1860,8 @@ S3BlockStore::touch_entry(std::string const & i_entry,
 {
     // IMPORTANT - This routine presumes you already hold the mutex.
 
+    bool retval = true;
+
     // Do we already have this entry in the table?
     EntryHandle eh = new Entry(i_entry, i_mtime, i_size);
     EntrySet::const_iterator pos = m_entries.find(eh);
@@ -1882,15 +1887,20 @@ S3BlockStore::touch_entry(std::string const & i_entry,
         // Remove from current location in LRU list.
         m_lru.erase(eh->m_listpos);
 
-        // Update tstamp.
+        // Update values.
         eh->m_tstamp = i_mtime;
+        if (i_size)
+            eh->m_size = i_size;
+
+        // If we don't have a size then we don't have the block.
+        retval = eh->m_size > 0;
     }
 
     // Reinsert at the recent end of the LRU list.
     m_lru.push_front(eh);
     eh->m_listpos = m_lru.begin();
 
-    return true;
+    return retval;
 }
 
 void
@@ -2005,13 +2015,17 @@ S3BlockStore::parse_mdndx_entries(istream & i_strm, EntryTimeSet & o_ets)
     {
         string const & name = mdndx.mdentry(ii).name();
         int32_t mtime = timeoff + mdndx.mdentry(ii).mtime();
+        uint32_t size = mdndx.mdentry(ii).has_size() ?
+            mdndx.mdentry(ii).size() : 0;
 
-        EntryHandle eh = new Entry(name, 0, 0);
+        EntryHandle eh = new Entry(name, mtime, size);
         EntrySet::const_iterator pos = m_entries.find(eh);
         if (pos != m_entries.end())
         {
             // It's an existing entry, just update the time.
             (*pos)->m_tstamp = mtime;
+            if (size)
+                (*pos)->m_size = size;
         }
         else
         {

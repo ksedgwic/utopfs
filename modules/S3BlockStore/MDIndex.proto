@@ -4,6 +4,7 @@ message MDEntry
 {
     required string		name	= 1;
     optional uint32		mtime	= 2;
+    optional uint32		size	= 3;
 }
 
 message MDIndex
