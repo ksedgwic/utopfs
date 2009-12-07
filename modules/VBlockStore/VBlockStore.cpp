@@ -466,7 +466,7 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
     }
 
     Stats::set(o_ss, "nreqs", nreqs + nkql, 1.0, "%.0f", SF_VALUE);
-    Stats::set(o_ss, "rps", -int64_t(nreqs + nkql), 1.0, "%.0f", SF_DELTA);
+    Stats::set(o_ss, "dnreqs", int64_t(nreqs + nkql), 1.0, "%.0f", SF_DELTA);
 }
 
 bool
