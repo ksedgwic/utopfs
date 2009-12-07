@@ -430,15 +430,23 @@ VBlockStore::bs_get_stats(StatSet & o_ss) const
     BlockStore::bs_get_stats(o_ss);
 
     // Accumulate some stats across the request queue.
-    size_t nreqs = m_requests.size();
+    size_t nreqs = 0;
     {
         ACE_Guard<ACE_Thread_Mutex> guard(m_vbsmutex);
+
+        nreqs = m_requests.size();
+            
+        // The reason we iterate instead of just calling
+        // m_requests.size() is so we have a place to set breakpoints
+        // in the debugger and see the whole request queue.
+
         for (VBSRequestSet::const_iterator it = m_requests.begin();
              it != m_requests.end();
              ++it)
         {
-            // BREAK here to see the VBS request queue.
-            ++nreqs;
+            VBSRequestHandle const & rqh = *it;
+            // BREAK here to see the VBS request queue items.
+            (void) rqh;
         }
     }
 

@@ -99,7 +99,10 @@ public:
                           void const * i_argp,
                           Exception const & i_ex)
     {
-        m_except = i_ex.clone();
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_except = i_ex.clone();
+        }
         done();
     }
 };
@@ -122,7 +125,10 @@ public:
                           void const * i_argp,
                           Exception const & i_ex)
     {
-        m_except = i_ex.clone();
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_except = i_ex.clone();
+        }
         done();
     }
 
@@ -144,7 +150,13 @@ public:
                              size_t i_keysize,
                              void const * i_argp)
     {
-        if (--m_count == 0)
+        bool isdone = false;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            if (--m_count == 0)
+                isdone = true;
+        }
+        if (isdone)
             done();
     }
 
@@ -152,9 +164,17 @@ public:
                             size_t i_keysize,
                             void const * i_argp)
     {
-        m_missing.push_back(OctetSeq((uint8 const *) i_keydata,
-                                     (uint8 const *) i_keydata + i_keysize));
-        if (--m_count == 0)
+        bool isdone = false;
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+
+            m_missing.push_back(OctetSeq((uint8 const *) i_keydata,
+                                         (uint8 const *) i_keydata + i_keysize));
+
+            if (--m_count == 0)
+                isdone = true;
+        }
+        if (isdone)
             done();
     }
 
@@ -181,7 +201,10 @@ public:
                           void const * i_argp,
                           Exception const & i_ex)
     {
-        m_except = i_ex.clone();
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_except = i_ex.clone();
+        }
         done();
     }
 
@@ -203,7 +226,10 @@ public:
                            void const * i_argp,
                            Exception const & i_exp)
     {
-        m_except = i_exp.clone();
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_except = i_exp.clone();
+        }
         done();
     }
 };
@@ -220,7 +246,10 @@ public:
     virtual void het_edge(void const * i_argp,
                           SignedHeadEdge const & i_she)
     {
-        m_edges.push_back(i_she);
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_edges.push_back(i_she);
+        }
     }
 
     virtual void het_complete(void const * i_argp)
@@ -231,7 +260,10 @@ public:
     virtual void het_error(void const * i_argp,
                            Exception const & i_exp)
     {
-        m_except = i_exp.clone();
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_except = i_exp.clone();
+        }
         done();
     }
 
@@ -251,7 +283,10 @@ public:
     virtual void hnt_node(void const * i_argp,
                           HeadNode const & i_hn)
     {
-        m_nodes.push_back(i_hn);
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_nodes.push_back(i_hn);
+        }
     }
 
     virtual void hnt_complete(void const * i_argp)
@@ -262,7 +297,10 @@ public:
     virtual void hnt_error(void const * i_argp,
                            Exception const & i_exp)
     {
-        m_except = i_exp.clone();
+        {
+            ACE_Guard<ACE_Thread_Mutex> guard(m_bcmutex);
+            m_except = i_exp.clone();
+        }
         done();
     }
 
