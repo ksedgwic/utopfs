@@ -158,7 +158,7 @@ protected:
 
     void update(std::string const & i_entry, BlockRef const & i_blkref);
 
-    void remove(std::string const & i_entry);
+    void remove(Context & i_ctxt, std::string const & i_entry);
 
 private:
     typedef std::map<std::string, FileNodeHandle> EntryMap;

@@ -7,6 +7,7 @@
 
 #include "utfslog.h"
 
+#include "BlockNodeCache.h"
 #include "Context.h"
 #include "DataBlockNode.h"
 #include "FileNode.h"
@@ -49,13 +50,19 @@ TripleIndBlockNode::bn_flush(Context & i_ctxt)
 
     for (unsigned i = 0; i < NUMREF; ++i)
     {
-        if (m_blkobj[i])
+        if (m_blkobj_X[i])
         {
             DoubleIndBlockNodeHandle nh =
-                dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj[i]);
+                dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj_X[i]);
 
-            if (nh->bn_isdirty())
-                m_blkref[i] = nh->bn_flush(i_ctxt);
+            // Flush the object.
+            m_blkref[i] = nh->bn_flush(i_ctxt);
+
+            // Insert it in the clean cache.
+            i_ctxt.m_bncachep->insert(nh);
+
+            // Clear it in the dirty array.
+            m_blkobj_X[i] = NULL;
         }
     }
 
@@ -92,29 +99,39 @@ TripleIndBlockNode::rb_traverse(Context & i_ctxt,
         DoubleIndBlockNodeHandle nh;
 
         // Do we have one in the cache already?
-        if (m_blkobj[ndx])
+        if (m_blkobj_X[ndx])
         {
             // Yep, use it.
-            nh = dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj[ndx]);
+            nh = dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj_X[ndx]);
         }
         else
         {
             // Nope, does it have a digest yet?
             if (m_blkref[ndx])
             {
-                // Yes, read it from the blockstore.
-                nh = new DoubleIndBlockNode(i_ctxt, m_blkref[ndx]);
+                // Does the clean cache have it?
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_blkref[ndx]);
+                if (bnh)
+                {
+                    // Yes, better be a DoubleIndBlockNode ...
+                    nh = dynamic_cast<DoubleIndBlockNode *>(&*bnh);
+                }
+                else
+                {
+                    // Nope, read it from the blockstore.
+                    nh = new DoubleIndBlockNode(i_ctxt, m_blkref[ndx]);
 
-                // Keep it in the cache.
-                m_blkobj[ndx] = nh;
+                    // Insert it in the clean cache.
+                    i_ctxt.m_bncachep->insert(nh);
+                }
             }
             else if (i_flags & RB_MODIFY)
             {
                 // Nope, create new block.
                 nh = new DoubleIndBlockNode();
 
-                // Keep it in the cache.
-                m_blkobj[ndx] = nh;
+                // Keep it in the dirty cache.
+                m_blkobj_X[ndx] = nh;
 
                 // Increment the block count.
                 i_fn.blocks(i_fn.blocks() + 1);
@@ -132,6 +149,15 @@ TripleIndBlockNode::rb_traverse(Context & i_ctxt,
         if (nh->rb_traverse(i_ctxt, i_fn, i_flags, off,
                             i_rngoff, i_rngsize, i_trav))
         {
+            // The node is already marked dirty ...
+
+            // Remove it from the clean cache.
+            i_ctxt.m_bncachep->remove(nh->bn_blkref());
+
+            // Insert it in the dirty collection.
+            m_blkobj_X[ndx] = nh;
+
+            // We're dirty too.
             bn_isdirty(true);
         }
     }
@@ -157,26 +183,37 @@ TripleIndBlockNode::rb_truncate(Context & i_ctxt,
         if (off < i_size)
         {
             // Yes, it's part of the live file.
-            if (m_blkobj[ndx] || m_blkref[ndx])
+            if (m_blkobj_X[ndx] || m_blkref[ndx])
             {
                 DoubleIndBlockNodeHandle nh;
             
                 // Do we have one in the cache already?
-                if (m_blkobj[ndx])
+                if (m_blkobj_X[ndx])
                 {
                     // Yep, use it.
-                    nh = dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj[ndx]);
+                    nh = dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj_X[ndx]);
                 }
                 else
                 {
                     // Nope, does it have a digest yet?
                     if (m_blkref[ndx])
                     {
-                        // Yes, read it from the blockstore.
-                        nh = new DoubleIndBlockNode(i_ctxt, m_blkref[ndx]);
+                        // Does the clean cache have it?
+                        BlockNodeHandle bnh =
+                            i_ctxt.m_bncachep->lookup(m_blkref[ndx]);
+                        if (bnh)
+                        {
+                            // Yes, better be a DoubleIndBlockNode ...
+                            nh = dynamic_cast<DoubleIndBlockNode *>(&*bnh);
+                        }
+                        else
+                        {
+                            // Nope, read it from the blockstore.
+                            nh = new DoubleIndBlockNode(i_ctxt, m_blkref[ndx]);
 
-                        // Keep it in the cache.
-                        m_blkobj[ndx] = nh;
+                            // Insert it in the clean cache.
+                            i_ctxt.m_bncachep->insert(nh);
+                        }
                     }
                 }
 
@@ -185,7 +222,16 @@ TripleIndBlockNode::rb_truncate(Context & i_ctxt,
 
                 // If it's dirtied so are we ...
                 if (nh->bn_isdirty())
+                {
+                    // Remove it from the clean cache.
+                    i_ctxt.m_bncachep->remove(nh->bn_blkref());
+
+                    // Insert it in the dirty collection.
+                    m_blkobj_X[ndx] = nh;
+
+                    // We're dirty too.
                     bn_isdirty(true);
+                }
 
                 // Did it have child blocks?  If not purge it ...
                 if (nb > 1)
@@ -195,8 +241,14 @@ TripleIndBlockNode::rb_truncate(Context & i_ctxt,
                 }
                 else
                 {
+                    // This seems redundant with the remove above, surely
+                    // one is enough?
+
+                    // Remove from the clean cache.
+                    i_ctxt.m_bncachep->remove(m_blkref[ndx]);
+
                     m_blkref[ndx].clear();
-                    m_blkobj[ndx] = NULL;
+                    m_blkobj_X[ndx] = NULL;
                     bn_isdirty(true);
                 }
             }
@@ -205,8 +257,12 @@ TripleIndBlockNode::rb_truncate(Context & i_ctxt,
         {
             // Nope, it's truncated.
             // We're just removing the references.
+
+            // Remove from the clean cache.
+            i_ctxt.m_bncachep->remove(m_blkref[ndx]);
+
             m_blkref[ndx].clear();
-            m_blkobj[ndx] = NULL;
+            m_blkobj_X[ndx] = NULL;
             bn_isdirty(true);
         }
 
@@ -230,10 +286,29 @@ TripleIndBlockNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
             keys.push_back(m_blkref[i]);
             ++nblocks;
 
-            DoubleIndBlockNodeHandle nh =
-                m_blkobj[i]
-                ? dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj[i])
-                : new DoubleIndBlockNode(i_ctxt, m_blkref[i]);
+            DoubleIndBlockNodeHandle nh;
+            if (m_blkobj_X[i])
+            {
+                nh = dynamic_cast<DoubleIndBlockNode *>(&*m_blkobj_X[i]);
+            }
+            else
+            {
+                // Does the clean cache have it?
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_blkref[i]);
+                if (bnh)
+                {
+                    // Yes, better be a DoubleIndBlockNode ...
+                    nh = dynamic_cast<DoubleIndBlockNode *>(&*bnh);
+                }
+                else
+                {
+                    // Nope, read it from the blockstore.
+                    nh = new DoubleIndBlockNode(i_ctxt, m_blkref[i]);
+
+                    // Let's not insert refresh blocks it in the clean
+                    // cache ...
+                }
+            }
 
             nblocks += nh->rb_refresh(i_ctxt, i_rid);
         }
@@ -253,7 +328,7 @@ ZeroTripleIndBlockNode::ZeroTripleIndBlockNode(DoubleIndBlockNodeHandle const & 
 
     // Initialize all of our references to the zero data block.
     for (unsigned i = 0; i < NUMREF; ++i)
-        m_blkobj[i] = i_nh;
+        m_blkobj_X[i] = i_nh;
 }
 
 

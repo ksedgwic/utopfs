@@ -361,8 +361,14 @@ FileNode::rb_traverse(Context & i_ctxt,
                     if (m_dirref[i])
                     {
                         // Does the clean cache have it?
-                        dbh = i_ctxt.m_bncachep->lookup(m_dirref[i]);
-                        if (!dbh)
+                        BlockNodeHandle bnh =
+                            i_ctxt.m_bncachep->lookup(m_dirref[i]);
+                        if (bnh)
+                        {
+                            // Yes, better be a DataBlockNode ...
+                            dbh = dynamic_cast<DataBlockNode *>(&*bnh);
+                        }
+                        else
                         {
                             // Nope, read it from the blockstore.
                             dbh = new DataBlockNode(i_ctxt, m_dirref[i]);
@@ -432,21 +438,31 @@ FileNode::rb_traverse(Context & i_ctxt,
         IndirectBlockNodeHandle ibh;
 
         // Do we have a cached version of this block?
-        if (m_sinobj)
+        if (m_sinobj_X)
         {
             // Yup, use it.
-            ibh = m_sinobj;
+            ibh = m_sinobj_X;
         }
         else
         {
             // Nope, does it have a digest yet?
             if (m_sinref)
             {
-                // Yes, read it from the blockstore.
-                ibh = new IndirectBlockNode(i_ctxt, m_sinref);
+                // Does the clean cache have it?
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_sinref);
+                if (bnh)
+                {
+                    // Yes, better be a IndirectBlockNode ...
+                    ibh = dynamic_cast<IndirectBlockNode *>(&*bnh);
+                }
+                else
+                {
+                    // Nope, read it from the blockstore.
+                    ibh = new IndirectBlockNode(i_ctxt, m_sinref);
 
-                // Keep it in the cache.
-                m_sinobj = ibh;
+                    // Insert it in the clean cache.
+                    i_ctxt.m_bncachep->insert(ibh);
+                }
             }
             else if (i_flags & RB_MODIFY)
             {
@@ -454,7 +470,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                 ibh = new IndirectBlockNode();
 
                 // Keep it in the cache.
-                m_sinobj = ibh;
+                m_sinobj_X = ibh;
 
                 // Increment the block count.
                 m_inode.set_blocks(m_inode.blocks() + 1);
@@ -471,6 +487,15 @@ FileNode::rb_traverse(Context & i_ctxt,
         if (ibh->rb_traverse(i_ctxt, *this, i_flags, off,
                               i_rngoff, i_rngsize, i_trav))
         {
+            // The node is already marked dirty ...
+
+            // Remove it from the clean cache.
+            i_ctxt.m_bncachep->remove(ibh->bn_blkref());
+
+            // Insert it in the dirty collection.
+            m_sinobj_X = ibh;
+
+            // We're dirty too.
             bn_isdirty(true);
         }
     }
@@ -498,21 +523,31 @@ FileNode::rb_traverse(Context & i_ctxt,
         DoubleIndBlockNodeHandle nh;
 
         // Do we have a cached version of this block?
-        if (m_dinobj)
+        if (m_dinobj_X)
         {
             // Yup, use it.
-            nh = m_dinobj;
+            nh = m_dinobj_X;
         }
         else
         {
             // Nope, does it have a digest yet?
             if (m_dinref)
             {
-                // Yes, read it from the blockstore.
-                nh = new DoubleIndBlockNode(i_ctxt, m_dinref);
+                // Does the clean cache have it?
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_dinref);
+                if (bnh)
+                {
+                    // Yes, better be a DoubleIndBlockNode ...
+                    nh = dynamic_cast<DoubleIndBlockNode *>(&*bnh);
+                }
+                else
+                {
+                    // Nope, read it from the blockstore.
+                    nh = new DoubleIndBlockNode(i_ctxt, m_dinref);
 
-                // Keep it in the cache.
-                m_dinobj = nh;
+                    // Insert it in the clean cache.
+                    i_ctxt.m_bncachep->insert(nh);
+                }
             }
             else if (i_flags & RB_MODIFY)
             {
@@ -520,7 +555,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                 nh = new DoubleIndBlockNode();
 
                 // Keep it in the cache.
-                m_dinobj = nh;
+                m_dinobj_X = nh;
 
                 // Increment the block count.
                 m_inode.set_blocks(m_inode.blocks() + 1);
@@ -537,6 +572,15 @@ FileNode::rb_traverse(Context & i_ctxt,
         if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
                              i_rngoff, i_rngsize, i_trav))
         {
+            // The node is already marked dirty ...
+
+            // Remove it from the clean cache.
+            i_ctxt.m_bncachep->remove(nh->bn_blkref());
+
+            // Insert it in the dirty collection.
+            m_dinobj_X = nh;
+
+            // We're dirty too.
             bn_isdirty(true);
         }
     }
@@ -565,21 +609,31 @@ FileNode::rb_traverse(Context & i_ctxt,
         TripleIndBlockNodeHandle nh;
 
         // Do we have a cached version of this block?
-        if (m_tinobj)
+        if (m_tinobj_X)
         {
             // Yup, use it.
-            nh = m_tinobj;
+            nh = m_tinobj_X;
         }
         else
         {
             // Nope, does it have a digest yet?
             if (m_tinref)
             {
-                // Yes, read it from the blockstore.
-                nh = new TripleIndBlockNode(i_ctxt, m_tinref);
+                // Does the clean cache have it?
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_tinref);
+                if (bnh)
+                {
+                    // Yes, better be a TripleIndBlockNode ...
+                    nh = dynamic_cast<TripleIndBlockNode *>(&*bnh);
+                }
+                else
+                {
+                    // Nope, read it from the blockstore.
+                    nh = new TripleIndBlockNode(i_ctxt, m_tinref);
 
-                // Keep it in the cache.
-                m_tinobj = nh;
+                    // Insert it in the clean cache.
+                    i_ctxt.m_bncachep->insert(nh);
+                }
             }
             else if (i_flags & RB_MODIFY)
             {
@@ -587,7 +641,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                 nh = new TripleIndBlockNode();
 
                 // Keep it in the cache.
-                m_tinobj = nh;
+                m_tinobj_X = nh;
 
                 // Increment the block count.
                 m_inode.set_blocks(m_inode.blocks() + 1);
@@ -604,6 +658,15 @@ FileNode::rb_traverse(Context & i_ctxt,
         if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
                              i_rngoff, i_rngsize, i_trav))
         {
+            // The node is already marked dirty ...
+
+            // Remove it from the clean cache.
+            i_ctxt.m_bncachep->remove(nh->bn_blkref());
+
+            // Insert it in the dirty collection.
+            m_tinobj_X = nh;
+
+            // We're dirty too.
             bn_isdirty(true);
         }
     }
@@ -674,7 +737,7 @@ FileNode::rb_truncate(Context & i_ctxt,
             // Increment the block counter if there is a data
             // block.
             //
-            if (m_dirobj[ndx] || m_dirref[ndx])
+            if (m_dirobj_X[ndx] || m_dirref[ndx])
                 ++nblocks;
         }
 
@@ -684,21 +747,32 @@ FileNode::rb_truncate(Context & i_ctxt,
             DataBlockNodeHandle dbh;
 
             // Do we have a cached version of this block?
-            if (m_dirobj[ndx])
+            if (m_dirobj_X[ndx])
             {
                 // Yep, use it.
-                dbh = m_dirobj[ndx];
+                dbh = m_dirobj_X[ndx];
             }
             else
             {
                 // Nope, does it have a digest yet?
                 if (m_dirref[ndx])
                 {
-                    // Yes, read it from the blockstore.
-                    dbh = new DataBlockNode(i_ctxt, m_dirref[ndx]);
+                    // Does the clean cache have it?
+                    BlockNodeHandle bnh =
+                        i_ctxt.m_bncachep->lookup(m_dirref[ndx]);
+                    if (bnh)
+                    {
+                        // Yes, better be a DataBlockNode ...
+                        dbh = dynamic_cast<DataBlockNode *>(&*bnh);
+                    }
+                    else
+                    {
+                        // Nope, read it from the blockstore.
+                        dbh = new DataBlockNode(i_ctxt, m_dirref[ndx]);
 
-                    // Keep it in the cache.
-                    m_dirobj[ndx] = dbh;
+                        // Insert it in the clean cache.
+                        i_ctxt.m_bncachep->insert(dbh);
+                    }
                 }
                 else
                 {
@@ -719,9 +793,21 @@ FileNode::rb_truncate(Context & i_ctxt,
                                '\0', 
                                dbh->bn_size() - off0);
 
+#if 0
                 // Seems we could just set the dirty flag instead?
                 m_dirref[ndx] = dbh->bn_persist(i_ctxt);
+#endif
 
+                // It's dirty now.
+                dbh->bn_isdirty(true);
+
+                // Remove it from the clean cache.
+                i_ctxt.m_bncachep->remove(dbh->bn_blkref());
+
+                // Insert it in the dirty collection.
+                m_dirobj_X[ndx] = dbh;
+
+                // We're dirty too.
                 bn_isdirty(true);
             }
         }
@@ -729,10 +815,14 @@ FileNode::rb_truncate(Context & i_ctxt,
         // This block is after the truncation.
         else
         {
+            // Remove from the clean cache.
+            i_ctxt.m_bncachep->remove(m_dirref[ndx]);
+
             // We're just removing the references.
             m_dirref[ndx].clear();
-            m_dirobj[ndx] = NULL;
+            m_dirobj_X[ndx] = NULL;
 
+            // We're dirty now.
             bn_isdirty(true);
         }
 
@@ -744,7 +834,7 @@ FileNode::rb_truncate(Context & i_ctxt,
     sz = IndirectBlockNode::NUMREF * BLKSZ;
 
     // Is there an indirect block?
-    if (m_sinobj || m_sinref)
+    if (m_sinobj_X || m_sinref)
     {
         // Does it overlap the live portion of the file?
         if (off < i_size)
@@ -752,25 +842,44 @@ FileNode::rb_truncate(Context & i_ctxt,
             IndirectBlockNodeHandle nh;
 
             // Is there a cached version?
-            if (m_sinobj)
+            if (m_sinobj_X)
             {
                 // Yes, just use it.
-                nh = m_sinobj;
+                nh = m_sinobj_X;
             }
             else
             {
-                // Nope, read from the blockstore.
-                nh = new IndirectBlockNode(i_ctxt, m_sinref);
+                // Does the clean cache have it?
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_sinref);
+                if (bnh)
+                {
+                    // Yes, better be a IndirectBlockNode ...
+                    nh = dynamic_cast<IndirectBlockNode *>(&*bnh);
+                }
+                else
+                {
+                    // Nope, read it from the blockstore.
+                    nh = new IndirectBlockNode(i_ctxt, m_sinref);
 
-                // Keep it in the cache.
-                m_sinobj = nh;
+                    // Insert it in the clean cache.
+                    i_ctxt.m_bncachep->insert(nh);
+                }
             }
 
             // Traverse the indirect block.
             size_t nb = nh->rb_truncate(i_ctxt, off, i_size);
 
             if (nh->bn_isdirty())
+            {
+                // Remove it from the clean cache.
+                i_ctxt.m_bncachep->remove(nh->bn_blkref());
+
+                // Insert it in the dirty collection.
+                m_sinobj_X = nh;
+
+                // We're dirty too.
                 bn_isdirty(true);
+            }
 
             // Did it have child blocks?  If not purge it ...
             if (nb > 1)
@@ -780,8 +889,14 @@ FileNode::rb_truncate(Context & i_ctxt,
             }
             else
             {
+                // This seems redundant with the remove above, surely
+                // one is enough?
+
+                // Remove from the clean cache.
+                i_ctxt.m_bncachep->remove(m_sinref);
+
                 m_sinref.clear();
-                m_sinobj = NULL;
+                m_sinobj_X = NULL;
 
                 bn_isdirty(true);
             }
@@ -789,14 +904,20 @@ FileNode::rb_truncate(Context & i_ctxt,
         else
         {
             // Nope, this is in the truncated portion of the file.
+
+            // Remove from the clean cache.
+            i_ctxt.m_bncachep->remove(m_sinref);
+
             m_sinref.clear();
-            m_sinobj = NULL;
+            m_sinobj_X = NULL;
 
             bn_isdirty(true);
         }
     }
 
     off += sz;
+
+    // FIXME - Are we missing the DoubleIndBlock (and Triple ...) traversal?
 
     return nblocks;
 }
@@ -826,8 +947,30 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
         keys.push_back(m_sinref);
         ++nblocks;
 
-        IndirectBlockNodeHandle nh =
-            m_sinobj ? m_sinobj : new IndirectBlockNode(i_ctxt, m_sinref);
+        IndirectBlockNodeHandle nh;
+        if (m_sinobj_X)
+        {
+            nh = m_sinobj_X;
+        }
+        else
+        {
+            // Does the clean cache have it?
+            BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_sinref);
+            if (bnh)
+            {
+                // Yes, better be a IndirectBlockNode ...
+                nh = dynamic_cast<IndirectBlockNode *>(&*bnh);
+            }
+            else
+            {
+                // Nope, read it from the blockstore.
+                nh = new IndirectBlockNode(i_ctxt, m_sinref);
+
+                // Let's not insert refresh blocks it in the clean
+                // cache ...
+            }
+        }
+
         nblocks += nh->rb_refresh(i_ctxt, i_rid);
     }
 
@@ -836,8 +979,30 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
         keys.push_back(m_dinref);
         ++nblocks;
 
-        DoubleIndBlockNodeHandle nh =
-            m_dinobj ? m_dinobj : new DoubleIndBlockNode(i_ctxt, m_dinref);
+        DoubleIndBlockNodeHandle nh;
+        if (m_dinobj_X)
+        {
+            nh = m_dinobj_X;
+        }
+        else
+        {
+            // Does the clean cache have it?
+            BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_dinref);
+            if (bnh)
+            {
+                // Yes, better be a DoubleIndBlockNode ...
+                nh = dynamic_cast<DoubleIndBlockNode *>(&*bnh);
+            }
+            else
+            {
+                // Nope, read it from the blockstore.
+                nh = new DoubleIndBlockNode(i_ctxt, m_dinref);
+
+                // Let's not insert refresh blocks it in the clean
+                // cache ...
+            }
+        }
+
         nblocks += nh->rb_refresh(i_ctxt, i_rid);
     }
 
@@ -846,8 +1011,30 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
         keys.push_back(m_tinref);
         ++nblocks;
 
-        TripleIndBlockNodeHandle nh =
-            m_tinobj ? m_tinobj : new TripleIndBlockNode(i_ctxt, m_tinref);
+        TripleIndBlockNodeHandle nh;
+        if (m_tinobj_X)
+        {
+            nh = m_tinobj_X;
+        }
+        else
+        {
+            // Does the clean cache have it?
+            BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_tinref);
+            if (bnh)
+            {
+                // Yes, better be a TripleIndBlockNode ...
+                nh = dynamic_cast<TripleIndBlockNode *>(&*bnh);
+            }
+            else
+            {
+                // Nope, read it from the blockstore.
+                nh = new TripleIndBlockNode(i_ctxt, m_tinref);
+
+                // Let's not insert refresh blocks it in the clean
+                // cache ...
+            }
+        }
+
         nblocks += nh->rb_refresh(i_ctxt, i_rid);
     }
 
@@ -857,8 +1044,30 @@ FileNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
         keys.push_back(m_qinref);
         ++nblocks;
 
-        QuadIndBlockNodeHandle nh =
-            m_qinobj ? m_qinobj : new QuadIndBlockNode(i_ctxt, m_qinref);
+        QuadIndBlockNodeHandle nh;
+        if (m_qinobj_X)
+        {
+            nh = m_qinobj_X;
+        }
+        else
+        {
+            // Does the clean cache have it?
+            BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_qinref);
+            if (bnh)
+            {
+                // Yes, better be a QuadIndBlockNode ...
+                nh = dynamic_cast<QuadIndBlockNode *>(&*bnh);
+            }
+            else
+            {
+                // Nope, read it from the blockstore.
+                nh = new QuadIndBlockNode(i_ctxt, m_qinref);
+
+                // Let's not insert refresh blocks it in the clean
+                // cache ...
+            }
+        }
+
         nblocks += nh->rb_refresh(i_ctxt, i_rid);
     }
 #endif

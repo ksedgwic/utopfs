@@ -98,13 +98,19 @@ IndirectBlockNode::bn_flush(Context & i_ctxt)
 
     for (unsigned i = 0; i < NUMREF; ++i)
     {
-        if (m_blkobj[i])
+        if (m_blkobj_X[i])
         {
             DataBlockNodeHandle nh =
-                dynamic_cast<DataBlockNode *>(&*m_blkobj[i]);
+                dynamic_cast<DataBlockNode *>(&*m_blkobj_X[i]);
 
-            if (nh->bn_isdirty())
-                m_blkref[i] = nh->bn_flush(i_ctxt);
+            // Flush the object.
+            m_blkref[i] = nh->bn_flush(i_ctxt);
+
+            // Insert it in the clean cache.
+            i_ctxt.m_bncachep->insert(nh);
+
+            // Clear it in the dirty array.
+            m_blkobj_X[i] = NULL;
         }
     }
 
@@ -141,29 +147,39 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
         DataBlockNodeHandle nh;
 
         // Do we have one in the cache already?
-        if (m_blkobj[ndx])
+        if (m_blkobj_X[ndx])
         {
             // Yep, use it.
-            nh = dynamic_cast<DataBlockNode *>(&*m_blkobj[ndx]);
+            nh = dynamic_cast<DataBlockNode *>(&*m_blkobj_X[ndx]);
         }
         else
         {
             // Nope, does it have a digest yet?
             if (m_blkref[ndx])
             {
-                // Yes, read it from the blockstore.
-                nh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
+                // Does the clean cache have it?
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(m_blkref[ndx]);
+                if (bnh)
+                {
+                    // Yes, better be a DataBlockNode ...
+                    nh = dynamic_cast<DataBlockNode *>(&*bnh);
+                }
+                else
+                {
+                    // Nope, read it from the blockstore.
+                    nh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
 
-                // Keep it in the cache.
-                m_blkobj[ndx] = nh;
+                    // Insert it in the clean cache.
+                    i_ctxt.m_bncachep->insert(nh);
+                }
             }
             else if (i_flags & RB_MODIFY)
             {
                 // Nope, create new block.
                 nh = new DataBlockNode();
 
-                // Keep it in the cache.
-                m_blkobj[ndx] = nh;
+                // Keep it in the dirty cache.
+                m_blkobj_X[ndx] = nh;
 
                 // Increment the block count.
                 i_fn.blocks(i_fn.blocks() + 1);
@@ -182,6 +198,14 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
                             off, i_fn.size()))
         {
             nh->bn_isdirty(true);
+
+            // Remove it from the clean cache.
+            i_ctxt.m_bncachep->remove(nh->bn_blkref());
+
+            // Insert it in the dirty collection.
+            m_blkobj_X[ndx] = nh;
+
+            // We're dirty too.
             bn_isdirty(true);
         }
     }
@@ -207,7 +231,7 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
             // Increment the block counter if there is a data
             // block.
             //
-            if (m_blkobj[ndx] || m_blkref[ndx])
+            if (m_blkobj_X[ndx] || m_blkref[ndx])
                 ++nblocks;
         }
 
@@ -217,21 +241,32 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
             DataBlockNodeHandle dbh;
 
             // Do we have a cached version of this block?
-            if (m_blkobj[ndx])
+            if (m_blkobj_X[ndx])
             {
                 // Yep, use it.
-                dbh = dynamic_cast<DataBlockNode *>(&*m_blkobj[ndx]);
+                dbh = dynamic_cast<DataBlockNode *>(&*m_blkobj_X[ndx]);
             }
             else
             {
                 // Nope, does it have a digest yet?
                 if (m_blkref[ndx])
                 {
-                    // Yes, read it from the blockstore.
-                    dbh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
+                    // Does the clean cache have it?
+                    BlockNodeHandle bnh =
+                        i_ctxt.m_bncachep->lookup(m_blkref[ndx]);
+                    if (bnh)
+                    {
+                        // Yes, better be a DataBlockBlockNode ...
+                        dbh = dynamic_cast<DataBlockNode *>(&*bnh);
+                    }
+                    else
+                    {
+                        // Nope, read it from the blockstore.
+                        dbh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
 
-                    // Keep it in the cache.
-                    m_blkobj[ndx] = dbh;
+                        // Insert it in the clean cache.
+                        i_ctxt.m_bncachep->insert(dbh);
+                    }
                 }
                 else
                 {
@@ -252,11 +287,23 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
                                '\0', 
                                dbh->bn_size() - off0);
 
+#if 0
                 // Seems we could just set the dirty flag instead?
                 dbh->bn_persist(i_ctxt);
-
                 m_blkref[ndx] = dbh->bn_blkref();
+                bn_isdirty(true);
+#endif
 
+                // It's dirty now.
+                dbh->bn_isdirty(true);
+
+                // Remove it from the clean cache.
+                i_ctxt.m_bncachep->remove(dbh->bn_blkref());
+
+                // Insert it in the dirty collection.
+                m_blkobj_X[ndx] = dbh;
+
+                // We're dirty too.
                 bn_isdirty(true);
             }
         }
@@ -264,9 +311,12 @@ IndirectBlockNode::rb_truncate(Context & i_ctxt,
         // This block is after the truncation.
         else
         {
+            // Remove from the clean cache.
+            i_ctxt.m_bncachep->remove(m_blkref[ndx]);
+
             // We're just removing the references.
             m_blkref[ndx].clear();
-            m_blkobj[ndx] = NULL;
+            m_blkobj_X[ndx] = NULL;
 
             bn_isdirty(true);
         }
@@ -307,7 +357,7 @@ ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
 
     // Initialize all of our references to the zero data block.
     for (unsigned i = 0; i < NUMREF; ++i)
-        m_blkobj[i] = i_dbnh;
+        m_blkobj_X[i] = i_dbnh;
 }
 
 

@@ -369,7 +369,7 @@ DirNode::unlink(Context & i_ctxt, string const & i_entry, bool i_dirstoo)
     if (!i_dirstoo && S_ISDIR(fnh->mode()))
         throw EISDIR;
 
-    remove(i_entry);
+    remove(i_ctxt, i_entry);
 
     return 0;
 }
@@ -393,7 +393,7 @@ DirNode::rmdir(Context & i_ctxt, string const & i_entry)
     if (dnh->numentries() != 0)
         throw ENOTEMPTY;
 
-    remove(i_entry);
+    remove(i_ctxt, i_entry);
 
     return 0;
 }
@@ -443,7 +443,7 @@ DirNode::linkdst(Context & i_ctxt,
     if (fnh)
     {
         if (i_force)
-            remove(i_entry);
+            remove(i_ctxt, i_entry);
         else
             throw EEXIST;
     }
@@ -574,6 +574,16 @@ DirNode::find_blkref(Context & i_ctxt, string const & i_entry)
 
         // Remove it from the dirty cache.
         m_dirty.erase(pos);
+
+        // Update the ref in the entries table.
+        for (int i = 0; i < m_dir.entry_size(); ++i)
+        {
+            if (m_dir.entry(i).name() == i_entry)
+            {
+                m_dir.mutable_entry(i)->set_blkref(ref);
+                break;
+            }
+        }
         
         return ref;
     }
@@ -646,7 +656,7 @@ DirNode::update(string const & i_entry, BlockRef const & i_blkref)
 }
 
 void
-DirNode::remove(string const & i_entry)
+DirNode::remove(Context & i_ctxt, string const & i_entry)
 {
     LOG(lgr, 6, "remove " << i_entry);
 
@@ -665,6 +675,8 @@ DirNode::remove(string const & i_entry)
     {
         if (m_dir.entry(i).name() == i_entry)
         {
+            ref = m_dir.entry(i).blkref();
+
             // Get mutable reference to this entry.
             Directory::Entry * me = m_dir.mutable_entry(i);
 
@@ -679,6 +691,10 @@ DirNode::remove(string const & i_entry)
 
     // Remove from the dirty cache.
     m_dirty.erase(i_entry);
+
+    // Remove any clean cache entry.
+    if (ref)
+        i_ctxt.m_bncachep->remove(ref);
 
     // Now we're dirty.
     bn_isdirty(true);
