@@ -139,11 +139,11 @@ private:
     BlockRef					m_tinref;			// Triple indirect refs
     BlockRef					m_qinref;			// Quad indirect refs
 
-    // Cached Objects
-    DataBlockNodeHandle			m_dirobj[NDIRECT];
-    IndirectBlockNodeHandle		m_sinobj;
-    DoubleIndBlockNodeHandle	m_dinobj;
-    TripleIndBlockNodeHandle	m_tinobj;
+    // Cached Dirty Objects
+    DataBlockNodeHandle			m_dirobj_X[NDIRECT];
+    IndirectBlockNodeHandle		m_sinobj_X;
+    DoubleIndBlockNodeHandle	m_dinobj_X;
+    TripleIndBlockNodeHandle	m_tinobj_X;
 };
 
 } // namespace UTFS

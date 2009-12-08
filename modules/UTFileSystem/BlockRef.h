@@ -61,6 +61,9 @@ public:
     /// Non-nil predicate.
     operator bool() const { return !operator!(); }
 
+    /// Hash function (uses initial bytes).
+    size_t hashval() const { return * (size_t *) m_ref; }
+
     /// Clear the reference.
     void clear();
 
@@ -76,6 +79,15 @@ public:
     //
     void validate(utp::uint8 const * i_data, size_t i_size) const
         throw(utp::VerificationError);
+
+    // Hash functor.
+    struct hash
+    {
+        size_t operator()(BlockRef const & i_ref) const
+        {
+            return i_ref.hashval();
+        }
+    };
 
 private:
     utp::uint8				m_ref[32];

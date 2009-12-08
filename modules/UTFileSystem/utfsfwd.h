@@ -4,6 +4,8 @@
 /// @file utfsfwd.h
 /// Forward Declarations for UTFS.
 
+#include <list>
+
 #include "RC.h"
 
 namespace UTFS {
@@ -45,6 +47,10 @@ typedef utp::RCPtr<DirNode> DirNodeHandle;
 struct Context;
 
 class BlockRef;
+
+typedef std::list<BlockNodeHandle> BlockNodeList;
+
+class BlockNodeCache;
 
 } // end namespace utp
 

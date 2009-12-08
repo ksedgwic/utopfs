@@ -69,9 +69,12 @@ public:
     virtual BlockRef const & bn_flush(Context & i_ctxt) = 0;
 
 protected:
-    BlockRef			m_ref;
-    bool				m_isdirty;
- };
+    friend class BlockNodeCache;	// Needs to get/set m_lpos.
+    
+    BlockRef					m_ref;
+    bool						m_isdirty;
+    BlockNodeList::iterator		m_lpos;
+};
 
 } // namespace UTFS
 

@@ -166,8 +166,8 @@ private:
     // Name to digest mapppings (what is persisted).
     Directory				m_dir;
 
-    // Name to FileNodeHandle mappings (cached).
-    EntryMap				m_cache;
+    // Name to dirty FileNodeHandle mappings (cached).
+    EntryMap				m_dirty;
 };
 
 } // namespace UTFS

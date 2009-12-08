@@ -31,11 +31,6 @@ namespace UTFS {
 class UTFS_EXP RefBlockNode : public BlockNode
 {
 public:
-#if 0
-    // Sequence of index offsets and BlockRefs used for updates.
-    typedef std::vector<std::pair<off_t, BlockRef> > BindingSeq;
-#endif
-
     // Block traversal functor base class.
     //
     class UTFS_EXP BlockTraverseFunc

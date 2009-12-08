@@ -233,22 +233,47 @@ FileNode::bn_flush(Context & i_ctxt)
 
     for (unsigned i = 0; i < NDIRECT; ++i)
     {
-        if (m_dirobj[i] && m_dirobj[i]->bn_isdirty())
-            m_dirref[i] = m_dirobj[i]->bn_flush(i_ctxt);
+        if (m_dirobj_X[i])
+        {
+            // Flush the object.
+            m_dirref[i] = m_dirobj_X[i]->bn_flush(i_ctxt);
+
+            // Insert it in the clean cache.
+            i_ctxt.m_bncachep->insert(m_dirobj_X[i]);
+
+            // Clear it in the dirty array.
+            m_dirobj_X[i] = NULL;
+        }
     }
 
-    if (m_sinobj && m_sinobj->bn_isdirty())
-        m_sinref = m_sinobj->bn_flush(i_ctxt);
+    if (m_sinobj_X)
+    {
+        m_sinref = m_sinobj_X->bn_flush(i_ctxt);
+        i_ctxt.m_bncachep->insert(m_sinobj_X);
+        m_sinobj_X = NULL;
+    }
 
-    if (m_dinobj && m_dinobj->bn_isdirty())
-        m_dinref = m_dinobj->bn_flush(i_ctxt);
+    if (m_dinobj_X)
+    {
+        m_dinref = m_dinobj_X->bn_flush(i_ctxt);
+        i_ctxt.m_bncachep->insert(m_dinobj_X);
+        m_dinobj_X = NULL;
+    }
 
-    if (m_tinobj && m_tinobj->bn_isdirty())
-        m_tinref = m_tinobj->bn_flush(i_ctxt);
+    if (m_tinobj_X)
+    {
+        m_tinref = m_tinobj_X->bn_flush(i_ctxt);
+        i_ctxt.m_bncachep->insert(m_tinobj_X);
+        m_tinobj_X = NULL;
+    }
 
 #if 0
-    if (m_qinobj && m_qinobj->bn_isdirty())
-        m_qinref = m_qinobj->bn_flush(i_ctxt);
+    if (m_qinobj_X)
+    {
+        m_qinref = m_qinobj_X->bn_flush(i_ctxt);
+        i_ctxt.m_bncachep->insert(m_qinobj_X);
+        m_qinobj_X = NULL;
+    }
 #endif
 
     return bn_persist(i_ctxt);
@@ -324,22 +349,27 @@ FileNode::rb_traverse(Context & i_ctxt,
                 // Find the block object to use.
                 DataBlockNodeHandle dbh;
 
-                // Do we have a cached version of this block?
-                if (m_dirobj[i])
+                // Do we have a cached dirty version of this block?
+                if (m_dirobj_X[i])
                 {
                     // Yep, use it.
-                    dbh = m_dirobj[i];
+                    dbh = m_dirobj_X[i];
                 }
                 else
                 {
                     // Nope, does it have a digest yet?
                     if (m_dirref[i])
                     {
-                        // Yes, read it from the blockstore.
-                        dbh = new DataBlockNode(i_ctxt, m_dirref[i]);
+                        // Does the clean cache have it?
+                        dbh = i_ctxt.m_bncachep->lookup(m_dirref[i]);
+                        if (!dbh)
+                        {
+                            // Nope, read it from the blockstore.
+                            dbh = new DataBlockNode(i_ctxt, m_dirref[i]);
 
-                        // Keep it in the cache.
-                        m_dirobj[i] = dbh;
+                            // Insert it in the clean cache.
+                            i_ctxt.m_bncachep->insert(dbh);
+                        }
                     }
                     else if (i_flags & RB_MODIFY)
                     {
@@ -347,7 +377,7 @@ FileNode::rb_traverse(Context & i_ctxt,
                         dbh = new DataBlockNode();
 
                         // Keep it in the cache.
-                        m_dirobj[i] = dbh;
+                        m_dirobj_X[i] = dbh;
 
                         // Increment the block count.
                         i_fn.blocks(i_fn.blocks() + 1);
@@ -367,7 +397,16 @@ FileNode::rb_traverse(Context & i_ctxt,
                                     off,
                                     size()))
                 {
+                    // It's dirty now.
                     dbh->bn_isdirty(true);
+
+                    // Remove it from the clean cache.
+                    i_ctxt.m_bncachep->remove(dbh->bn_blkref());
+
+                    // Insert it in the dirty collection.
+                    m_dirobj_X[i] = dbh;
+
+                    // We're dirty too.
                     bn_isdirty(true);
                 }
             }

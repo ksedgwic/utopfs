@@ -3,13 +3,15 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
+#include "BlockCipher.h"
 #include "BlockStore.h"
 #include "Except.h"
 #include "Log.h"
-#include "BlockCipher.h"
 
 #include "utfslog.h"
 
+#include "BlockNodeCache.h"
+#include "Context.h"
 #include "DirNode.h"
 #include "SymlinkNode.h"
 
@@ -108,14 +110,25 @@ DirNode::bn_flush(Context & i_ctxt)
     if (!bn_isdirty())
         return bn_blkref();
 
-    // We only need to traverse the stuff in our cache.
-    for (EntryMap::iterator it = m_cache.begin(); it != m_cache.end(); ++it)
+    // Traverse the items in our dirty cache, flush them, insert them
+    // in the block node cache and remove from the dirty cache.
+    //
+    while (!m_dirty.empty())
     {
-        if (it->second->bn_isdirty())
-        {
-            BlockRef const & blkref = it->second->bn_flush(i_ctxt);
-            update(it->first, blkref);
-        }
+        // Grab the first node.
+        EntryMap::iterator pos = m_dirty.begin();
+
+        // Flush it out to the block store.
+        BlockRef const & blkref = pos->second->bn_flush(i_ctxt);
+
+        // Update the reference in our directory.
+        update(pos->first, blkref);
+
+        // Insert in the clean node cache.
+        i_ctxt.m_bncachep->insert(pos->second);
+
+        // Erase from the dirty collection.
+        m_dirty.erase(pos);
     }
 
     if (lgr.is_enabled(6))
@@ -163,25 +176,40 @@ DirNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
     {
         Directory::Entry const & ent = m_dir.entry(i);
 
-        // Do we have a cached object?
-        EntryMap::iterator pos = m_cache.find(ent.name());
-        if (pos != m_cache.end())
+        // Do we have a cached dirty object?
+        EntryMap::iterator pos = m_dirty.find(ent.name());
+        if (pos != m_dirty.end())
         {
             nblocks += pos->second->rb_refresh(i_ctxt, i_rid);
         }
         else
         {
-            FileNodeHandle nh = new FileNode(i_ctxt, ent.blkref());
+            // Does the clean cache have one?
+            FileNodeHandle nh;
+            BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(ent.blkref());
+            if (bnh)
+            {
+                // Upcast to FileNode, it is at least that.
+                nh = dynamic_cast<FileNode *>(&*bnh);
+            }
+            else
+            {
+                nh = new FileNode(i_ctxt, ent.blkref());
 
-            // Is it really a directory?  Upgrade object ...
-            if (S_ISDIR(nh->mode()))
-                nh = new DirNode(i_ctxt, *nh);
+                // Is it really a directory?  Upgrade object ...
+                if (S_ISDIR(nh->mode()))
+                    nh = new DirNode(i_ctxt, *nh);
 
-            // Is it really a symlink?  Upgrade object ...
-            else if (S_ISLNK(nh->mode()))
-                nh = new SymlinkNode(*nh);
+                // Is it really a symlink?  Upgrade object ...
+                else if (S_ISLNK(nh->mode()))
+                    nh = new SymlinkNode(*nh);
 
-            m_cache.insert(make_pair(ent.name(), nh));
+                // Should we insert it in the clean cache here?
+                //
+                // Seems like the refresh kinda wrecks the cache.
+                // Maybe let them evaporate when we are done
+                // traversing instead.
+            }
 
             nblocks += nh->rb_refresh(i_ctxt, i_rid);
         }
@@ -287,8 +315,8 @@ DirNode::mknod(Context & i_ctxt,
     // Create a new file.
     fnh = new FileNode(i_mode, i_uname, i_gname);
 
-    // Insert into the cache.
-    m_cache.insert(make_pair(i_entry, fnh));
+    // Insert into the dirty cache.
+    m_dirty.insert(make_pair(i_entry, fnh));
 
     // Insert a placeholder in the directory.
     update(i_entry, BlockRef());
@@ -313,8 +341,8 @@ DirNode::mkdir(Context & i_ctxt,
     // Create the new directory node.
     DirNodeHandle dnh = new DirNode(i_mode, i_uname, i_gname);
 
-    // Insert into the cache.
-    m_cache.insert(make_pair(i_entry, dnh));
+    // Insert into the dirty cache.
+    m_dirty.insert(make_pair(i_entry, dnh));
 
     // Insert a placeholder in the directory.
     update(i_entry, BlockRef());
@@ -384,8 +412,8 @@ DirNode::symlink(Context & i_ctxt,
     // Create the symbolic link.
     fnh = new SymlinkNode(i_opath);
 
-    // Insert into the cache.
-    m_cache.insert(make_pair(i_entry, fnh));
+    // Insert into the dirty cache.
+    m_dirty.insert(make_pair(i_entry, fnh));
 
     // Insert a placeholder in the directory.
     update(i_entry, BlockRef());
@@ -475,9 +503,9 @@ DirNode::lookup(Context & i_ctxt,
                 string const & i_entry,
                 bool i_readonly)
 {
-    // Do we have a cached entry for this name?
-    EntryMap::const_iterator pos = m_cache.find(i_entry);
-    if (pos != m_cache.end())
+    // Do we have a cached dirty object for this name?
+    EntryMap::const_iterator pos = m_dirty.find(i_entry);
+    if (pos != m_dirty.end())
     {
         return pos->second;
     }
@@ -486,26 +514,40 @@ DirNode::lookup(Context & i_ctxt,
         // Is it in the directories digest table?
         for (int i = 0; i < m_dir.entry_size(); ++i)
         {
-            if (m_dir.entry(i).name() == i_entry)
+            Directory::Entry const & ent = m_dir.entry(i);
+
+            if (ent.name() == i_entry)
             {
-                // If we are read-only bail and come back with a
-                // write lock ...
-                //
-                if (i_readonly)
-                    throw OperationError(i_entry);
+                // Is it in the clean cache?
+                FileNodeHandle nh;
+                BlockNodeHandle bnh = i_ctxt.m_bncachep->lookup(ent.blkref());
+                if (bnh)
+                {
+                    // Upcast to FileNode, it is at least that.
+                    nh = dynamic_cast<FileNode *>(&*bnh);
+                }
+                else
+                {
+                    // If we are read-only bail and come back with a
+                    // write lock ...
+                    //
+                    if (i_readonly)
+                        throw OperationError(i_entry);
 
-                FileNodeHandle nh =
-                    new FileNode(i_ctxt, m_dir.entry(i).blkref());
+                    nh = new FileNode(i_ctxt, ent.blkref());
 
-                // Is it really a directory?  Upgrade object ...
-                if (S_ISDIR(nh->mode()))
-                    nh = new DirNode(i_ctxt, *nh);
+                    // Is it really a directory?  Upgrade object ...
+                    if (S_ISDIR(nh->mode()))
+                        nh = new DirNode(i_ctxt, *nh);
 
-                // Is it really a symlink?  Upgrade object ...
-                else if (S_ISLNK(nh->mode()))
-                    nh = new SymlinkNode(*nh);
+                    // Is it really a symlink?  Upgrade object ...
+                    else if (S_ISLNK(nh->mode()))
+                        nh = new SymlinkNode(*nh);
 
-                m_cache.insert(make_pair(i_entry, nh));
+                    // Insert this in the clean cache.
+                    i_ctxt.m_bncachep->insert(nh);
+                }
+
                 return nh;
             }
         }
@@ -519,10 +561,21 @@ DirNode::find_blkref(Context & i_ctxt, string const & i_entry)
 {
     // If it is in the cache we need to flush it so we
     // have a valid block reference.
-    EntryMap::const_iterator pos = m_cache.find(i_entry);
-    if (pos != m_cache.end())
+    EntryMap::iterator pos = m_dirty.find(i_entry);
+    if (pos != m_dirty.end())
     {
-        return pos->second->bn_flush(i_ctxt);
+        FileNodeHandle fnh = pos->second;
+
+        // Flush the node to get a valid reference.
+        BlockRef ref = fnh->bn_flush(i_ctxt);
+
+        // Insert it into the clean cache.
+        i_ctxt.m_bncachep->insert(fnh);
+
+        // Remove it from the dirty cache.
+        m_dirty.erase(pos);
+        
+        return ref;
     }
 
     // Is it in the directories digest table?
@@ -607,6 +660,7 @@ DirNode::remove(string const & i_entry)
     // No need to scan to the last item since we know the item is
     // in the list.
     //
+    BlockRef ref;
     for (int i = 0; i < m_dir.entry_size() - 1; ++i)
     {
         if (m_dir.entry(i).name() == i_entry)
@@ -623,8 +677,8 @@ DirNode::remove(string const & i_entry)
     }
     m_dir.mutable_entry()->RemoveLast();
 
-    // Remove from the cache.
-    m_cache.erase(i_entry);
+    // Remove from the dirty cache.
+    m_dirty.erase(i_entry);
 
     // Now we're dirty.
     bn_isdirty(true);

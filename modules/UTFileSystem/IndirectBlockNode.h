@@ -67,8 +67,8 @@ protected:
     // Block References
     BlockRef				m_blkref[NUMREF];
 
-    // Cached Objects
-    BlockNodeHandle			m_blkobj[NUMREF];
+    // Cached Dirty Objects
+    BlockNodeHandle			m_blkobj_X[NUMREF];
 };
 
 // The ZeroIndirectBlockNode is a singleton which is used for

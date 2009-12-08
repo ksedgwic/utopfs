@@ -33,6 +33,7 @@ DataBlockNode::DataBlockNode()
 }
 
 DataBlockNode::DataBlockNode(Context & i_ctxt, BlockRef const & i_ref)
+    : BlockNode(i_ref)
 {
     LOG(lgr, 6, "CTOR " << i_ref);
 

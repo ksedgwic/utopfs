@@ -62,6 +62,7 @@ UTFileSystem::fs_mkfs(BlockStoreHandle const & i_bsh,
     m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
     m_ctxt.m_ztinobj = new ZeroTripleIndBlockNode(m_ctxt.m_zdinobj);
 
+    m_ctxt.m_bncachep = &m_bncache;
     m_ctxt.m_statsp = &m_stats;
 
     m_rdh = new RootDirNode(i_uname, i_gname);
@@ -102,6 +103,7 @@ UTFileSystem::fs_mount(BlockStoreHandle const & i_bsh,
     m_ctxt.m_zsinobj = new ZeroIndirectBlockNode(m_ctxt.m_zdatobj);
     m_ctxt.m_zdinobj = new ZeroDoubleIndBlockNode(m_ctxt.m_zsinobj);
 
+    m_ctxt.m_bncachep = &m_bncache;
     m_ctxt.m_statsp = &m_stats;
 
     try
@@ -1180,7 +1182,7 @@ UTFileSystem::fs_sync()
     // written; it's a major improvement allowing other read-only
     // operations to take place concurrently ...
     //
-    ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
     if (m_rdh->bn_isdirty())
         rootref(m_rdh->bn_flush(m_ctxt));

@@ -17,6 +17,7 @@
 #include "FileSystem.h"
 #include "Types.h"
 
+#include "BlockNodeCache.h"
 #include "Context.h"
 
 #include "utfsexp.h"
@@ -165,6 +166,8 @@ private:
     utp::HeadNode							m_hn;
 
     BlockRef								m_rbr;
+
+    BlockNodeCache							m_bncache;
 
     UTStats									m_stats;
 };

@@ -8,12 +8,13 @@ PROTO +=	\
 			$(NULL)
 
 LIBSRC += 	\
+			FileNode.cpp \
+			BlockNodeCache.cpp \
 			BlockNode.cpp \
 			BlockRef.cpp \
 			DataBlockNode.cpp \
 			DirNode.cpp \
 			DoubleIndBlockNode.cpp \
-			FileNode.cpp \
 			IndirectBlockNode.cpp \
 			RefBlockNode.cpp \
 			RootDirNode.cpp \

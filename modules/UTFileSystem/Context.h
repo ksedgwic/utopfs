@@ -26,6 +26,8 @@ struct UTFS_EXP Context
     DoubleIndBlockNodeHandle	m_zdinobj;
     TripleIndBlockNodeHandle	m_ztinobj;
 
+    BlockNodeCache *			m_bncachep;
+
     UTStats *					m_statsp;
 };
 
