@@ -329,6 +329,9 @@ ZeroDoubleIndBlockNode::ZeroDoubleIndBlockNode(IndirectBlockNodeHandle const & i
     // Initialize all of our references to the zero data block.
     for (unsigned i = 0; i < NUMREF; ++i)
         m_blkobj_X[i] = i_nh;
+
+    // We aren't ever dirty.
+    m_isdirty = false;
 }
 
 

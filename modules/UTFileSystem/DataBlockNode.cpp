@@ -99,6 +99,29 @@ DataBlockNode::bn_flush(Context & i_ctxt)
 ZeroDataBlockNode::ZeroDataBlockNode()
 {
     LOG(lgr, 6, "CTOR " << "ZERO");
+
+    // We aren't ever dirty.
+    m_isdirty = false;
+}
+
+#if 0
+long
+ZeroDataBlockNode::rc_add_ref(void * ptr) const
+{
+    // Breakpoint here to see new references ...
+    return BlockNode::rc_add_ref(ptr);
+}
+#endif
+
+void
+ZeroDataBlockNode::bn_isdirty(bool i_isdirty)
+{
+    if (i_isdirty)
+        throwstream(InternalError, FILELINE
+                    << "dirtying the zero data block makes me sad");
+
+    // Delegate actual work.
+    DataBlockNode::bn_isdirty(i_isdirty);
 }
 
 BlockRef const &

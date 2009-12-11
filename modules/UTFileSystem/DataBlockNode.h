@@ -59,6 +59,14 @@ public:
     // Default constructor.
     ZeroDataBlockNode();
 
+#if 0
+    // Debugging, where are we referenced?
+	virtual long rc_add_ref(void * ptr = NULL) const;
+#endif
+
+    /// Setting us dirty is bad.
+    virtual void bn_isdirty(bool i_isdirty);
+
     // This would be a mistake.
     virtual BlockRef const & bn_persist(Context & i_ctxt);
 };

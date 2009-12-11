@@ -358,8 +358,30 @@ ZeroIndirectBlockNode::ZeroIndirectBlockNode(DataBlockNodeHandle const & i_dbnh)
     // Initialize all of our references to the zero data block.
     for (unsigned i = 0; i < NUMREF; ++i)
         m_blkobj_X[i] = i_dbnh;
+
+    // We aren't ever dirty.
+    m_isdirty = false;
 }
 
+#if 0
+long
+ZeroIndirectBlockNode::rc_add_ref(void * ptr) const
+{
+    // Breakpoint here to see new references ...
+    return BlockNode::rc_add_ref(ptr);
+}
+#endif
+
+void
+ZeroIndirectBlockNode::bn_isdirty(bool i_isdirty)
+{
+    if (i_isdirty)
+        throwstream(InternalError, FILELINE
+                    << "dirtying the zero indirect block makes me sad");
+
+    // Delegate actual work.
+    IndirectBlockNode::bn_isdirty(i_isdirty);
+}
 
 BlockRef const &
 ZeroIndirectBlockNode::bn_persist(Context & i_ctxt)
