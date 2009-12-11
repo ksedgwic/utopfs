@@ -26,6 +26,8 @@ BlockNodeCache::insert(BlockNodeHandle const & i_bnh)
 
     ACE_Guard<ACE_Thread_Mutex> guard(m_bncmutex);
 
+    LOG(lgr, 6, "insert " << ref);
+
     // Is it already in the cache?
     BlockNodeMap::const_iterator pos = m_nodemap.find(ref);
     if (pos != m_nodemap.end())
@@ -60,6 +62,8 @@ void
 BlockNodeCache::remove(BlockRef const & i_ref)
 {
     ACE_Guard<ACE_Thread_Mutex> guard(m_bncmutex);
+
+    LOG(lgr, 6, "remove " << i_ref);
 
     // Find the block node.
     BlockNodeMap::const_iterator pos = m_nodemap.find(i_ref);

@@ -31,6 +31,7 @@ IndirectBlockNode::IndirectBlockNode()
 
 IndirectBlockNode::IndirectBlockNode(Context & i_ctxt,
                                      BlockRef const & i_ref)
+    : RefBlockNode(i_ref)
 {
     LOG(lgr, 6, "CTOR " << i_ref);
 
