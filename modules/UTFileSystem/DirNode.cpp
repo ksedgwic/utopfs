@@ -495,6 +495,9 @@ DirNode::update(Context & i_ctxt,
 
     mtime(T64::now());
 
+    // Insert into the dirty cache.
+    m_dirty.insert(make_pair(i_entry, i_fnh));
+
     bn_isdirty(true);
 }
 
