@@ -14,6 +14,7 @@
 
 #include "BlockStore.h"
 #include "RC.h"
+#include "Stats.h"
 
 #include "vbsexp.h"
 #include "vbsfwd.h"

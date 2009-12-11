@@ -86,6 +86,19 @@ BlockNodeCache::remove(BlockRef const & i_ref)
 }
 
 void
+BlockNodeCache::get_stats(StatSet & o_ss) const
+{
+    size_t bncsz;
+
+    {
+        ACE_Guard<ACE_Thread_Mutex> guard(m_bncmutex);
+        bncsz = m_nodemap.size();
+    }
+
+    Stats::set(o_ss, "bncsz", bncsz, 1.0/1000, "%.1fk", SF_VALUE);
+}
+
+void
 BlockNodeCache::touch(BlockNodeHandle const & i_bnh)
 {
     // IMPORTANT - The caller needs to be holding the mutex!

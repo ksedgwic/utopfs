@@ -77,7 +77,7 @@ public:
 
     size_t blksize() const { return m_size; }
 
-private:
+protected:
     utp::uint8 const *		m_data;
     utp::uint8 const *		m_ptr;
     size_t					m_size;

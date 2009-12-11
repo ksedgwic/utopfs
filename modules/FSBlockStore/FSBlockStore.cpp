@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 
@@ -270,6 +271,7 @@ FSBlockStore::bs_open(StringSeq const & i_args)
     szstrm.close();
 
     // Read all of the existing blocks.
+    size_t nblks = 0;
     EntryTimeSet ets;
     ACE_Dirent dir;
     if (dir.open(m_blockspath.c_str()) == -1)
@@ -297,7 +299,15 @@ FSBlockStore::bs_open(StringSeq const & i_args)
         EntryHandle eh = new Entry(entry, mtime, size);
         m_entries.insert(eh);
         ets.insert(eh);
+
+        if (++nblks % (100 * 1000) == 0)
+            LOG(lgr, 4, "read "
+                << setprecision(1)
+                << (double(nblks) / (1000.0 * 1000.0))
+                << "M entries");
     }
+
+    LOG(lgr, 4, "read complete, " << nblks << " entries");
 
     // Unroll the ordered set into the LRU list from recent to oldest.
     //

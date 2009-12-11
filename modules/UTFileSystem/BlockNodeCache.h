@@ -10,6 +10,7 @@
 
 #include "utpfwd.h"
 
+#include "Stats.h"
 #include "Types.h"
 
 #include "BlockRef.h"
@@ -37,6 +38,9 @@ public:
 
     // Remove Node.
     void remove(BlockRef const & i_ref);
+
+    // Supply stats.
+    void get_stats(utp::StatSet & o_ss) const;
 
 protected:
     // Move the node the front (recent) end of the MRU list.

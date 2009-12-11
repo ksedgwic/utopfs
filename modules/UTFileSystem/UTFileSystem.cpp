@@ -1205,6 +1205,8 @@ UTFileSystem::fs_get_stats(StatSet & o_ss) const
 
     Stats::set(o_ss, "gbps", m_stats.m_ngbytes.value(), 1.0/1024.0, "%.1fKB/s", SF_DELTA);
     Stats::set(o_ss, "pbps", m_stats.m_npbytes.value(), 1.0/1024.0, "%.1fKB/s", SF_DELTA);
+
+    m_bncache.get_stats(o_ss);
 }
 
 void

@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1232,7 +1233,47 @@ S3BlockStore::bs_refresh_block_async(uint64 i_rid,
         return;
     }
 }
-        
+
+// PutHandler wrapper that logs progress.
+//
+class MDNDXPutHandler : public PutHandler
+{
+public:
+    MDNDXPutHandler(uint8 const * i_data,
+                    size_t i_size,
+                    string const & i_instname)
+        : PutHandler(i_data, i_size)
+        , m_instname(i_instname)
+        , m_lastchunk(0)
+    {
+    }
+
+    virtual int ph_objdata(int i_buffsz, char * o_buffer)
+    {
+        // Delegate the real work to the base class.
+        int rv = PutHandler::ph_objdata(i_buffsz, o_buffer);
+
+        // Print occasional progress.
+        size_t sofar = m_size - m_left;
+        size_t chunk = sofar / (512 * 1024);
+        if (chunk != m_lastchunk)
+        {
+            LOG(lgr, 4, m_instname << ' '
+                << "writing MDNDX, size "
+                <<  fixed << setprecision(1)
+                << (double(sofar) / (1024.0 * 1024.0))
+                << " Mbyte");
+        }
+        m_lastchunk = chunk;
+
+        return rv;
+    }
+
+private:
+    string		m_instname;
+    size_t		m_lastchunk;
+};
+
 void
 S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
                                       RefreshFinishCompletion & i_cmpl,
@@ -1372,7 +1413,9 @@ S3BlockStore::bs_refresh_finish_async(uint64 i_rid,
                 throwstream(InternalError, FILELINE
                             << "too many retries");
 
-            PutHandler ph((uint8 const *) &mdndxbuf[0], mdndxbuf.size());
+            MDNDXPutHandler ph((uint8 const *) &mdndxbuf[0],
+                               mdndxbuf.size(),
+                               m_instname);
             S3_put_object(&m_buckctxt,
                           "MDNDX",
                           mdndxbuf.size(),
