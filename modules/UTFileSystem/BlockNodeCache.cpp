@@ -33,17 +33,17 @@ BlockNodeCache::insert(BlockNodeHandle const & i_bnh)
     BlockNodeMap::const_iterator pos = m_nodemap.find(ref);
     if (pos != m_nodemap.end())
     {
-        LOG(lgr, 2, "INSERT COLLISION: " << ref);
-        LOG(lgr, 2, "EXISTING: " << *(pos->second));
-        LOG(lgr, 2, "INSERTED: " << *i_bnh);
-        
-        throwstream(InternalError, FILELINE
-                    << "BlockNode " << ref << " already in cache");
-    }
+        LOG(lgr, 4, "already there " << ref);
 
-    m_nodemap.insert(make_pair(ref, i_bnh));
-    m_nodemru.push_front(i_bnh);
-    i_bnh->m_lpos = m_nodemru.begin();
+        // Update it in the MRU list.
+        touch(pos->second);
+    }
+    else
+    {
+        m_nodemap.insert(make_pair(ref, i_bnh));
+        m_nodemru.push_front(i_bnh);
+        i_bnh->m_lpos = m_nodemru.begin();
+    }
 }
 
 BlockNodeHandle
