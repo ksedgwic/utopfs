@@ -1133,19 +1133,23 @@ size_t
 UTFileSystem::fs_refresh()
     throw (InternalError)
 {
-    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+    {
+        ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
 
-    // Try and sync first.  If we are out of space we'll
-    // have to try and sync again afterwards.
-    try
-    {
-        if (m_rdh->bn_isdirty())
-            rootref(m_rdh->bn_flush(m_ctxt));
+        // Try and sync first.  If we are out of space we'll
+        // have to try and sync again afterwards.
+        try
+        {
+            if (m_rdh->bn_isdirty())
+                rootref(m_rdh->bn_flush(m_ctxt));
+        }
+        catch (NoSpaceError const & ex)
+        {
+            LOG(lgr, 1, "NoSpaceError encountered: " << ex.what());
+        }
     }
-    catch (NoSpaceError const & ex)
-    {
-        LOG(lgr, 1, "NoSpaceError encountered: " << ex.what());
-    }
+
+    ACE_Read_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
     
     // Generate a random refresh id.
     uint64 rid;

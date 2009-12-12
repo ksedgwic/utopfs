@@ -35,7 +35,8 @@ int
 SpecialFileNode::read(Context & i_ctxt,
                       void * o_bufptr,
                       size_t i_size,
-                      off_t i_off)
+                      off_t i_off,
+                      unsigned int i_flags)
 {
     off_t len = m_data.size();
     if (i_off < len)

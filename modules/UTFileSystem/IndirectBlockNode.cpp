@@ -118,6 +118,13 @@ IndirectBlockNode::bn_flush(Context & i_ctxt)
     return bn_persist(i_ctxt);
 }
 
+void
+IndirectBlockNode::bn_tostream(std::ostream & ostrm) const
+{
+    RefBlockNode::bn_tostream(ostrm);
+    ostrm << ' ' << "IndirectBlockNode";
+}
+
 bool
 IndirectBlockNode::rb_traverse(Context & i_ctxt,
                                FileNode & i_fn,
@@ -171,10 +178,11 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
                     nh = new DataBlockNode(i_ctxt, m_blkref[ndx]);
 
                     // Insert it in the clean cache.
-                    i_ctxt.m_bncachep->insert(nh);
+                    if (!(i_flags & RB_NOCACHE))
+                        i_ctxt.m_bncachep->insert(nh);
                 }
             }
-            else if (i_flags & RB_MODIFY)
+            else if (i_flags & RB_MODIFY_X)
             {
                 // Nope, create new block.
                 nh = new DataBlockNode();
@@ -198,6 +206,10 @@ IndirectBlockNode::rb_traverse(Context & i_ctxt,
         if (i_trav.bt_visit(i_ctxt, nh->bn_data(), nh->bn_size(),
                             off, i_fn.size()))
         {
+            if (!(i_flags & RB_MODIFY_X))
+                throwstream(InternalError, FILELINE
+                            << "dirtied w/o RB_MODIFY");
+
             nh->bn_isdirty(true);
 
             // Remove it from the clean cache.
@@ -389,6 +401,13 @@ ZeroIndirectBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero indirect block makes me sad");
+}
+
+void
+ZeroIndirectBlockNode::bn_tostream(std::ostream & ostrm) const
+{
+    RefBlockNode::bn_tostream(ostrm);
+    ostrm << ' ' << "ZeroIndirectBlockNode";
 }
 
 } // namespace UTFS

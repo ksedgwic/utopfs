@@ -45,6 +45,8 @@ public:
 
     virtual BlockRef const & bn_flush(Context & i_ctxt);
 
+    virtual void bn_tostream(std::ostream & ostrm) const;
+
 private:
     utp::uint8				m_data[BLKSZ];
 };
@@ -69,6 +71,8 @@ public:
 
     // This would be a mistake.
     virtual BlockRef const & bn_persist(Context & i_ctxt);
+
+    virtual void bn_tostream(std::ostream & ostrm) const;
 };
 
 } // namespace UTFS

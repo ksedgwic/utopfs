@@ -279,10 +279,17 @@ FileNode::bn_flush(Context & i_ctxt)
     return bn_persist(i_ctxt);
 }
 
+void
+FileNode::bn_tostream(std::ostream & ostrm) const
+{
+    RefBlockNode::bn_tostream(ostrm);
+    ostrm << ' ' << "FileNode";
+}
+
 bool
 FileNode::rb_traverse(Context & i_ctxt,
                       FileNode & i_fn,
-                      unsigned int i_flags,
+                      unsigned i_flags,
                       off_t i_base,
                       off_t i_rngoff,
                       size_t i_rngsize,
@@ -374,15 +381,16 @@ FileNode::rb_traverse(Context & i_ctxt,
                             dbh = new DataBlockNode(i_ctxt, m_dirref[i]);
 
                             // Insert it in the clean cache.
-                            i_ctxt.m_bncachep->insert(dbh);
+                            if (!(i_flags & RB_NOCACHE))
+                                i_ctxt.m_bncachep->insert(dbh);
                         }
                     }
-                    else if (i_flags & RB_MODIFY)
+                    else if (i_flags & RB_MODIFY_X)
                     {
                         // Nope, create new block.
                         dbh = new DataBlockNode();
 
-                        // Keep it in the cache.
+                        // Keep it in the dirty tree.
                         m_dirobj_X[i] = dbh;
 
                         // Increment the block count.
@@ -403,17 +411,20 @@ FileNode::rb_traverse(Context & i_ctxt,
                                     off,
                                     size()))
                 {
-                    // It's dirty now.
-                    dbh->bn_isdirty(true);
+                    if (i_flags & RB_MODIFY_X)
+                    {
+                        // It's dirty now.
+                        dbh->bn_isdirty(true);
 
-                    // Remove it from the clean cache.
-                    i_ctxt.m_bncachep->remove(dbh->bn_blkref());
+                        // Remove it from the clean cache.
+                        i_ctxt.m_bncachep->remove(dbh->bn_blkref());
 
-                    // Insert it in the dirty collection.
-                    m_dirobj_X[i] = dbh;
+                        // Insert it in the dirty collection.
+                        m_dirobj_X[i] = dbh;
 
-                    // We're dirty too.
-                    bn_isdirty(true);
+                        // We're dirty too.
+                        bn_isdirty(true);
+                    }
                 }
             }
 
@@ -461,10 +472,11 @@ FileNode::rb_traverse(Context & i_ctxt,
                     ibh = new IndirectBlockNode(i_ctxt, m_sinref);
 
                     // Insert it in the clean cache.
-                    i_ctxt.m_bncachep->insert(ibh);
+                    if (!(i_flags & RB_NOCACHE))
+                        i_ctxt.m_bncachep->insert(ibh);
                 }
             }
-            else if (i_flags & RB_MODIFY)
+            else if (i_flags & RB_MODIFY_X)
             {
                 // Nope, create a new one.
                 ibh = new IndirectBlockNode();
@@ -487,16 +499,19 @@ FileNode::rb_traverse(Context & i_ctxt,
         if (ibh->rb_traverse(i_ctxt, *this, i_flags, off,
                               i_rngoff, i_rngsize, i_trav))
         {
-            // The node is already marked dirty ...
+            if (i_flags & RB_MODIFY_X)
+            {
+                // The node is already marked dirty ...
 
-            // Remove it from the clean cache.
-            i_ctxt.m_bncachep->remove(ibh->bn_blkref());
+                // Remove it from the clean cache.
+                i_ctxt.m_bncachep->remove(ibh->bn_blkref());
 
-            // Insert it in the dirty collection.
-            m_sinobj_X = ibh;
+                // Insert it in the dirty collection.
+                m_sinobj_X = ibh;
 
-            // We're dirty too.
-            bn_isdirty(true);
+                // We're dirty too.
+                bn_isdirty(true);
+            }
         }
     }
 
@@ -546,10 +561,11 @@ FileNode::rb_traverse(Context & i_ctxt,
                     nh = new DoubleIndBlockNode(i_ctxt, m_dinref);
 
                     // Insert it in the clean cache.
-                    i_ctxt.m_bncachep->insert(nh);
+                    if (!(i_flags & RB_NOCACHE))
+                        i_ctxt.m_bncachep->insert(nh);
                 }
             }
-            else if (i_flags & RB_MODIFY)
+            else if (i_flags & RB_MODIFY_X)
             {
                 // Nope, create a new one.
                 nh = new DoubleIndBlockNode();
@@ -572,16 +588,19 @@ FileNode::rb_traverse(Context & i_ctxt,
         if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
                              i_rngoff, i_rngsize, i_trav))
         {
-            // The node is already marked dirty ...
+            if (i_flags & RB_MODIFY_X)
+            {
+                // The node is already marked dirty ...
 
-            // Remove it from the clean cache.
-            i_ctxt.m_bncachep->remove(nh->bn_blkref());
+                // Remove it from the clean cache.
+                i_ctxt.m_bncachep->remove(nh->bn_blkref());
 
-            // Insert it in the dirty collection.
-            m_dinobj_X = nh;
+                // Insert it in the dirty collection.
+                m_dinobj_X = nh;
 
-            // We're dirty too.
-            bn_isdirty(true);
+                // We're dirty too.
+                bn_isdirty(true);
+            }
         }
     }
 
@@ -632,10 +651,11 @@ FileNode::rb_traverse(Context & i_ctxt,
                     nh = new TripleIndBlockNode(i_ctxt, m_tinref);
 
                     // Insert it in the clean cache.
-                    i_ctxt.m_bncachep->insert(nh);
+                    if (!(i_flags & RB_NOCACHE))
+                        i_ctxt.m_bncachep->insert(nh);
                 }
             }
-            else if (i_flags & RB_MODIFY)
+            else if (i_flags & RB_MODIFY_X)
             {
                 // Nope, create a new one.
                 nh = new TripleIndBlockNode();
@@ -658,16 +678,19 @@ FileNode::rb_traverse(Context & i_ctxt,
         if (nh->rb_traverse(i_ctxt, *this, i_flags, off,
                              i_rngoff, i_rngsize, i_trav))
         {
-            // The node is already marked dirty ...
+            if (i_flags & RB_MODIFY_X)
+            {
+                // The node is already marked dirty ...
 
-            // Remove it from the clean cache.
-            i_ctxt.m_bncachep->remove(nh->bn_blkref());
+                // Remove it from the clean cache.
+                i_ctxt.m_bncachep->remove(nh->bn_blkref());
 
-            // Insert it in the dirty collection.
-            m_tinobj_X = nh;
+                // Insert it in the dirty collection.
+                m_tinobj_X = nh;
 
-            // We're dirty too.
-            bn_isdirty(true);
+                // We're dirty too.
+                bn_isdirty(true);
+            }
         }
     }
 
@@ -1214,12 +1237,16 @@ private:
 };
 
 int
-FileNode::read(Context & i_ctxt, void * o_bufptr, size_t i_size, off_t i_off)
+FileNode::read(Context & i_ctxt,
+               void * o_bufptr,
+               size_t i_size,
+               off_t i_off,
+               unsigned int i_flags)
 {
     try
     {
         ReadBTF rbtf(o_bufptr, i_size, i_off);
-        rb_traverse(i_ctxt, *this, RB_DEFAULT, 0, i_off, i_size, rbtf);
+        rb_traverse(i_ctxt, *this, i_flags, 0, i_off, i_size, rbtf);
         return rbtf.bt_retval();
     }
     catch (NotFoundError const & ex)
@@ -1303,7 +1330,7 @@ FileNode::write(Context & i_ctxt,
     try
     {
         WriteBTF wbtf(i_data, i_size, i_off);
-        if (rb_traverse(i_ctxt, *this, RB_MODIFY, 0, i_off, i_size, wbtf))
+        if (rb_traverse(i_ctxt, *this, RB_MODIFY_X, 0, i_off, i_size, wbtf))
         {
             // Did the node get bigger?
             // If the file grew the size needs to be larger.

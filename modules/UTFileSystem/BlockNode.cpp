@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "BlockCipher.h"
 #include "BlockStore.h"
 #include "Digest.h"
@@ -34,6 +36,18 @@ BlockNode::BlockNode(BlockRef const & i_ref)
 BlockNode::~BlockNode()
 {
     LOG(lgr, 6, "DTOR " << bn_blkref());
+}
+
+void
+BlockNode::bn_tostream(std::ostream & ostrm) const
+{
+    ostrm << m_ref << ' ' << (m_isdirty ? 'D' : 'C');
+}
+
+ostream & operator<<(ostream & ostrm, BlockNode const & i_bn)
+{
+    i_bn.bn_tostream(ostrm);
+    return ostrm;
 }
 
 } // namespace UTFS

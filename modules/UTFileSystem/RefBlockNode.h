@@ -61,17 +61,42 @@ public:
 
     virtual ~RefBlockNode();
 
-    // Traversal option flags.
+#if 0
+    // Traversal Mode.
+    //
+    // RB_READONLY traversals throw OperationError if the desired
+    // block is not already in the dirty tree or clean cache.  A
+    // read-lock is all that is required for this access.
+    //
+    // RB_REFRESH traversals will read missing blocks from the block
+    // store but will not insert them in the clean cache to avoid
+    // diluting the cache.  A read-lock is all that is required for
+    // this traversal.
+    //
+    // RB_MODIFY traversals will create new blocks, read existing
+    // blocks and insert them in the clean cache.  A write-lock
+    // is required for RB_MODIFY traversals.
+    //
+    // [Should these be separate flags instead of an enum?]
+    //
+    enum TraverseMode
+    {
+        RB_READONLY		= 0x0,	// read-lock required, cache clean nodes
+        RB_REFRESH		= 0x1,	// read-lock required, suppress cache
+        RB_MODIFY_X		= 0x2,	// write-lock required, cache clean nodes
+    };
+#endif
+
     enum TraverseFlags
     {
-        RB_DEFAULT		= 0x0,	// Read-only, don't create missing blocks.
-        RB_MODIFY		= 0x1	// Create missing blocks.
+        RB_MODIFY_X		= 0x1,	// write-lock required, can dirty nodes
+        RB_NOCACHE		= 0x2,	// don't insert in clean cache (refresh)
     };
 
     // Traverse range calling functor methods.
     virtual bool rb_traverse(Context & i_ctxt,
                              FileNode & i_fn,
-                             unsigned int i_flags,
+                             unsigned i_flags,
                              off_t i_base,			// offset of this block
                              off_t i_rngoff,		// offset of range
                              size_t i_rngsize,		// size of range

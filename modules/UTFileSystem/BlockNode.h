@@ -6,6 +6,7 @@
 ///
 /// See README.txt for inheritance diagram.
 
+#include <iosfwd>
 #include <vector>
 
 #include "utpfwd.h"
@@ -68,6 +69,9 @@ public:
     //
     virtual BlockRef const & bn_flush(Context & i_ctxt) = 0;
 
+    // Emit logging friendly block summary.
+    virtual void bn_tostream(std::ostream & ostrm) const;
+
 protected:
     friend class BlockNodeCache;	// Needs to get/set m_lpos.
     
@@ -75,6 +79,8 @@ protected:
     bool						m_isdirty;
     BlockNodeList::iterator		m_lpos;
 };
+
+std::ostream & operator<<(std::ostream & ostrm, BlockNode const & i_bn);
 
 } // namespace UTFS
 

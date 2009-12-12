@@ -38,9 +38,11 @@ public:
 
     virtual BlockRef const & bn_flush(Context & i_ctxt);
 
+    virtual void bn_tostream(std::ostream & ostrm) const;
+
     virtual bool rb_traverse(Context & i_ctxt,
                              FileNode & i_fn,
-                             unsigned int i_flags,
+                             unsigned i_flags,
                              off_t i_base,
                              off_t i_rngoff,
                              size_t i_rngsize,
@@ -66,6 +68,8 @@ public:
 
     // This would be a mistake.
     virtual BlockRef const & bn_persist(Context & i_ctxt);
+
+    virtual void bn_tostream(std::ostream & ostrm) const;
 };
 
 } // namespace UTFS

@@ -167,6 +167,13 @@ DirNode::bn_flush(Context & i_ctxt)
     return FileNode::bn_flush(i_ctxt);
 }
 
+void
+DirNode::bn_tostream(std::ostream & ostrm) const
+{
+    FileNode::bn_tostream(ostrm);
+    ostrm << ' ' << "DirNode";
+}
+
 size_t
 DirNode::rb_refresh(Context & i_ctxt, uint64 i_rid)
 {

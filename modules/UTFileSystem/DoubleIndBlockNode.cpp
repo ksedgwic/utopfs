@@ -69,6 +69,13 @@ DoubleIndBlockNode::bn_flush(Context & i_ctxt)
     return bn_persist(i_ctxt);
 }
 
+void
+DoubleIndBlockNode::bn_tostream(std::ostream & ostrm) const
+{
+    IndirectBlockNode::bn_tostream(ostrm);
+    ostrm << ' ' << "DoubleIndBlockNode";
+}
+
 bool
 DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
                                 FileNode & i_fn,
@@ -122,10 +129,11 @@ DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
                     nh = new IndirectBlockNode(i_ctxt, m_blkref[ndx]);
 
                     // Insert it in the clean cache.
-                    i_ctxt.m_bncachep->insert(nh);
+                    if (!(i_flags & RB_NOCACHE))
+                        i_ctxt.m_bncachep->insert(nh);
                 }
             }
-            else if (i_flags & RB_MODIFY)
+            else if (i_flags & RB_MODIFY_X)
             {
                 // Nope, create new block.
                 nh = new IndirectBlockNode();
@@ -149,16 +157,19 @@ DoubleIndBlockNode::rb_traverse(Context & i_ctxt,
         if (nh->rb_traverse(i_ctxt, i_fn, i_flags, off,
                             i_rngoff, i_rngsize, i_trav))
         {
-            // The node is already marked dirty ...
+            if (i_flags & RB_MODIFY_X)
+            {
+                // The node is already marked dirty ...
 
-            // Remove it from the clean cache.
-            i_ctxt.m_bncachep->remove(nh->bn_blkref());
+                // Remove it from the clean cache.
+                i_ctxt.m_bncachep->remove(nh->bn_blkref());
 
-            // Insert it in the dirty collection.
-            m_blkobj_X[ndx] = nh;
+                // Insert it in the dirty collection.
+                m_blkobj_X[ndx] = nh;
 
-            // We're dirty too.
-            bn_isdirty(true);
+                // We're dirty too.
+                bn_isdirty(true);
+            }
         }
     }
 
@@ -340,6 +351,13 @@ ZeroDoubleIndBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero double indirect block makes me sad");
+}
+
+void
+ZeroDoubleIndBlockNode::bn_tostream(std::ostream & ostrm) const
+{
+    DoubleIndBlockNode::bn_tostream(ostrm);
+    ostrm << ' ' << "ZeroDoubleIndBlockNode";
 }
 
 } // namespace UTFS

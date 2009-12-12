@@ -96,6 +96,13 @@ DataBlockNode::bn_flush(Context & i_ctxt)
     return bn_persist(i_ctxt);
 }
 
+void
+DataBlockNode::bn_tostream(std::ostream & ostrm) const
+{
+    BlockNode::bn_tostream(ostrm);
+    ostrm << ' ' << "DataBlockNode";
+}
+
 ZeroDataBlockNode::ZeroDataBlockNode()
 {
     LOG(lgr, 6, "CTOR " << "ZERO");
@@ -129,6 +136,13 @@ ZeroDataBlockNode::bn_persist(Context & i_ctxt)
 {
     throwstream(InternalError, FILELINE
                 << "persisting the zero data block makes me sad");
+}
+
+void
+ZeroDataBlockNode::bn_tostream(std::ostream & ostrm) const
+{
+    BlockNode::bn_tostream(ostrm);
+    ostrm << ' ' << "ZeroDataBlockNode";
 }
 
 } // namespace UTFS

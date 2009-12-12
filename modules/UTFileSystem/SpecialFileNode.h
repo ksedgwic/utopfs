@@ -30,7 +30,8 @@ public:
     virtual int read(Context & i_ctxt,
                      void * o_bufptr,
                      size_t i_size,
-                     off_t i_off);
+                     off_t i_off,
+                     unsigned int flags);
 
 private:
     std::string				m_data;
