@@ -86,6 +86,10 @@ public:
     virtual int chmod(Context & i_ctxt,
                       mode_t i_mode);
 
+    virtual int chown(Context & i_ctxt,
+                      std::string const & i_uname,
+                      std::string const & i_gname);
+
     virtual int truncate(Context & i_ctxt,
                          off_t i_size);
 

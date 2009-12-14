@@ -274,6 +274,30 @@ FileSystem_fs_chmod(FileSystemObject *self, PyObject *args)
 }
 
 static PyObject *
+FileSystem_fs_chown(FileSystemObject *self, PyObject *args)
+{
+    char * path;
+    char * uname;
+    char * gname;
+    if (!PyArg_ParseTuple(args, "sss:fs_chown", &path, &uname, &gname))
+        return NULL;
+
+    PYUTP_TRY
+    {
+        PYUTP_THREADED_SCOPE scope;
+        errno = - self->m_fsh->fs_chown(path, uname, gname);
+    }
+    PYUTP_CATCH_ALL;
+
+    // Convert errno returns to OSError exceptions.
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
 FileSystem_fs_truncate(FileSystemObject *self, PyObject *args)
 {
     char * path;
@@ -538,6 +562,7 @@ static PyMethodDef FileSystem_methods[] = {
     {"fs_rename",		(PyCFunction)FileSystem_fs_rename,		METH_VARARGS},
     {"fs_link",			(PyCFunction)FileSystem_fs_link,		METH_VARARGS},
     {"fs_chmod",		(PyCFunction)FileSystem_fs_chmod,		METH_VARARGS},
+    {"fs_chown",		(PyCFunction)FileSystem_fs_chown,		METH_VARARGS},
     {"fs_truncate",		(PyCFunction)FileSystem_fs_truncate,	METH_VARARGS},
     {"fs_open",			(PyCFunction)FileSystem_fs_open,		METH_VARARGS},
     {"fs_read",			(PyCFunction)FileSystem_fs_read,		METH_VARARGS},

@@ -1,5 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -383,6 +385,55 @@ utopfs_chmod(char const * i_path, mode_t i_mode)
 }
 
 static int
+utopfs_chown(char const * i_path, uid_t i_uid, gid_t i_gid)
+{
+    // Translate the uid and gid to string names.
+    //
+    char pbuf[16 * 1024];
+    struct passwd pwd;
+    struct passwd * rpwdp;
+    int rv = getpwuid_r(i_uid, &pwd, pbuf, sizeof(pbuf), &rpwdp);
+    if (!rpwdp)
+    {
+        if (rv == 0)
+        {
+            // No error, but not found.
+        }
+        else
+        {
+            // Error.
+        }
+    }
+
+    char gbuf[16 * 1024];
+    struct group grp;
+    struct group * rgrpp;
+    rv = getgrgid_r(i_gid, &grp, gbuf, sizeof(gbuf), &rgrpp);
+    if (!rpwdp)
+    {
+        if (rv == 0)
+        {
+            // No error, but not found.
+        }
+        else
+        {
+            // Error.
+        }
+    }
+
+    try
+    {
+        return utopfs.assembly->fsh()->fs_chown(i_path,
+                                                pwd.pw_name,
+                                                grp.gr_name);
+    }
+    catch (utp::Exception const & ex)
+    {
+        return fatal(ex.what());
+    }
+}
+
+static int
 utopfs_truncate(char const * i_path, off_t i_size)
 {
     try
@@ -705,6 +756,7 @@ main(int argc, char ** argv)
     utopfs_oper.rename		= utopfs_rename;
     utopfs_oper.link		= utopfs_link;
     utopfs_oper.chmod		= utopfs_chmod;
+    utopfs_oper.chown		= utopfs_chown;
     utopfs_oper.truncate	= utopfs_truncate;
     utopfs_oper.open		= utopfs_open;
     utopfs_oper.read		= utopfs_read;

@@ -99,6 +99,11 @@ public:
                          mode_t i_mode)
         throw (utp::InternalError);
 
+    virtual int fs_chown(std::string const & i_path,
+                         std::string const & i_uname,
+                         std::string const & i_gname)
+        throw (utp::InternalError);
+
     virtual int fs_truncate(std::string const & i_path,
                             off_t i_size)
         throw (utp::InternalError);

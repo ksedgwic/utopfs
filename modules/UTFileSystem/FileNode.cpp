@@ -1154,6 +1154,21 @@ FileNode::chmod(Context & i_ctxt, mode_t i_mode)
 }
 
 int
+FileNode::chown(Context & i_ctxt,
+                string const & i_uname,
+                string const & i_gname)
+{
+    m_inode.set_uname(i_uname);
+    m_inode.set_gname(i_gname);
+
+    // Doesn't look like chown sets the modifiction time.
+
+    bn_isdirty(true);
+
+    return 0;
+}
+
+int
 FileNode::truncate(Context & i_ctxt, off_t i_size)
 {
     // Traverse adjusting block references.

@@ -665,6 +665,50 @@ UTFileSystem::fs_chmod(string const & i_path, mode_t i_mode)
     }
 }
 
+class ChownTraverseFunc : public DirNode::NodeTraverseFunc
+{
+public:
+    ChownTraverseFunc(string i_uname, string i_gname)
+        : m_uname(i_uname), m_gname(i_gname) {}
+
+    virtual void nt_leaf(Context & i_ctxt, FileNode & i_fn)
+    {
+        nt_retval(i_fn.chown(i_ctxt, m_uname, m_gname));
+    }
+
+private:
+    string		m_uname;
+    string		m_gname;
+};
+
+int
+UTFileSystem::fs_chown(string const & i_path,
+                       string const & i_uname,
+                       string const & i_gname)
+    throw (InternalError)
+{
+    LOG(lgr, 6, "fs_chown " << i_path);
+
+    ACE_Write_Guard<ACE_RW_Thread_Mutex> guard(m_utfsrwmutex);
+
+    try
+    {
+        pair<string, string> ps = DirNode::pathsplit(i_path);
+        ChownTraverseFunc ctf(i_uname, i_gname);
+        m_rdh->node_traverse(m_ctxt, DirNode::NT_UPDATE,
+                             ps.first, ps.second, ctf);
+
+        LOG(lgr, 6, "fs_chown " << i_path << " -> " << ctf.nt_retval());
+        return ctf.nt_retval();
+    }
+    catch (int const & i_errno)
+    {
+        LOG(lgr, 6, "fs_chown " << i_path
+            << ": " << ACE_OS::strerror(i_errno));
+        return -i_errno;
+    }
+}
+
 class TruncateTraverseFunc : public DirNode::NodeTraverseFunc
 {
 public:
