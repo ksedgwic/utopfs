@@ -99,7 +99,7 @@ AsyncPutHandler::handle_exception(ACE_HANDLE fd)
         // Call the completion handler.
         m_cmpl.bp_complete(m_keydata, m_keysize, m_argp);
 
-        // IMPORTANT - We put destructed here; Don't touch *anything*
+        // IMPORTANT - We get destructed here; Don't touch *anything*
         // after this!
         //
         m_s3bs.remove_handler(this);
@@ -110,7 +110,7 @@ AsyncPutHandler::handle_exception(ACE_HANDLE fd)
     {
         if (--m_retries > 0)
         {
-            LOG(lgr, 3, (void *) this << ' '
+            LOG(lgr, 5, (void *) this << ' '
                 << keystr(m_keydata, m_keysize) << ": " << st << ": RETRY");
 
             rh_reset(); // Reset our state.
@@ -129,7 +129,7 @@ AsyncPutHandler::handle_exception(ACE_HANDLE fd)
             InternalError ex(errstrm.str().c_str());
             m_cmpl.bp_error(m_keydata, m_keysize, m_argp, ex);
 
-            // IMPORTANT - We put destructed here; Don't touch *anything*
+            // IMPORTANT - We get destructed here; Don't touch *anything*
             // after this!
             //
             m_s3bs.remove_handler(this);
@@ -148,7 +148,7 @@ AsyncPutHandler::handle_exception(ACE_HANDLE fd)
         InternalError ex(errstrm.str().c_str());
         m_cmpl.bp_error(m_keydata, m_keysize, m_argp, ex);
 
-        // IMPORTANT - We put destructed here; Don't touch *anything*
+        // IMPORTANT - We get destructed here; Don't touch *anything*
         // after this!
         //
         m_s3bs.remove_handler(this);

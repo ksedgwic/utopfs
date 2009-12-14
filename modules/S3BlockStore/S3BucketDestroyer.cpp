@@ -110,7 +110,7 @@ ObjectDestroyer::handle_exception(ACE_HANDLE fd)
     {
         if (--m_retries > 0)
         {
-            LOG(lgr, 3, (void *) this << " DESTROY " << m_key
+            LOG(lgr, 5, (void *) this << " DESTROY " << m_key
                 << ": " << st << ": RETRY");
 
             rh_reset(); // Reset our state.

@@ -241,7 +241,6 @@ VBSChild::needed_keys_size()
     return m_neededkeys.size();
 }
 
-
 void
 VBSChild::initiate_requests()
 {

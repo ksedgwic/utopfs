@@ -100,7 +100,7 @@ AsyncGetHandler::handle_exception(ACE_HANDLE fd)
     {
         if (--m_retries > 0)
         {
-            LOG(lgr, 3, (void *) this << ' '
+            LOG(lgr, 5, (void *) this << ' '
                 << keystr(m_keydata, m_keysize) << ": " << st << ": RETRY");
 
             rh_reset(); // Reset our state.

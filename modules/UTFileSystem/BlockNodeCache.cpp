@@ -33,7 +33,7 @@ BlockNodeCache::insert(BlockNodeHandle const & i_bnh)
     BlockNodeMap::const_iterator pos = m_nodemap.find(ref);
     if (pos != m_nodemap.end())
     {
-        LOG(lgr, 4, "already there " << ref);
+        // LOG(lgr, 4, "already there " << ref);
 
         // Update it in the MRU list.
         touch(pos->second);

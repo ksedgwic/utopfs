@@ -302,7 +302,7 @@ FSBlockStore::bs_open(StringSeq const & i_args)
 
         if (++nblks % (100 * 1000) == 0)
             LOG(lgr, 4, "read "
-                << setprecision(1)
+                << fixed << setprecision(1)
                 << (double(nblks) / (1000.0 * 1000.0))
                 << "M entries");
     }
