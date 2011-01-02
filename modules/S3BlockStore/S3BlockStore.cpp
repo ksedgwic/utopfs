@@ -10,6 +10,7 @@
 #include <ace/os_include/os_byteswap.h>
 #include <ace/OS_NS_sys_stat.h>
 #include <ace/Thread_Mutex.h>
+#include <ace/Reverse_Lock_T.h>
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream.h>

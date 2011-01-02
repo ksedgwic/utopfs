@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "ace/OS.h"
+#include "ace/OS_NS_time.h"
 
 #include "T64.h"
 

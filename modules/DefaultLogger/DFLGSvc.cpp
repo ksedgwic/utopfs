@@ -47,7 +47,7 @@ DFLGSvc::init(int argc, char * argv[])
     //         -p <file-path>           enables file, path [default.log]
     //         -x                       don't flush file lines [do-flush]
 
-    ACE_Get_Opt getopt(argc, argv, ACE_LIB_TEXT("c:f:l:p:x"), 0);
+    ACE_Get_Opt getopt(argc, argv, "c:f:l:p:x", 0);
     for (int c; (c = getopt()) != -1; ) {
         switch (c) {
         case 'c':

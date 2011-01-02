@@ -4,6 +4,7 @@
 #include <map>
 
 #include <ace/Synch.h>
+#include <ace/TSS_T.h>
 
 #if defined(WIN32)
 // Python and ACE clash providing WIN32's missing pid_t

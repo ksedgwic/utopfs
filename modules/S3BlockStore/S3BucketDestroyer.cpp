@@ -4,6 +4,7 @@
 #include "MD5.h"
 
 #include <ace/Handle_Set.h>
+#include <ace/Reverse_Lock_T.h>
 
 #include "S3BlockStore.h"
 #include "s3bsfwd.h"

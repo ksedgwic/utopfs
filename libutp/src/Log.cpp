@@ -15,6 +15,7 @@
 
 #include <ace/Synch.h>
 #include <ace/Atomic_Op.h>
+#include <ace/TSS_T.h>
 
 #include "Log.h"
 #include "LoggerBase.h"
