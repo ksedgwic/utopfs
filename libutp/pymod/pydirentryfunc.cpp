@@ -38,6 +38,8 @@ PyDirEntryFunc::def_entry(string const & i_name,
     PyObject * args = Py_BuildValue("(sOl)", i_name.c_str(), stobj, i_off);
     PyObject * result = PyEval_CallObject(method, args);
 
+    // FIXME - pretty sure we are leaking the stobj here ...
+    // likely want to DECREF it ...
 
     // FIXME - figure out how to translate exceptions.
     
